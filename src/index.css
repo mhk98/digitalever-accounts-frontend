@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@media (max-width: 768px) {
+	.sidebar {
+		width: 100%;
+	}
+	.sidebar .w-64 {
+		width: 240px; /* Adjust based on your preference */
+	}
+	.sidebar .w-20 {
+		width: 80px;
+	}
+}
+
+.date-input{
+    color: white;
+}
+
+
+.logo{
+	width: 160px;
+	height: 50px!important;
+}
