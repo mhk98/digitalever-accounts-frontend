@@ -1,6 +1,3 @@
-
-
-
 import { motion } from "framer-motion";
 import { Edit, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -23,7 +20,7 @@ const AssetsPurchaseTable = () => {
   const [createProduct, setCreateProduct] = useState({
     name: "",
     price: "",
-    quantity:""
+    quantity: "",
   });
 
   const [products, setProducts] = useState([]);
@@ -119,6 +116,7 @@ const AssetsPurchaseTable = () => {
     setCurrentProduct({
       ...product,
       price: product.price ?? "",
+      quantity: product.quantity ?? "",
     });
     setIsModalOpen(true);
   };
@@ -130,10 +128,12 @@ const AssetsPurchaseTable = () => {
 
     if (!createProduct.name?.trim()) return toast.error("Name is required!");
     if (!createProduct.price) return toast.error("Price is required!");
+    if (!createProduct.quantity) return toast.error(" Quantity is required!");
 
     try {
       const payload = {
         name: createProduct.name.trim(),
+        quantity: Number(createProduct.quantity),
         price: Number(createProduct.price),
       };
 
@@ -141,7 +141,7 @@ const AssetsPurchaseTable = () => {
       if (res?.success) {
         toast.success("Successfully created product");
         setIsModalOpen1(false);
-        setCreateProduct({ name: "", price: "" });
+        setCreateProduct({ name: "", price: "", quantity: "" });
         refetch?.();
       } else {
         toast.error(res?.message || "Create failed!");
@@ -158,10 +158,13 @@ const AssetsPurchaseTable = () => {
     if (!currentProduct?.name?.trim()) return toast.error("Name is required!");
     if (currentProduct?.price === "" || currentProduct?.price === null)
       return toast.error("Price is required!");
+    if (currentProduct?.quantity === "" || currentProduct?.quantity === null)
+      return toast.error("Quantity is required!");
 
     try {
       const payload = {
         name: currentProduct.name.trim(),
+        quantity: Number(currentProduct.quantity),
         price: Number(currentProduct.price),
       };
 
@@ -349,7 +352,10 @@ const AssetsPurchaseTable = () => {
 
             {!isLoading && products.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-6 py-6 text-center text-sm text-gray-300">
+                <td
+                  colSpan={3}
+                  className="px-6 py-6 text-center text-sm text-gray-300"
+                >
                   No data found
                 </td>
               </tr>
@@ -375,7 +381,9 @@ const AssetsPurchaseTable = () => {
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
               className={`px-3 py-2 text-black rounded-md ${
-                pageNum === currentPage ? "bg-white" : "bg-indigo-500 hover:bg-indigo-400"
+                pageNum === currentPage
+                  ? "bg-white"
+                  : "bg-indigo-500 hover:bg-indigo-400"
               }`}
             >
               {pageNum}
@@ -401,7 +409,9 @@ const AssetsPurchaseTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">Edit Purchase Asset</h2>
+            <h2 className="text-lg font-semibold text-white">
+              Edit Purchase Asset
+            </h2>
 
             <div className="mt-4">
               <label className="block text-sm text-white">Name:</label>
@@ -411,7 +421,7 @@ const AssetsPurchaseTable = () => {
                 onChange={(e) =>
                   setCurrentProduct({ ...currentProduct, name: e.target.value })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
@@ -422,9 +432,12 @@ const AssetsPurchaseTable = () => {
                 step="0.01"
                 value={currentProduct?.quantity || ""}
                 onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, quantity: e.target.value })
+                  setCurrentProduct({
+                    ...currentProduct,
+                    quantity: e.target.value,
+                  })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
@@ -435,9 +448,12 @@ const AssetsPurchaseTable = () => {
                 step="0.01"
                 value={currentProduct?.price || ""}
                 onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, price: e.target.value })
+                  setCurrentProduct({
+                    ...currentProduct,
+                    price: e.target.value,
+                  })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
@@ -468,7 +484,9 @@ const AssetsPurchaseTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">Add Purchase Asset</h2>
+            <h2 className="text-lg font-semibold text-white">
+              Add Purchase Asset
+            </h2>
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
@@ -479,7 +497,7 @@ const AssetsPurchaseTable = () => {
                   onChange={(e) =>
                     setCreateProduct({ ...createProduct, name: e.target.value })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>
@@ -491,9 +509,12 @@ const AssetsPurchaseTable = () => {
                   step="0.01"
                   value={createProduct.quantity}
                   onChange={(e) =>
-                    setCreateProduct({ ...createProduct, quantity: e.target.value })
+                    setCreateProduct({
+                      ...createProduct,
+                      quantity: e.target.value,
+                    })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>
@@ -505,9 +526,12 @@ const AssetsPurchaseTable = () => {
                   step="0.01"
                   value={createProduct.price}
                   onChange={(e) =>
-                    setCreateProduct({ ...createProduct, price: e.target.value })
+                    setCreateProduct({
+                      ...createProduct,
+                      price: e.target.value,
+                    })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>

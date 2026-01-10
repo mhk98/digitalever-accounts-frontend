@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Helper function to get the auth token
 const getAuthToken = () => {
-  return localStorage.getItem("token");  // Modify this based on your token storage logic
+  return localStorage.getItem("token"); // Modify this based on your token storage logic
 };
 
 export const receivedProductApi = createApi({
@@ -10,7 +10,7 @@ export const receivedProductApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:5000/api/v1/",
     prepareHeaders: (headers) => {
-      const token = getAuthToken();  // Fetch the token
+      const token = getAuthToken(); // Fetch the token
       if (token) {
         // If the token exists, add it to the headers
         headers.set("Authorization", `Bearer ${token}`);
@@ -27,7 +27,7 @@ export const receivedProductApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["received-product"],  // Invalidate the received-product tag after this mutation
+      invalidatesTags: ["received-product"], // Invalidate the received-product tag after this mutation
     }),
 
     deleteReceivedProduct: build.mutation({
@@ -35,7 +35,7 @@ export const receivedProductApi = createApi({
         url: `/received-product/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["received-product"],  // Invalidate the received-product tag after deletion
+      invalidatesTags: ["received-product"], // Invalidate the received-product tag after deletion
     }),
 
     updateReceivedProduct: build.mutation({
@@ -44,13 +44,13 @@ export const receivedProductApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["received-product"],  // Invalidate the received-product tag after this mutation
+      invalidatesTags: ["received-product"], // Invalidate the received-product tag after this mutation
     }),
 
-     getAllReceivedProduct: build.query({
-      query: ({ page, limit, startDate, endDate, productId,}) => ({
+    getAllReceivedProduct: build.query({
+      query: ({ page, limit, startDate, endDate, name }) => ({
         url: "/received-product",
-        params: { page, limit, startDate, endDate, productId,},  // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
       }),
       providesTags: ["received-product"],
       refetchOnMountOrArgChange: true,
@@ -65,7 +65,6 @@ export const receivedProductApi = createApi({
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
-    
   }),
 });
 

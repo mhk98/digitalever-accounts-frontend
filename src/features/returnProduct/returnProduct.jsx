@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Helper function to get the auth token
 const getAuthToken = () => {
-  return localStorage.getItem("token");  // Modify this based on your token storage logic
+  return localStorage.getItem("token"); // Modify this based on your token storage logic
 };
 
 export const returnProductApi = createApi({
@@ -10,7 +10,7 @@ export const returnProductApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:5000/api/v1/",
     prepareHeaders: (headers) => {
-      const token = getAuthToken();  // Fetch the token
+      const token = getAuthToken(); // Fetch the token
       if (token) {
         // If the token exists, add it to the headers
         headers.set("Authorization", `Bearer ${token}`);
@@ -27,7 +27,7 @@ export const returnProductApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["return-product"],  // Invalidate the return-product tag after this mutation
+      invalidatesTags: ["return-product"], // Invalidate the return-product tag after this mutation
     }),
 
     deleteReturnProduct: build.mutation({
@@ -35,7 +35,7 @@ export const returnProductApi = createApi({
         url: `/return-product/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["return-product"],  // Invalidate the return-product tag after deletion
+      invalidatesTags: ["return-product"], // Invalidate the return-product tag after deletion
     }),
 
     updateReturnProduct: build.mutation({
@@ -44,13 +44,13 @@ export const returnProductApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["return-product"],  // Invalidate the return-product tag after this mutation
+      invalidatesTags: ["return-product"], // Invalidate the return-product tag after this mutation
     }),
 
-     getAllReturnProduct: build.query({
-      query: ({ page, limit, startDate, endDate, name,}) => ({
+    getAllReturnProduct: build.query({
+      query: ({ page, limit, startDate, endDate, name }) => ({
         url: "/return-product",
-        params: { page, limit, startDate, endDate, name,},  // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
       }),
       providesTags: ["return-product"],
       refetchOnMountOrArgChange: true,
@@ -65,7 +65,6 @@ export const returnProductApi = createApi({
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
-    
   }),
 });
 

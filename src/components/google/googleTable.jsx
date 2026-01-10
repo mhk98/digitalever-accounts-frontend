@@ -1,5 +1,3 @@
-
-
 import { motion } from "framer-motion";
 import { Edit, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -64,18 +62,21 @@ const GoogleTable = () => {
   const queryArgs = {
     page: currentPage,
     limit: itemsPerPage,
-    platform:"Google",
+    platform: "Google",
     startDate: startDate || undefined,
     endDate: endDate || undefined,
   };
 
-  const { data, isLoading, isError, error, refetch } = useGetAllMetaQuery(queryArgs);
+  const { data, isLoading, isError, error, refetch } =
+    useGetAllMetaQuery(queryArgs);
 
   useEffect(() => {
     if (isError) {
       console.error("Error fetching meta data", error);
     } else if (!isLoading && data) {
-      const onlyGoogle = (data.data || []).filter((item) => item.platform === "Google");
+      const onlyGoogle = (data.data || []).filter(
+        (item) => item.platform === "Google"
+      );
       setProducts(onlyGoogle);
       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
     }
@@ -183,9 +184,12 @@ const GoogleTable = () => {
     else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
   };
 
-  const handlePreviousSet = () => setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
+  const handlePreviousSet = () =>
+    setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
   const handleNextSet = () =>
-    setStartPage((prev) => Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)));
+    setStartPage((prev) =>
+      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+    );
 
   return (
     <motion.div
@@ -199,7 +203,8 @@ const GoogleTable = () => {
           className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
           onClick={handleAddProduct}
         >
-          Add<Plus size={18} className="ms-2" />
+          Add
+          <Plus size={18} className="ms-2" />
         </button>
       </div>
 
@@ -259,17 +264,25 @@ const GoogleTable = () => {
                 transition={{ duration: 0.3 }}
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {rp.createdAt ? new Date(rp.createdAt).toLocaleDateString() : "-"}
+                  {rp.createdAt
+                    ? new Date(rp.createdAt).toLocaleDateString()
+                    : "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {Number(rp.amount || 0).toFixed(2)}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button onClick={() => handleEditClick(rp)} className="text-indigo-600 hover:text-indigo-900">
+                  <button
+                    onClick={() => handleEditClick(rp)}
+                    className="text-indigo-600 hover:text-indigo-900"
+                  >
                     <Edit size={18} />
                   </button>
-                  <button onClick={() => handleDeleteProduct(rp.Id)} className="text-red-600 hover:text-red-900 ms-4">
+                  <button
+                    onClick={() => handleDeleteProduct(rp.Id)}
+                    className="text-red-600 hover:text-red-900 ms-4"
+                  >
                     <Trash2 size={18} />
                   </button>
                 </td>
@@ -278,7 +291,10 @@ const GoogleTable = () => {
 
             {!isLoading && products.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-6 py-6 text-center text-sm text-gray-300">
+                <td
+                  colSpan={3}
+                  className="px-6 py-6 text-center text-sm text-gray-300"
+                >
                   No data found
                 </td>
               </tr>
@@ -304,7 +320,9 @@ const GoogleTable = () => {
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
               className={`px-3 py-2 text-black rounded-md ${
-                pageNum === currentPage ? "bg-white" : "bg-indigo-500 hover:bg-indigo-400"
+                pageNum === currentPage
+                  ? "bg-white"
+                  : "bg-indigo-500 hover:bg-indigo-400"
               }`}
             >
               {pageNum}
@@ -330,7 +348,9 @@ const GoogleTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">Edit Meta Expense</h2>
+            <h2 className="text-lg font-semibold text-white">
+              Edit Meta Expense
+            </h2>
 
             <div className="mt-4">
               <label className="block text-sm text-white">Amount:</label>
@@ -344,15 +364,21 @@ const GoogleTable = () => {
                     amount: e.target.value, // ✅ fixed
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
             <div className="mt-6 flex justify-end">
-              <button className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2" onClick={handleUpdateProduct}>
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                onClick={handleUpdateProduct}
+              >
                 Save
               </button>
-              <button className="bg-red-600 hover:bg-red-700 text-white p-2 rounded" onClick={handleModalClose}>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                onClick={handleModalClose}
+              >
                 Cancel
               </button>
             </div>
@@ -369,7 +395,9 @@ const GoogleTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">Add Meta Expense</h2>
+            <h2 className="text-lg font-semibold text-white">
+              Add Meta Expense
+            </h2>
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
@@ -384,16 +412,23 @@ const GoogleTable = () => {
                       amount: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>
 
               <div className="mt-6 flex justify-end">
-                <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2">
+                <button
+                  type="submit"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                >
                   Save
                 </button>
-                <button type="button" className="bg-red-600 hover:bg-red-700 text-white p-2 rounded" onClick={handleModalClose1}>
+                <button
+                  type="button"
+                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                  onClick={handleModalClose1}
+                >
                   Cancel
                 </button>
               </div>

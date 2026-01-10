@@ -21,7 +21,6 @@ const ProductsTable = () => {
     name: "",
     purchase_price: "",
     sale_price: "",
- 
   });
 
   const [products, setProducts] = useState([]);
@@ -29,7 +28,7 @@ const ProductsTable = () => {
   const [endDate, setEndDate] = useState("");
   const [name, setName] = useState("");
 
-  console.log("startDate:", startDate, );
+  console.log("startDate:", startDate);
   console.log("endDate:", endDate);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -75,15 +74,14 @@ const ProductsTable = () => {
 
   const queryArgs = {
     page: currentPage,
-  limit: itemsPerPage,
-  startDate: startDate || undefined,
-  endDate: endDate || undefined,
-  name: name?.trim() ? name.trim() : undefined,  
-  
-};
+    limit: itemsPerPage,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    name: name?.trim() ? name.trim() : undefined,
+  };
 
-
-  const { data, isLoading, isError, error, refetch } = useGetAllProductQuery(queryArgs);
+  const { data, isLoading, isError, error, refetch } =
+    useGetAllProductQuery(queryArgs);
 
   useEffect(() => {
     if (isError) {
@@ -125,7 +123,6 @@ const ProductsTable = () => {
           name: "",
           purchase_price: "",
           sale_price: "",
-      
         });
         refetch?.();
       }
@@ -141,7 +138,6 @@ const ProductsTable = () => {
         name: currentProduct.name,
         purchase_price: Number(currentProduct.purchase_price),
         sale_price: Number(currentProduct.sale_price),
-       
       };
 
       const res = await updateProduct({
@@ -195,7 +191,9 @@ const ProductsTable = () => {
     setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
 
   const handleNextSet = () =>
-    setStartPage((prev) => Math.min(prev + pagesPerSet, totalPages - pagesPerSet + 1));
+    setStartPage((prev) =>
+      Math.min(prev + pagesPerSet, totalPages - pagesPerSet + 1)
+    );
 
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
 
@@ -296,7 +294,6 @@ const ProductsTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {Number(product.sale_price || 0).toFixed(2)}
                 </td>
-                
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
@@ -372,12 +369,14 @@ const ProductsTable = () => {
                 onChange={(e) =>
                   setCurrentProduct({ ...currentProduct, name: e.target.value })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Purchase Price:</label>
+              <label className="block text-sm text-white">
+                Purchase Price:
+              </label>
               <input
                 type="number"
                 step="0.01"
@@ -388,7 +387,7 @@ const ProductsTable = () => {
                     purchase_price: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
@@ -404,7 +403,7 @@ const ProductsTable = () => {
                     sale_price: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
@@ -446,13 +445,15 @@ const ProductsTable = () => {
                   onChange={(e) =>
                     setCreateProduct({ ...createProduct, name: e.target.value })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm text-white">Purchase Price:</label>
+                <label className="block text-sm text-white">
+                  Purchase Price:
+                </label>
                 <input
                   type="number"
                   step="0.01"
@@ -463,7 +464,7 @@ const ProductsTable = () => {
                       purchase_price: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>
@@ -480,7 +481,7 @@ const ProductsTable = () => {
                       sale_price: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>

@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Helper function to get the auth token
 const getAuthToken = () => {
-  return localStorage.getItem("token");  // Modify this based on your token storage logic
+  return localStorage.getItem("token"); // Modify this based on your token storage logic
 };
 
 export const inTransitProductApi = createApi({
@@ -10,7 +10,7 @@ export const inTransitProductApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:5000/api/v1/",
     prepareHeaders: (headers) => {
-      const token = getAuthToken();  // Fetch the token
+      const token = getAuthToken(); // Fetch the token
       if (token) {
         // If the token exists, add it to the headers
         headers.set("Authorization", `Bearer ${token}`);
@@ -27,7 +27,7 @@ export const inTransitProductApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["intransit-product"],  // Invalidate the intransit-product tag after this mutation
+      invalidatesTags: ["intransit-product"], // Invalidate the intransit-product tag after this mutation
     }),
 
     deleteInTransitProduct: build.mutation({
@@ -35,7 +35,7 @@ export const inTransitProductApi = createApi({
         url: `/intransit-product/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["intransit-product"],  // Invalidate the intransit-product tag after deletion
+      invalidatesTags: ["intransit-product"], // Invalidate the intransit-product tag after deletion
     }),
 
     updateInTransitProduct: build.mutation({
@@ -44,13 +44,13 @@ export const inTransitProductApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["intransit-product"],  // Invalidate the intransit-product tag after this mutation
+      invalidatesTags: ["intransit-product"], // Invalidate the intransit-product tag after this mutation
     }),
 
-     getAllInTransitProduct: build.query({
-      query: ({ page, limit, startDate, endDate, productId,}) => ({
+    getAllInTransitProduct: build.query({
+      query: ({ page, limit, startDate, endDate, name }) => ({
         url: "/intransit-product",
-        params: { page, limit, startDate, endDate, productId,},  // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
       }),
       providesTags: ["intransit-product"],
       refetchOnMountOrArgChange: true,
@@ -65,7 +65,6 @@ export const inTransitProductApi = createApi({
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
-    
   }),
 });
 

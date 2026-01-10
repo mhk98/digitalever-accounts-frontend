@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Helper function to get the auth token
 const getAuthToken = () => {
-  return localStorage.getItem("token");  // Modify this based on your token storage logic
+  return localStorage.getItem("token"); // Modify this based on your token storage logic
 };
 
 export const confirmOrderApi = createApi({
@@ -10,7 +10,7 @@ export const confirmOrderApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:5000/api/v1/",
     prepareHeaders: (headers) => {
-      const token = getAuthToken();  // Fetch the token
+      const token = getAuthToken(); // Fetch the token
       if (token) {
         // If the token exists, add it to the headers
         headers.set("Authorization", `Bearer ${token}`);
@@ -27,7 +27,7 @@ export const confirmOrderApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["confirm-order"],  // Invalidate the confirm-order tag after this mutation
+      invalidatesTags: ["confirm-order"], // Invalidate the confirm-order tag after this mutation
     }),
 
     deleteConfirmOrder: build.mutation({
@@ -35,7 +35,7 @@ export const confirmOrderApi = createApi({
         url: `/confirm-order/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["confirm-order"],  // Invalidate the confirm-order tag after deletion
+      invalidatesTags: ["confirm-order"], // Invalidate the confirm-order tag after deletion
     }),
 
     updateConfirmOrder: build.mutation({
@@ -44,13 +44,13 @@ export const confirmOrderApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["confirm-order"],  // Invalidate the confirm-order tag after this mutation
+      invalidatesTags: ["confirm-order"], // Invalidate the confirm-order tag after this mutation
     }),
 
-     getAllConfirmOrder: build.query({
-      query: ({ page, limit, startDate, endDate, productId,}) => ({
+    getAllConfirmOrder: build.query({
+      query: ({ page, limit, startDate, endDate, name }) => ({
         url: "/confirm-order",
-        params: { page, limit, startDate, endDate, productId,},  // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
       }),
       providesTags: ["confirm-order"],
       refetchOnMountOrArgChange: true,
@@ -65,7 +65,6 @@ export const confirmOrderApi = createApi({
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
-    
   }),
 });
 

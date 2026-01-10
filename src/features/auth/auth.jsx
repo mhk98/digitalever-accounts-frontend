@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Helper function to get the auth token
 const getAuthToken = () => {
-  return localStorage.getItem("token");  // You can use sessionStorage or other storage methods as well
+  return localStorage.getItem("token"); // You can use sessionStorage or other storage methods as well
 };
 
 export const authApi = createApi({
@@ -19,7 +19,7 @@ export const authApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["auth"], 
+  tagTypes: ["auth"],
   endpoints: (build) => ({
     userLogin: build.mutation({
       query: (loginData) => ({
@@ -27,7 +27,7 @@ export const authApi = createApi({
         method: "POST",
         body: loginData,
       }),
-      invalidatesTags: ["auth"], 
+      invalidatesTags: ["auth"],
     }),
 
     userRegister: build.mutation({
@@ -36,7 +36,7 @@ export const authApi = createApi({
         method: "POST",
         body: registerData,
       }),
-      invalidatesTags: ["auth"], 
+      invalidatesTags: ["auth"],
     }),
 
     userDelete: build.mutation({
@@ -44,7 +44,7 @@ export const authApi = createApi({
         url: `/user/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["auth"], 
+      invalidatesTags: ["auth"],
     }),
 
     userUpdate: build.mutation({
@@ -53,14 +53,14 @@ export const authApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["auth"], 
+      invalidatesTags: ["auth"],
     }),
 
     singleUser: build.mutation({
       query: (id) => ({
         url: `/user/${id}`,
       }),
-      providesTags: ["auth"], 
+      providesTags: ["auth"],
     }),
 
     getAllUser: build.query({

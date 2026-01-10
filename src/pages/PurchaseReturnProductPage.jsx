@@ -1,15 +1,15 @@
 import Header from "../components/common/Header";
-import ReturnProductTable from "../components/returnProduct/returnProductTable";
+import PurchaseReturnProductTable from "../components/purchaseReturnProduct/purchaseReturnProductTable";
 
-const ReturnProductPage = () => {
+const PurchaseReturnProductPage = () => {
   return (
     <div className="flex-1 relative z-10">
       <Header title="Product" />
 
       <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
-        <ReturnProductTable />
+        <PurchaseReturnProductTable />
       </main>
     </div>
   );
 };
-export default ReturnProductPage;
+export default PurchaseReturnProductPage;

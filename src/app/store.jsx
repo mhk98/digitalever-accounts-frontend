@@ -5,7 +5,7 @@ import { productApi } from "../features/product/product";
 import { authApi } from "../features/auth/auth";
 import { receivedProductApi } from "../features/receivedProduct/receivedProduct";
 import { inTransitProductApi } from "../features/inTransitProduct/inTransitProduct";
-import { returnProductApi } from "../features/returnProduct/inTransitProduct";
+import { returnProductApi } from "../features/returnProduct/returnProduct";
 import { metaApi } from "../features/marketing/marketing";
 import { assetsPurchaseApi } from "../features/assetsPurchase/assetsPurchase";
 import { assetsSaleApi } from "../features/assetsSale/assetsSale";
@@ -14,15 +14,7 @@ import { pettyCashApi } from "../features/pettyCash/pettyCash";
 import { expenseApi } from "../features/expense/expense";
 import { bookApi } from "../features/book/book";
 import { cashInOutApi } from "../features/cashInOut/cashInOut";
-
-
-
-
-
-
-
-
-
+import { purchaseReturnProductApi } from "../features/purchaseReturnProduct/purchaseReturnProduct";
 
 const store = configureStore({
   reducer: {
@@ -30,6 +22,7 @@ const store = configureStore({
     [receivedProductApi.reducerPath]: receivedProductApi.reducer,
     [inTransitProductApi.reducerPath]: inTransitProductApi.reducer,
     [returnProductApi.reducerPath]: returnProductApi.reducer,
+    [purchaseReturnProductApi.reducerPath]: purchaseReturnProductApi.reducer,
     [confirmOrderApi.reducerPath]: confirmOrderApi.reducer,
     [metaApi.reducerPath]: metaApi.reducer,
     [assetsPurchaseApi.reducerPath]: assetsPurchaseApi.reducer,
@@ -39,38 +32,26 @@ const store = configureStore({
     [expenseApi.reducerPath]: expenseApi.reducer,
     [bookApi.reducerPath]: bookApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
-   
-  
-
-  
-  
-  
- 
   },
 
   // middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(logger),
 
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
-        productApi.middleware,
-        receivedProductApi.middleware,
-        inTransitProductApi.middleware,
-        returnProductApi.middleware,
-        confirmOrderApi.middleware,
-        metaApi.middleware,
-        assetsPurchaseApi.middleware,
-        assetsSaleApi.middleware,
-        cashInOutApi.middleware,
-        pettyCashApi.middleware,
-        expenseApi.middleware,
-        bookApi.middleware,
-        authApi.middleware,
-    
-     
-     
-
-    
-      
+      productApi.middleware,
+      receivedProductApi.middleware,
+      inTransitProductApi.middleware,
+      returnProductApi.middleware,
+      purchaseReturnProductApi.middleware,
+      confirmOrderApi.middleware,
+      metaApi.middleware,
+      assetsPurchaseApi.middleware,
+      assetsSaleApi.middleware,
+      cashInOutApi.middleware,
+      pettyCashApi.middleware,
+      expenseApi.middleware,
+      bookApi.middleware,
+      authApi.middleware
     ),
 });
 

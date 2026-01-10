@@ -1,21 +1,24 @@
-
 import { motion } from "framer-motion";
 import { Edit, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
-
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
-import { useDeleteInTransitProductMutation, useGetAllInTransitProductQuery, useInsertInTransitProductMutation, useUpdateInTransitProductMutation } from "../../features/inTransitProduct/inTransitProduct";
+import {
+  useDeleteInTransitProductMutation,
+  useGetAllInTransitProductQuery,
+  useInsertInTransitProductMutation,
+  useUpdateInTransitProductMutation,
+} from "../../features/inTransitProduct/inTransitProduct";
 
-const InTransitProductTable = () => {
+const InTransiteProductTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
 
   const [currentProduct, setCurrentProduct] = useState(null);
 
-  // ✅ Add form state (insert productId, show name)
+  // ✅ Add form (INSERT) -> productId (Id)
   const [createProduct, setCreateProduct] = useState({
     productId: "",
     quantity: "",
@@ -23,13 +26,10 @@ const InTransitProductTable = () => {
 
   const [products, setProducts] = useState([]);
 
-  console.log("products", products)
-
-
-  // ✅ Filters
+  // ✅ Filters: start/end + product NAME
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [name, setName] = useState(""); // ✅ filter by productId
+  const [productName, setProductName] = useState(""); // ✅ filter by name
 
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
@@ -37,7 +37,7 @@ const InTransitProductTable = () => {
   const [pagesPerSet, setPagesPerSet] = useState(10);
   const [itemsPerPage] = useState(10);
 
-  // ✅ All products for dropdown + name mapping
+  // ✅ All products
   const {
     data: allProductsRes,
     isLoading: isLoadingAllProducts,
@@ -53,19 +53,54 @@ const InTransitProductTable = () => {
     }
   }, [isErrorAllProducts, errorAllProducts]);
 
-  // ✅ Dropdown options (show name, value = Id)
+  // ✅ Dropdown options (value = Id, label = name)
   const productDropdownOptions = useMemo(() => {
     return (productsData || []).map((p) => ({
-      value: p.Id,
+      value: String(p.Id ?? p.id ?? p._id),
       label: p.name,
     }));
   }, [productsData]);
 
-  // ✅ Helper: show product name in table
-  const productNameById = (id) =>
-    productsData.find((p) => p.Id === id)?.name || "N/A";
+  // ✅ Create a map: productId -> productName
+  const productNameMap = useMemo(() => {
+    const m = new Map();
+    (productsData || []).forEach((p) => {
+      const key = String(p.Id ?? p.id ?? p._id);
+      m.set(key, p.name);
+    });
+    return m;
+  }, [productsData]);
 
-  // Responsive pagesPerSet
+  // ✅ Robust resolver for table product name
+  const resolveProductName = (rp) => {
+    // Try multiple possible keys that backend might return
+    const pid =
+      rp.productId ??
+      rp.product_id ??
+      rp.ProductId ??
+      rp.product?.Id ??
+      rp.product?.id ??
+      rp.product?._id;
+
+    // If API already includes name
+    if (rp.productName) return rp.productName;
+    if (rp.product?.name) return rp.product?.name;
+
+    if (pid === null || pid === undefined || pid === "") return "N/A";
+
+    // Normal lookup by id
+    const byId = productNameMap.get(String(pid));
+    if (byId) return byId;
+
+    // If wrong data saved: productId contains name text
+    const pidText = String(pid);
+    const looksLikeName = (productsData || []).some((p) => p.name === pidText);
+    if (looksLikeName) return pidText;
+
+    return "N/A";
+  };
+
+  // ✅ Responsive pagesPerSet
   useEffect(() => {
     const updatePagesPerSet = () => {
       if (window.innerWidth < 640) setPagesPerSet(5);
@@ -82,22 +117,23 @@ const InTransitProductTable = () => {
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate, name]);
+  }, [startDate, endDate, productName]);
 
-  // ✅ (optional) startDate > endDate হলে endDate ঠিক করে দেবে
+  // ✅ startDate > endDate হলে endDate ঠিক করে দেবে
   useEffect(() => {
     if (startDate && endDate && startDate > endDate) {
       setEndDate(startDate);
     }
   }, [startDate, endDate]);
 
-  // ✅ Query args
+  // ✅ Query args: date + NAME
+  // NOTE: backend key যদি "name" না হয়, এখানে name -> productName/search করে দাও
   const queryArgs = {
     page: currentPage,
     limit: itemsPerPage,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
-    name: name || undefined, // ✅ filter key productId
+    name: productName || undefined, // ✅ filter by product name
   };
 
   const { data, isLoading, isError, error, refetch } =
@@ -106,11 +142,13 @@ const InTransitProductTable = () => {
   useEffect(() => {
     if (isError) {
       console.error("Error fetching received product data", error);
-    } else if (!isLoading && data) {
+      return;
+    }
+    if (!isLoading && data) {
       setProducts(data.data || []);
       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
     }
-  }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
+  }, [data, isLoading, isError, error, itemsPerPage]);
 
   // ✅ Modals
   const handleAddProduct = () => setIsModalOpen1(true);
@@ -119,7 +157,7 @@ const InTransitProductTable = () => {
   const handleEditClick = (rp) => {
     setCurrentProduct({
       ...rp,
-      productId: rp.productId ?? "",
+      productId: rp.productId ? String(rp.productId) : "",
       quantity: rp.quantity ?? "",
     });
     setIsModalOpen(true);
@@ -129,20 +167,23 @@ const InTransitProductTable = () => {
 
   // ✅ Insert
   const [insertInTransitProduct] = useInsertInTransitProductMutation();
+
   const handleCreateProduct = async (e) => {
     e.preventDefault();
 
     if (!createProduct.productId) return toast.error("Please select a product");
+    if (!createProduct.quantity || Number(createProduct.quantity) <= 0)
+      return toast.error("Please enter a valid quantity");
 
     try {
       const payload = {
-        productId: createProduct.productId,
+        productId: Number(createProduct.productId), // ✅ INSERT uses Id
         quantity: Number(createProduct.quantity),
       };
 
       const res = await insertInTransitProduct(payload).unwrap();
       if (res.success) {
-        toast.success("Successfully created in-transit product");
+        toast.success("Successfully created received product");
         setIsModalOpen1(false);
         setCreateProduct({ productId: "", quantity: "" });
         refetch?.();
@@ -154,12 +195,17 @@ const InTransitProductTable = () => {
 
   // ✅ Update
   const [updateInTransitProduct] = useUpdateInTransitProductMutation();
+
   const handleUpdateProduct = async () => {
-    if (!currentProduct?.productId) return toast.error("Please select a product");
+    if (!currentProduct?.productId)
+      return toast.error("Please select a product");
+
+    if (!currentProduct?.quantity || Number(currentProduct.quantity) <= 0)
+      return toast.error("Please enter a valid quantity");
 
     try {
       const updatedProduct = {
-        productId: currentProduct.productId,
+        productId: Number(currentProduct.productId), // ✅ UPDATE uses Id
         quantity: Number(currentProduct.quantity),
       };
 
@@ -182,6 +228,7 @@ const InTransitProductTable = () => {
 
   // ✅ Delete
   const [deleteInTransitProduct] = useDeleteInTransitProductMutation();
+
   const handleDeleteProduct = async (id) => {
     const confirmDelete = window.confirm("Do you want to delete this product?");
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
@@ -203,10 +250,10 @@ const InTransitProductTable = () => {
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
-    setName("");
+    setProductName("");
   };
 
-  // Pagination
+  // ✅ Pagination
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
 
   const handlePageChange = (pageNumber) => {
@@ -239,7 +286,7 @@ const InTransitProductTable = () => {
         </button>
       </div>
 
-      {/* Filters */}
+      {/* ✅ Filters (NAME based) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
         <div className="flex items-center justify-center">
           <label className="mr-2 text-sm text-white">Start Date:</label>
@@ -263,12 +310,13 @@ const InTransitProductTable = () => {
 
         <div className="flex items-center justify-center">
           <Select
-            options={productDropdownOptions}
-            value={productDropdownOptions.find((o) => o.value === name) || null}
-            onChange={(selected) => setName(selected?.value || "")}
-            placeholder={
-              isLoadingAllProducts ? "Loading..." : "Select Product"
+            options={productDropdownOptions} // value=Id, label=name
+            value={
+              productDropdownOptions.find((o) => o.label === productName) ||
+              null
             }
+            onChange={(selected) => setProductName(selected?.label || "")} // ✅ store NAME
+            placeholder={isLoadingAllProducts ? "Loading..." : "Select Product"}
             isClearable
             className="text-black w-full"
             isDisabled={isLoadingAllProducts}
@@ -315,15 +363,17 @@ const InTransitProductTable = () => {
                 transition={{ duration: 0.3 }}
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
-                  {productNameById(rp.productId)}
+                  {resolveProductName(rp)}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {Number(rp.quantity || 0).toFixed(2)}
                 </td>
+
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {Number(rp.purchase_price || 0).toFixed(2)}
                 </td>
+
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td>
@@ -348,7 +398,7 @@ const InTransitProductTable = () => {
             {!isLoading && products.length === 0 && (
               <tr>
                 <td
-                  colSpan={3}
+                  colSpan={5}
                   className="px-6 py-6 text-center text-sm text-gray-300"
                 >
                   No data found
@@ -395,7 +445,7 @@ const InTransitProductTable = () => {
         </button>
       </div>
 
-      {/* ✅ Edit Modal */}
+      {/* ✅ Edit Modal (UPDATE uses Id) */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <motion.div
@@ -404,7 +454,9 @@ const InTransitProductTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">Edit Received Product</h2>
+            <h2 className="text-lg font-semibold text-white">
+              Edit Received Product
+            </h2>
 
             <div className="mt-4">
               <label className="block text-sm text-white">Product:</label>
@@ -412,13 +464,13 @@ const InTransitProductTable = () => {
                 options={productDropdownOptions}
                 value={
                   productDropdownOptions.find(
-                    (o) => o.value === currentProduct?.productId
+                    (o) => o.value === String(currentProduct?.productId)
                   ) || null
                 }
                 onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    productId: selected?.value || "",
+                    productId: selected?.value || "", // ✅ Id
                   })
                 }
                 placeholder="Select Product"
@@ -440,7 +492,7 @@ const InTransitProductTable = () => {
                     quantity: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
               />
             </div>
 
@@ -462,7 +514,7 @@ const InTransitProductTable = () => {
         </div>
       )}
 
-      {/* ✅ Add Modal */}
+      {/* ✅ Add Modal (INSERT uses Id) */}
       {isModalOpen1 && (
         <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
           <motion.div
@@ -471,7 +523,9 @@ const InTransitProductTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">Add Received Product</h2>
+            <h2 className="text-lg font-semibold text-white">
+              Add Received Product
+            </h2>
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
@@ -480,13 +534,13 @@ const InTransitProductTable = () => {
                   options={productDropdownOptions}
                   value={
                     productDropdownOptions.find(
-                      (o) => o.value === createProduct.productId
+                      (o) => o.value === String(createProduct.productId)
                     ) || null
                   }
                   onChange={(selected) =>
                     setCreateProduct({
                       ...createProduct,
-                      productId: selected?.value || "",
+                      productId: selected?.value || "", // ✅ Id
                     })
                   }
                   placeholder="Select Product"
@@ -508,7 +562,7 @@ const InTransitProductTable = () => {
                       quantity: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
                   required
                 />
               </div>
@@ -536,4 +590,4 @@ const InTransitProductTable = () => {
   );
 };
 
-export default InTransitProductTable;
+export default InTransiteProductTable;

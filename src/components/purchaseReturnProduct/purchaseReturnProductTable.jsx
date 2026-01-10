@@ -1,38 +1,106 @@
 import { motion } from "framer-motion";
 import { Edit, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import {
-  useDeleteMetaMutation,
-  useGetAllMetaQuery,
-  useInsertMetaMutation,
-  useUpdateMetaMutation,
-} from "../../features/marketing/marketing";
+import Select from "react-select";
 
-const SEOTable = () => {
+import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
+import {
+  useDeletePurchaseReturnProductMutation,
+  useGetAllPurchaseReturnProductQuery,
+  useInsertPurchaseReturnProductMutation,
+  useUpdatePurchaseReturnProductMutation,
+} from "../../features/purchaseReturnProduct/purchaseReturnProduct";
+
+const PurchaseReturnProductTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
 
   const [currentProduct, setCurrentProduct] = useState(null);
 
-  // ✅ Add form state
+  // ✅ Add form (INSERT) -> productId (Id)
   const [createProduct, setCreateProduct] = useState({
-    amount: "",
+    productId: "",
+    quantity: "",
   });
 
   const [products, setProducts] = useState([]);
 
-  // ✅ Filters
+  // ✅ Filters: start/end + product NAME
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [productName, setProductName] = useState(""); // ✅ filter by name
 
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
-  const itemsPerPage = 10;
+  const [itemsPerPage] = useState(10);
 
-  // Responsive pagesPerSet
+  // ✅ All products
+  const {
+    data: allProductsRes,
+    isLoading: isLoadingAllProducts,
+    isError: isErrorAllProducts,
+    error: errorAllProducts,
+  } = useGetAllProductWithoutQueryQuery();
+
+  const productsData = allProductsRes?.data || [];
+
+  useEffect(() => {
+    if (isErrorAllProducts) {
+      console.error("Error fetching products", errorAllProducts);
+    }
+  }, [isErrorAllProducts, errorAllProducts]);
+
+  // ✅ Dropdown options (value = Id, label = name)
+  const productDropdownOptions = useMemo(() => {
+    return (productsData || []).map((p) => ({
+      value: String(p.Id ?? p.id ?? p._id),
+      label: p.name,
+    }));
+  }, [productsData]);
+
+  // ✅ Create a map: productId -> productName
+  const productNameMap = useMemo(() => {
+    const m = new Map();
+    (productsData || []).forEach((p) => {
+      const key = String(p.Id ?? p.id ?? p._id);
+      m.set(key, p.name);
+    });
+    return m;
+  }, [productsData]);
+
+  // ✅ Robust resolver for table product name
+  const resolveProductName = (rp) => {
+    // Try multiple possible keys that backend might return
+    const pid =
+      rp.productId ??
+      rp.product_id ??
+      rp.ProductId ??
+      rp.product?.Id ??
+      rp.product?.id ??
+      rp.product?._id;
+
+    // If API already includes name
+    if (rp.productName) return rp.productName;
+    if (rp.product?.name) return rp.product?.name;
+
+    if (pid === null || pid === undefined || pid === "") return "N/A";
+
+    // Normal lookup by id
+    const byId = productNameMap.get(String(pid));
+    if (byId) return byId;
+
+    // If wrong data saved: productId contains name text
+    const pidText = String(pid);
+    const looksLikeName = (productsData || []).some((p) => p.name === pidText);
+    if (looksLikeName) return pidText;
+
+    return "N/A";
+  };
+
+  // ✅ Responsive pagesPerSet
   useEffect(() => {
     const updatePagesPerSet = () => {
       if (window.innerWidth < 640) setPagesPerSet(5);
@@ -45,51 +113,52 @@ const SEOTable = () => {
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
 
-  // Filters change হলে page reset
+  // ✅ Filters change হলে page reset
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate]);
+  }, [startDate, endDate, productName]);
 
-  // startDate > endDate হলে endDate ঠিক করে দেবে
+  // ✅ startDate > endDate হলে endDate ঠিক করে দেবে
   useEffect(() => {
     if (startDate && endDate && startDate > endDate) {
       setEndDate(startDate);
     }
   }, [startDate, endDate]);
 
-  // Query args
+  // ✅ Query args: date + NAME
+  // NOTE: backend key যদি "name" না হয়, এখানে name -> productName/search করে দাও
   const queryArgs = {
     page: currentPage,
     limit: itemsPerPage,
-    platform: "SEO",
     startDate: startDate || undefined,
     endDate: endDate || undefined,
+    name: productName || undefined, // ✅ filter by product name
   };
 
   const { data, isLoading, isError, error, refetch } =
-    useGetAllMetaQuery(queryArgs);
+    useGetAllPurchaseReturnProductQuery(queryArgs);
 
   useEffect(() => {
     if (isError) {
-      console.error("Error fetching meta data", error);
-    } else if (!isLoading && data) {
-      const onlySEO = (data.data || []).filter(
-        (item) => item.platform === "SEO"
-      );
-      setProducts(onlySEO);
+      console.error("Error fetching received product data", error);
+      return;
+    }
+    if (!isLoading && data) {
+      setProducts(data.data || []);
       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
     }
-  }, [data, isLoading, isError, error, currentPage]);
+  }, [data, isLoading, isError, error, itemsPerPage]);
 
-  // Modals
+  // ✅ Modals
   const handleAddProduct = () => setIsModalOpen1(true);
   const handleModalClose1 = () => setIsModalOpen1(false);
 
   const handleEditClick = (rp) => {
     setCurrentProduct({
       ...rp,
-      amount: rp.amount ?? "",
+      productId: rp.productId ? String(rp.productId) : "",
+      quantity: rp.quantity ?? "",
     });
     setIsModalOpen(true);
   };
@@ -97,26 +166,28 @@ const SEOTable = () => {
   const handleModalClose = () => setIsModalOpen(false);
 
   // ✅ Insert
-  const [insertMeta] = useInsertMetaMutation();
+  const [insertPurchaseReturnProduct] =
+    useInsertPurchaseReturnProductMutation();
+
   const handleCreateProduct = async (e) => {
     e.preventDefault();
 
-    if (!createProduct.amount) return toast.error("Amount is required!");
+    if (!createProduct.productId) return toast.error("Please select a product");
+    if (!createProduct.quantity || Number(createProduct.quantity) <= 0)
+      return toast.error("Please enter a valid quantity");
 
     try {
       const payload = {
-        platform: "SEO",
-        amount: Number(createProduct.amount),
+        productId: Number(createProduct.productId), // ✅ INSERT uses Id
+        quantity: Number(createProduct.quantity),
       };
 
-      const res = await insertMeta(payload).unwrap();
-      if (res?.success) {
-        toast.success("Successfully created meta");
+      const res = await insertPurchaseReturnProduct(payload).unwrap();
+      if (res.success) {
+        toast.success("Successfully created received product");
         setIsModalOpen1(false);
-        setCreateProduct({ amount: "" });
+        setCreateProduct({ productId: "", quantity: "" });
         refetch?.();
-      } else {
-        toast.error(res?.message || "Create failed!");
       }
     } catch (err) {
       toast.error(err?.data?.message || "Create failed!");
@@ -124,26 +195,33 @@ const SEOTable = () => {
   };
 
   // ✅ Update
-  const [updateMeta] = useUpdateMetaMutation();
+  const [updatePurchaseReturnProduct] =
+    useUpdatePurchaseReturnProductMutation();
+
   const handleUpdateProduct = async () => {
-    if (!currentProduct?.Id) return toast.error("Invalid item!");
+    if (!currentProduct?.productId)
+      return toast.error("Please select a product");
+
+    if (!currentProduct?.quantity || Number(currentProduct.quantity) <= 0)
+      return toast.error("Please enter a valid quantity");
 
     try {
-      const payload = {
-        amount: Number(currentProduct.amount),
+      const updatedProduct = {
+        productId: Number(currentProduct.productId), // ✅ UPDATE uses Id
+        quantity: Number(currentProduct.quantity),
       };
 
-      const res = await updateMeta({
+      const res = await updatePurchaseReturnProduct({
         id: currentProduct.Id,
-        data: payload,
+        data: updatedProduct,
       }).unwrap();
 
-      if (res?.success) {
+      if (res.success) {
         toast.success("Successfully updated!");
         setIsModalOpen(false);
         refetch?.();
       } else {
-        toast.error(res?.message || "Update failed!");
+        toast.error("Update failed!");
       }
     } catch (err) {
       toast.error(err?.data?.message || "Update failed!");
@@ -151,31 +229,34 @@ const SEOTable = () => {
   };
 
   // ✅ Delete
-  const [deleteMeta] = useDeleteMetaMutation();
+  const [deletePurchaseReturnProduct] =
+    useDeletePurchaseReturnProductMutation();
+
   const handleDeleteProduct = async (id) => {
-    const confirmDelete = window.confirm("Do you want to delete this item?");
+    const confirmDelete = window.confirm("Do you want to delete this product?");
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {
-      const res = await deleteMeta(id).unwrap();
-      if (res?.success) {
-        toast.success("Deleted successfully!");
+      const res = await deletePurchaseReturnProduct(id).unwrap();
+      if (res.success) {
+        toast.success("Product deleted successfully!");
         refetch?.();
       } else {
-        toast.error(res?.message || "Delete failed!");
+        toast.error("Delete failed!");
       }
     } catch (err) {
       toast.error(err?.data?.message || "Delete failed!");
     }
   };
 
-  // Filters clear
+  // ✅ Filters clear
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
+    setProductName("");
   };
 
-  // Pagination
+  // ✅ Pagination
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
 
   const handlePageChange = (pageNumber) => {
@@ -186,6 +267,7 @@ const SEOTable = () => {
 
   const handlePreviousSet = () =>
     setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
+
   const handleNextSet = () =>
     setStartPage((prev) =>
       Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
@@ -203,13 +285,12 @@ const SEOTable = () => {
           className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
           onClick={handleAddProduct}
         >
-          Add
-          <Plus size={18} className="ms-2" />
+          Add <Plus size={18} className="ms-2" />
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center mb-6 w-full justify-center mx-auto">
+      {/* ✅ Filters (NAME based) */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
         <div className="flex items-center justify-center">
           <label className="mr-2 text-sm text-white">Start Date:</label>
           <input
@@ -230,6 +311,21 @@ const SEOTable = () => {
           />
         </div>
 
+        <div className="flex items-center justify-center">
+          <Select
+            options={productDropdownOptions} // value=Id, label=name
+            value={
+              productDropdownOptions.find((o) => o.label === productName) ||
+              null
+            }
+            onChange={(selected) => setProductName(selected?.label || "")} // ✅ store NAME
+            placeholder={isLoadingAllProducts ? "Loading..." : "Select Product"}
+            isClearable
+            className="text-black w-full"
+            isDisabled={isLoadingAllProducts}
+          />
+        </div>
+
         <button
           className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
           onClick={clearFilters}
@@ -244,10 +340,16 @@ const SEOTable = () => {
           <thead>
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Date
+                Product
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Amount
+                Quantity
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Purchase Price
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Sale Price
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Actions
@@ -263,13 +365,20 @@ const SEOTable = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {rp.createdAt
-                    ? new Date(rp.createdAt).toLocaleDateString()
-                    : "-"}
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
+                  {resolveProductName(rp)}
                 </td>
+
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {Number(rp.amount || 0).toFixed(2)}
+                  {Number(rp.quantity || 0).toFixed(2)}
+                </td>
+
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {Number(rp.purchase_price || 0).toFixed(2)}
+                </td>
+
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {Number(rp.sale_price || 0).toFixed(2)}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -292,7 +401,7 @@ const SEOTable = () => {
             {!isLoading && products.length === 0 && (
               <tr>
                 <td
-                  colSpan={3}
+                  colSpan={5}
                   className="px-6 py-6 text-center text-sm text-gray-300"
                 >
                   No data found
@@ -339,7 +448,7 @@ const SEOTable = () => {
         </button>
       </div>
 
-      {/* Edit Modal */}
+      {/* ✅ Edit Modal (UPDATE uses Id) */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <motion.div
@@ -349,22 +458,44 @@ const SEOTable = () => {
             transition={{ duration: 0.3 }}
           >
             <h2 className="text-lg font-semibold text-white">
-              Edit Meta Expense
+              Edit Received Product
             </h2>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Amount:</label>
+              <label className="block text-sm text-white">Product:</label>
+              <Select
+                options={productDropdownOptions}
+                value={
+                  productDropdownOptions.find(
+                    (o) => o.value === String(currentProduct?.productId)
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    productId: selected?.value || "", // ✅ Id
+                  })
+                }
+                placeholder="Select Product"
+                isClearable
+                className="text-black w-full"
+                isDisabled={isLoadingAllProducts}
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-white">Quantity:</label>
               <input
                 type="number"
                 step="0.01"
-                value={currentProduct?.amount || ""}
+                value={currentProduct?.quantity || ""}
                 onChange={(e) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    amount: e.target.value, // ✅ fixed
+                    quantity: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
               />
             </div>
 
@@ -386,7 +517,7 @@ const SEOTable = () => {
         </div>
       )}
 
-      {/* Add Modal */}
+      {/* ✅ Add Modal (INSERT uses Id) */}
       {isModalOpen1 && (
         <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
           <motion.div
@@ -396,23 +527,45 @@ const SEOTable = () => {
             transition={{ duration: 0.3 }}
           >
             <h2 className="text-lg font-semibold text-white">
-              Add Meta Expense
+              Add Received Product
             </h2>
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
-                <label className="block text-sm text-white">Amount</label>
+                <label className="block text-sm text-white">Product:</label>
+                <Select
+                  options={productDropdownOptions}
+                  value={
+                    productDropdownOptions.find(
+                      (o) => o.value === String(createProduct.productId)
+                    ) || null
+                  }
+                  onChange={(selected) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      productId: selected?.value || "", // ✅ Id
+                    })
+                  }
+                  placeholder="Select Product"
+                  isClearable
+                  className="text-black w-full"
+                  isDisabled={isLoadingAllProducts}
+                />
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm text-white">Quantity</label>
                 <input
                   type="number"
                   step="0.01"
-                  value={createProduct.amount}
+                  value={createProduct.quantity}
                   onChange={(e) =>
                     setCreateProduct({
                       ...createProduct,
-                      amount: e.target.value,
+                      quantity: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
                   required
                 />
               </div>
@@ -440,4 +593,4 @@ const SEOTable = () => {
   );
 };
 
-export default SEOTable;
+export default PurchaseReturnProductTable;

@@ -1,9 +1,9 @@
-// import { 
-//   BarChart2, 
-//   Settings, 
+// import {
+//   BarChart2,
+//   Settings,
 //   ShoppingBasket,
-//   TrendingUp, 
-//   Users, 
+//   TrendingUp,
+//   Users,
 //   ChevronDown
 // } from "lucide-react";
 // import { useState } from "react";
@@ -62,11 +62,10 @@
 //         href: "/return-product",
 //         roles: ["superAdmin", "admin", "manager"],
 //       },
-      
-    
+
 //     ],
 //   },
- 
+
 //   {
 //     name: "Sales",
 //     icon: TrendingUp,
@@ -78,7 +77,7 @@
 //         href: "/confirm-order",
 //         roles: ["superAdmin", "admin"],
 //       },
-    
+
 //     ],
 //   },
 //   {
@@ -132,7 +131,7 @@
 //       animate={{ width: isSidebarOpen ? 256 : 80 }}
 //     >
 //       <div className="h-full bg-gray-800 bg-opacity-50 backdrop-blur-md p-4 flex flex-col border-r border-gray-700">
-        
+
 //         {/* Logo */}
 //         <motion.button
 //           whileHover={{ scale: 1.1 }}
@@ -149,7 +148,7 @@
 //             .filter(item => item.roles.includes(userRole))
 //             .map((item) => (
 //               <div key={item.name}>
-                
+
 //                 {/* Main menu item */}
 //                 <motion.div
 //                   onClick={() => item.children ? toggleMenu(item.name) : null}
@@ -203,7 +202,6 @@
 
 // export default Sidebar;
 
-
 import {
   LayoutDashboard,
   Building2,
@@ -214,19 +212,16 @@ import {
   Truck,
   RotateCcw,
   Wallet,
-  ArrowDownCircle,
   ArrowUpCircle,
-  Coins,
   UserCog,
   ChevronDown,
-  ClipboardCheck
+  ClipboardCheck,
 } from "lucide-react";
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import logo from "../../images/logo.jpg";
-
 
 const SIDEBAR_ITEMS = [
   {
@@ -253,8 +248,8 @@ const SIDEBAR_ITEMS = [
         icon: Receipt,
         href: "/assets-sale",
         roles: ["superAdmin", "admin"],
-      }
-    ]
+      },
+    ],
   },
   {
     name: "Digital Marketing Expense",
@@ -285,8 +280,8 @@ const SIDEBAR_ITEMS = [
         icon: Receipt,
         href: "/seo",
         roles: ["superAdmin", "admin"],
-      }
-    ]
+      },
+    ],
   },
   {
     name: "Inventory",
@@ -301,9 +296,15 @@ const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin", "manager"],
       },
       {
-        name: "Received Product",
+        name: "Purchase Product",
         icon: PackageCheck,
-        href: "/received-product",
+        href: "/purchase-product",
+        roles: ["superAdmin", "admin", "manager"],
+      },
+      {
+        name: "Purchase Return",
+        icon: PackageCheck,
+        href: "/purchase-return",
         roles: ["superAdmin", "admin", "manager"],
       },
       {
@@ -313,9 +314,9 @@ const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin", "manager"],
       },
       {
-        name: "Return Product",
+        name: "Sales Return",
         icon: RotateCcw,
-        href: "/return-product",
+        href: "/sales-return",
         roles: ["superAdmin", "admin", "manager"],
       },
       {
@@ -332,24 +333,24 @@ const SIDEBAR_ITEMS = [
     color: "#3B82F6",
     roles: ["superAdmin", "admin"],
     children: [
-      {
-        name: "Cash In",
-        icon: ArrowDownCircle,
-        href: "/cash-in",
-        roles: ["superAdmin", "admin"],
-      },
-      {
-        name: "Petty Cash",
-        icon: Coins,
-        href: "/petty-cash",
-        roles: ["superAdmin", "admin"],
-      },
-      {
-        name: "Expense",
-        icon: ArrowUpCircle,
-        href: "/expense",
-        roles: ["superAdmin", "admin"],
-      },
+      // {
+      //   name: "Cash In",
+      //   icon: ArrowDownCircle,
+      //   href: "/cash-in",
+      //   roles: ["superAdmin", "admin"],
+      // },
+      // {
+      //   name: "Petty Cash",
+      //   icon: Coins,
+      //   href: "/petty-cash",
+      //   roles: ["superAdmin", "admin"],
+      // },
+      // {
+      //   name: "Expense",
+      //   icon: ArrowUpCircle,
+      //   href: "/expense",
+      //   roles: ["superAdmin", "admin"],
+      // },
       {
         name: "Book",
         icon: ArrowUpCircle,
@@ -366,7 +367,6 @@ const SIDEBAR_ITEMS = [
     roles: ["superAdmin", "admin", "manager", "staff"],
   },
 ];
-
 
 const Sidebar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -386,7 +386,6 @@ const Sidebar = () => {
       animate={{ width: isSidebarOpen ? 256 : 80 }}
     >
       <div className="h-full bg-gray-800 p-4 flex flex-col border-r border-gray-700">
-
         {/* Logo */}
         <motion.button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -397,17 +396,17 @@ const Sidebar = () => {
 
         {/* Menu */}
         <nav className="mt-8 flex-grow">
-          {SIDEBAR_ITEMS
-            .filter(item => item.roles.includes(userRole))
-            .map(item => (
+          {SIDEBAR_ITEMS.filter((item) => item.roles.includes(userRole)).map(
+            (item) => (
               <div key={item.name}>
-
                 {/* ✅ MENU WITHOUT SUBMENU */}
                 {!item.children && (
                   <Link to={item.href}>
                     <motion.div className="flex items-center p-4 rounded-lg hover:bg-gray-700 mb-2">
                       <item.icon size={20} style={{ color: item.color }} />
-                      {isSidebarOpen && <span className="ml-4">{item.name}</span>}
+                      {isSidebarOpen && (
+                        <span className="ml-4">{item.name}</span>
+                      )}
                     </motion.div>
                   </Link>
                 )}
@@ -442,8 +441,8 @@ const Sidebar = () => {
                           className="ml-8"
                         >
                           {item.children
-                            .filter(sub => sub.roles.includes(userRole))
-                            .map(sub => (
+                            .filter((sub) => sub.roles.includes(userRole))
+                            .map((sub) => (
                               <Link key={sub.href} to={sub.href}>
                                 <div className="p-2 hover:bg-gray-700 rounded mb-1">
                                   {sub.name}
@@ -455,9 +454,9 @@ const Sidebar = () => {
                     </AnimatePresence>
                   </>
                 )}
-
               </div>
-            ))}
+            )
+          )}
         </nav>
       </div>
     </motion.div>
