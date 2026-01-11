@@ -2,149 +2,291 @@
 import { motion } from "framer-motion";
 import Header from "../components/common/Header";
 import StatCard from "../components/common/StatCard";
-import { useEffect, useState } from "react";
-import {
-  Boxes,
-  Warehouse,
-  HandCoins,
-  Truck,
-  Receipt,
-  Landmark
-} from "lucide-react";
+import { useMemo } from "react";
+import { Truck, Receipt, Landmark } from "lucide-react";
 
-import axios from "axios";
-
+import { useGetAllAssetsSaleWithoutQueryQuery } from "../features/assetsSale/assetsSale";
+import { useGetAllAssetsPurchaseWithoutQueryQuery } from "../features/assetsPurchase/assetsPurchase"; // ✅ তোমার প্রকৃত path/hook নাম বসাও
+import { useGetAllInTransitProductWithoutQueryQuery } from "../features/inTransitProduct/inTransitProduct";
+import { useGetAllReturnProductWithoutQueryQuery } from "../features/returnProduct/returnProduct";
+import { useGetAllConfirmOrderApiWithoutQueryQuery } from "../features/confirmOrder/confirmOrder";
+import { useGetAllPurchaseReturnProductWithoutQueryQuery } from "../features/purchaseReturnProduct/purchaseReturnProduct";
+import { useGetAllMetaWithoutQueryQuery } from "../features/marketing/marketing";
+import { useGetAllReceiveableWithoutQueryQuery } from "../features/receiveable/receiveable";
+import { useGetAllPayableWithoutQueryQuery } from "../features/payable/payable";
+import { useGetAllReceivedProductWithoutQueryQuery } from "../features/receivedProduct/receivedProduct";
 
 const OverviewPage = () => {
+  // ✅ Digital Marketing Expense data
+  const {
+    data: metaRes,
+    isLoading: metaLoading,
+    isError: metaError,
+    error: metaErrObj,
+  } = useGetAllMetaWithoutQueryQuery();
 
+  const meta = metaRes?.data || [];
 
-	const [accountings, setAccountings] = useState([]);
-		
-	useEffect(() => {
-   const fetchData = async () => {
-	   try {
-		   const response = await axios.get(`http://localhost:5000/api/v1/accounting`);
-		   setAccountings(response.data.data);
-	   } catch (err) {
-		   console.log(err.message);
-	   }
-   };
-   // Only fetch data if both dates are defined
+  const totalMetaAmount = useMemo(() => {
+    return meta.reduce((sum, item) => sum + Number(item?.amount || 0), 0);
+  }, [meta]);
 
-	   fetchData();
+  if (metaError) console.error("Purchase error:", metaErrObj);
 
-}, []);
+  // ✅ Receiveable data
+  const {
+    data: receiveableRes,
+    isLoading: receiveableLoading,
+    isError: receiveableError,
+    error: receiveableErrObj,
+  } = useGetAllReceiveableWithoutQueryQuery();
 
-console.log("accountings", accountings);
+  const receiveable = receiveableRes?.data || [];
 
+  const totalReceiveableAmount = useMemo(() => {
+    return receiveable.reduce(
+      (sum, item) => sum + Number(item?.amount || 0),
+      0
+    );
+  }, [receiveable]);
 
-		const [products, setProducts] = useState([])
-		const fetchData = async () => {
-            try {
-                const response = await axios.get("http://localhost:5000/api/v1/product");
-		
+  if (receiveableError) console.error("Purchase error:", receiveableErrObj);
 
-                setProducts(response.data.meta);
-            } catch (err) {
-                console.log(err.message);
-            }
-        };
+  // ✅ Payable data
+  const {
+    data: payableRes,
+    isLoading: payableLoading,
+    isError: payableError,
+    error: payableErrObj,
+  } = useGetAllPayableWithoutQueryQuery();
 
+  const payable = payableRes?.data || [];
 
-		useEffect(()=>{
-			fetchData()
-		}, [])
+  const totalPayableAmount = useMemo(() => {
+    return payable.reduce((sum, item) => sum + Number(item?.amount || 0), 0);
+  }, [payable]);
 
-		
-		
-		// console.log("products", products);
+  if (payableError) console.error("Purchase error:", payableErrObj);
 
+  // ✅ Purchase data
+  const {
+    data: purchaseRes,
+    isLoading: purchaseLoading,
+    isError: purchaseError,
+    error: purchaseErrObj,
+  } = useGetAllAssetsPurchaseWithoutQueryQuery();
 
-	// 	const [products, setProducts] = useState([]);
+  const purchases = purchaseRes?.data || [];
 
-    // console.log('products', products)
-  
-    //     const { data, isLoading, isError, error } = useGetAllProductQuery();
-    
-    //     useEffect(() => {
-    //         if (isError) {
-    //             console.error("Error fetching health data", error);
-    //         } else if (!isLoading && data) {
-    //             setProducts(data);
-    //         }
-    //     }, [data, isLoading, isError, error]);
+  const totalPurchaseAmount = useMemo(() => {
+    return purchases.reduce((sum, item) => sum + Number(item?.total || 0), 0);
+  }, [purchases]);
 
+  if (purchaseError) console.error("Purchase error:", purchaseErrObj);
 
+  // ✅ Sale data
+  const {
+    data: saleRes,
+    isLoading: saleLoading,
+    isError: saleError,
+    error: saleErrObj,
+  } = useGetAllAssetsSaleWithoutQueryQuery();
 
+  const sales = saleRes?.data || [];
 
-	return (
-		<div className='flex-1 overflow-auto relative z-10'>
-			<Header title='Overview'  />
+  const totalSaleAmount = useMemo(() => {
+    return sales.reduce((sum, item) => sum + Number(item?.total || 0), 0);
+  }, [sales]);
 
-			<main className='max-w-7xl mx-auto py-6 px-4 lg:px-8'>
-				{/* STATS */}
+  // ✅ remaining amount (purchase - sale)
+  const remainingAmount = useMemo(() => {
+    return totalPurchaseAmount - totalSaleAmount;
+  }, [totalPurchaseAmount, totalSaleAmount]);
 
-			
-	<motion.div
-  className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8"
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 1 }}
->
-  <StatCard
-    name="Total Assets"
-    icon={Boxes}
-    value={products.total || 0}
-    color="#6366F1"
-  />
+  if (saleError) console.error("Sale error:", saleErrObj);
 
-  <StatCard
-    name="Total Inventory Assets"
-    icon={Warehouse}
-    value={(accountings.totalPurchaseAmount || 0).toFixed(2)}
-    color="#3B82F6"
-  />
+  const assetsLoading = purchaseLoading || saleLoading;
 
-  <StatCard
-    name="Total Dues"
-    icon={HandCoins}
-    value={(accountings.totalSaleAmount || 0).toFixed(2)}
-    color="#10B981"
-  />
+  // Inventory Data
 
-  <StatCard
-    name="Total Intransit Amount"
-    icon={Truck}
-    value={(accountings.intransitAmount || 0).toFixed(2)}
-    color="#F59E0B"
-  />
+  //Purchase Product
+  const {
+    data: receivedProductRes,
+    isLoading: receivedProductLoading,
+    isError: receivedProductError,
+    error: receivedProductErrObj,
+  } = useGetAllReceivedProductWithoutQueryQuery();
 
-  <StatCard
-    name="Total Expense Amount"
-    icon={Receipt}
-    value={(accountings.totalExpenseAmount || 0).toFixed(2)}
-    color="#EF4444"
-  />
+  const receivedProducts = receivedProductRes?.data || [];
 
-  <StatCard
-    name="Total Bank Amount"
-    icon={Landmark}
-    value={(accountings.bankBalance || 0).toFixed(2)}
-    color="#8B5CF6"
-  />
-</motion.div>
+  const totalReceivedProductAmount = useMemo(() => {
+    return receivedProducts.reduce(
+      (sum, item) => sum + Number(item?.quantity || 0),
+      0
+    );
+  }, [receivedProducts]);
 
+  //Purchase Return Product
+  const {
+    data: purchaseReturnProductRes,
+    isLoading: purchaseReturnProductLoading,
+    isError: purchaseReturnProductError,
+    error: purchaseReturnProductErrObj,
+  } = useGetAllPurchaseReturnProductWithoutQueryQuery();
 
+  const purchaseReturnProducts = purchaseReturnProductRes?.data || [];
 
-				{/* CHARTS */}
+  const totalPurchaseReturnProductAmount = useMemo(() => {
+    return purchaseReturnProducts.reduce(
+      (sum, item) => sum + Number(item?.quantity || 0),
+      0
+    );
+  }, [purchaseReturnProducts]);
 
-				{/* <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-					<SalesOverviewChart />
-					<CategoryDistributionChart />
-					<SalesChannelChart />
-				</div> */}
-			</main>
-		</div>
-	);
+  //Intransit Product
+  const {
+    data: intransitProductRes,
+    isLoading: intransitProductLoading,
+    isError: intransitProductError,
+    error: intransitProductErrObj,
+  } = useGetAllInTransitProductWithoutQueryQuery();
+
+  const intransitProducts = intransitProductRes?.data || [];
+
+  const totalIntransitProductAmount = useMemo(() => {
+    return intransitProducts.reduce(
+      (sum, item) => sum + Number(item?.quantity || 0),
+      0
+    );
+  }, [intransitProducts]);
+
+  //Intransit Product
+  const {
+    data: salesReturnProductRes,
+    isLoading: salesReturnProductLoading,
+    isError: salesReturnProductError,
+    error: salesReturnProductErrObj,
+  } = useGetAllReturnProductWithoutQueryQuery();
+
+  const salesReturnProducts = salesReturnProductRes?.data || [];
+
+  const totalSalesReturnProductAmount = useMemo(() => {
+    return salesReturnProducts.reduce(
+      (sum, item) => sum + Number(item?.quantity || 0),
+      0
+    );
+  }, [salesReturnProducts]);
+
+  //Intransit Product
+  const {
+    data: confirmOrderProductRes,
+    isLoading: confirmOrderProductLoading,
+    isError: confirmOrderProductError,
+    error: confirmOrderProductErrObj,
+  } = useGetAllConfirmOrderApiWithoutQueryQuery();
+
+  const confirmOrderProducts = confirmOrderProductRes?.data || [];
+
+  const totalConfirmOrderProductAmount = useMemo(() => {
+    return confirmOrderProducts.reduce(
+      (sum, item) => sum + Number(item?.quantity || 0),
+      0
+    );
+  }, [confirmOrderProducts]);
+
+  if (receivedProductError) console.error("Sale error:", receivedProductErrObj);
+  if (purchaseReturnProductError)
+    console.error("Sale error:", purchaseReturnProductErrObj);
+  if (intransitProductError)
+    console.error("Sale error:", intransitProductErrObj);
+  if (salesReturnProductError)
+    console.error("Sale error:", salesReturnProductErrObj);
+  if (confirmOrderProductError)
+    console.error("Sale error:", confirmOrderProductErrObj);
+
+  const inventoryLoading =
+    receivedProductLoading ||
+    purchaseReturnProductLoading ||
+    intransitProductLoading ||
+    salesReturnProductLoading ||
+    confirmOrderProductLoading;
+
+  // এখানে স্টক থাকা ত্রুটিযুক্ত বা অবিক্রিত প্রডাক্ট ফেরত দেওয়া হয়েছে + কুরিয়ারে থাকা প্রডাক্ট + অর্ডার কনফার্ম হওয়া প্রডাক্ট (আলাদাভাবে যোগ করা হয়েছে)
+  const totalInventoryExpense = Number(
+    totalPurchaseReturnProductAmount +
+      totalIntransitProductAmount +
+      totalConfirmOrderProductAmount
+  );
+
+  // স্যেসব প্রডাক্ট বিক্রি হয় নি বা ফেরত এসেছে। এগুলো স্টকে থাকা প্রডাক্টের সাথে সাথে যোগ করা হয়েছে।
+  const inventoryStock_AfterAdd_SalesReturnProduct = Number(
+    totalReceivedProductAmount + totalSalesReturnProductAmount
+  );
+
+  // স্টক থাকা ত্রুটিযুক্ত বা অবিক্রিত প্রডাক্ট ফেরত দেওয়া হয়েছে + কুরিয়ারে থাকা প্রডাক্ট + অর্ডার কনফার্ম হওয়া প্রডাক্ট - এগুলো বাদ দিয়ে বাকি স্টকে থাকা প্রডাক্ট আলাদা করা হয়েছে।
+  const remainingInventoryStock_AfterMinus_InventoryExpense =
+    inventoryStock_AfterAdd_SalesReturnProduct - totalInventoryExpense;
+
+  console.log("totalReceivedProductAmount", totalReceivedProductAmount);
+
+  return (
+    <div className="flex-1 overflow-auto relative z-10">
+      <Header title="Overview" />
+
+      <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
+        <motion.div
+          className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+        >
+          <StatCard
+            name="Total Asset Value"
+            icon={Truck}
+            value={assetsLoading ? "Loading..." : remainingAmount.toFixed(2)}
+            color="#F59E0B"
+          />
+
+          <StatCard
+            name="Total Inventory Value"
+            icon={Receipt}
+            value={
+              inventoryLoading
+                ? "Loading..."
+                : remainingInventoryStock_AfterMinus_InventoryExpense
+            } // ✅ তোমার expense API থাকলে এখানে বসাবে
+            color="#EF4444"
+          />
+          <StatCard
+            name="Total Marketing Expense"
+            icon={Receipt}
+            value={metaLoading ? "Loading..." : totalMetaAmount} // ✅ তোমার expense API থাকলে এখানে বসাবে
+            color="#EF4444"
+          />
+          <StatCard
+            name="Total Receiveable Amount"
+            icon={Receipt}
+            value={receiveableLoading ? "Loading..." : totalReceiveableAmount}
+            color="#EF4444"
+          />
+          <StatCard
+            name="Total Payable Amount"
+            icon={Receipt}
+            value={payableLoading ? "Loading..." : totalPayableAmount}
+            // ✅ তোমার expense API থাকলে এখানে বসাবে
+            color="#EF4444"
+          />
+
+          <StatCard
+            name="Total Bank Amount"
+            icon={Landmark}
+            value={"0.00"} // ✅ তোমার bank API থাকলে এখানে বসাবে
+            color="#8B5CF6"
+          />
+        </motion.div>
+      </main>
+    </div>
+  );
 };
+
 export default OverviewPage;

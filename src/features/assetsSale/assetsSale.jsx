@@ -70,9 +70,9 @@ export const assetsSaleApi = createApi({
 });
 
 export const {
-  useInsertAssetsSaleMutation,
   useGetAllAssetsSaleQuery,
-  useDeleteAssetsSaleMutation,
+  useInsertAssetsSaleMutation,
   useUpdateAssetsSaleMutation,
+  useDeleteAssetsSaleMutation,
   useGetAllAssetsSaleWithoutQueryQuery,
 } = assetsSaleApi;

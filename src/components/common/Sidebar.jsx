@@ -359,6 +359,27 @@ const SIDEBAR_ITEMS = [
       },
     ],
   },
+
+  {
+    name: "Due Management",
+    icon: Wallet,
+    color: "#3B82F6",
+    roles: ["superAdmin", "admin"],
+    children: [
+      {
+        name: "Receivable",
+        icon: ArrowUpCircle,
+        href: "/receivable",
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Payable",
+        icon: ArrowUpCircle,
+        href: "/payable",
+        roles: ["superAdmin", "admin"],
+      },
+    ],
+  },
   {
     name: "Profile",
     icon: UserCog,

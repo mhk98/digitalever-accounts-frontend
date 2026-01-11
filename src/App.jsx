@@ -24,6 +24,8 @@ import ExpensePage from "./pages/ExpensePage";
 import AccountingPage from "./pages/AccountingPage";
 import CashInOutPage from "./pages/CashInOutPage";
 import PurchaseReturnProductPage from "./pages/PurchaseReturnProductPage";
+import ReceiveablePage from "./pages/ReceiveablePage";
+import PayablePage from "./pages/PayablePage";
 
 function App() {
   return (
@@ -207,6 +209,26 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <AssetsSalePage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/Receivable"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <ReceiveablePage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/payable"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <PayablePage />
                   </SidebarLayout>
                 </RequireAuth>
               }

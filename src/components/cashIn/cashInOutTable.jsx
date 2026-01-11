@@ -1,7 +1,3 @@
-
-
-
-
 // import { motion } from "framer-motion";
 // import { Edit, Plus, Trash2 } from "lucide-react";
 // import { useEffect, useMemo, useState } from "react";
@@ -443,7 +439,6 @@
 //   )}
 // </td>
 
-
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
 //                   {rp.paymentMode || "-"}
 //                 </td>
@@ -716,7 +711,6 @@
 
 // export default CashInOutTable;
 
-
 import { motion } from "framer-motion";
 import { Edit, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -796,7 +790,8 @@ const CashInOutTable = () => {
 
     // remove empty values
     Object.keys(args).forEach((k) => {
-      if (args[k] === undefined || args[k] === null || args[k] === "") delete args[k];
+      if (args[k] === undefined || args[k] === null || args[k] === "")
+        delete args[k];
     });
 
     return args;
@@ -815,8 +810,10 @@ const CashInOutTable = () => {
   // ✅ if id is not ready, skip query
   const shouldSkip = !id;
 
-  const { data, isLoading, isError, error, refetch } =
-    useGetAllCashInOutQuery(queryArgs, { skip: shouldSkip });
+  const { data, isLoading, isError, error, refetch } = useGetAllCashInOutQuery(
+    queryArgs,
+    { skip: shouldSkip }
+  );
 
   useEffect(() => {
     if (isError) console.error("Error:", error);
@@ -842,8 +839,10 @@ const CashInOutTable = () => {
 
     if (!createProduct.name.trim()) return toast.error("Name is required!");
     if (!createProduct.amount) return toast.error("Amount is required!");
-    if (!createProduct.paymentMode) return toast.error("Payment Mode is required!");
-    if (!createProduct.paymentStatus) return toast.error("Payment Status is required!");
+    if (!createProduct.paymentMode)
+      return toast.error("Payment Mode is required!");
+    if (!createProduct.paymentStatus)
+      return toast.error("Payment Status is required!");
 
     try {
       const formData = new FormData();
@@ -926,9 +925,12 @@ const CashInOutTable = () => {
     else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
   };
 
-  const handlePreviousSet = () => setStartPage((p) => Math.max(p - pagesPerSet, 1));
+  const handlePreviousSet = () =>
+    setStartPage((p) => Math.max(p - pagesPerSet, 1));
   const handleNextSet = () =>
-    setStartPage((p) => Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)));
+    setStartPage((p) =>
+      Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+    );
 
   return (
     <motion.div
@@ -1041,9 +1043,13 @@ const CashInOutTable = () => {
 
               // ✅ FIX: file path safe
               const safePath = String(rp.file || "").replace(/\\/g, "/");
-              const fileUrl = safePath ? `http://localhost:5000/${safePath}` : "";
+              const fileUrl = safePath
+                ? `http://localhost:5000/${safePath}`
+                : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
-              const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(ext);
+              const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
+                ext
+              );
               const isPdf = ext === "pdf";
 
               return (
@@ -1053,7 +1059,9 @@ const CashInOutTable = () => {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{rp.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {rp.name}
+                  </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {!safePath ? (
@@ -1079,21 +1087,35 @@ const CashInOutTable = () => {
                         View PDF
                       </a>
                     ) : (
-                      <a href={fileUrl} target="_blank" rel="noreferrer" className="text-indigo-400 underline">
+                      <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-indigo-400 underline"
+                      >
                         Open File
                       </a>
                     )}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{rp.paymentMode || "-"}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{rp.paymentStatus || "-"}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{rp.remarks || "-"}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {rp.paymentMode || "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {rp.paymentStatus || "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {rp.remarks || "-"}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {Number(rp.amount || 0).toFixed(2)}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button onClick={() => handleEditClick(rp)} className="text-indigo-600 hover:text-indigo-900">
+                    <button
+                      onClick={() => handleEditClick(rp)}
+                      className="text-indigo-600 hover:text-indigo-900"
+                    >
                       <Edit size={18} />
                     </button>
                     <button
@@ -1109,7 +1131,10 @@ const CashInOutTable = () => {
 
             {!isLoading && products.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-6 py-6 text-center text-sm text-gray-300">
+                <td
+                  colSpan={7}
+                  className="px-6 py-6 text-center text-sm text-gray-300"
+                >
                   No data found
                 </td>
               </tr>
@@ -1135,7 +1160,9 @@ const CashInOutTable = () => {
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
               className={`px-3 py-2 text-black rounded-md ${
-                pageNum === currentPage ? "bg-white" : "bg-indigo-500 hover:bg-indigo-400"
+                pageNum === currentPage
+                  ? "bg-white"
+                  : "bg-indigo-500 hover:bg-indigo-400"
               }`}
             >
               {pageNum}
@@ -1169,16 +1196,27 @@ const CashInOutTable = () => {
                 type="number"
                 step="0.01"
                 value={currentProduct?.amount || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, amount: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    amount: e.target.value,
+                  })
+                }
                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
               />
             </div>
 
             <div className="mt-6 flex justify-end">
-              <button className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2" onClick={handleUpdateProduct}>
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                onClick={handleUpdateProduct}
+              >
                 Save
               </button>
-              <button className="bg-red-600 hover:bg-red-700 text-white p-2 rounded" onClick={() => setIsModalOpen(false)}>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                onClick={() => setIsModalOpen(false)}
+              >
                 Cancel
               </button>
             </div>
@@ -1195,7 +1233,9 @@ const CashInOutTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">Add Cash In/Out</h2>
+            <h2 className="text-lg font-semibold text-white">
+              Add Cash In/Out
+            </h2>
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
@@ -1203,7 +1243,9 @@ const CashInOutTable = () => {
                 <input
                   type="text"
                   value={createProduct.name}
-                  onChange={(e) => setCreateProduct({ ...createProduct, name: e.target.value })}
+                  onChange={(e) =>
+                    setCreateProduct({ ...createProduct, name: e.target.value })
+                  }
                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
                   required
                 />
@@ -1213,7 +1255,12 @@ const CashInOutTable = () => {
                 <label className="block text-sm text-white">Payment Mode</label>
                 <select
                   value={createProduct.paymentMode}
-                  onChange={(e) => setCreateProduct({ ...createProduct, paymentMode: e.target.value })}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      paymentMode: e.target.value,
+                    })
+                  }
                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
                   required
                 >
@@ -1228,10 +1275,17 @@ const CashInOutTable = () => {
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm text-white">Payment Status</label>
+                <label className="block text-sm text-white">
+                  Payment Status
+                </label>
                 <select
                   value={createProduct.paymentStatus}
-                  onChange={(e) => setCreateProduct({ ...createProduct, paymentStatus: e.target.value })}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      paymentStatus: e.target.value,
+                    })
+                  }
                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
                   required
                 >
@@ -1246,7 +1300,12 @@ const CashInOutTable = () => {
                 <input
                   type="text"
                   value={createProduct.remarks}
-                  onChange={(e) => setCreateProduct({ ...createProduct, remarks: e.target.value })}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      remarks: e.target.value,
+                    })
+                  }
                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
                   required
                 />
@@ -1258,28 +1317,51 @@ const CashInOutTable = () => {
                   type="number"
                   step="0.01"
                   value={createProduct.amount}
-                  onChange={(e) => setCreateProduct({ ...createProduct, amount: e.target.value })}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      amount: e.target.value,
+                    })
+                  }
                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
                   required
                 />
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm text-white">Upload Document</label>
+                <label className="block text-sm text-white">
+                  Upload Document
+                </label>
                 <input
                   type="file"
                   accept=".jpg,.jpeg,.png,.pdf"
-                  onChange={(e) => setCreateProduct({ ...createProduct, file: e.target.files?.[0] || null })}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      file: e.target.files?.[0] || null,
+                    })
+                  }
                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
                 />
-                {createProduct.file && <p className="mt-2 text-xs text-gray-300">Selected: {createProduct.file.name}</p>}
+                {createProduct.file && (
+                  <p className="mt-2 text-xs text-gray-300">
+                    Selected: {createProduct.file.name}
+                  </p>
+                )}
               </div>
 
               <div className="mt-6 flex justify-end">
-                <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2">
+                <button
+                  type="submit"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                >
                   Save
                 </button>
-                <button type="button" className="bg-red-600 hover:bg-red-700 text-white p-2 rounded" onClick={handleModalClose1}>
+                <button
+                  type="button"
+                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                  onClick={handleModalClose1}
+                >
                   Cancel
                 </button>
               </div>

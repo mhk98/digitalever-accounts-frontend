@@ -15,6 +15,8 @@ import { expenseApi } from "../features/expense/expense";
 import { bookApi } from "../features/book/book";
 import { cashInOutApi } from "../features/cashInOut/cashInOut";
 import { purchaseReturnProductApi } from "../features/purchaseReturnProduct/purchaseReturnProduct";
+import { receiveableApi } from "../features/receiveable/receiveable";
+import { payableApi } from "../features/payable/payable";
 
 const store = configureStore({
   reducer: {
@@ -31,6 +33,8 @@ const store = configureStore({
     [pettyCashApi.reducerPath]: pettyCashApi.reducer,
     [expenseApi.reducerPath]: expenseApi.reducer,
     [bookApi.reducerPath]: bookApi.reducer,
+    [receiveableApi.reducerPath]: receiveableApi.reducer,
+    [payableApi.reducerPath]: payableApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
   },
 
@@ -51,6 +55,8 @@ const store = configureStore({
       pettyCashApi.middleware,
       expenseApi.middleware,
       bookApi.middleware,
+      receiveableApi.middleware,
+      payableApi.middleware,
       authApi.middleware
     ),
 });
