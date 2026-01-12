@@ -15,6 +15,7 @@ import { useGetAllMetaWithoutQueryQuery } from "../features/marketing/marketing"
 import { useGetAllReceiveableWithoutQueryQuery } from "../features/receiveable/receiveable";
 import { useGetAllPayableWithoutQueryQuery } from "../features/payable/payable";
 import { useGetAllReceivedProductWithoutQueryQuery } from "../features/receivedProduct/receivedProduct";
+import { useGetAllCashInOutWithoutQueryQuery } from "../features/cashInOut/cashInOut";
 
 const OverviewPage = () => {
   // ✅ Digital Marketing Expense data
@@ -32,6 +33,42 @@ const OverviewPage = () => {
   }, [meta]);
 
   if (metaError) console.error("Purchase error:", metaErrObj);
+
+  //Total Cash In Amount
+  const {
+    data: cashInRes,
+    isLoading: cashInLoading,
+    isError: cashInError,
+    error: cashInErrObj,
+  } = useGetAllCashInOutWithoutQueryQuery();
+
+  const cashIn = cashInRes?.data || [];
+
+  const totalCashInAmount = useMemo(() => {
+    return cashIn
+      .filter((item) => item.paymentStatus === "CashIn")
+      .reduce((sum, item) => sum + Number(item?.amount || 0), 0);
+  }, [cashIn]);
+
+  if (cashInError) console.error("Purchase error:", cashInErrObj);
+
+  //Total Cash Out Amount
+  const {
+    data: cashOutRes,
+    isLoading: cashOutLoading,
+    isError: cashOutError,
+    error: cashOutErrObj,
+  } = useGetAllCashInOutWithoutQueryQuery();
+
+  const cashOut = cashOutRes?.data || [];
+
+  const totalCashOutAmount = useMemo(() => {
+    return cashOut
+      .filter((item) => item.paymentStatus === "CashOut")
+      .reduce((sum, item) => sum + Number(item?.amount || 0), 0);
+  }, [cashOut]);
+
+  if (cashOutError) console.error("Purchase error:", cashOutErrObj);
 
   // ✅ Receiveable data
   const {
@@ -278,9 +315,15 @@ const OverviewPage = () => {
           />
 
           <StatCard
-            name="Total Bank Amount"
+            name="Total Cash In Amount"
             icon={Landmark}
-            value={"0.00"} // ✅ তোমার bank API থাকলে এখানে বসাবে
+            value={cashInLoading ? "Loading..." : totalCashInAmount}
+            color="#8B5CF6"
+          />
+          <StatCard
+            name="Total Cash Out Amount"
+            icon={Landmark}
+            value={cashOutLoading ? "Loading..." : totalCashOutAmount}
             color="#8B5CF6"
           />
         </motion.div>

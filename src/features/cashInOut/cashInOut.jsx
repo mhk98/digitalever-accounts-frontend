@@ -65,7 +65,7 @@
 //       refetchOnMountOrArgChange: true,
 //       pollingInterval: 1000,
 //     }),
-    
+
 //   }),
 // });
 
@@ -76,8 +76,6 @@
 //   useUpdateCashInOutMutation,
 //   useInsertCashInOutMutation,
 // } = cashInOutOutApi;
-
-
 
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
@@ -148,7 +146,11 @@ export const cashInOutApi = createApi({
 
         // ✅ remove undefined/empty
         Object.keys(params).forEach((k) => {
-          if (params[k] === undefined || params[k] === null || params[k] === "") {
+          if (
+            params[k] === undefined ||
+            params[k] === null ||
+            params[k] === ""
+          ) {
             delete params[k];
           }
         });
@@ -163,6 +165,15 @@ export const cashInOutApi = createApi({
       // ✅ pollingInterval off (debug এ সমস্যা করে)
       // pollingInterval: 1000,
     }),
+
+    getAllCashInOutWithoutQuery: build.query({
+      query: () => ({
+        url: "/cash-in-out/all",
+      }),
+      providesTags: ["cashInOut"],
+      refetchOnMountOrArgChange: true,
+      pollingInterval: 1000,
+    }),
   }),
 });
 
@@ -171,4 +182,5 @@ export const {
   useInsertCashInOutMutation,
   useUpdateCashInOutMutation,
   useDeleteCashInOutMutation,
+  useGetAllCashInOutWithoutQueryQuery,
 } = cashInOutApi;

@@ -232,6 +232,13 @@ const SIDEBAR_ITEMS = [
     roles: ["superAdmin", "admin", "manager", "staff"],
   },
   {
+    name: "User Management",
+    icon: LayoutDashboard,
+    color: "#6366f1",
+    href: "/user-management",
+    roles: ["superAdmin", "admin"],
+  },
+  {
     name: "Assets",
     icon: Building2,
     color: "#EC4899",

@@ -4,14 +4,10 @@
 // import { useDeleteBookMutation, useGetAllBookQuery, useInsertBookMutation, useUpdateBookMutation } from "../../features/book/book";
 // import toast from "react-hot-toast";
 
-
-
 // const AccountingTable = () => {
-
 
 //  const [isModalOpen, setIsModalOpen] = useState(false);
 //   const [isModalOpen1, setIsModalOpen1] = useState(false);
-
 
 //         const [currentProduct, setCurrentProduct] = useState(null);
 
@@ -25,17 +21,15 @@
 //     const [pagesPerSet, setPagesPerSet] = useState(10);
 //     // eslint-disable-next-line no-unused-vars
 //     const [itemsPerPage, setItemsPerPage] = useState(10);  // 2 items per page
-    
-
 
 //     useEffect(() => {
 //         const updatePagesPerSet = () => {
 //             if (window.innerWidth < 640) {
-//                 setPagesPerSet(5); 
+//                 setPagesPerSet(5);
 //             } else if (window.innerWidth < 1024) {
 //                 setPagesPerSet(7);
 //             } else {
-//                 setPagesPerSet(10); 
+//                 setPagesPerSet(10);
 //             }
 //         };
 
@@ -44,16 +38,13 @@
 //         return () => window.removeEventListener("resize", updatePagesPerSet);
 //     }, []);
 
-
-
-    
 //     const [books, setBooks] = useState([]);
 
 //       const queryArgs = {
 //     page: currentPage,
 //   limit: itemsPerPage,
-//   name: name?.trim() ? name.trim() : undefined,  
-  
+//   name: name?.trim() ? name.trim() : undefined,
+
 // };
 
 //     const { data, isLoading, isError, error, refetch} = useGetAllBookQuery(queryArgs);
@@ -67,17 +58,12 @@
 //         }
 //     }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
 
-
-
 //    console.log("books", books)
 
- 
 //      const handleModalClose = () => setIsModalOpen(false);
 //   const handleEditBook = () => setIsModalOpen(true);
 //   const handleAddBook = () => setIsModalOpen1(true);
 //   const handleModalClose1 = () => setIsModalOpen1(false);
-
-
 
 // const [insertBook] = useInsertBookMutation();
 //   const handleCreateBook = async (e) => {
@@ -94,7 +80,7 @@
 //         setIsModalOpen1(false);
 //         setCreateProduct({
 //           name: "",
-      
+
 //         });
 //         refetch?.();
 //       }
@@ -103,8 +89,6 @@
 //     }
 //   };
 
-
-
 //     const [updateBook] = useUpdateBookMutation();
 //   const handleUpdateBook = async () => {
 //     try {
@@ -112,7 +96,7 @@
 //         name: currentProduct.name,
 //         purchase_price: Number(currentProduct.purchase_price),
 //         sale_price: Number(currentProduct.sale_price),
-       
+
 //       };
 
 //       const res = await updateBook({
@@ -150,7 +134,6 @@
 //     }
 //   };
 
- 
 //     const handlePageChange = (pageNumber) => {
 //         setCurrentPage(pageNumber);
 //         if (pageNumber < startPage) {
@@ -165,9 +148,6 @@
 
 //     const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
 
-
-
-
 //     return (
 //         <motion.div
 //             className='bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8'
@@ -175,7 +155,6 @@
 //             animate={{ opacity: 1, y: 0 }}
 //             transition={{ delay: 0.2 }}
 //         >
-
 
 //         {/* Top bar */}
 //         <div className="flex items-center justify-between">
@@ -221,7 +200,7 @@
 //                   <div className="text-[16px] font-semibold text-white">
 //                     {item.name}
 //                   </div>
-//                   <div className="mt-1 text-sm text-white">            
+//                   <div className="mt-1 text-sm text-white">
 //                   {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "-"}
 
 //                   </div>
@@ -254,11 +233,6 @@
 //             <div className="py-10 text-sm text-gray-500">No data found</div>
 //           )}
 //         </div>
-    
-
-
-
-        
 
 //             <div className='flex items-center justify-center space-x-2 mt-6'>
 //                 <button onClick={handlePreviousSet} disabled={startPage === 1} className='px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400'>
@@ -369,13 +343,11 @@
 //         </div>
 //       )}
 
-           
 //         </motion.div>
 //     );
 // };
 
 // export default AccountingTable;
-
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -384,13 +356,13 @@ import {
   useDeleteBookMutation,
   useGetAllBookQuery,
   useInsertBookMutation,
-  useUpdateBookMutation
+  useUpdateBookMutation,
 } from "../../features/book/book";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 
 const AccountingTable = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);   // Edit modal
+  const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
   const [isModalOpen1, setIsModalOpen1] = useState(false); // Add modal
 
   const [currentProduct, setCurrentProduct] = useState(null);
@@ -398,7 +370,7 @@ const AccountingTable = () => {
   const [createProduct, setCreateProduct] = useState({ name: "" });
   const [name, setName] = useState(""); // ✅ search state
 
-  console.log("name", name)
+  console.log("name", name);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
@@ -417,24 +389,19 @@ const AccountingTable = () => {
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
 
-  
-// const queryArgs = useMemo(
-//     () => ({
-//       page: currentPage,
-//       limit: itemsPerPage,
-//       name: name || undefined, // ✅ send Id
-//     }),
-//     [currentPage, itemsPerPage, name]
-//   );
-
-
-
-
+  // const queryArgs = useMemo(
+  //     () => ({
+  //       page: currentPage,
+  //       limit: itemsPerPage,
+  //       name: name || undefined, // ✅ send Id
+  //     }),
+  //     [currentPage, itemsPerPage, name]
+  //   );
 
   const { data, isLoading, isError, error, refetch } = useGetAllBookQuery({
     page: currentPage,
-      limit: itemsPerPage,
-      searchTerm: name || undefined,
+    limit: itemsPerPage,
+    searchTerm: name || undefined,
   });
 
   const books = data?.data ?? [];
@@ -487,7 +454,7 @@ const AccountingTable = () => {
     if (!currentProduct?.Id) return toast.error("Invalid book selected!");
 
     try {
-      const updated = { name: (currentProduct.name || "")};
+      const updated = { name: currentProduct.name || "" };
 
       const res = await updateBook({
         id: currentProduct.Id,
@@ -534,9 +501,12 @@ const AccountingTable = () => {
     else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
   };
 
-  const handlePreviousSet = () => setStartPage((p) => Math.max(p - pagesPerSet, 1));
+  const handlePreviousSet = () =>
+    setStartPage((p) => Math.max(p - pagesPerSet, 1));
   const handleNextSet = () =>
-    setStartPage((p) => Math.min(p + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)));
+    setStartPage((p) =>
+      Math.min(p + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1))
+    );
 
   return (
     <motion.div
@@ -559,7 +529,10 @@ const AccountingTable = () => {
             placeholder="Search by book name..."
             className="w-full rounded-md border border-gray-200 bg-white px-4 py-3 pr-12 text-sm text-gray-700 outline-none focus:border-gray-300"
           />
-          <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+          <Search
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+            size={18}
+          />
         </div>
 
         {/* Add button */}
@@ -576,22 +549,29 @@ const AccountingTable = () => {
       {/* List */}
       <div className="mt-10">
         {books.map((item) => (
-          <div key={item.id} className="flex items-center justify-between border-b border-gray-100 py-6">
+          <div
+            key={item.id}
+            className="flex items-center justify-between border-b border-gray-100 py-6"
+          >
             {/* Left */}
-          <Link to={`/book/${item.Id}`}>
-            <div className="flex items-center gap-5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-50">
-                <BookOpen className="text-indigo-600" size={18} />
-              </div>
+            <Link to={`/book/${item.Id}`}>
+              <div className="flex items-center gap-5">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-50">
+                  <BookOpen className="text-indigo-600" size={18} />
+                </div>
 
-              <div>
-                <div className="text-[16px] font-semibold text-white">{item.name}</div>
-                <div className="mt-1 text-sm text-white">
-                  {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "-"}
+                <div>
+                  <div className="text-[16px] font-semibold text-white">
+                    {item.name}
+                  </div>
+                  <div className="mt-1 text-sm text-white">
+                    {item.createdAt
+                      ? new Date(item.createdAt).toLocaleDateString()
+                      : "-"}
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
 
             {/* Right */}
             <div className="flex items-center gap-4 pr-2">
@@ -638,7 +618,9 @@ const AccountingTable = () => {
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
               className={`px-3 py-2 text-white rounded-md ${
-                pageNum === currentPage ? "bg-indigo-600" : "bg-indigo-500 hover:bg-indigo-400"
+                pageNum === currentPage
+                  ? "bg-indigo-600"
+                  : "bg-indigo-500 hover:bg-indigo-400"
               }`}
             >
               {pageNum}
@@ -672,9 +654,12 @@ const AccountingTable = () => {
                 type="text"
                 value={currentProduct?.name || ""}
                 onChange={(e) =>
-                  setCurrentProduct((prev) => ({ ...prev, name: e.target.value }))
+                  setCurrentProduct((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
@@ -714,7 +699,7 @@ const AccountingTable = () => {
                   type="text"
                   value={createProduct.name}
                   onChange={(e) => setCreateProduct({ name: e.target.value })}
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>

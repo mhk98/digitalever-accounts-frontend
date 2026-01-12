@@ -451,7 +451,7 @@ const ReceiveableTable = () => {
                 onChange={(e) =>
                   setCurrentProduct({ ...currentProduct, name: e.target.value })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
@@ -467,7 +467,7 @@ const ReceiveableTable = () => {
                     amount: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
@@ -482,7 +482,7 @@ const ReceiveableTable = () => {
                     remarks: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
@@ -548,7 +548,7 @@ const ReceiveableTable = () => {
                   onChange={(e) =>
                     setCreateProduct({ ...createProduct, name: e.target.value })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>
@@ -564,7 +564,7 @@ const ReceiveableTable = () => {
                       remarks: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>
@@ -581,7 +581,7 @@ const ReceiveableTable = () => {
                       amount: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>

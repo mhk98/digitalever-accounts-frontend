@@ -898,6 +898,14 @@ const CashInOutTable = () => {
   const handleDeleteProduct = async (rowId) => {
     if (!window.confirm("Do you want to delete this item?")) return;
     try {
+      const formData = new FormData();
+      formData.append("name", currentProduct.name.trim());
+      formData.append("paymentMode", currentProduct.paymentMode);
+      formData.append("paymentStatus", currentProduct.paymentStatus);
+      formData.append("remarks", currentProduct.remarks?.trim() || "");
+      formData.append("amount", String(Number(currentProduct.amount)));
+      formData.append("bookId", id);
+
       const res = await deleteCashInOut(rowId).unwrap();
       if (res?.success) {
         toast.success("Deleted!");
@@ -1014,7 +1022,7 @@ const CashInOutTable = () => {
           <thead>
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Name
+                Company Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Document
@@ -1189,6 +1197,77 @@ const CashInOutTable = () => {
             transition={{ duration: 0.3 }}
           >
             <h2 className="text-lg font-semibold text-white">Edit</h2>
+            <div className="mt-4">
+              <label className="block text-sm text-white">Company Name</label>
+              <input
+                type="text"
+                value={currentProduct.name}
+                onChange={(e) =>
+                  setCurrentProduct({ ...currentProduct, name: e.target.value })
+                }
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                required
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-white">Payment Mode</label>
+              <select
+                value={currentProduct.paymentMode}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    paymentMode: e.target.value,
+                  })
+                }
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                required
+              >
+                <option value="">Select Payment Mode</option>
+                <option value="Cash">Cash</option>
+                <option value="Bkash">Bkash</option>
+                <option value="Petty Cash">Petty Cash</option>
+                <option value="Nagad">Nagad</option>
+                <option value="Rocket">Rocket</option>
+                <option value="Bank">Bank</option>
+                <option value="Card">Card</option>
+              </select>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-white">Payment Status</label>
+              <select
+                value={currentProduct.paymentStatus}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    paymentStatus: e.target.value,
+                  })
+                }
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                required
+              >
+                <option value="">Select Payment Status</option>
+                <option value="CashIn">CashIn</option>
+                <option value="CashOut">CashOut</option>
+              </select>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-white">Remarks</label>
+              <input
+                type="text"
+                value={currentProduct.remarks}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    remarks: e.target.value,
+                  })
+                }
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                required
+              />
+            </div>
 
             <div className="mt-4">
               <label className="block text-sm text-white">Amount:</label>
@@ -1202,10 +1281,31 @@ const CashInOutTable = () => {
                     amount: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
+            <div className="mt-4">
+              <label className="block text-sm text-white">
+                Upload Document
+              </label>
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf"
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    file: e.target.files?.[0] || null,
+                  })
+                }
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+              />
+              {currentProduct.file && (
+                <p className="mt-2 text-xs text-gray-300">
+                  Selected: {currentProduct.file.name}
+                </p>
+              )}
+            </div>
             <div className="mt-6 flex justify-end">
               <button
                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
@@ -1239,14 +1339,14 @@ const CashInOutTable = () => {
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
-                <label className="block text-sm text-white">Name</label>
+                <label className="block text-sm text-white">Company Name</label>
                 <input
                   type="text"
                   value={createProduct.name}
                   onChange={(e) =>
                     setCreateProduct({ ...createProduct, name: e.target.value })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>
@@ -1267,6 +1367,7 @@ const CashInOutTable = () => {
                   <option value="">Select Payment Mode</option>
                   <option value="Cash">Cash</option>
                   <option value="Bkash">Bkash</option>
+                  <option value="Petty Cash">Petty Cash</option>
                   <option value="Nagad">Nagad</option>
                   <option value="Rocket">Rocket</option>
                   <option value="Bank">Bank</option>
@@ -1306,7 +1407,7 @@ const CashInOutTable = () => {
                       remarks: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>
@@ -1323,7 +1424,7 @@ const CashInOutTable = () => {
                       amount: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>

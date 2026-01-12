@@ -26,6 +26,7 @@ import CashInOutPage from "./pages/CashInOutPage";
 import PurchaseReturnProductPage from "./pages/PurchaseReturnProductPage";
 import ReceiveablePage from "./pages/ReceiveablePage";
 import PayablePage from "./pages/PayablePage";
+import UsermanagementPage from "./pages/UsermanagementPage";
 
 function App() {
   return (
@@ -229,6 +230,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <PayablePage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/user-management"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <UsermanagementPage />
                   </SidebarLayout>
                 </RequireAuth>
               }
