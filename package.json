@@ -12,6 +12,9 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.3.0",
     "axios": "^1.7.7",
+    "docx": "^9.5.1",
+    "docx-preview": "^0.3.7",
+    "file-saver": "^2.0.5",
     "framer-motion": "^11.3.19",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",

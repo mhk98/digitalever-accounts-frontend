@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2, Truck } from "lucide-react";
+import { Edit, Plus, ShoppingBasket, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -268,7 +268,7 @@ const AssetsPurchaseTable = () => {
 
         <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
           <div className="flex items-center gap-2 text-gray-300">
-            <Truck size={18} className="text-amber-400" />
+            <ShoppingBasket size={18} className="text-amber-400" />
             <span className="text-sm">Total Purchase</span>
           </div>
 
@@ -281,22 +281,22 @@ const AssetsPurchaseTable = () => {
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
         <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">Start Date:</label>
+          <label className="mr-2 text-sm text-white">From:</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="border border-gray-300 rounded p-1 text-black bg-white"
+            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
           />
         </div>
 
         <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">End Date:</label>
+          <label className="mr-2 text-sm text-white">To:</label>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="border border-gray-300 rounded p-1 text-black bg-white"
+            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
           />
         </div>
 

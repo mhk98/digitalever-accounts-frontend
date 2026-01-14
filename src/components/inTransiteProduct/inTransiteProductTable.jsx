@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2 } from "lucide-react";
+import { Edit, Plus, Trash2, Truck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -8,6 +8,7 @@ import { useGetAllProductWithoutQueryQuery } from "../../features/product/produc
 import {
   useDeleteInTransitProductMutation,
   useGetAllInTransitProductQuery,
+  useGetAllInTransitProductWithoutQueryQuery,
   useInsertInTransitProductMutation,
   useUpdateInTransitProductMutation,
 } from "../../features/inTransitProduct/inTransitProduct";
@@ -270,6 +271,26 @@ const InTransiteProductTable = () => {
       Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
     );
 
+  const {
+    data: inTransitProductRes,
+    isLoading: inTransitProductLoading,
+    isError: inTransitProductError,
+    error: inTransitProductErrObj,
+  } = useGetAllInTransitProductWithoutQueryQuery();
+
+  const inTransitProduct = inTransitProductRes?.data || [];
+
+  // ✅ totals
+  const totalinTransitProductAmount = useMemo(() => {
+    return inTransitProduct.reduce(
+      (sum, item) => sum + Number(item?.quantity || 0),
+      0
+    );
+  }, [inTransitProduct]);
+
+  if (inTransitProductError)
+    console.error("Purchase error:", inTransitProductErrObj);
+
   return (
     <motion.div
       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
@@ -277,15 +298,29 @@ const InTransiteProductTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <div className="my-6 flex justify-start">
+      {/* Add Button */}
+      <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
+          type="button"
           onClick={handleAddProduct}
+          className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
         >
-          Add <Plus size={18} className="ms-2" />
+          Add <Plus size={18} className="ml-2" />
         </button>
-      </div>
 
+        <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
+          <div className="flex items-center gap-2 text-gray-300">
+            <Truck size={18} className="text-amber-400" />
+            <span className="text-sm">Total Intransit Product</span>
+          </div>
+
+          <span className="text-white font-semibold tabular-nums">
+            {inTransitProductLoading
+              ? "Loading..."
+              : totalinTransitProductAmount.toFixed(2)}
+          </span>
+        </div>
+      </div>
       {/* ✅ Filters (NAME based) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
         <div className="flex items-center justify-center">

@@ -1,41 +1,26 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// Helper function to get the auth token
-const getAuthToken = () => {
-  return localStorage.getItem("token");  // Modify this based on your token storage logic
-};
+const getAuthToken = () => localStorage.getItem("token");
 
 export const pettyCashApi = createApi({
   reducerPath: "pettyCashApi",
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:5000/api/v1/",
     prepareHeaders: (headers) => {
-      const token = getAuthToken();  // Fetch the token
-      if (token) {
-        // If the token exists, add it to the headers
-        headers.set("Authorization", `Bearer ${token}`);
-      }
+      const token = getAuthToken();
+      if (token) headers.set("Authorization", `Bearer ${token}`);
       return headers;
     },
   }),
-
-  tagTypes: ["petty-cash"], // Define the tag type for invalidation and refetching
+  tagTypes: ["pettyCash"],
   endpoints: (build) => ({
     insertPettyCash: build.mutation({
       query: (data) => ({
         url: "/petty-cash/create",
         method: "POST",
-        body: data,
+        body: data, // FormData
       }),
-      invalidatesTags: ["petty-cash"],  // Invalidate the PettyCash tag after this mutation
-    }),
-
-    deletePettyCash: build.mutation({
-      query: (id) => ({
-        url: `/petty-cash/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["petty-cash"],  // Invalidate the PettyCash tag after deletion
+      invalidatesTags: ["pettyCash"],
     }),
 
     updatePettyCash: build.mutation({
@@ -44,35 +29,77 @@ export const pettyCashApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["petty-cash"],  // Invalidate the PettyCash tag after this mutation
+      invalidatesTags: ["pettyCash"],
     }),
 
-     getAllPettyCash: build.query({
-      query: ({ page, limit, startDate, endDate, productId,}) => ({
-        url: "/petty-cash",
-        params: { page, limit, startDate, endDate, productId,},  // Pass the page and limit as query params
+    deletePettyCash: build.mutation({
+      query: (id) => ({
+        url: `/petty-cash/${id}`,
+        method: "DELETE",
       }),
-      providesTags: ["petty-cash"],
+      invalidatesTags: ["pettyCash"],
+    }),
+
+    // ✅ FIXED: FILTER PARAMS PASSING
+    getAllPettyCash: build.query({
+      query: (arg) => {
+        const {
+          page,
+          limit,
+          startDate,
+          endDate,
+          searchTerm,
+          paymentMode,
+          paymentStatus,
+        } = arg || {};
+
+        const params = {
+          page,
+          limit,
+          startDate,
+          endDate,
+          searchTerm,
+          paymentMode,
+          paymentStatus,
+        };
+
+        // ✅ remove undefined/empty
+        Object.keys(params).forEach((k) => {
+          if (
+            params[k] === undefined ||
+            params[k] === null ||
+            params[k] === ""
+          ) {
+            delete params[k];
+          }
+        });
+
+        return {
+          url: "/petty-cash",
+          params,
+        };
+      },
+      providesTags: ["pettyCash"],
       refetchOnMountOrArgChange: true,
-      pollingInterval: 1000,
+      // ✅ pollingInterval off (debug এ সমস্যা করে)
+      // pollingInterval: 1000,
     }),
 
     getAllPettyCashWithoutQuery: build.query({
       query: () => ({
         url: "/petty-cash/all",
       }),
-      providesTags: ["petty-cash"],
+      providesTags: ["pettyCash"],
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
-    
   }),
 });
 
 export const {
   useGetAllPettyCashQuery,
-  useGetAllPettyCashWithoutQueryQuery,
-  useDeletePettyCashMutation,
-  useUpdatePettyCashMutation,
   useInsertPettyCashMutation,
+  useUpdatePettyCashMutation,
+  useDeletePettyCashMutation,
+  useGetAllPettyCashWithoutQueryQuery,
 } = pettyCashApi;

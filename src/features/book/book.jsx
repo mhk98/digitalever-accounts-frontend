@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Helper function to get the auth token
 const getAuthToken = () => {
-  return localStorage.getItem("token");  // Modify this based on your token storage logic
+  return localStorage.getItem("token"); // Modify this based on your token storage logic
 };
 
 export const bookApi = createApi({
@@ -10,7 +10,7 @@ export const bookApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:5000/api/v1/",
     prepareHeaders: (headers) => {
-      const token = getAuthToken();  // Fetch the token
+      const token = getAuthToken(); // Fetch the token
       if (token) {
         // If the token exists, add it to the headers
         headers.set("Authorization", `Bearer ${token}`);
@@ -27,7 +27,7 @@ export const bookApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["book"],  // Invalidate the Book tag after this mutation
+      invalidatesTags: ["book"], // Invalidate the Book tag after this mutation
     }),
 
     deleteBook: build.mutation({
@@ -35,7 +35,7 @@ export const bookApi = createApi({
         url: `/book/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["book"],  // Invalidate the Book tag after deletion
+      invalidatesTags: ["book"], // Invalidate the Book tag after deletion
     }),
 
     updateBook: build.mutation({
@@ -44,19 +44,36 @@ export const bookApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["book"],  // Invalidate the Book tag after this mutation
+      invalidatesTags: ["book"], // Invalidate the Book tag after this mutation
     }),
 
-   getAllBook: build.query({
-  query: ({ page, limit, startDate, endDate, bookId, searchTerm, paymentMode, paymentStatus }) => ({
-    url: "/book",
-    params: { page, limit, startDate, endDate, bookId, searchTerm, paymentMode, paymentStatus },
-  }),
-  providesTags: ["book"],
-  refetchOnMountOrArgChange: true,
-  // pollingInterval: 1000,  // ❌ remove
-}),
-
+    getAllBook: build.query({
+      query: ({
+        page,
+        limit,
+        startDate,
+        endDate,
+        bookId,
+        searchTerm,
+        paymentMode,
+        paymentStatus,
+      }) => ({
+        url: "/book",
+        params: {
+          page,
+          limit,
+          startDate,
+          endDate,
+          bookId,
+          searchTerm,
+          paymentMode,
+          paymentStatus,
+        },
+      }),
+      providesTags: ["book"],
+      refetchOnMountOrArgChange: true,
+      // pollingInterval: 1000,  // ❌ remove
+    }),
 
     getAllBookWithoutQuery: build.query({
       query: () => ({
@@ -66,7 +83,12 @@ export const bookApi = createApi({
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
-    
+    getSingleBookDataById: build.query({
+      query: (id) => ({
+        url: `/book/${id}`,
+      }),
+      providesTags: ["book"], // Provides the 'supplier' tag for caching and invalidation
+    }),
   }),
 });
 
@@ -76,4 +98,5 @@ export const {
   useDeleteBookMutation,
   useUpdateBookMutation,
   useInsertBookMutation,
+  useGetSingleBookDataByIdQuery,
 } = bookApi;

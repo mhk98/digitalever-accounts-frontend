@@ -1,17 +1,17 @@
 // import { motion } from "framer-motion";
 
-import AssetsSaleTable from "../components/assetsSale/AssetsSaleTable";
+import AssetsDamageTable from "../components/assetsSale/AssetsSaleTable";
 import Header from "../components/common/Header";
 
-const AssetsSalePage = () => {
+const AssetsDamagePage = () => {
   return (
     <div className="flex-1 relative z-10">
-      <Header title="Sale Assets" />
+      <Header title="Assets Damage" />
 
       <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
-        <AssetsSaleTable />
+        <AssetsDamageTable />
       </main>
     </div>
   );
 };
-export default AssetsSalePage;
+export default AssetsDamagePage;

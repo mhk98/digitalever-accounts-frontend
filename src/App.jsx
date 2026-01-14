@@ -27,6 +27,8 @@ import PurchaseReturnProductPage from "./pages/PurchaseReturnProductPage";
 import ReceiveablePage from "./pages/ReceiveablePage";
 import PayablePage from "./pages/PayablePage";
 import UsermanagementPage from "./pages/UsermanagementPage";
+import PettyCashPage from "./pages/PettyCashPage";
+import AssetsDamagePage from "./pages/AssetsDamagePage";
 
 function App() {
   return (
@@ -163,7 +165,16 @@ function App() {
                 </RequireAuth>
               }
             />
-            {/* <Route path="/petty-cash" element={<RequireAuth><SidebarLayout><PettyCashPage /></SidebarLayout></RequireAuth>} /> */}
+            <Route
+              path="/petty-cash"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <PettyCashPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
             <Route
               path="/expense"
               element={
@@ -210,6 +221,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <AssetsSalePage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/assets-damage"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <AssetsDamagePage />
                   </SidebarLayout>
                 </RequireAuth>
               }

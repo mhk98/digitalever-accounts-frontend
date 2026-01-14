@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Edit, Plus, Search, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   useDeleteMetaMutation,
   useGetAllMetaQuery,
+  useGetAllMetaWithoutQueryQuery,
   useInsertMetaMutation,
   useUpdateMetaMutation,
 } from "../../features/marketing/marketing";
@@ -191,6 +192,24 @@ const GoogleTable = () => {
       Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
     );
 
+  const {
+    data: googleRes,
+    isLoading: googleLoading,
+    isError: googleError,
+    error: googleErrObj,
+  } = useGetAllMetaWithoutQueryQuery();
+
+  const google = googleRes?.data || [];
+
+  // ✅ totals
+  const totalGoogleAmount = useMemo(() => {
+    return google
+      ?.filter((item) => item.platform === "Google")
+      .reduce((sum, item) => sum + Number(item?.amount || 0), 0);
+  }, [google]);
+
+  if (googleError) console.error("Purchase error:", googleErrObj);
+
   return (
     <motion.div
       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
@@ -198,14 +217,26 @@ const GoogleTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <div className="my-6 flex justify-start">
+      {/* Add Button */}
+      <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
+          type="button"
           onClick={handleAddProduct}
+          className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
         >
-          Add
-          <Plus size={18} className="ms-2" />
+          Add <Plus size={18} className="ml-2" />
         </button>
+
+        <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
+          <div className="flex items-center gap-2 text-gray-300">
+            <Search size={18} className="text-amber-400" />
+            <span className="text-sm">Total Google Expense</span>
+          </div>
+
+          <span className="text-white font-semibold tabular-nums">
+            {googleLoading ? "Loading..." : totalGoogleAmount.toFixed(2)}
+          </span>
+        </div>
       </div>
 
       {/* Filters */}

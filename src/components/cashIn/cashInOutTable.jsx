@@ -10,16 +10,42 @@
 // } from "../../features/cashInOut/cashInOut";
 // import { useParams } from "react-router-dom";
 
+// import ReportMenu from "./ReportMenu";
+// import ReportPreviewModal from "./ReportPreviewModal";
+
+// import { generateCashInOutPdf } from "../../utils/report/generateCashInOutPdf";
+// import { generateCashInOutXlsx } from "../../utils/report/generateCashInOutXlsx";
+// import { useGetSingleBookDataByIdQuery } from "../../features/book/book";
+
+// const BANKS = [
+//   "Al Arafah",
+//   "BRAC Bank",
+//   "Bank Asia",
+//   "City Bank",
+//   "Dutch-Bangla Bank",
+//   "Dhaka Bank",
+//   "Eastern Bank",
+//   "Islami Bank",
+//   "Janata Bank",
+//   "Mutual Trust Bank",
+//   "One Bank",
+//   "Prime Bank",
+//   "Pubali Bank",
+//   "Premier Bank",
+//   "United Commercial Bank",
+//   "Sonali Bank",
+//   "Standard Chartered",
+//   "Trust Bank",
+// ];
+
 // const CashInOutTable = () => {
-//   const { id } = useParams();
+//   const { id } = useParams(); // bookId
 
 //   const [isModalOpen, setIsModalOpen] = useState(false);
 //   const [isModalOpen1, setIsModalOpen1] = useState(false);
 //   const [currentProduct, setCurrentProduct] = useState(null);
 
-//   // ✅ Add form state
 //   const [createProduct, setCreateProduct] = useState({
-//     name: "",
 //     paymentMode: "",
 //     paymentStatus: "",
 //     remarks: "",
@@ -29,12 +55,9 @@
 
 //   const [products, setProducts] = useState([]);
 
-//   // ✅ Date filters
+//   // filters
 //   const [startDate, setStartDate] = useState("");
 //   const [endDate, setEndDate] = useState("");
-
-//   // ✅ NEW: extra filters
-//   const [filterName, setFilterName] = useState("");
 //   const [filterPaymentMode, setFilterPaymentMode] = useState("");
 //   const [filterPaymentStatus, setFilterPaymentStatus] = useState("");
 
@@ -44,33 +67,41 @@
 //   const [pagesPerSet, setPagesPerSet] = useState(10);
 //   const itemsPerPage = 10;
 
-//   // Responsive pagesPerSet
 //   useEffect(() => {
 //     const updatePagesPerSet = () => {
 //       if (window.innerWidth < 640) setPagesPerSet(5);
 //       else if (window.innerWidth < 1024) setPagesPerSet(7);
 //       else setPagesPerSet(10);
 //     };
-
 //     updatePagesPerSet();
 //     window.addEventListener("resize", updatePagesPerSet);
 //     return () => window.removeEventListener("resize", updatePagesPerSet);
 //   }, []);
 
-//   // ✅ Filters change হলে page reset
 //   useEffect(() => {
 //     setCurrentPage(1);
 //     setStartPage(1);
-//   }, [startDate, endDate, filterName, filterPaymentMode, filterPaymentStatus]);
+//   }, [startDate, endDate, filterPaymentMode, filterPaymentStatus]);
 
-//   // startDate > endDate হলে endDate ঠিক করে দেবে
 //   useEffect(() => {
-//     if (startDate && endDate && startDate > endDate) {
-//       setEndDate(startDate);
-//     }
+//     if (startDate && endDate && startDate > endDate) setEndDate(startDate);
 //   }, [startDate, endDate]);
 
-//   // ✅ Query args (memo so RTK doesn't refetch unnecessarily)
+//   // ✅ Bank না হলে bankName reset (Add)
+//   useEffect(() => {
+//     if (createProduct.paymentMode !== "Bank" && createProduct.bankName) {
+//       setCreateProduct((p) => ({ ...p, bankName: "" }));
+//     }
+//   }, [createProduct.paymentMode]);
+
+//   // ✅ Bank না হলে bankName reset (Edit)
+//   useEffect(() => {
+//     if (!currentProduct) return;
+//     if (currentProduct.paymentMode !== "Bank" && currentProduct.bankName) {
+//       setCurrentProduct((p) => ({ ...p, bankName: "" }));
+//     }
+//   }, [currentProduct?.paymentMode]);
+
 //   const queryArgs = useMemo(() => {
 //     const args = {
 //       page: currentPage,
@@ -78,12 +109,14 @@
 //       bookId: id,
 //       startDate: startDate || undefined,
 //       endDate: endDate || undefined,
-
-//       // ✅ new filters
-//       searchTerm: filterName.trim() ? filterName.trim() : undefined,
 //       paymentMode: filterPaymentMode || undefined,
 //       paymentStatus: filterPaymentStatus || undefined,
 //     };
+
+//     Object.keys(args).forEach((k) => {
+//       if (args[k] === undefined || args[k] === null || args[k] === "")
+//         delete args[k];
+//     });
 
 //     return args;
 //   }, [
@@ -92,26 +125,26 @@
 //     id,
 //     startDate,
 //     endDate,
-//     filterName,
 //     filterPaymentMode,
 //     filterPaymentStatus,
 //   ]);
 
-//   console.log("queryArgs", queryArgs)
+//   const shouldSkip = !id;
 
-//   const { data, isLoading, isError, error, refetch } =
-//     useGetAllCashInOutQuery(queryArgs);
+//   const { data, isLoading, isError, error, refetch } = useGetAllCashInOutQuery(
+//     queryArgs,
+//     { skip: shouldSkip }
+//   );
 
 //   useEffect(() => {
-//     if (isError) {
-//       console.error("Error fetching cash in/out data", error);
-//     } else if (!isLoading && data) {
+//     if (isError) console.error("Error:", error);
+//     if (!isLoading && data) {
 //       setProducts(data?.data ?? []);
 //       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
 //     }
-//   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
+//   }, [data, isLoading, isError, error, itemsPerPage]);
 
-//   // Modals
+//   // modals
 //   const handleAddProduct = () => setIsModalOpen1(true);
 //   const handleModalClose1 = () => setIsModalOpen1(false);
 
@@ -119,114 +152,119 @@
 //     setCurrentProduct({
 //       ...rp,
 //       amount: rp.amount ?? "",
+//       bankName: rp.bankName ?? "",
+//       file: null, // edit modal এ নতুন ফাইল না নিলে null
 //     });
 //     setIsModalOpen(true);
 //   };
 
-//   // const handleModalClose = () => setIsModalOpen(false);
-
-//   // ✅ Insert (FormData for file upload)
+//   // insert
 //   const [insertCashIn] = useInsertCashInOutMutation();
 //   const handleCreateProduct = async (e) => {
 //     e.preventDefault();
 
-//     if (!createProduct.name?.trim()) return toast.error("Name is required!");
 //     if (!createProduct.amount) return toast.error("Amount is required!");
-//     if (!createProduct.paymentMode) return toast.error("Payment Mode is required!");
-//     if (!createProduct.paymentStatus) return toast.error("Payment Status is required!");
+//     if (!createProduct.paymentMode)
+//       return toast.error("Payment Mode is required!");
+//     if (!createProduct.paymentStatus)
+//       return toast.error("Payment Status is required!");
+//     if (createProduct.paymentMode === "Bank" && !createProduct.bankName)
+//       return toast.error("Bank Name is required!");
 
 //     try {
 //       const formData = new FormData();
-//       formData.append("name", createProduct.name.trim());
 //       formData.append("paymentMode", createProduct.paymentMode);
 //       formData.append("paymentStatus", createProduct.paymentStatus);
+//       formData.append(
+//         "bankName",
+//         createProduct.paymentMode === "Bank" ? createProduct.bankName : ""
+//       );
 //       formData.append("remarks", createProduct.remarks?.trim() || "");
 //       formData.append("amount", String(Number(createProduct.amount)));
 //       formData.append("bookId", id);
 
-//       if (createProduct.file) {
-//         formData.append("file", createProduct.file);
-//       }
+//       if (createProduct.file) formData.append("file", createProduct.file);
 
 //       const res = await insertCashIn(formData).unwrap();
 
 //       if (res?.success) {
-//         toast.success("Successfully created cash in/out");
+//         toast.success("Successfully created!");
 //         setIsModalOpen1(false);
 //         setCreateProduct({
-//           name: "",
 //           paymentMode: "",
 //           paymentStatus: "",
+//           bankName: "",
 //           remarks: "",
 //           amount: "",
 //           file: null,
 //         });
 //         refetch?.();
-//       } else {
-//         toast.error(res?.message || "Create failed!");
-//       }
+//       } else toast.error(res?.message || "Create failed!");
 //     } catch (err) {
 //       toast.error(err?.data?.message || "Create failed!");
 //     }
 //   };
 
-//   // ✅ Update
+//   // update
 //   const [updateCashInOut] = useUpdateCashInOutMutation();
 //   const handleUpdateProduct = async () => {
 //     const rowId = currentProduct?.Id ?? currentProduct?.id;
 //     if (!rowId) return toast.error("Invalid item!");
+//     if (!currentProduct.amount) return toast.error("Amount is required!");
+//     if (!currentProduct.paymentMode)
+//       return toast.error("Payment Mode is required!");
+//     if (!currentProduct.paymentStatus)
+//       return toast.error("Payment Status is required!");
+//     if (currentProduct.paymentMode === "Bank" && !currentProduct.bankName)
+//       return toast.error("Bank Name is required!");
 
 //     try {
-//       const payload = {
-//         amount: Number(currentProduct.amount),
-//       };
+//       const formData = new FormData();
+//       formData.append("paymentMode", currentProduct.paymentMode);
+//       formData.append("paymentStatus", currentProduct.paymentStatus);
+//       formData.append(
+//         "bankName",
+//         currentProduct.paymentMode === "Bank" ? currentProduct.bankName : ""
+//       );
+//       formData.append("remarks", currentProduct.remarks?.trim() || "");
+//       formData.append("amount", String(Number(currentProduct.amount)));
+//       if (currentProduct.file) formData.append("file", currentProduct.file);
 
-//       const res = await updateCashInOut({
-//         id: rowId,
-//         data: payload,
-//       }).unwrap();
-
+//       const res = await updateCashInOut({ id: rowId, data: formData }).unwrap();
 //       if (res?.success) {
-//         toast.success("Successfully updated!");
+//         toast.success("Updated!");
 //         setIsModalOpen(false);
 //         refetch?.();
-//       } else {
-//         toast.error(res?.message || "Update failed!");
-//       }
+//       } else toast.error(res?.message || "Update failed!");
 //     } catch (err) {
 //       toast.error(err?.data?.message || "Update failed!");
 //     }
 //   };
 
-//   // ✅ Delete
+//   // delete (✅ FIX: currentProduct লাগবে না)
 //   const [deleteCashInOut] = useDeleteCashInOutMutation();
 //   const handleDeleteProduct = async (rowId) => {
-//     const confirmDelete = window.confirm("Do you want to delete this item?");
-//     if (!confirmDelete) return toast.info("Delete action was cancelled.");
+//     if (!window.confirm("Do you want to delete this item?")) return;
 
 //     try {
 //       const res = await deleteCashInOut(rowId).unwrap();
 //       if (res?.success) {
-//         toast.success("Deleted successfully!");
+//         toast.success("Deleted!");
 //         refetch?.();
-//       } else {
-//         toast.error(res?.message || "Delete failed!");
-//       }
+//       } else toast.error(res?.message || "Delete failed!");
 //     } catch (err) {
 //       toast.error(err?.data?.message || "Delete failed!");
 //     }
 //   };
 
-//   // Filters clear
 //   const clearFilters = () => {
 //     setStartDate("");
 //     setEndDate("");
-//     setFilterName("");
 //     setFilterPaymentMode("");
 //     setFilterPaymentStatus("");
 //   };
 
-//   // Pagination
+//   // pagination
 //   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
 
 //   const handlePageChange = (pageNumber) => {
@@ -235,11 +273,119 @@
 //     else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
 //   };
 
-//   const handlePreviousSet = () => setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
+//   const handlePreviousSet = () =>
+//     setStartPage((p) => Math.max(p - pagesPerSet, 1));
 //   const handleNextSet = () =>
-//     setStartPage((prev) =>
-//       Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+//     setStartPage((p) =>
+//       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
 //     );
+
+//   // book info (name for report header)
+//   const { data: bookRes } = useGetSingleBookDataByIdQuery(id, {
+//     skip: !id,
+//   });
+//   const bookName = bookRes?.data?.name || "";
+
+//   console.log("bookName", bookName);
+
+//   // report states
+//   const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
+//   const [isReportPreviewOpen, setIsReportPreviewOpen] = useState(false);
+//   const [reportType, setReportType] = useState(""); // "pdf" | "sheet"
+//   const [reportBlob, setReportBlob] = useState(null);
+//   const [reportBlobUrl, setReportBlobUrl] = useState("");
+//   const [reportLoading, setReportLoading] = useState(false);
+//   const [sheetPreview, setSheetPreview] = useState({ header: [], rows: [] });
+
+//   const closeReportPreview = () => {
+//     setIsReportPreviewOpen(false);
+//     setReportType("");
+//     setReportBlob(null);
+//     setSheetPreview({ header: [], rows: [] });
+//     setReportLoading(false);
+
+//     if (reportBlobUrl) {
+//       URL.revokeObjectURL(reportBlobUrl);
+//       setReportBlobUrl("");
+//     }
+//   };
+
+//   const handleReportPdf = async () => {
+//     try {
+//       if (!products.length) return toast.error("No data found!");
+
+//       setReportType("pdf");
+//       setReportLoading(true);
+//       setIsReportPreviewOpen(true);
+//       setIsReportMenuOpen(false);
+
+//       const blob = await generateCashInOutPdf({
+//         products,
+//         bookId: id,
+//         bookName,
+//       });
+
+//       const url = URL.createObjectURL(blob);
+//       setReportBlob(blob);
+//       setReportBlobUrl(url);
+//     } catch (e) {
+//       toast.error("PDF report generate failed!");
+//       closeReportPreview();
+//     } finally {
+//       setReportLoading(false);
+//     }
+//   };
+
+//   // const handleReportSheet = async () => {
+//   //   try {
+//   //     if (!products.length) return toast.error("No data found!");
+
+//   //     setReportType("sheet");
+//   //     setReportLoading(true);
+//   //     setIsReportPreviewOpen(true);
+//   //     setIsReportMenuOpen(false);
+
+//   //     const { blob, preview } = generateCashInOutXlsx({ products, bookId: id });
+//   //     const url = URL.createObjectURL(blob);
+
+//   //     setReportBlob(blob);
+//   //     setReportBlobUrl(url);
+//   //     setSheetPreview(preview);
+//   //   } catch (e) {
+//   //     toast.error("Sheet report generate failed!");
+//   //     closeReportPreview();
+//   //   } finally {
+//   //     setReportLoading(false);
+//   //   }
+//   // };
+
+//   const handleReportSheet = async () => {
+//     try {
+//       if (!products.length) return toast.error("No data found!");
+
+//       setReportType("sheet");
+//       setReportLoading(true);
+//       setIsReportPreviewOpen(true);
+//       setIsReportMenuOpen(false);
+
+//       const { blob, preview } = generateCashInOutXlsx({
+//         products,
+//         bookId: id,
+//         bookName, // ✅ এখানে পাঠাচ্ছি
+//       });
+
+//       const url = URL.createObjectURL(blob);
+
+//       setReportBlob(blob);
+//       setReportBlobUrl(url);
+//       setSheetPreview(preview);
+//     } catch (e) {
+//       toast.error("Sheet report generate failed!");
+//       closeReportPreview();
+//     } finally {
+//       setReportLoading(false);
+//     }
+//   };
 
 //   return (
 //     <motion.div
@@ -248,18 +394,25 @@
 //       animate={{ opacity: 1, y: 0 }}
 //       transition={{ delay: 0.2 }}
 //     >
-//       <div className="my-6 flex justify-start">
+//       <div className="my-6 flex items-center justify-between">
 //         <button
 //           className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
 //           onClick={handleAddProduct}
 //         >
 //           Add <Plus size={18} className="ms-2" />
 //         </button>
+
+//         <ReportMenu
+//           isOpen={isReportMenuOpen}
+//           setIsOpen={setIsReportMenuOpen}
+//           onGoogleSheet={handleReportSheet}
+//           onPdf={handleReportPdf}
+//           disabled={isLoading || !id}
+//         />
 //       </div>
 
 //       {/* Filters */}
-//       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center mb-6 w-full justify-center mx-auto">
-//         {/* Start */}
+//       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
 //         <div className="flex items-center justify-center">
 //           <label className="mr-2 text-sm text-white">Start:</label>
 //           <input
@@ -270,7 +423,6 @@
 //           />
 //         </div>
 
-//         {/* End */}
 //         <div className="flex items-center justify-center">
 //           <label className="mr-2 text-sm text-white">End:</label>
 //           <input
@@ -281,21 +433,8 @@
 //           />
 //         </div>
 
-//         {/* ✅ Name Search */}
 //         <div className="flex items-center justify-center">
-//           <label className="mr-2 text-sm text-white">Name:</label>
-//           <input
-//             type="text"
-//             value={filterName}
-//             onChange={(e) => setFilterName(e.target.value)}
-//             placeholder="Search name..."
-//             className="border border-gray-300 rounded p-1 text-black bg-white w-full"
-//           />
-//         </div>
-
-//         {/* ✅ Payment Mode */}
-//         <div className="flex items-center justify-center">
-//           <label className="mr-2 text-sm text-white">Mode:</label>
+//           <label className="mr-2 text-sm text-white">Payment Mode:</label>
 //           <select
 //             value={filterPaymentMode}
 //             onChange={(e) => setFilterPaymentMode(e.target.value)}
@@ -304,6 +443,7 @@
 //             <option value="">All</option>
 //             <option value="Cash">Cash</option>
 //             <option value="Bkash">Bkash</option>
+//             <option value="Petty Cash">Petty Cash</option>
 //             <option value="Nagad">Nagad</option>
 //             <option value="Rocket">Rocket</option>
 //             <option value="Bank">Bank</option>
@@ -311,9 +451,32 @@
 //           </select>
 //         </div>
 
-//         {/* ✅ Payment Status */}
+//         {currentProduct.paymentMode === "Bank" && (
+//           <div className="mt-4">
+//             <label className="block text-sm text-white">Bank Name</label>
+//             <select
+//               value={currentProduct.bankName || ""}
+//               onChange={(e) =>
+//                 setCurrentProduct({
+//                   ...currentProduct,
+//                   bankName: e.target.value,
+//                 })
+//               }
+//               className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//               required
+//             >
+//               <option value="">Select Bank</option>
+//               {BANKS.map((b) => (
+//                 <option key={b} value={b}>
+//                   {b}
+//                 </option>
+//               ))}
+//             </select>
+//           </div>
+//         )}
+
 //         <div className="flex items-center justify-center">
-//           <label className="mr-2 text-sm text-white">Status:</label>
+//           <label className="mr-2 text-sm text-white">Payment Status:</label>
 //           <select
 //             value={filterPaymentStatus}
 //             onChange={(e) => setFilterPaymentStatus(e.target.value)}
@@ -339,9 +502,6 @@
 //           <thead>
 //             <tr>
 //               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-//                 Name
-//               </th>
-//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
 //                 Document
 //               </th>
 //               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -363,119 +523,98 @@
 //           </thead>
 
 //           <tbody className="divide-y divide-gray-700">
-//             {products.map((rp) => (
-//               <motion.tr
-//                 key={rp.Id ?? rp.id}
-//                 initial={{ opacity: 0 }}
-//                 animate={{ opacity: 1 }}
-//                 transition={{ duration: 0.3 }}
-//               >
-//                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {rp.name}
-//                 </td>
+//             {products.map((rp) => {
+//               const rowId = rp.Id ?? rp.id;
 
-//                 {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                  <img src= {`http://localhost:5000/${rp.file}`} alt="" />
-//                 </td> */}
+//               const safePath = String(rp.file || "").replace(/\\/g, "/");
+//               const fileUrl = safePath
+//                 ? `http://localhost:5000/${safePath}`
+//                 : "";
+//               const ext = safePath.split(".").pop()?.toLowerCase();
+//               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
+//                 ext
+//               );
+//               const isPdf = ext === "pdf";
 
-//                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//   {rp.file ? (
-//     (() => {
-//       const fileUrl = `http://localhost:5000/${rp.file}`;
-//       const ext = rp.file.split(".").pop()?.toLowerCase();
+//               return (
+//                 <motion.tr
+//                   key={rowId}
+//                   initial={{ opacity: 0 }}
+//                   animate={{ opacity: 1 }}
+//                   transition={{ duration: 0.3 }}
+//                 >
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {!safePath ? (
+//                       "-"
+//                     ) : isImage ? (
+//                       <a href={fileUrl} target="_blank" rel="noreferrer">
+//                         <img
+//                           src={fileUrl}
+//                           alt="document"
+//                           className="h-12 w-12 object-cover rounded border border-gray-600 hover:opacity-80"
+//                           onError={(e) => {
+//                             e.currentTarget.style.display = "none";
+//                           }}
+//                         />
+//                       </a>
+//                     ) : isPdf ? (
+//                       <a
+//                         href={fileUrl}
+//                         target="_blank"
+//                         rel="noreferrer"
+//                         className="px-3 py-1 rounded bg-indigo-600 text-white text-xs hover:bg-indigo-700"
+//                       >
+//                         View PDF
+//                       </a>
+//                     ) : (
+//                       <a
+//                         href={fileUrl}
+//                         target="_blank"
+//                         rel="noreferrer"
+//                         className="text-indigo-400 underline"
+//                       >
+//                         Open File
+//                       </a>
+//                     )}
+//                   </td>
 
-//       const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(ext);
-//       const isPdf = ext === "pdf";
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.paymentMode || "-"}
+//                   </td>
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.paymentStatus || "-"}
+//                   </td>
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.remarks || "-"}
+//                   </td>
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {Number(rp.amount || 0).toFixed(2)}
+//                   </td>
 
-//       if (isImage) {
-//         return (
-//           <a href={fileUrl} target="_blank" rel="noreferrer">
-//             <img
-//               src={fileUrl}
-//               alt="document"
-//               className="h-12 w-12 object-cover rounded border border-gray-600 hover:opacity-80"
-//             />
-//           </a>
-//         );
-//       }
-
-//       if (isPdf) {
-//         return (
-//           <div className="flex items-center gap-2">
-//             <a
-//               href={fileUrl}
-//               target="_blank"
-//               rel="noreferrer"
-//               className="px-3 py-1 rounded bg-indigo-600 text-white text-xs hover:bg-indigo-700"
-//             >
-//               View PDF
-//             </a>
-
-//             <a
-//               href={fileUrl}
-//               download
-//               className="px-3 py-1 rounded bg-gray-700 text-white text-xs hover:bg-gray-600"
-//             >
-//               Download
-//             </a>
-//           </div>
-//         );
-//       }
-
-//       // অন্য ফাইল হলে fallback
-//       return (
-//         <a
-//           href={fileUrl}
-//           target="_blank"
-//           rel="noreferrer"
-//           className="text-indigo-400 underline"
-//         >
-//           Open File
-//         </a>
-//       );
-//     })()
-//   ) : (
-//     "-"
-//   )}
-// </td>
-
-//                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {rp.paymentMode || "-"}
-//                 </td>
-
-//                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {rp.paymentStatus || "-"}
-//                 </td>
-
-//                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {rp.remarks || "-"}
-//                 </td>
-
-//                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {Number(rp.amount || 0).toFixed(2)}
-//                 </td>
-
-//                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-//                   <button
-//                     onClick={() => handleEditClick(rp)}
-//                     className="text-indigo-600 hover:text-indigo-900"
-//                   >
-//                     <Edit size={18} />
-//                   </button>
-
-//                   <button
-//                     onClick={() => handleDeleteProduct(rp.Id ?? rp.id)}
-//                     className="text-red-600 hover:text-red-900 ms-4"
-//                   >
-//                     <Trash2 size={18} />
-//                   </button>
-//                 </td>
-//               </motion.tr>
-//             ))}
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+//                     <button
+//                       onClick={() => handleEditClick(rp)}
+//                       className="text-indigo-600 hover:text-indigo-900"
+//                     >
+//                       <Edit size={18} />
+//                     </button>
+//                     <button
+//                       onClick={() => handleDeleteProduct(rowId)}
+//                       className="text-red-600 hover:text-red-900 ms-4"
+//                     >
+//                       <Trash2 size={18} />
+//                     </button>
+//                   </td>
+//                 </motion.tr>
+//               );
+//             })}
 
 //             {!isLoading && products.length === 0 && (
 //               <tr>
-//                 <td colSpan={7} className="px-6 py-6 text-center text-sm text-gray-300">
+//                 <td
+//                   colSpan={7}
+//                   className="px-6 py-6 text-center text-sm text-gray-300"
+//                 >
 //                   No data found
 //                 </td>
 //               </tr>
@@ -501,7 +640,9 @@
 //               key={pageNum}
 //               onClick={() => handlePageChange(pageNum)}
 //               className={`px-3 py-2 text-black rounded-md ${
-//                 pageNum === currentPage ? "bg-white" : "bg-indigo-500 hover:bg-indigo-400"
+//                 pageNum === currentPage
+//                   ? "bg-white"
+//                   : "bg-indigo-500 hover:bg-indigo-400"
 //               }`}
 //             >
 //               {pageNum}
@@ -518,8 +659,8 @@
 //         </button>
 //       </div>
 
-//       {/* Edit Modal (same as yours) */}
-//       {isModalOpen && (
+//       {/* Edit Modal */}
+//       {isModalOpen && currentProduct && (
 //         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
 //           <motion.div
 //             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
@@ -527,7 +668,90 @@
 //             animate={{ opacity: 1, y: 0 }}
 //             transition={{ duration: 0.3 }}
 //           >
-//             <h2 className="text-lg font-semibold text-white">Edit Meta Expense</h2>
+//             <h2 className="text-lg font-semibold text-white">Edit</h2>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Payment Mode</label>
+//               <select
+//                 value={currentProduct.paymentMode}
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     paymentMode: e.target.value,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                 required
+//               >
+//                 <option value="">Select Payment Mode</option>
+//                 <option value="Cash">Cash</option>
+//                 <option value="Bkash">Bkash</option>
+//                 <option value="Petty Cash">Petty Cash</option>
+//                 <option value="Nagad">Nagad</option>
+//                 <option value="Rocket">Rocket</option>
+//                 <option value="Bank">Bank</option>
+//                 <option value="Card">Card</option>
+//               </select>
+//             </div>
+
+//             {currentProduct.paymentMode === "Bank" && (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Bank Name</label>
+//                 <select
+//                   value={currentProduct.bankName || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       bankName: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                   required
+//                 >
+//                   <option value="">Select Bank</option>
+//                   {BANKS.map((b) => (
+//                     <option key={b} value={b}>
+//                       {b}
+//                     </option>
+//                   ))}
+//                 </select>
+//               </div>
+//             )}
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Payment Status</label>
+//               <select
+//                 value={currentProduct.paymentStatus}
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     paymentStatus: e.target.value,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                 required
+//               >
+//                 <option value="">Select Payment Status</option>
+//                 <option value="CashIn">CashIn</option>
+//                 <option value="CashOut">CashOut</option>
+//               </select>
+//             </div>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Remarks</label>
+//               <input
+//                 type="text"
+//                 value={currentProduct.remarks}
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     remarks: e.target.value,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                 required
+//               />
+//             </div>
 
 //             <div className="mt-4">
 //               <label className="block text-sm text-white">Amount:</label>
@@ -541,7 +765,7 @@
 //                     amount: e.target.value,
 //                   })
 //                 }
-//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
 //               />
 //             </div>
 
@@ -563,7 +787,7 @@
 //         </div>
 //       )}
 
-//       {/* Add Modal (same as yours, unchanged) */}
+//       {/* Add Modal */}
 //       {isModalOpen1 && (
 //         <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
 //           <motion.div
@@ -572,25 +796,11 @@
 //             animate={{ opacity: 1, y: 0 }}
 //             transition={{ duration: 0.3 }}
 //           >
-//             <h2 className="text-lg font-semibold text-white">Add Cash In/Out</h2>
+//             <h2 className="text-lg font-semibold text-white">
+//               Add Cash In/Out
+//             </h2>
 
 //             <form onSubmit={handleCreateProduct}>
-//               <div className="mt-4">
-//                 <label className="block text-sm text-white">Name</label>
-//                 <input
-//                   type="text"
-//                   value={createProduct.name}
-//                   onChange={(e) =>
-//                     setCreateProduct({
-//                       ...createProduct,
-//                       name: e.target.value,
-//                     })
-//                   }
-//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-//                   required
-//                 />
-//               </div>
-
 //               <div className="mt-4">
 //                 <label className="block text-sm text-white">Payment Mode</label>
 //                 <select
@@ -607,6 +817,7 @@
 //                   <option value="">Select Payment Mode</option>
 //                   <option value="Cash">Cash</option>
 //                   <option value="Bkash">Bkash</option>
+//                   <option value="Petty Cash">Petty Cash</option>
 //                   <option value="Nagad">Nagad</option>
 //                   <option value="Rocket">Rocket</option>
 //                   <option value="Bank">Bank</option>
@@ -614,8 +825,34 @@
 //                 </select>
 //               </div>
 
+//               {createProduct.paymentMode === "Bank" && (
+//                 <div className="mt-4">
+//                   <label className="block text-sm text-white">Bank Name</label>
+//                   <select
+//                     value={createProduct.bankName}
+//                     onChange={(e) =>
+//                       setCreateProduct({
+//                         ...createProduct,
+//                         bankName: e.target.value,
+//                       })
+//                     }
+//                     className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                     required
+//                   >
+//                     <option value="">Select Bank</option>
+//                     {BANKS.map((b) => (
+//                       <option key={b} value={b}>
+//                         {b}
+//                       </option>
+//                     ))}
+//                   </select>
+//                 </div>
+//               )}
+
 //               <div className="mt-4">
-//                 <label className="block text-sm text-white">Payment Status</label>
+//                 <label className="block text-sm text-white">
+//                   Payment Status
+//                 </label>
 //                 <select
 //                   value={createProduct.paymentStatus}
 //                   onChange={(e) =>
@@ -644,7 +881,7 @@
 //                       remarks: e.target.value,
 //                     })
 //                   }
-//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
 //                   required
 //                 />
 //               </div>
@@ -661,13 +898,15 @@
 //                       amount: e.target.value,
 //                     })
 //                   }
-//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
 //                   required
 //                 />
 //               </div>
 
 //               <div className="mt-4">
-//                 <label className="block text-sm text-white">Upload Document</label>
+//                 <label className="block text-sm text-white">
+//                   Upload Document
+//                 </label>
 //                 <input
 //                   type="file"
 //                   accept=".jpg,.jpeg,.png,.pdf"
@@ -705,6 +944,16 @@
 //           </motion.div>
 //         </div>
 //       )}
+
+//       <ReportPreviewModal
+//         open={isReportPreviewOpen}
+//         onClose={closeReportPreview}
+//         type={reportType}
+//         blob={reportBlob}
+//         blobUrl={reportBlobUrl}
+//         sheetPreview={sheetPreview}
+//         loading={reportLoading}
+//       />
 //     </motion.div>
 //   );
 // };
@@ -723,17 +972,45 @@ import {
 } from "../../features/cashInOut/cashInOut";
 import { useParams } from "react-router-dom";
 
+import ReportMenu from "./ReportMenu";
+import ReportPreviewModal from "./ReportPreviewModal";
+
+import { generateCashInOutPdf } from "../../utils/report/generateCashInOutPdf";
+import { generateCashInOutXlsx } from "../../utils/report/generateCashInOutXlsx";
+import { useGetSingleBookDataByIdQuery } from "../../features/book/book";
+
+const BANKS = [
+  "Al Arafah",
+  "BRAC Bank",
+  "Bank Asia",
+  "City Bank",
+  "Dutch-Bangla Bank",
+  "Dhaka Bank",
+  "Eastern Bank",
+  "Islami Bank",
+  "Janata Bank",
+  "Mutual Trust Bank",
+  "One Bank",
+  "Prime Bank",
+  "Pubali Bank",
+  "Premier Bank",
+  "United Commercial Bank",
+  "Sonali Bank",
+  "Standard Chartered",
+  "Trust Bank",
+];
+
 const CashInOutTable = () => {
   const { id } = useParams(); // bookId
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isModalOpen1, setIsModalOpen1] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); // edit
+  const [isModalOpen1, setIsModalOpen1] = useState(false); // add
   const [currentProduct, setCurrentProduct] = useState(null);
 
   const [createProduct, setCreateProduct] = useState({
-    name: "",
     paymentMode: "",
     paymentStatus: "",
+    bankName: "", // ✅ add
     remarks: "",
     amount: "",
     file: null,
@@ -744,7 +1021,6 @@ const CashInOutTable = () => {
   // filters
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [filterName, setFilterName] = useState("");
   const [filterPaymentMode, setFilterPaymentMode] = useState("");
   const [filterPaymentStatus, setFilterPaymentStatus] = useState("");
 
@@ -765,30 +1041,41 @@ const CashInOutTable = () => {
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
 
-  // reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate, filterName, filterPaymentMode, filterPaymentStatus]);
+  }, [startDate, endDate, filterPaymentMode, filterPaymentStatus]);
 
   useEffect(() => {
     if (startDate && endDate && startDate > endDate) setEndDate(startDate);
   }, [startDate, endDate]);
 
-  // ✅ IMPORTANT: queryArgs memo + clean
+  // ✅ Bank না হলে bankName reset (Add)
+  useEffect(() => {
+    if (createProduct.paymentMode !== "Bank" && createProduct.bankName) {
+      setCreateProduct((p) => ({ ...p, bankName: "" }));
+    }
+  }, [createProduct.paymentMode]);
+
+  // ✅ Bank না হলে bankName reset (Edit)
+  useEffect(() => {
+    if (!currentProduct) return;
+    if (currentProduct.paymentMode !== "Bank" && currentProduct.bankName) {
+      setCurrentProduct((p) => ({ ...p, bankName: "" }));
+    }
+  }, [currentProduct?.paymentMode]);
+
   const queryArgs = useMemo(() => {
     const args = {
       page: currentPage,
       limit: itemsPerPage,
       bookId: id,
-
       startDate: startDate || undefined,
       endDate: endDate || undefined,
       paymentMode: filterPaymentMode || undefined,
       paymentStatus: filterPaymentStatus || undefined,
     };
 
-    // remove empty values
     Object.keys(args).forEach((k) => {
       if (args[k] === undefined || args[k] === null || args[k] === "")
         delete args[k];
@@ -805,9 +1092,6 @@ const CashInOutTable = () => {
     filterPaymentStatus,
   ]);
 
-  console.log("queryArgs =>", queryArgs);
-
-  // ✅ if id is not ready, skip query
   const shouldSkip = !id;
 
   const { data, isLoading, isError, error, refetch } = useGetAllCashInOutQuery(
@@ -828,7 +1112,12 @@ const CashInOutTable = () => {
   const handleModalClose1 = () => setIsModalOpen1(false);
 
   const handleEditClick = (rp) => {
-    setCurrentProduct({ ...rp, amount: rp.amount ?? "" });
+    setCurrentProduct({
+      ...rp,
+      amount: rp.amount ?? "",
+      bankName: rp.bankName ?? "", // ✅ add
+      file: null,
+    });
     setIsModalOpen(true);
   };
 
@@ -837,18 +1126,22 @@ const CashInOutTable = () => {
   const handleCreateProduct = async (e) => {
     e.preventDefault();
 
-    if (!createProduct.name.trim()) return toast.error("Name is required!");
     if (!createProduct.amount) return toast.error("Amount is required!");
     if (!createProduct.paymentMode)
       return toast.error("Payment Mode is required!");
     if (!createProduct.paymentStatus)
       return toast.error("Payment Status is required!");
+    if (createProduct.paymentMode === "Bank" && !createProduct.bankName)
+      return toast.error("Bank Name is required!");
 
     try {
       const formData = new FormData();
-      formData.append("name", createProduct.name.trim());
       formData.append("paymentMode", createProduct.paymentMode);
       formData.append("paymentStatus", createProduct.paymentStatus);
+      formData.append(
+        "bankName",
+        createProduct.paymentMode === "Bank" ? createProduct.bankName : ""
+      );
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
       formData.append("bookId", id);
@@ -856,13 +1149,14 @@ const CashInOutTable = () => {
       if (createProduct.file) formData.append("file", createProduct.file);
 
       const res = await insertCashIn(formData).unwrap();
+
       if (res?.success) {
-        toast.success("Created!");
+        toast.success("Successfully created!");
         setIsModalOpen1(false);
         setCreateProduct({
-          name: "",
           paymentMode: "",
           paymentStatus: "",
+          bankName: "",
           remarks: "",
           amount: "",
           file: null,
@@ -879,13 +1173,31 @@ const CashInOutTable = () => {
   const handleUpdateProduct = async () => {
     const rowId = currentProduct?.Id ?? currentProduct?.id;
     if (!rowId) return toast.error("Invalid item!");
+    if (!currentProduct.amount) return toast.error("Amount is required!");
+    if (!currentProduct.paymentMode)
+      return toast.error("Payment Mode is required!");
+    if (!currentProduct.paymentStatus)
+      return toast.error("Payment Status is required!");
+    if (currentProduct.paymentMode === "Bank" && !currentProduct.bankName)
+      return toast.error("Bank Name is required!");
 
     try {
-      const payload = { amount: Number(currentProduct.amount) };
-      const res = await updateCashInOut({ id: rowId, data: payload }).unwrap();
+      const formData = new FormData();
+      formData.append("paymentMode", currentProduct.paymentMode);
+      formData.append("paymentStatus", currentProduct.paymentStatus);
+      formData.append(
+        "bankName",
+        currentProduct.paymentMode === "Bank" ? currentProduct.bankName : ""
+      );
+      formData.append("remarks", currentProduct.remarks?.trim() || "");
+      formData.append("amount", String(Number(currentProduct.amount)));
+      if (currentProduct.file) formData.append("file", currentProduct.file);
+
+      const res = await updateCashInOut({ id: rowId, data: formData }).unwrap();
       if (res?.success) {
         toast.success("Updated!");
         setIsModalOpen(false);
+        setCurrentProduct(null);
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
     } catch (err) {
@@ -897,15 +1209,8 @@ const CashInOutTable = () => {
   const [deleteCashInOut] = useDeleteCashInOutMutation();
   const handleDeleteProduct = async (rowId) => {
     if (!window.confirm("Do you want to delete this item?")) return;
-    try {
-      const formData = new FormData();
-      formData.append("name", currentProduct.name.trim());
-      formData.append("paymentMode", currentProduct.paymentMode);
-      formData.append("paymentStatus", currentProduct.paymentStatus);
-      formData.append("remarks", currentProduct.remarks?.trim() || "");
-      formData.append("amount", String(Number(currentProduct.amount)));
-      formData.append("bookId", id);
 
+    try {
       const res = await deleteCashInOut(rowId).unwrap();
       if (res?.success) {
         toast.success("Deleted!");
@@ -919,7 +1224,6 @@ const CashInOutTable = () => {
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
-    setFilterName("");
     setFilterPaymentMode("");
     setFilterPaymentStatus("");
   };
@@ -940,6 +1244,88 @@ const CashInOutTable = () => {
       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
     );
 
+  // book info (name for report header)
+  const { data: bookRes } = useGetSingleBookDataByIdQuery(id, {
+    skip: !id,
+  });
+  const bookName = bookRes?.data?.name || "";
+
+  // report states
+  const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
+  const [isReportPreviewOpen, setIsReportPreviewOpen] = useState(false);
+  const [reportType, setReportType] = useState(""); // "pdf" | "sheet"
+  const [reportBlob, setReportBlob] = useState(null);
+  const [reportBlobUrl, setReportBlobUrl] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
+  const [sheetPreview, setSheetPreview] = useState({ header: [], rows: [] });
+
+  const closeReportPreview = () => {
+    setIsReportPreviewOpen(false);
+    setReportType("");
+    setReportBlob(null);
+    setSheetPreview({ header: [], rows: [] });
+    setReportLoading(false);
+
+    if (reportBlobUrl) {
+      URL.revokeObjectURL(reportBlobUrl);
+      setReportBlobUrl("");
+    }
+  };
+
+  const handleReportPdf = async () => {
+    try {
+      if (!products.length) return toast.error("No data found!");
+
+      setReportType("pdf");
+      setReportLoading(true);
+      setIsReportPreviewOpen(true);
+      setIsReportMenuOpen(false);
+
+      const blob = await generateCashInOutPdf({
+        products,
+        bookId: id,
+        bookName,
+      });
+
+      const url = URL.createObjectURL(blob);
+      setReportBlob(blob);
+      setReportBlobUrl(url);
+    } catch (e) {
+      toast.error("PDF report generate failed!");
+      closeReportPreview();
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const handleReportSheet = async () => {
+    try {
+      if (!products.length) return toast.error("No data found!");
+
+      setReportType("sheet");
+      setReportLoading(true);
+      setIsReportPreviewOpen(true);
+      setIsReportMenuOpen(false);
+
+      const { blob, preview } = generateCashInOutXlsx({
+        products,
+        bookId: id,
+        bookName,
+      });
+
+      const url = URL.createObjectURL(blob);
+
+      setReportBlob(blob);
+      setReportBlobUrl(url);
+      setSheetPreview(preview);
+    } catch (e) {
+      toast.error("Sheet report generate failed!");
+      closeReportPreview();
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   return (
     <motion.div
       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
@@ -947,13 +1333,21 @@ const CashInOutTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <div className="my-6 flex justify-start">
+      <div className="my-6 flex items-center justify-between">
         <button
           className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
           onClick={handleAddProduct}
         >
           Add <Plus size={18} className="ms-2" />
         </button>
+
+        <ReportMenu
+          isOpen={isReportMenuOpen}
+          setIsOpen={setIsReportMenuOpen}
+          onGoogleSheet={handleReportSheet}
+          onPdf={handleReportPdf}
+          disabled={isLoading || !id}
+        />
       </div>
 
       {/* Filters */}
@@ -988,6 +1382,7 @@ const CashInOutTable = () => {
             <option value="">All</option>
             <option value="Cash">Cash</option>
             <option value="Bkash">Bkash</option>
+            <option value="Petty Cash">Petty Cash</option>
             <option value="Nagad">Nagad</option>
             <option value="Rocket">Rocket</option>
             <option value="Bank">Bank</option>
@@ -1022,13 +1417,13 @@ const CashInOutTable = () => {
           <thead>
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Company Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Document
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Payment Mode
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Bank
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Payment Status
@@ -1049,7 +1444,6 @@ const CashInOutTable = () => {
             {products.map((rp) => {
               const rowId = rp.Id ?? rp.id;
 
-              // ✅ FIX: file path safe
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
                 ? `http://localhost:5000/${safePath}`
@@ -1067,10 +1461,6 @@ const CashInOutTable = () => {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                    {rp.name}
-                  </td>
-
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {!safePath ? (
                       "-"
@@ -1109,6 +1499,11 @@ const CashInOutTable = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {rp.paymentMode || "-"}
                   </td>
+
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {rp.paymentMode === "Bank" ? rp.bankName || "-" : "-"}
+                  </td>
+
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {rp.paymentStatus || "-"}
                   </td>
@@ -1188,7 +1583,7 @@ const CashInOutTable = () => {
       </div>
 
       {/* Edit Modal */}
-      {isModalOpen && (
+      {isModalOpen && currentProduct && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <motion.div
             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
@@ -1197,23 +1592,11 @@ const CashInOutTable = () => {
             transition={{ duration: 0.3 }}
           >
             <h2 className="text-lg font-semibold text-white">Edit</h2>
-            <div className="mt-4">
-              <label className="block text-sm text-white">Company Name</label>
-              <input
-                type="text"
-                value={currentProduct.name}
-                onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, name: e.target.value })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
-                required
-              />
-            </div>
 
             <div className="mt-4">
               <label className="block text-sm text-white">Payment Mode</label>
               <select
-                value={currentProduct.paymentMode}
+                value={currentProduct.paymentMode || ""}
                 onChange={(e) =>
                   setCurrentProduct({
                     ...currentProduct,
@@ -1234,10 +1617,52 @@ const CashInOutTable = () => {
               </select>
             </div>
 
+            {currentProduct.paymentMode === "Bank" && (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Bank Name</label>
+                <select
+                  value={currentProduct.bankName || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      bankName: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Bank</option>
+                  {BANKS.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {currentProduct.paymentMode === "Bank" && (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Bank Account</label>
+                <input
+                  type="number"
+                  value={currentProduct.bankAccount || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      bankAccount: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  required
+                />
+              </div>
+            )}
+
             <div className="mt-4">
               <label className="block text-sm text-white">Payment Status</label>
               <select
-                value={currentProduct.paymentStatus}
+                value={currentProduct.paymentStatus || ""}
                 onChange={(e) =>
                   setCurrentProduct({
                     ...currentProduct,
@@ -1257,7 +1682,7 @@ const CashInOutTable = () => {
               <label className="block text-sm text-white">Remarks</label>
               <input
                 type="text"
-                value={currentProduct.remarks}
+                value={currentProduct.remarks || ""}
                 onChange={(e) =>
                   setCurrentProduct({
                     ...currentProduct,
@@ -1274,7 +1699,7 @@ const CashInOutTable = () => {
               <input
                 type="number"
                 step="0.01"
-                value={currentProduct?.amount || ""}
+                value={currentProduct?.amount ?? ""}
                 onChange={(e) =>
                   setCurrentProduct({
                     ...currentProduct,
@@ -1306,6 +1731,7 @@ const CashInOutTable = () => {
                 </p>
               )}
             </div>
+
             <div className="mt-6 flex justify-end">
               <button
                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
@@ -1315,7 +1741,10 @@ const CashInOutTable = () => {
               </button>
               <button
                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setCurrentProduct(null);
+                }}
               >
                 Cancel
               </button>
@@ -1339,19 +1768,6 @@ const CashInOutTable = () => {
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
-                <label className="block text-sm text-white">Company Name</label>
-                <input
-                  type="text"
-                  value={createProduct.name}
-                  onChange={(e) =>
-                    setCreateProduct({ ...createProduct, name: e.target.value })
-                  }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
-                  required
-                />
-              </div>
-
-              <div className="mt-4">
                 <label className="block text-sm text-white">Payment Mode</label>
                 <select
                   value={createProduct.paymentMode}
@@ -1374,6 +1790,50 @@ const CashInOutTable = () => {
                   <option value="Card">Card</option>
                 </select>
               </div>
+
+              {createProduct.paymentMode === "Bank" && (
+                <div className="mt-4">
+                  <label className="block text-sm text-white">Bank Name</label>
+                  <select
+                    value={createProduct.bankName}
+                    onChange={(e) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        bankName: e.target.value,
+                      })
+                    }
+                    className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                    required
+                  >
+                    <option value="">Select Bank</option>
+                    {BANKS.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {createProduct.paymentMode === "Bank" && (
+                <div className="mt-4">
+                  <label className="block text-sm text-white">
+                    Bank Account
+                  </label>
+                  <input
+                    type="number"
+                    value={createProduct.bankAccount}
+                    onChange={(e) =>
+                      setCurrentProduct({
+                        ...createProduct,
+                        bankAccount: e.target.value,
+                      })
+                    }
+                    className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                    required
+                  />
+                </div>
+              )}
 
               <div className="mt-4">
                 <label className="block text-sm text-white">
@@ -1470,6 +1930,16 @@ const CashInOutTable = () => {
           </motion.div>
         </div>
       )}
+
+      <ReportPreviewModal
+        open={isReportPreviewOpen}
+        onClose={closeReportPreview}
+        type={reportType}
+        blob={reportBlob}
+        blobUrl={reportBlobUrl}
+        sheetPreview={sheetPreview}
+        loading={reportLoading}
+      />
     </motion.div>
   );
 };

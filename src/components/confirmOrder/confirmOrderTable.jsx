@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2 } from "lucide-react";
+import { ClipboardCheck, Edit, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -7,6 +7,7 @@ import Select from "react-select";
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
 import {
   useDeleteConfirmOrderMutation,
+  useGetAllConfirmOrderApiWithoutQueryQuery,
   useGetAllConfirmOrderQuery,
   useInsertConfirmOrderMutation,
   useUpdateConfirmOrderMutation,
@@ -270,6 +271,25 @@ const ConfirmOrderTable = () => {
       Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
     );
 
+  const {
+    data: confirmOrderRes,
+    isLoading: confirmOrderLoading,
+    isError: confirmOrderError,
+    error: confirmOrderErrObj,
+  } = useGetAllConfirmOrderApiWithoutQueryQuery();
+
+  const confirmOrder = confirmOrderRes?.data || [];
+
+  // ✅ totals
+  const totalConfirmOrderAmount = useMemo(() => {
+    return confirmOrder.reduce(
+      (sum, item) => sum + Number(item?.quantity || 0),
+      0
+    );
+  }, [confirmOrder]);
+
+  if (confirmOrderError) console.error("Purchase error:", confirmOrderErrObj);
+
   return (
     <motion.div
       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
@@ -277,13 +297,28 @@ const ConfirmOrderTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <div className="my-6 flex justify-start">
+      {/* Add Button */}
+      <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
+          type="button"
           onClick={handleAddProduct}
+          className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
         >
-          Add <Plus size={18} className="ms-2" />
+          Add <Plus size={18} className="ml-2" />
         </button>
+
+        <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
+          <div className="flex items-center gap-2 text-gray-300">
+            <ClipboardCheck size={18} className="text-amber-400" />
+            <span className="text-sm">Total Confirm Order</span>
+          </div>
+
+          <span className="text-white font-semibold tabular-nums">
+            {confirmOrderLoading
+              ? "Loading..."
+              : totalConfirmOrderAmount.toFixed(2)}
+          </span>
+        </div>
       </div>
 
       {/* ✅ Filters (NAME based) */}

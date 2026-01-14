@@ -8,7 +8,10 @@ import { inTransitProductApi } from "../features/inTransitProduct/inTransitProdu
 import { returnProductApi } from "../features/returnProduct/returnProduct";
 import { metaApi } from "../features/marketing/marketing";
 import { assetsPurchaseApi } from "../features/assetsPurchase/assetsPurchase";
-import { assetsSaleApi } from "../features/assetsSale/assetsSale";
+import {
+  assetsDamageApi,
+  assetsSaleApi,
+} from "../features/assetsSale/assetsSale";
 import { confirmOrderApi } from "../features/confirmOrder/confirmOrder";
 import { pettyCashApi } from "../features/pettyCash/pettyCash";
 import { expenseApi } from "../features/expense/expense";
@@ -17,6 +20,7 @@ import { cashInOutApi } from "../features/cashInOut/cashInOut";
 import { purchaseReturnProductApi } from "../features/purchaseReturnProduct/purchaseReturnProduct";
 import { receiveableApi } from "../features/receiveable/receiveable";
 import { payableApi } from "../features/payable/payable";
+import { overviewApi } from "../features/overview/overview";
 
 const store = configureStore({
   reducer: {
@@ -29,12 +33,14 @@ const store = configureStore({
     [metaApi.reducerPath]: metaApi.reducer,
     [assetsPurchaseApi.reducerPath]: assetsPurchaseApi.reducer,
     [assetsSaleApi.reducerPath]: assetsSaleApi.reducer,
+    [assetsDamageApi.reducerPath]: assetsDamageApi.reducer,
     [cashInOutApi.reducerPath]: cashInOutApi.reducer,
     [pettyCashApi.reducerPath]: pettyCashApi.reducer,
     [expenseApi.reducerPath]: expenseApi.reducer,
     [bookApi.reducerPath]: bookApi.reducer,
     [receiveableApi.reducerPath]: receiveableApi.reducer,
     [payableApi.reducerPath]: payableApi.reducer,
+    [overviewApi.reducerPath]: overviewApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
   },
 
@@ -51,12 +57,14 @@ const store = configureStore({
       metaApi.middleware,
       assetsPurchaseApi.middleware,
       assetsSaleApi.middleware,
+      assetsDamageApi.middleware,
       cashInOutApi.middleware,
       pettyCashApi.middleware,
       expenseApi.middleware,
       bookApi.middleware,
       receiveableApi.middleware,
       payableApi.middleware,
+      overviewApi.middleware,
       authApi.middleware
     ),
 });
