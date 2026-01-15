@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Helper function to get the auth token
 const getAuthToken = () => {
-  return localStorage.getItem("token");  // Modify this based on your token storage logic
+  return localStorage.getItem("token"); // Modify this based on your token storage logic
 };
 
 export const assetsPurchaseApi = createApi({
@@ -10,7 +10,7 @@ export const assetsPurchaseApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:5000/api/v1/",
     prepareHeaders: (headers) => {
-      const token = getAuthToken();  // Fetch the token
+      const token = getAuthToken(); // Fetch the token
       if (token) {
         // If the token exists, add it to the headers
         headers.set("Authorization", `Bearer ${token}`);
@@ -27,7 +27,7 @@ export const assetsPurchaseApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["assets-purchase"],  // Invalidate the product tag after this mutation
+      invalidatesTags: ["assets-purchase"], // Invalidate the product tag after this mutation
     }),
 
     deleteAssetsPurchase: build.mutation({
@@ -35,7 +35,7 @@ export const assetsPurchaseApi = createApi({
         url: `/assets-purchase/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["assets-purchase"],  // Invalidate the product tag after deletion
+      invalidatesTags: ["assets-purchase"], // Invalidate the product tag after deletion
     }),
 
     updateAssetsPurchase: build.mutation({
@@ -44,13 +44,13 @@ export const assetsPurchaseApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["assets-purchase"],  // Invalidate the product tag after this mutation
+      invalidatesTags: ["assets-purchase"], // Invalidate the product tag after this mutation
     }),
 
     getAllAssetsPurchase: build.query({
-      query: ({ page, limit, startDate, endDate, name,}) => ({
+      query: ({ page, limit, startDate, endDate, name }) => ({
         url: "/assets-purchase",
-        params: { page, limit, startDate, endDate, name,},  // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
       }),
       providesTags: ["assets-purchase"],
       refetchOnMountOrArgChange: true,
@@ -66,7 +66,6 @@ export const assetsPurchaseApi = createApi({
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
-    
   }),
 });
 
@@ -75,5 +74,5 @@ export const {
   useGetAllAssetsPurchaseQuery,
   useDeleteAssetsPurchaseMutation,
   useUpdateAssetsPurchaseMutation,
-  useGetAllAssetsPurchaseWithoutQueryQuery
+  useGetAllAssetsPurchaseWithoutQueryQuery,
 } = assetsPurchaseApi;

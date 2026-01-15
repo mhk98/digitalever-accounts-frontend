@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Helper function to get the auth token from localStorage (or sessionStorage)
 const getAuthToken = () => {
-  return localStorage.getItem("token");  // Adjust as per your storage method
+  return localStorage.getItem("token"); // Adjust as per your storage method
 };
 
 export const buyerApi = createApi({
@@ -59,9 +59,9 @@ export const buyerApi = createApi({
 
     // Get all buyers (GET request)
     getAllBuyer: build.query({
-      query: ({ page, limit, startDate, endDate, buyerId,}) => ({
+      query: ({ page, limit, startDate, endDate, buyerId }) => ({
         url: "/buyer",
-        params: { page, limit, startDate, endDate, buyerId,},  // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, buyerId }, // Pass the page and limit as query params
       }),
       providesTags: ["buyer"],
       refetchOnMountOrArgChange: true,
@@ -86,5 +86,5 @@ export const {
   useGetSingleBuyerQuery,
   useDeleteBuyerMutation,
   useUpdateBuyerMutation,
-  useGetAllBuyerWithoutQueryQuery
+  useGetAllBuyerWithoutQueryQuery,
 } = buyerApi;

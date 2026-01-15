@@ -8,10 +8,6 @@ import { inTransitProductApi } from "../features/inTransitProduct/inTransitProdu
 import { returnProductApi } from "../features/returnProduct/returnProduct";
 import { metaApi } from "../features/marketing/marketing";
 import { assetsPurchaseApi } from "../features/assetsPurchase/assetsPurchase";
-import {
-  assetsDamageApi,
-  assetsSaleApi,
-} from "../features/assetsSale/assetsSale";
 import { confirmOrderApi } from "../features/confirmOrder/confirmOrder";
 import { pettyCashApi } from "../features/pettyCash/pettyCash";
 import { expenseApi } from "../features/expense/expense";
@@ -21,6 +17,8 @@ import { purchaseReturnProductApi } from "../features/purchaseReturnProduct/purc
 import { receiveableApi } from "../features/receiveable/receiveable";
 import { payableApi } from "../features/payable/payable";
 import { overviewApi } from "../features/overview/overview";
+import { assetsSaleApi } from "../features/assetsSale/assetsSale";
+import { assetsDamageApi } from "../features/assetsDamage/assetsDamage";
 
 const store = configureStore({
   reducer: {

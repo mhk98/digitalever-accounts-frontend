@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Helper function to get the auth token
 const getAuthToken = () => {
-  return localStorage.getItem("token");  // Modify this based on your token storage logic
+  return localStorage.getItem("token"); // Modify this based on your token storage logic
 };
 
 export const expenseApi = createApi({
@@ -10,7 +10,7 @@ export const expenseApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:5000/api/v1/",
     prepareHeaders: (headers) => {
-      const token = getAuthToken();  // Fetch the token
+      const token = getAuthToken(); // Fetch the token
       if (token) {
         // If the token exists, add it to the headers
         headers.set("Authorization", `Bearer ${token}`);
@@ -27,7 +27,7 @@ export const expenseApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["expense"],  // Invalidate the Expense tag after this mutation
+      invalidatesTags: ["expense"], // Invalidate the Expense tag after this mutation
     }),
 
     deleteExpense: build.mutation({
@@ -35,7 +35,7 @@ export const expenseApi = createApi({
         url: `/expense/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["expense"],  // Invalidate the Expense tag after deletion
+      invalidatesTags: ["expense"], // Invalidate the Expense tag after deletion
     }),
 
     updateExpense: build.mutation({
@@ -44,13 +44,13 @@ export const expenseApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["expense"],  // Invalidate the Expense tag after this mutation
+      invalidatesTags: ["expense"], // Invalidate the Expense tag after this mutation
     }),
 
-     getAllExpense: build.query({
-      query: ({ page, limit, startDate, endDate, name,}) => ({
+    getAllExpense: build.query({
+      query: ({ page, limit, startDate, endDate, name }) => ({
         url: "/expense",
-        params: { page, limit, startDate, endDate, name,},  // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
       }),
       providesTags: ["expense"],
       refetchOnMountOrArgChange: true,
@@ -65,7 +65,6 @@ export const expenseApi = createApi({
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
-    
   }),
 });
 

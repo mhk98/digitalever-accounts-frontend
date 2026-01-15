@@ -6,11 +6,11 @@ import Select from "react-select";
 
 import { useGetAllAssetsPurchaseWithoutQueryQuery } from "../../features/assetsPurchase/assetsPurchase";
 import {
-  useDeleteAssetsDamageMutation,
-  useGetAllAssetsDamageQuery,
+  useDeleteAssetsSaleMutation,
+  useGetAllAssetsSaleQuery,
   useGetAllAssetsSaleWithoutQueryQuery,
-  useInsertAssetsDamageMutation,
-  useUpdateAssetsDamageMutation,
+  useInsertAssetsSaleMutation,
+  useUpdateAssetsSaleMutation,
 } from "../../features/assetsSale/assetsSale";
 
 const AssetsSaleTable = () => {
@@ -124,7 +124,7 @@ const AssetsSaleTable = () => {
   }, [currentPage, itemsPerPage, startDate, endDate, filterProductName]);
 
   const { data, isLoading, isError, error, refetch } =
-    useGetAllAssetsDamageQuery(queryArgs);
+    useGetAllAssetsSaleQuery(queryArgs);
 
   useEffect(() => {
     if (isError) {
@@ -154,7 +154,7 @@ const AssetsSaleTable = () => {
   const handleModalClose = () => setIsModalOpen(false);
 
   // ✅ Insert
-  const [insertAssetsDamage] = useInsertAssetsDamageMutation();
+  const [insertAssetsSale] = useInsertAssetsSaleMutation();
 
   const handleCreateProduct = async (e) => {
     e.preventDefault();
@@ -172,7 +172,7 @@ const AssetsSaleTable = () => {
         price: Number(createProduct.price),
       };
 
-      const res = await insertAssetsDamage(payload).unwrap();
+      const res = await insertAssetsSale(payload).unwrap();
 
       if (res?.success) {
         toast.success("Successfully created sale!");
@@ -188,7 +188,7 @@ const AssetsSaleTable = () => {
   };
 
   // ✅ Update
-  const [updateAssetsDamage] = useUpdateAssetsDamageMutation();
+  const [updateAssetsSale] = useUpdateAssetsSaleMutation();
 
   const handleUpdateProduct = async () => {
     const rowId = currentProduct?.Id ?? currentProduct?.id;
@@ -207,7 +207,7 @@ const AssetsSaleTable = () => {
         price: Number(currentProduct.price),
       };
 
-      const res = await updateAssetsDamage({
+      const res = await updateAssetsSale({
         id: rowId,
         data: payload,
       }).unwrap();
@@ -225,13 +225,13 @@ const AssetsSaleTable = () => {
   };
 
   // ✅ Delete
-  const [deleteAssetsDamage] = useDeleteAssetsDamageMutation();
+  const [deleteAssetsSale] = useDeleteAssetsSaleMutation();
 
   const handleDeleteProduct = async (rowId) => {
     if (!window.confirm("Do you want to delete this sale row?")) return;
 
     try {
-      const res = await deleteAssetsDamage(rowId).unwrap();
+      const res = await deleteAssetsSale(rowId).unwrap();
       if (res?.success) {
         toast.success("Deleted successfully!");
         refetch?.();

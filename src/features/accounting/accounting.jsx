@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Helper function to get the auth token (you can store and retrieve it as needed)
 const getAuthToken = () => {
-  return localStorage.getItem("token");  // Replace with your token retrieval logic
+  return localStorage.getItem("token"); // Replace with your token retrieval logic
 };
 
 export const accountingApi = createApi({
@@ -26,7 +26,7 @@ export const accountingApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["accounting"],  // Invalidate the accounting tag after this mutation
+      invalidatesTags: ["accounting"], // Invalidate the accounting tag after this mutation
     }),
 
     deleteAccounting: build.mutation({
@@ -34,7 +34,7 @@ export const accountingApi = createApi({
         url: `/accounting/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["accounting"],  // Invalidate the accounting tag after deletion
+      invalidatesTags: ["accounting"], // Invalidate the accounting tag after deletion
     }),
 
     updateAccounting: build.mutation({
@@ -43,7 +43,7 @@ export const accountingApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["accounting"],  // Invalidate the accounting tag after this mutation
+      invalidatesTags: ["accounting"], // Invalidate the accounting tag after this mutation
     }),
 
     // getAllAccounting: build.query({
@@ -55,11 +55,10 @@ export const accountingApi = createApi({
     //   pollingInterval: 1000,
     // }),
 
-
     getAllAccounting: build.query({
-      query: ({ page, limit}) => ({
+      query: ({ page, limit }) => ({
         url: "/accounting",
-        params: { page, limit},  // Pass the page and limit as query params
+        params: { page, limit }, // Pass the page and limit as query params
       }),
       providesTags: ["accounting"],
       refetchOnMountOrArgChange: true,

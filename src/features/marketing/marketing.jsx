@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Helper function to get the auth token
 const getAuthToken = () => {
-  return localStorage.getItem("token");  // Modify this based on your token storage logic
+  return localStorage.getItem("token"); // Modify this based on your token storage logic
 };
 
 export const metaApi = createApi({
@@ -10,7 +10,7 @@ export const metaApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:5000/api/v1/",
     prepareHeaders: (headers) => {
-      const token = getAuthToken();  // Fetch the token
+      const token = getAuthToken(); // Fetch the token
       if (token) {
         // If the token exists, add it to the headers
         headers.set("Authorization", `Bearer ${token}`);
@@ -27,7 +27,7 @@ export const metaApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["meta"],  // Invalidate the meta tag after this mutation
+      invalidatesTags: ["meta"], // Invalidate the meta tag after this mutation
     }),
 
     deleteMeta: build.mutation({
@@ -35,7 +35,7 @@ export const metaApi = createApi({
         url: `/meta/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["meta"],  // Invalidate the meta tag after deletion
+      invalidatesTags: ["meta"], // Invalidate the meta tag after deletion
     }),
 
     updateMeta: build.mutation({
@@ -44,13 +44,13 @@ export const metaApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["meta"],  // Invalidate the meta tag after this mutation
+      invalidatesTags: ["meta"], // Invalidate the meta tag after this mutation
     }),
 
-     getAllMeta: build.query({
-      query: ({ page, limit, startDate, endDate, productId,}) => ({
+    getAllMeta: build.query({
+      query: ({ page, limit, startDate, endDate, productId }) => ({
         url: "/meta",
-        params: { page, limit, startDate, endDate, productId,},  // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, productId }, // Pass the page and limit as query params
       }),
       providesTags: ["meta"],
       refetchOnMountOrArgChange: true,
@@ -65,7 +65,6 @@ export const metaApi = createApi({
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
-    
   }),
 });
 

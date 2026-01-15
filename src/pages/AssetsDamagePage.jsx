@@ -1,6 +1,5 @@
 // import { motion } from "framer-motion";
-
-import AssetsDamageTable from "../components/assetsSale/AssetsSaleTable";
+import AssetsDamageTable from "../components/assetsDamage/AssetsDamageTable";
 import Header from "../components/common/Header";
 
 const AssetsDamagePage = () => {

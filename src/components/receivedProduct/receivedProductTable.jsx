@@ -23,6 +23,7 @@ const ReceivedProductTable = () => {
   const [createProduct, setCreateProduct] = useState({
     productId: "",
     quantity: "",
+    company_name: "",
   });
 
   const [products, setProducts] = useState([]);
@@ -160,6 +161,7 @@ const ReceivedProductTable = () => {
       ...rp,
       productId: rp.productId ? String(rp.productId) : "",
       quantity: rp.quantity ?? "",
+      company_name: rp.company_name ?? "",
     });
     setIsModalOpen(true);
   };
@@ -203,6 +205,9 @@ const ReceivedProductTable = () => {
 
     if (!currentProduct?.quantity || Number(currentProduct.quantity) <= 0)
       return toast.error("Please enter a valid quantity");
+
+    if (!currentProduct?.company_name || currentProduct.company_name)
+      return toast.error("Please enter Company Name");
 
     try {
       const updatedProduct = {
@@ -373,6 +378,12 @@ const ReceivedProductTable = () => {
           <thead>
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Company Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Product
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -398,6 +409,14 @@ const ReceivedProductTable = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
+                  {rp.createdAt
+                    ? new Date(rp.createdAt).toLocaleDateString()
+                    : "-"}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
+                  {rp.company_name}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
                   {resolveProductName(rp)}
                 </td>
@@ -517,6 +536,21 @@ const ReceivedProductTable = () => {
             </div>
 
             <div className="mt-4">
+              <label className="block text-sm text-white">Company Name:</label>
+              <input
+                type="text"
+                value={currentProduct?.company_name || ""}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    company_name: e.target.value,
+                  })
+                }
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
+              />
+            </div>
+
+            <div className="mt-4">
               <label className="block text-sm text-white">Quantity:</label>
               <input
                 type="number"
@@ -583,6 +617,23 @@ const ReceivedProductTable = () => {
                   isClearable
                   className="text-black w-full"
                   isDisabled={isLoadingAllProducts}
+                />
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm text-white">
+                  Company Name:
+                </label>
+                <input
+                  type="text"
+                  value={createProduct?.company_name || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...createProduct,
+                      company_name: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
                 />
               </div>
 

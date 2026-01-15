@@ -59,11 +59,10 @@ export const supplierApi = createApi({
       providesTags: ["supplier"], // Provides the 'supplier' tag for caching and invalidation
     }),
 
-  
     getAllSupplier: build.query({
-      query: ({ page, limit, startDate, endDate, supplierId,}) => ({
+      query: ({ page, limit, startDate, endDate, supplierId }) => ({
         url: "/supplier",
-        params: { page, limit, startDate, endDate, supplierId,},  // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, supplierId }, // Pass the page and limit as query params
       }),
       providesTags: ["supplier"],
       refetchOnMountOrArgChange: true,
@@ -88,5 +87,5 @@ export const {
   useGetSingleSupplierQuery,
   useDeleteSupplierMutation,
   useUpdateSupplierMutation,
-  useGetAllSupplierWithoutQueryQuery
+  useGetAllSupplierWithoutQueryQuery,
 } = supplierApi;
