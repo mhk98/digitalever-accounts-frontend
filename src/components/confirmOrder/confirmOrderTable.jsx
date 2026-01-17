@@ -7,7 +7,6 @@ import Select from "react-select";
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
 import {
   useDeleteConfirmOrderMutation,
-  useGetAllConfirmOrderApiWithoutQueryQuery,
   useGetAllConfirmOrderQuery,
   useInsertConfirmOrderMutation,
   useUpdateConfirmOrderMutation,
@@ -268,27 +267,10 @@ const ConfirmOrderTable = () => {
 
   const handleNextSet = () =>
     setStartPage((prev) =>
-      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
-  const {
-    data: confirmOrderRes,
-    isLoading: confirmOrderLoading,
-    isError: confirmOrderError,
-    error: confirmOrderErrObj,
-  } = useGetAllConfirmOrderApiWithoutQueryQuery();
-
-  const confirmOrder = confirmOrderRes?.data || [];
-
-  // ✅ totals
-  const totalConfirmOrderAmount = useMemo(() => {
-    return confirmOrder.reduce(
-      (sum, item) => sum + Number(item?.quantity || 0),
-      0
-    );
-  }, [confirmOrder]);
-
-  if (confirmOrderError) console.error("Purchase error:", confirmOrderErrObj);
+  console.log("totalQuantity", data?.meta?.totalQuantity);
 
   return (
     <motion.div
@@ -314,9 +296,7 @@ const ConfirmOrderTable = () => {
           </div>
 
           <span className="text-white font-semibold tabular-nums">
-            {confirmOrderLoading
-              ? "Loading..."
-              : totalConfirmOrderAmount.toFixed(2)}
+            {isLoading ? "Loading..." : data.meta.totalQuantity}
           </span>
         </div>
       </div>
@@ -372,6 +352,9 @@ const ConfirmOrderTable = () => {
           <thead>
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Product
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -397,6 +380,11 @@ const ConfirmOrderTable = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
+                  {rp.createdAt
+                    ? new Date(rp.createdAt).toLocaleDateString()
+                    : "-"}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
                   {resolveProductName(rp)}
                 </td>
@@ -499,7 +487,7 @@ const ConfirmOrderTable = () => {
                 options={productDropdownOptions}
                 value={
                   productDropdownOptions.find(
-                    (o) => o.value === String(currentProduct?.productId)
+                    (o) => o.value === String(currentProduct?.productId),
                   ) || null
                 }
                 onChange={(selected) =>
@@ -569,7 +557,7 @@ const ConfirmOrderTable = () => {
                   options={productDropdownOptions}
                   value={
                     productDropdownOptions.find(
-                      (o) => o.value === String(createProduct.productId)
+                      (o) => o.value === String(createProduct.productId),
                     ) || null
                   }
                   onChange={(selected) =>

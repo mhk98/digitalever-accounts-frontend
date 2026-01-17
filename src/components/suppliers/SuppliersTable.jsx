@@ -163,7 +163,7 @@ const SuppliersTable = () => {
   const [deleteProduct] = useDeleteSupplierMutation();
   const handleDeleteProduct = async (id) => {
     const confirmDelete = window.confirm(
-      "Do you want to delete this supplier?"
+      "Do you want to delete this supplier?",
     );
 
     if (confirmDelete) {
@@ -203,7 +203,7 @@ const SuppliersTable = () => {
     setStartPage((prevStart) => Math.max(prevStart - pagesPerSet, 1));
   const handleNextSet = () =>
     setStartPage((prevStart) =>
-      Math.min(prevStart + pagesPerSet, totalPages - pagesPerSet + 1)
+      Math.min(prevStart + pagesPerSet, totalPages - pagesPerSet + 1),
     );
 
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
@@ -251,7 +251,7 @@ const SuppliersTable = () => {
           <Select
             options={supplierOptions}
             value={supplierOptions.find(
-              (option) => option.value === currentSupplier?.supplierId
+              (option) => option.value === currentSupplier?.supplierId,
             )} // Optional chaining ব্যবহার করা হলো
             onChange={(selectedOption) => setSupplierId(selectedOption?.value)}
             placeholder="Select Supplier"

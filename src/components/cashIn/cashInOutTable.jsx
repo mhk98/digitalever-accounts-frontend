@@ -16,6 +16,10 @@
 // import { generateCashInOutPdf } from "../../utils/report/generateCashInOutPdf";
 // import { generateCashInOutXlsx } from "../../utils/report/generateCashInOutXlsx";
 // import { useGetSingleBookDataByIdQuery } from "../../features/book/book";
+// import {
+//   useGetAllCategoryQuery,
+//   useInsertCategoryMutation,
+// } from "../../features/category/category";
 
 // const BANKS = [
 //   "Al Arafah",
@@ -41,13 +45,14 @@
 // const CashInOutTable = () => {
 //   const { id } = useParams(); // bookId
 
-//   const [isModalOpen, setIsModalOpen] = useState(false);
-//   const [isModalOpen1, setIsModalOpen1] = useState(false);
+//   const [isModalOpen, setIsModalOpen] = useState(false); // edit
+//   const [isModalOpen1, setIsModalOpen1] = useState(false); // add
 //   const [currentProduct, setCurrentProduct] = useState(null);
 
 //   const [createProduct, setCreateProduct] = useState({
 //     paymentMode: "",
 //     paymentStatus: "",
+//     bankName: "", // ✅ add
 //     remarks: "",
 //     amount: "",
 //     file: null,
@@ -133,7 +138,7 @@
 
 //   const { data, isLoading, isError, error, refetch } = useGetAllCashInOutQuery(
 //     queryArgs,
-//     { skip: shouldSkip }
+//     { skip: shouldSkip },
 //   );
 
 //   useEffect(() => {
@@ -152,8 +157,8 @@
 //     setCurrentProduct({
 //       ...rp,
 //       amount: rp.amount ?? "",
-//       bankName: rp.bankName ?? "",
-//       file: null, // edit modal এ নতুন ফাইল না নিলে null
+//       bankName: rp.bankName ?? "", // ✅ add
+//       file: null,
 //     });
 //     setIsModalOpen(true);
 //   };
@@ -177,7 +182,7 @@
 //       formData.append("paymentStatus", createProduct.paymentStatus);
 //       formData.append(
 //         "bankName",
-//         createProduct.paymentMode === "Bank" ? createProduct.bankName : ""
+//         createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
 //       );
 //       formData.append("remarks", createProduct.remarks?.trim() || "");
 //       formData.append("amount", String(Number(createProduct.amount)));
@@ -224,7 +229,7 @@
 //       formData.append("paymentStatus", currentProduct.paymentStatus);
 //       formData.append(
 //         "bankName",
-//         currentProduct.paymentMode === "Bank" ? currentProduct.bankName : ""
+//         currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
 //       );
 //       formData.append("remarks", currentProduct.remarks?.trim() || "");
 //       formData.append("amount", String(Number(currentProduct.amount)));
@@ -234,6 +239,7 @@
 //       if (res?.success) {
 //         toast.success("Updated!");
 //         setIsModalOpen(false);
+//         setCurrentProduct(null);
 //         refetch?.();
 //       } else toast.error(res?.message || "Update failed!");
 //     } catch (err) {
@@ -241,7 +247,7 @@
 //     }
 //   };
 
-//   // delete (✅ FIX: currentProduct লাগবে না)
+//   // delete
 //   const [deleteCashInOut] = useDeleteCashInOutMutation();
 //   const handleDeleteProduct = async (rowId) => {
 //     if (!window.confirm("Do you want to delete this item?")) return;
@@ -277,7 +283,7 @@
 //     setStartPage((p) => Math.max(p - pagesPerSet, 1));
 //   const handleNextSet = () =>
 //     setStartPage((p) =>
-//       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+//       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
 //     );
 
 //   // book info (name for report header)
@@ -285,8 +291,6 @@
 //     skip: !id,
 //   });
 //   const bookName = bookRes?.data?.name || "";
-
-//   console.log("bookName", bookName);
 
 //   // report states
 //   const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
@@ -336,29 +340,6 @@
 //     }
 //   };
 
-//   // const handleReportSheet = async () => {
-//   //   try {
-//   //     if (!products.length) return toast.error("No data found!");
-
-//   //     setReportType("sheet");
-//   //     setReportLoading(true);
-//   //     setIsReportPreviewOpen(true);
-//   //     setIsReportMenuOpen(false);
-
-//   //     const { blob, preview } = generateCashInOutXlsx({ products, bookId: id });
-//   //     const url = URL.createObjectURL(blob);
-
-//   //     setReportBlob(blob);
-//   //     setReportBlobUrl(url);
-//   //     setSheetPreview(preview);
-//   //   } catch (e) {
-//   //     toast.error("Sheet report generate failed!");
-//   //     closeReportPreview();
-//   //   } finally {
-//   //     setReportLoading(false);
-//   //   }
-//   // };
-
 //   const handleReportSheet = async () => {
 //     try {
 //       if (!products.length) return toast.error("No data found!");
@@ -371,7 +352,7 @@
 //       const { blob, preview } = generateCashInOutXlsx({
 //         products,
 //         bookId: id,
-//         bookName, // ✅ এখানে পাঠাচ্ছি
+//         bookName,
 //       });
 
 //       const url = URL.createObjectURL(blob);
@@ -386,6 +367,24 @@
 //       setReportLoading(false);
 //     }
 //   };
+
+//   const [categories, setCategories] = useState([]);
+
+//   const {
+//     data: category,
+//     isLoading: categoryLoading,
+//     isError: isCategoryError,
+//     error: categoryError,
+//   } = useGetAllCategoryQuery();
+
+//   useEffect(() => {
+//     if (isCategoryError) console.categoryError("Error:", categoryError);
+//     if (!categoryLoading && category) {
+//       setCategories(category?.data ?? []);
+//     }
+//   }, [category, categoryLoading, isCategoryError, categoryError]);
+//   // insert
+//   const [insertCategory] = useInsertCategoryMutation();
 
 //   return (
 //     <motion.div
@@ -451,30 +450,6 @@
 //           </select>
 //         </div>
 
-//         {currentProduct.paymentMode === "Bank" && (
-//           <div className="mt-4">
-//             <label className="block text-sm text-white">Bank Name</label>
-//             <select
-//               value={currentProduct.bankName || ""}
-//               onChange={(e) =>
-//                 setCurrentProduct({
-//                   ...currentProduct,
-//                   bankName: e.target.value,
-//                 })
-//               }
-//               className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
-//               required
-//             >
-//               <option value="">Select Bank</option>
-//               {BANKS.map((b) => (
-//                 <option key={b} value={b}>
-//                   {b}
-//                 </option>
-//               ))}
-//             </select>
-//           </div>
-//         )}
-
 //         <div className="flex items-center justify-center">
 //           <label className="mr-2 text-sm text-white">Payment Status:</label>
 //           <select
@@ -508,6 +483,9 @@
 //                 Payment Mode
 //               </th>
 //               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Bank
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
 //                 Payment Status
 //               </th>
 //               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -532,7 +510,7 @@
 //                 : "";
 //               const ext = safePath.split(".").pop()?.toLowerCase();
 //               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
-//                 ext
+//                 ext,
 //               );
 //               const isPdf = ext === "pdf";
 
@@ -581,6 +559,11 @@
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
 //                     {rp.paymentMode || "-"}
 //                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.paymentMode === "Bank" ? rp.bankName || "-" : "-"}
+//                   </td>
+
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
 //                     {rp.paymentStatus || "-"}
 //                   </td>
@@ -673,7 +656,7 @@
 //             <div className="mt-4">
 //               <label className="block text-sm text-white">Payment Mode</label>
 //               <select
-//                 value={currentProduct.paymentMode}
+//                 value={currentProduct.paymentMode || ""}
 //                 onChange={(e) =>
 //                   setCurrentProduct({
 //                     ...currentProduct,
@@ -718,10 +701,28 @@
 //               </div>
 //             )}
 
+//             {currentProduct.paymentMode === "Bank" && (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Bank Account</label>
+//                 <input
+//                   type="number"
+//                   value={currentProduct.bankAccount || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       bankAccount: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                   required
+//                 />
+//               </div>
+//             )}
+
 //             <div className="mt-4">
 //               <label className="block text-sm text-white">Payment Status</label>
 //               <select
-//                 value={currentProduct.paymentStatus}
+//                 value={currentProduct.paymentStatus || ""}
 //                 onChange={(e) =>
 //                   setCurrentProduct({
 //                     ...currentProduct,
@@ -741,7 +742,7 @@
 //               <label className="block text-sm text-white">Remarks</label>
 //               <input
 //                 type="text"
-//                 value={currentProduct.remarks}
+//                 value={currentProduct.remarks || ""}
 //                 onChange={(e) =>
 //                   setCurrentProduct({
 //                     ...currentProduct,
@@ -758,7 +759,7 @@
 //               <input
 //                 type="number"
 //                 step="0.01"
-//                 value={currentProduct?.amount || ""}
+//                 value={currentProduct?.amount ?? ""}
 //                 onChange={(e) =>
 //                   setCurrentProduct({
 //                     ...currentProduct,
@@ -767,6 +768,28 @@
 //                 }
 //                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
 //               />
+//             </div>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">
+//                 Upload Document
+//               </label>
+//               <input
+//                 type="file"
+//                 accept=".jpg,.jpeg,.png,.pdf"
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     file: e.target.files?.[0] || null,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//               />
+//               {currentProduct.file && (
+//                 <p className="mt-2 text-xs text-gray-300">
+//                   Selected: {currentProduct.file.name}
+//                 </p>
+//               )}
 //             </div>
 
 //             <div className="mt-6 flex justify-end">
@@ -778,7 +801,10 @@
 //               </button>
 //               <button
 //                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
-//                 onClick={() => setIsModalOpen(false)}
+//                 onClick={() => {
+//                   setIsModalOpen(false);
+//                   setCurrentProduct(null);
+//                 }}
 //               >
 //                 Cancel
 //               </button>
@@ -846,6 +872,26 @@
 //                       </option>
 //                     ))}
 //                   </select>
+//                 </div>
+//               )}
+
+//               {createProduct.paymentMode === "Bank" && (
+//                 <div className="mt-4">
+//                   <label className="block text-sm text-white">
+//                     Bank Account
+//                   </label>
+//                   <input
+//                     type="number"
+//                     value={createProduct.bankAccount}
+//                     onChange={(e) =>
+//                       setCurrentProduct({
+//                         ...createProduct,
+//                         bankAccount: e.target.value,
+//                       })
+//                     }
+//                     className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                     required
+//                   />
 //                 </div>
 //               )}
 
@@ -978,6 +1024,10 @@ import ReportPreviewModal from "./ReportPreviewModal";
 import { generateCashInOutPdf } from "../../utils/report/generateCashInOutPdf";
 import { generateCashInOutXlsx } from "../../utils/report/generateCashInOutXlsx";
 import { useGetSingleBookDataByIdQuery } from "../../features/book/book";
+import {
+  useGetAllCategoryQuery,
+  useInsertCategoryMutation,
+} from "../../features/category/category";
 
 const BANKS = [
   "Al Arafah",
@@ -1000,6 +1050,15 @@ const BANKS = [
   "Trust Bank",
 ];
 
+const STATIC_CATEGORIES = [
+  "Office Expense",
+  "Marketing",
+  "Salary",
+  "Transport",
+  "Utility Bill",
+  "Other",
+];
+
 const CashInOutTable = () => {
   const { id } = useParams(); // bookId
 
@@ -1010,7 +1069,9 @@ const CashInOutTable = () => {
   const [createProduct, setCreateProduct] = useState({
     paymentMode: "",
     paymentStatus: "",
-    bankName: "", // ✅ add
+    bankName: "",
+    bankAccount: "",
+    categoryId: "",
     remarks: "",
     amount: "",
     file: null,
@@ -1029,6 +1090,14 @@ const CashInOutTable = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
   const itemsPerPage = 10;
+
+  // ✅ Category states
+  const [categories, setCategories] = useState([]);
+  const [isNewCategoryAdd, setIsNewCategoryAdd] = useState(false);
+  const [newCategoryNameAdd, setNewCategoryNameAdd] = useState("");
+
+  const [isNewCategoryEdit, setIsNewCategoryEdit] = useState(false);
+  const [newCategoryNameEdit, setNewCategoryNameEdit] = useState("");
 
   useEffect(() => {
     const updatePagesPerSet = () => {
@@ -1050,18 +1119,22 @@ const CashInOutTable = () => {
     if (startDate && endDate && startDate > endDate) setEndDate(startDate);
   }, [startDate, endDate]);
 
-  // ✅ Bank না হলে bankName reset (Add)
+  // ✅ Bank না হলে bank fields reset (Add)
   useEffect(() => {
-    if (createProduct.paymentMode !== "Bank" && createProduct.bankName) {
-      setCreateProduct((p) => ({ ...p, bankName: "" }));
+    if (createProduct.paymentMode !== "Bank") {
+      if (createProduct.bankName || createProduct.bankAccount) {
+        setCreateProduct((p) => ({ ...p, bankName: "", bankAccount: "" }));
+      }
     }
   }, [createProduct.paymentMode]);
 
-  // ✅ Bank না হলে bankName reset (Edit)
+  // ✅ Bank না হলে bank fields reset (Edit)
   useEffect(() => {
     if (!currentProduct) return;
-    if (currentProduct.paymentMode !== "Bank" && currentProduct.bankName) {
-      setCurrentProduct((p) => ({ ...p, bankName: "" }));
+    if (currentProduct.paymentMode !== "Bank") {
+      if (currentProduct.bankName || currentProduct.bankAccount) {
+        setCurrentProduct((p) => ({ ...p, bankName: "", bankAccount: "" }));
+      }
     }
   }, [currentProduct?.paymentMode]);
 
@@ -1096,7 +1169,7 @@ const CashInOutTable = () => {
 
   const { data, isLoading, isError, error, refetch } = useGetAllCashInOutQuery(
     queryArgs,
-    { skip: shouldSkip }
+    { skip: shouldSkip },
   );
 
   useEffect(() => {
@@ -1107,22 +1180,108 @@ const CashInOutTable = () => {
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
 
+  // book info (name for report header)
+  const { data: bookRes } = useGetSingleBookDataByIdQuery(id, { skip: !id });
+  const bookName = bookRes?.data?.name || "";
+
+  // ✅ Category: fetch all
+  const {
+    data: categoryRes,
+    isLoading: categoryLoading,
+    isError: isCategoryError,
+    error: categoryError,
+  } = useGetAllCategoryQuery();
+
+  useEffect(() => {
+    if (isCategoryError) console.error("Category error:", categoryError);
+    if (!categoryLoading && categoryRes) {
+      setCategories(categoryRes?.data ?? []);
+    }
+  }, [categoryRes, categoryLoading, isCategoryError, categoryError]);
+
+  // ✅ Category options: static + api
+  const categoryOptions = useMemo(() => {
+    const staticOnes = STATIC_CATEGORIES.map((name) => ({
+      id: `static:${name}`,
+      name,
+      isStatic: true,
+    }));
+
+    const fromApi = (categories || []).map((c) => ({
+      id: String(c.Id ?? c.id ?? c._id),
+      name: c.name,
+      isStatic: false,
+    }));
+
+    // de-dup by name
+    const seen = new Set();
+    const merged = [...staticOnes, ...fromApi].filter((x) => {
+      const k = String(x.name || "")
+        .toLowerCase()
+        .trim();
+      if (!k) return false;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+
+    return merged;
+  }, [categories]);
+
+  // ✅ Insert category mutation
+  const [insertCategory, { isLoading: isAddingCategory }] =
+    useInsertCategoryMutation();
+
+  const addCategoryByName = async (name) => {
+    const n = name.trim();
+    if (!n) {
+      toast.error("New category name is required!");
+      return null;
+    }
+
+    try {
+      const res = await insertCategory({ name: n }).unwrap();
+      if (res?.success) {
+        toast.success("Category added!");
+        const created = res?.data;
+        const createdId = String(created?.Id ?? created?.id ?? created?._id);
+        return createdId;
+      }
+      toast.error(res?.message || "Category add failed!");
+      return null;
+    } catch (err) {
+      toast.error(err?.data?.message || "Category add failed!");
+      return null;
+    }
+  };
+
   // modals
   const handleAddProduct = () => setIsModalOpen1(true);
-  const handleModalClose1 = () => setIsModalOpen1(false);
+  const handleModalClose1 = () => {
+    setIsModalOpen1(false);
+    setIsNewCategoryAdd(false);
+    setNewCategoryNameAdd("");
+  };
 
   const handleEditClick = (rp) => {
     setCurrentProduct({
       ...rp,
       amount: rp.amount ?? "",
-      bankName: rp.bankName ?? "", // ✅ add
+      bankName: rp.bankName ?? "",
+      bankAccount: rp.bankAccount ?? "",
+      categoryId: String(
+        rp.categoryId ?? rp.category?.Id ?? rp.category?.id ?? "",
+      ),
       file: null,
     });
+    setIsNewCategoryEdit(false);
+    setNewCategoryNameEdit("");
     setIsModalOpen(true);
   };
 
   // insert
   const [insertCashIn] = useInsertCashInOutMutation();
+
   const handleCreateProduct = async (e) => {
     e.preventDefault();
 
@@ -1131,17 +1290,49 @@ const CashInOutTable = () => {
       return toast.error("Payment Mode is required!");
     if (!createProduct.paymentStatus)
       return toast.error("Payment Status is required!");
-    if (createProduct.paymentMode === "Bank" && !createProduct.bankName)
-      return toast.error("Bank Name is required!");
+
+    if (createProduct.paymentMode === "Bank") {
+      if (!createProduct.bankName) return toast.error("Bank Name is required!");
+      if (!createProduct.bankAccount)
+        return toast.error("Bank Account is required!");
+    }
+
+    if (!createProduct.categoryId && !isNewCategoryAdd) {
+      return toast.error("Category is required!");
+    }
 
     try {
+      let finalCategoryId = createProduct.categoryId;
+
+      // ✅ If user selected a static category => create it via API first
+      if (finalCategoryId?.startsWith("static:")) {
+        const name = finalCategoryId.replace("static:", "");
+        const createdId = await addCategoryByName(name);
+        if (!createdId) return;
+        finalCategoryId = createdId;
+      }
+
+      // ✅ If user selected New Category => create it first
+      if (isNewCategoryAdd) {
+        const createdId = await addCategoryByName(newCategoryNameAdd);
+        if (!createdId) return;
+        finalCategoryId = createdId;
+      }
+
       const formData = new FormData();
       formData.append("paymentMode", createProduct.paymentMode);
       formData.append("paymentStatus", createProduct.paymentStatus);
       formData.append(
         "bankName",
-        createProduct.paymentMode === "Bank" ? createProduct.bankName : ""
+        createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
       );
+      formData.append(
+        "bankAccount",
+        createProduct.paymentMode === "Bank"
+          ? String(createProduct.bankAccount)
+          : "",
+      );
+      formData.append("category", String(finalCategoryId || ""));
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
       formData.append("bookId", id);
@@ -1153,10 +1344,14 @@ const CashInOutTable = () => {
       if (res?.success) {
         toast.success("Successfully created!");
         setIsModalOpen1(false);
+        setIsNewCategoryAdd(false);
+        setNewCategoryNameAdd("");
         setCreateProduct({
           paymentMode: "",
           paymentStatus: "",
           bankName: "",
+          bankAccount: "",
+          categoryId: "",
           remarks: "",
           amount: "",
           file: null,
@@ -1170,25 +1365,58 @@ const CashInOutTable = () => {
 
   // update
   const [updateCashInOut] = useUpdateCashInOutMutation();
+
   const handleUpdateProduct = async () => {
     const rowId = currentProduct?.Id ?? currentProduct?.id;
     if (!rowId) return toast.error("Invalid item!");
+
     if (!currentProduct.amount) return toast.error("Amount is required!");
     if (!currentProduct.paymentMode)
       return toast.error("Payment Mode is required!");
     if (!currentProduct.paymentStatus)
       return toast.error("Payment Status is required!");
-    if (currentProduct.paymentMode === "Bank" && !currentProduct.bankName)
-      return toast.error("Bank Name is required!");
+
+    if (currentProduct.paymentMode === "Bank") {
+      if (!currentProduct.bankName)
+        return toast.error("Bank Name is required!");
+      if (!currentProduct.bankAccount)
+        return toast.error("Bank Account is required!");
+    }
+
+    if (!currentProduct.categoryId && !isNewCategoryEdit) {
+      return toast.error("Category is required!");
+    }
 
     try {
+      let finalCategoryId = currentProduct.categoryId;
+
+      if (finalCategoryId?.startsWith("static:")) {
+        const name = finalCategoryId.replace("static:", "");
+        const createdId = await addCategoryByName(name);
+        if (!createdId) return;
+        finalCategoryId = createdId;
+      }
+
+      if (isNewCategoryEdit) {
+        const createdId = await addCategoryByName(newCategoryNameEdit);
+        if (!createdId) return;
+        finalCategoryId = createdId;
+      }
+
       const formData = new FormData();
       formData.append("paymentMode", currentProduct.paymentMode);
       formData.append("paymentStatus", currentProduct.paymentStatus);
       formData.append(
         "bankName",
-        currentProduct.paymentMode === "Bank" ? currentProduct.bankName : ""
+        currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
       );
+      formData.append(
+        "bankAccount",
+        currentProduct.paymentMode === "Bank"
+          ? String(currentProduct.bankAccount)
+          : "",
+      );
+      formData.append("categoryId", String(finalCategoryId || ""));
       formData.append("remarks", currentProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(currentProduct.amount)));
       if (currentProduct.file) formData.append("file", currentProduct.file);
@@ -1198,6 +1426,8 @@ const CashInOutTable = () => {
         toast.success("Updated!");
         setIsModalOpen(false);
         setCurrentProduct(null);
+        setIsNewCategoryEdit(false);
+        setNewCategoryNameEdit("");
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
     } catch (err) {
@@ -1207,6 +1437,7 @@ const CashInOutTable = () => {
 
   // delete
   const [deleteCashInOut] = useDeleteCashInOutMutation();
+
   const handleDeleteProduct = async (rowId) => {
     if (!window.confirm("Do you want to delete this item?")) return;
 
@@ -1241,14 +1472,8 @@ const CashInOutTable = () => {
     setStartPage((p) => Math.max(p - pagesPerSet, 1));
   const handleNextSet = () =>
     setStartPage((p) =>
-      Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+      Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
-
-  // book info (name for report header)
-  const { data: bookRes } = useGetSingleBookDataByIdQuery(id, {
-    skip: !id,
-  });
-  const bookName = bookRes?.data?.name || "";
 
   // report states
   const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
@@ -1450,7 +1675,7 @@ const CashInOutTable = () => {
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
-                ext
+                ext,
               );
               const isPdf = ext === "pdf";
 
@@ -1507,9 +1732,11 @@ const CashInOutTable = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {rp.paymentStatus || "-"}
                   </td>
+
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {rp.remarks || "-"}
                   </td>
+
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {Number(rp.amount || 0).toFixed(2)}
                   </td>
@@ -1521,6 +1748,7 @@ const CashInOutTable = () => {
                     >
                       <Edit size={18} />
                     </button>
+
                     <button
                       onClick={() => handleDeleteProduct(rowId)}
                       className="text-red-600 hover:text-red-900 ms-4"
@@ -1582,7 +1810,7 @@ const CashInOutTable = () => {
         </button>
       </div>
 
-      {/* Edit Modal */}
+      {/* ✅ Edit Modal */}
       {isModalOpen && currentProduct && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <motion.div
@@ -1618,46 +1846,115 @@ const CashInOutTable = () => {
             </div>
 
             {currentProduct.paymentMode === "Bank" && (
-              <div className="mt-4">
-                <label className="block text-sm text-white">Bank Name</label>
-                <select
-                  value={currentProduct.bankName || ""}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      bankName: e.target.value,
-                    })
-                  }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
-                  required
-                >
-                  <option value="">Select Bank</option>
-                  {BANKS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <>
+                <div className="mt-4">
+                  <label className="block text-sm text-white">Bank Name</label>
+                  <select
+                    value={currentProduct.bankName || ""}
+                    onChange={(e) =>
+                      setCurrentProduct({
+                        ...currentProduct,
+                        bankName: e.target.value,
+                      })
+                    }
+                    className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                    required
+                  >
+                    <option value="">Select Bank</option>
+                    {BANKS.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-sm text-white">
+                    Bank Account
+                  </label>
+                  <input
+                    type="text"
+                    value={currentProduct.bankAccount || ""}
+                    onChange={(e) =>
+                      setCurrentProduct({
+                        ...currentProduct,
+                        bankAccount: e.target.value,
+                      })
+                    }
+                    className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
+                    required
+                  />
+                </div>
+              </>
             )}
 
-            {currentProduct.paymentMode === "Bank" && (
-              <div className="mt-4">
-                <label className="block text-sm text-white">Bank Account</label>
-                <input
-                  type="number"
-                  value={currentProduct.bankAccount || ""}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      bankAccount: e.target.value,
-                    })
+            {/* ✅ Category (Edit) */}
+            <div className="mt-4">
+              <label className="block text-sm text-white">Category</label>
+              <select
+                value={
+                  isNewCategoryEdit
+                    ? "__new__"
+                    : currentProduct.categoryId || ""
+                }
+                onChange={(e) => {
+                  const v = e.target.value;
+
+                  if (v === "__new__") {
+                    setIsNewCategoryEdit(true);
+                    setCurrentProduct((p) => ({ ...p, categoryId: "" }));
+                    return;
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
-                  required
-                />
-              </div>
-            )}
+
+                  setIsNewCategoryEdit(false);
+                  setNewCategoryNameEdit("");
+                  setCurrentProduct((p) => ({ ...p, categoryId: v }));
+                }}
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                required
+              >
+                <option value="">Select Category</option>
+
+                {categoryOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+
+                <option value="__new__">+ New Category</option>
+              </select>
+
+              {isNewCategoryEdit && (
+                <div className="mt-3 flex gap-2">
+                  <input
+                    type="text"
+                    value={newCategoryNameEdit}
+                    onChange={(e) => setNewCategoryNameEdit(e.target.value)}
+                    placeholder="Write new category name"
+                    className="border border-gray-300 rounded p-2 w-full text-white bg-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const createdId =
+                        await addCategoryByName(newCategoryNameEdit);
+                      if (!createdId) return;
+                      setCurrentProduct((p) => ({
+                        ...p,
+                        categoryId: createdId,
+                      }));
+                      setIsNewCategoryEdit(false);
+                      setNewCategoryNameEdit("");
+                    }}
+                    disabled={isAddingCategory}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 rounded disabled:bg-gray-500"
+                  >
+                    {isAddingCategory ? "Adding..." : "Add"}
+                  </button>
+                </div>
+              )}
+            </div>
 
             <div className="mt-4">
               <label className="block text-sm text-white">Payment Status</label>
@@ -1689,13 +1986,13 @@ const CashInOutTable = () => {
                     remarks: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
                 required
               />
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Amount:</label>
+              <label className="block text-sm text-white">Amount</label>
               <input
                 type="number"
                 step="0.01"
@@ -1706,7 +2003,8 @@ const CashInOutTable = () => {
                     amount: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
+                required
               />
             </div>
 
@@ -1744,6 +2042,8 @@ const CashInOutTable = () => {
                 onClick={() => {
                   setIsModalOpen(false);
                   setCurrentProduct(null);
+                  setIsNewCategoryEdit(false);
+                  setNewCategoryNameEdit("");
                 }}
               >
                 Cancel
@@ -1753,7 +2053,7 @@ const CashInOutTable = () => {
         </div>
       )}
 
-      {/* Add Modal */}
+      {/* ✅ Add Modal */}
       {isModalOpen1 && (
         <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
           <motion.div
@@ -1792,48 +2092,117 @@ const CashInOutTable = () => {
               </div>
 
               {createProduct.paymentMode === "Bank" && (
-                <div className="mt-4">
-                  <label className="block text-sm text-white">Bank Name</label>
-                  <select
-                    value={createProduct.bankName}
-                    onChange={(e) =>
-                      setCreateProduct({
-                        ...createProduct,
-                        bankName: e.target.value,
-                      })
-                    }
-                    className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
-                    required
-                  >
-                    <option value="">Select Bank</option>
-                    {BANKS.map((b) => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <>
+                  <div className="mt-4">
+                    <label className="block text-sm text-white">
+                      Bank Name
+                    </label>
+                    <select
+                      value={createProduct.bankName}
+                      onChange={(e) =>
+                        setCreateProduct({
+                          ...createProduct,
+                          bankName: e.target.value,
+                        })
+                      }
+                      className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                      required
+                    >
+                      <option value="">Select Bank</option>
+                      {BANKS.map((b) => (
+                        <option key={b} value={b}>
+                          {b}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-sm text-white">
+                      Bank Account
+                    </label>
+                    <input
+                      type="text"
+                      value={createProduct.bankAccount}
+                      onChange={(e) =>
+                        setCreateProduct({
+                          ...createProduct,
+                          bankAccount: e.target.value,
+                        })
+                      }
+                      className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
+                      required
+                    />
+                  </div>
+                </>
               )}
 
-              {createProduct.paymentMode === "Bank" && (
-                <div className="mt-4">
-                  <label className="block text-sm text-white">
-                    Bank Account
-                  </label>
-                  <input
-                    type="number"
-                    value={createProduct.bankAccount}
-                    onChange={(e) =>
-                      setCurrentProduct({
-                        ...createProduct,
-                        bankAccount: e.target.value,
-                      })
+              {/* ✅ Category (Add) */}
+              <div className="mt-4">
+                <label className="block text-sm text-white">Category</label>
+                <select
+                  value={
+                    isNewCategoryAdd
+                      ? "__new__"
+                      : createProduct.categoryId || ""
+                  }
+                  onChange={(e) => {
+                    const v = e.target.value;
+
+                    if (v === "__new__") {
+                      setIsNewCategoryAdd(true);
+                      setCreateProduct((p) => ({ ...p, categoryId: "" }));
+                      return;
                     }
-                    className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
-                    required
-                  />
-                </div>
-              )}
+
+                    setIsNewCategoryAdd(false);
+                    setNewCategoryNameAdd("");
+                    setCreateProduct((p) => ({ ...p, categoryId: v }));
+                  }}
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Category</option>
+
+                  {categoryOptions.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+
+                  <option value="__new__">+ New Category</option>
+                </select>
+
+                {isNewCategoryAdd && (
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      type="text"
+                      value={newCategoryNameAdd}
+                      onChange={(e) => setNewCategoryNameAdd(e.target.value)}
+                      placeholder="Write new category name"
+                      className="border border-gray-300 rounded p-2 w-full text-white bg-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const createdId =
+                          await addCategoryByName(newCategoryNameAdd);
+                        if (!createdId) return;
+                        setCreateProduct((p) => ({
+                          ...p,
+                          categoryId: createdId,
+                        }));
+                        setIsNewCategoryAdd(false);
+                        setNewCategoryNameAdd("");
+                      }}
+                      disabled={isAddingCategory}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 rounded disabled:bg-gray-500"
+                    >
+                      {isAddingCategory ? "Adding..." : "Add"}
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <div className="mt-4">
                 <label className="block text-sm text-white">
@@ -1867,7 +2236,7 @@ const CashInOutTable = () => {
                       remarks: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
                   required
                 />
               </div>
@@ -1884,7 +2253,7 @@ const CashInOutTable = () => {
                       amount: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
                   required
                 />
               </div>

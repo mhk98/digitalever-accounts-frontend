@@ -8,7 +8,6 @@ import { useGetAllProductWithoutQueryQuery } from "../../features/product/produc
 import {
   useDeleteInTransitProductMutation,
   useGetAllInTransitProductQuery,
-  useGetAllInTransitProductWithoutQueryQuery,
   useInsertInTransitProductMutation,
   useUpdateInTransitProductMutation,
 } from "../../features/inTransitProduct/inTransitProduct";
@@ -268,28 +267,8 @@ const InTransiteProductTable = () => {
 
   const handleNextSet = () =>
     setStartPage((prev) =>
-      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
-
-  const {
-    data: inTransitProductRes,
-    isLoading: inTransitProductLoading,
-    isError: inTransitProductError,
-    error: inTransitProductErrObj,
-  } = useGetAllInTransitProductWithoutQueryQuery();
-
-  const inTransitProduct = inTransitProductRes?.data || [];
-
-  // ✅ totals
-  const totalinTransitProductAmount = useMemo(() => {
-    return inTransitProduct.reduce(
-      (sum, item) => sum + Number(item?.quantity || 0),
-      0
-    );
-  }, [inTransitProduct]);
-
-  if (inTransitProductError)
-    console.error("Purchase error:", inTransitProductErrObj);
 
   return (
     <motion.div
@@ -315,9 +294,7 @@ const InTransiteProductTable = () => {
           </div>
 
           <span className="text-white font-semibold tabular-nums">
-            {inTransitProductLoading
-              ? "Loading..."
-              : totalinTransitProductAmount.toFixed(2)}
+            {isLoading ? "Loading..." : data?.meta?.totalQuantity}
           </span>
         </div>
       </div>
@@ -372,6 +349,9 @@ const InTransiteProductTable = () => {
           <thead>
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Product
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -397,6 +377,11 @@ const InTransiteProductTable = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
+                  {rp.createdAt
+                    ? new Date(rp.createdAt).toLocaleDateString()
+                    : "-"}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
                   {resolveProductName(rp)}
                 </td>
@@ -499,7 +484,7 @@ const InTransiteProductTable = () => {
                 options={productDropdownOptions}
                 value={
                   productDropdownOptions.find(
-                    (o) => o.value === String(currentProduct?.productId)
+                    (o) => o.value === String(currentProduct?.productId),
                   ) || null
                 }
                 onChange={(selected) =>
@@ -569,7 +554,7 @@ const InTransiteProductTable = () => {
                   options={productDropdownOptions}
                   value={
                     productDropdownOptions.find(
-                      (o) => o.value === String(createProduct.productId)
+                      (o) => o.value === String(createProduct.productId),
                     ) || null
                   }
                   onChange={(selected) =>

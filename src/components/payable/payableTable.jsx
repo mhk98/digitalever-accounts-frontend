@@ -215,7 +215,7 @@ const PayableTable = () => {
     setStartPage((p) => Math.max(p - pagesPerSet, 1));
   const handleNextSet = () =>
     setStartPage((p) =>
-      Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+      Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
   const {
@@ -336,7 +336,7 @@ const PayableTable = () => {
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
-                ext
+                ext,
               );
               const isPdf = ext === "pdf";
 

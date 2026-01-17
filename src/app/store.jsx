@@ -19,6 +19,8 @@ import { payableApi } from "../features/payable/payable";
 import { overviewApi } from "../features/overview/overview";
 import { assetsSaleApi } from "../features/assetsSale/assetsSale";
 import { assetsDamageApi } from "../features/assetsDamage/assetsDamage";
+import { supplierApi } from "../features/supplier/supplier";
+import { CategoryApi } from "../features/category/category";
 
 const store = configureStore({
   reducer: {
@@ -36,6 +38,8 @@ const store = configureStore({
     [pettyCashApi.reducerPath]: pettyCashApi.reducer,
     [expenseApi.reducerPath]: expenseApi.reducer,
     [bookApi.reducerPath]: bookApi.reducer,
+    [supplierApi.reducerPath]: supplierApi.reducer,
+    [CategoryApi.reducerPath]: CategoryApi.reducer,
     [receiveableApi.reducerPath]: receiveableApi.reducer,
     [payableApi.reducerPath]: payableApi.reducer,
     [overviewApi.reducerPath]: overviewApi.reducer,
@@ -60,10 +64,12 @@ const store = configureStore({
       pettyCashApi.middleware,
       expenseApi.middleware,
       bookApi.middleware,
+      supplierApi.middleware,
+      CategoryApi.middleware,
       receiveableApi.middleware,
       payableApi.middleware,
       overviewApi.middleware,
-      authApi.middleware
+      authApi.middleware,
     ),
 });
 

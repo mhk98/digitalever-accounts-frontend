@@ -10,6 +10,7 @@ import {
 } from "../../features/product/product";
 import toast from "react-hot-toast";
 import Select from "react-select";
+import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 
 const ProductsTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -192,7 +193,7 @@ const ProductsTable = () => {
 
   const handleNextSet = () =>
     setStartPage((prev) =>
-      Math.min(prev + pagesPerSet, totalPages - pagesPerSet + 1)
+      Math.min(prev + pagesPerSet, totalPages - pagesPerSet + 1),
     );
 
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
@@ -202,6 +203,22 @@ const ProductsTable = () => {
     label: p.name,
   }));
 
+  const {
+    data: allSupplierRes,
+    isLoading: isLoadingSupplier,
+    isError: isErrorSupplier,
+    error: errorSupplier,
+  } = useGetAllSupplierWithoutQueryQuery();
+
+  const suppliers = allSupplierRes?.data || [];
+
+  useEffect(() => {
+    if (isErrorSupplier) {
+      console.error("Error fetching products", errorSupplier);
+    }
+  }, [isErrorSupplier, errorSupplier]);
+
+  console.log("suppliers", suppliers);
   return (
     <motion.div
       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
@@ -362,7 +379,7 @@ const ProductsTable = () => {
             <h2 className="text-lg font-semibold text-white">Edit Product</h2>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Name:</label>
+              <label className="block text-sm text-white">Product:</label>
               <input
                 type="text"
                 value={currentProduct?.name || ""}
@@ -371,6 +388,33 @@ const ProductsTable = () => {
                 }
                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-white">Supplier:</label>
+              <select
+                value={createProduct.supplier}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...createProduct,
+                    supplier: e.target.value,
+                  })
+                }
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                required
+              >
+                <option value="">Select Supplier</option>
+
+                {isLoadingSupplier ? (
+                  <option disabled>Loading...</option>
+                ) : (
+                  suppliers?.map((supplier) => (
+                    <option key={supplier.Id} value={supplier.name}>
+                      {supplier}.name
+                    </option>
+                  ))
+                )}
+              </select>
             </div>
 
             <div className="mt-4">
@@ -449,7 +493,32 @@ const ProductsTable = () => {
                   required
                 />
               </div>
+              <div className="mt-4">
+                <label className="block text-sm text-white">Supplier:</label>
+                <select
+                  value={createProduct.supplier || ""}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      supplier: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Supplier</option>
 
+                  {isLoadingSupplier ? (
+                    <option disabled>Loading...</option>
+                  ) : (
+                    suppliers?.map((supplier) => (
+                      <option key={supplier.Id} value={supplier.name}>
+                        {supplier.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
               <div className="mt-4">
                 <label className="block text-sm text-white">
                   Purchase Price:

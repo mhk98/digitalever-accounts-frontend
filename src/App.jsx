@@ -29,6 +29,7 @@ import PayablePage from "./pages/PayablePage";
 import UsermanagementPage from "./pages/UsermanagementPage";
 import PettyCashPage from "./pages/PettyCashPage";
 import AssetsDamagePage from "./pages/AssetsDamagePage";
+import SupplierPage from "./pages/SupplierPage";
 
 function App() {
   return (
@@ -201,6 +202,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <CashInOutPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/supplier"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <SupplierPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

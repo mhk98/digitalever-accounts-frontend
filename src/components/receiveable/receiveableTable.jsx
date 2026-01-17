@@ -215,7 +215,7 @@ const ReceiveableTable = () => {
     setStartPage((p) => Math.max(p - pagesPerSet, 1));
   const handleNextSet = () =>
     setStartPage((p) =>
-      Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+      Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
   const {
@@ -231,7 +231,7 @@ const ReceiveableTable = () => {
   const totalReceiveableAmount = useMemo(() => {
     return receiveable.reduce(
       (sum, item) => sum + Number(item?.amount || 0),
-      0
+      0,
     );
   }, [receiveable]);
 
@@ -341,7 +341,7 @@ const ReceiveableTable = () => {
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
-                ext
+                ext,
               );
               const isPdf = ext === "pdf";
 

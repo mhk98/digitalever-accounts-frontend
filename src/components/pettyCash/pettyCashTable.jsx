@@ -169,7 +169,7 @@ const PettyCashTable = () => {
       formData.append("paymentStatus", createProduct.paymentStatus);
       formData.append(
         "bankName",
-        createProduct.paymentMode === "Bank" ? createProduct.bankName : ""
+        createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
       );
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
@@ -217,7 +217,7 @@ const PettyCashTable = () => {
       formData.append("paymentStatus", currentProduct.paymentStatus);
       formData.append(
         "bankName",
-        currentProduct.paymentMode === "Bank" ? currentProduct.bankName : ""
+        currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
       );
       formData.append("remarks", currentProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(currentProduct.amount)));
@@ -273,7 +273,7 @@ const PettyCashTable = () => {
     setStartPage((p) => Math.max(p - pagesPerSet, 1));
   const handleNextSet = () =>
     setStartPage((p) =>
-      Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+      Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
   // report states
@@ -470,7 +470,7 @@ const PettyCashTable = () => {
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
-                ext
+                ext,
               );
               const isPdf = ext === "pdf";
 

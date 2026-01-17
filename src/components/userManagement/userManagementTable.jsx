@@ -261,7 +261,7 @@ const UserManagementTable = () => {
 
   const handleNextSet = () =>
     setStartPage((p) =>
-      Math.min(p + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1))
+      Math.min(p + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)),
     );
 
   return (

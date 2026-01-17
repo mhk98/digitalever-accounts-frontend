@@ -5,8 +5,8 @@ const getAuthToken = () => {
   return localStorage.getItem("token"); // Retrieve the token from localStorage or other storage
 };
 
-export const supplierApi = createApi({
-  reducerPath: "supplierApi",
+export const CategoryApi = createApi({
+  reducerPath: "CategoryApi",
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:5000/api/v1/",
 
@@ -20,60 +20,60 @@ export const supplierApi = createApi({
     },
   }),
 
-  tagTypes: ["supplier"], // Define the tag type for cache management
+  tagTypes: ["Category"], // Define the tag type for cache management
   endpoints: (build) => ({
-    // Insert a new supplier (POST request)
-    insertSupplier: build.mutation({
+    // Insert a new Category (POST request)
+    insertCategory: build.mutation({
       query: (data) => ({
-        url: "/supplier/create",
+        url: "/category/create",
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["supplier"], // Invalidate the supplier cache after insertion
+      invalidatesTags: ["category"], // Invalidate the Category cache after insertion
     }),
 
-    // Delete a supplier (DELETE request)
-    deleteSupplier: build.mutation({
+    // Delete a Category (DELETE request)
+    deleteCategory: build.mutation({
       query: (id) => ({
-        url: `/supplier/${id}`,
+        url: `/category/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["supplier"], // Invalidate the supplier cache after deletion
+      invalidatesTags: ["category"], // Invalidate the Category cache after deletion
     }),
 
-    // Update supplier details (PATCH request)
-    updateSupplier: build.mutation({
+    // Update Category details (PATCH request)
+    updateCategory: build.mutation({
       query: ({ id, data }) => ({
-        url: `/supplier/${id}`,
+        url: `/category/${id}`,
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["supplier"], // Invalidate the supplier cache after update
+      invalidatesTags: ["category"], // Invalidate the Category cache after update
     }),
 
-    // Get a single supplier (GET request)
-    getSingleSupplier: build.query({
+    // Get a single Category (GET request)
+    getSingleCategory: build.query({
       query: (id) => ({
-        url: `/supplier/${id}`,
+        url: `/category/${id}`,
       }),
-      providesTags: ["supplier"], // Provides the 'supplier' tag for caching and invalidation
+      providesTags: ["category"], // Provides the 'Category' tag for caching and invalidation
     }),
 
-    getAllSupplier: build.query({
+    getAllCategory: build.query({
       query: ({ page, limit, searchTerm }) => ({
-        url: "/supplier",
+        url: "/category",
         params: { page, limit, searchTerm }, // Pass the page and limit as query params
       }),
-      providesTags: ["supplier"],
+      providesTags: ["category"],
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
 
-    getAllSupplierWithoutQuery: build.query({
+    getAllCategoryWithoutQuery: build.query({
       query: () => ({
-        url: "/supplier/all",
+        url: "/category/all",
       }),
-      providesTags: ["supplier"],
+      providesTags: ["category"],
 
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
@@ -82,10 +82,10 @@ export const supplierApi = createApi({
 });
 
 export const {
-  useInsertSupplierMutation,
-  useGetAllSupplierQuery,
-  useGetSingleSupplierQuery,
-  useDeleteSupplierMutation,
-  useUpdateSupplierMutation,
-  useGetAllSupplierWithoutQueryQuery,
-} = supplierApi;
+  useInsertCategoryMutation,
+  useGetAllCategoryQuery,
+  useGetSingleCategoryQuery,
+  useDeleteCategoryMutation,
+  useUpdateCategoryMutation,
+  useGetAllCategoryWithoutQueryQuery,
+} = CategoryApi;

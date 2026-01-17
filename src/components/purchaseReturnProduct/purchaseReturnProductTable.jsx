@@ -8,7 +8,6 @@ import { useGetAllProductWithoutQueryQuery } from "../../features/product/produc
 import {
   useDeletePurchaseReturnProductMutation,
   useGetAllPurchaseReturnProductQuery,
-  useGetAllPurchaseReturnProductWithoutQueryQuery,
   useInsertPurchaseReturnProductMutation,
   useUpdatePurchaseReturnProductMutation,
 } from "../../features/purchaseReturnProduct/purchaseReturnProduct";
@@ -271,28 +270,9 @@ const PurchaseReturnProductTable = () => {
 
   const handleNextSet = () =>
     setStartPage((prev) =>
-      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
-  const {
-    data: purchaseReturnProductRes,
-    isLoading: purchaseReturnProductLoading,
-    isError: purchaseReturnProductError,
-    error: purchaseReturnProductErrObj,
-  } = useGetAllPurchaseReturnProductWithoutQueryQuery();
-
-  const purchaseReturnProduct = purchaseReturnProductRes?.data || [];
-
-  // ✅ totals
-  const totalPurchaseReturnProductAmount = useMemo(() => {
-    return purchaseReturnProduct.reduce(
-      (sum, item) => sum + Number(item?.quantity || 0),
-      0
-    );
-  }, [purchaseReturnProduct]);
-
-  if (purchaseReturnProductError)
-    console.error("Purchase error:", purchaseReturnProductErrObj);
   return (
     <motion.div
       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
@@ -317,9 +297,7 @@ const PurchaseReturnProductTable = () => {
           </div>
 
           <span className="text-white font-semibold tabular-nums">
-            {purchaseReturnProductLoading
-              ? "Loading..."
-              : totalPurchaseReturnProductAmount.toFixed(2)}
+            {isLoading ? "Loading..." : data?.meta?.totalQuantity}
           </span>
         </div>
       </div>
@@ -375,6 +353,9 @@ const PurchaseReturnProductTable = () => {
           <thead>
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Product
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -400,6 +381,11 @@ const PurchaseReturnProductTable = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
+                  {rp.createdAt
+                    ? new Date(rp.createdAt).toLocaleDateString()
+                    : "-"}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
                   {resolveProductName(rp)}
                 </td>
@@ -502,7 +488,7 @@ const PurchaseReturnProductTable = () => {
                 options={productDropdownOptions}
                 value={
                   productDropdownOptions.find(
-                    (o) => o.value === String(currentProduct?.productId)
+                    (o) => o.value === String(currentProduct?.productId),
                   ) || null
                 }
                 onChange={(selected) =>
@@ -572,7 +558,7 @@ const PurchaseReturnProductTable = () => {
                   options={productDropdownOptions}
                   value={
                     productDropdownOptions.find(
-                      (o) => o.value === String(createProduct.productId)
+                      (o) => o.value === String(createProduct.productId),
                     ) || null
                   }
                   onChange={(selected) =>

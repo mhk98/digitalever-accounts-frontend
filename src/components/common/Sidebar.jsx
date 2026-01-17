@@ -124,6 +124,12 @@ const SIDEBAR_ITEMS = [
     roles: ["superAdmin", "admin", "inventor"],
     children: [
       {
+        name: "Supplier",
+        icon: Package,
+        href: "/supplier",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
         name: "Product",
         icon: Package,
         href: "/products",
@@ -318,7 +324,7 @@ const Sidebar = () => {
                   </>
                 )}
               </div>
-            )
+            ),
           )}
         </nav>
       </div>

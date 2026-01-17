@@ -8,7 +8,6 @@ import { useGetAllProductWithoutQueryQuery } from "../../features/product/produc
 import {
   useDeleteReceivedProductMutation,
   useGetAllReceivedProductQuery,
-  useGetAllReceivedProductWithoutQueryQuery,
   useInsertReceivedProductMutation,
   useUpdateReceivedProductMutation,
 } from "../../features/receivedProduct/receivedProduct";
@@ -23,8 +22,10 @@ const ReceivedProductTable = () => {
   const [createProduct, setCreateProduct] = useState({
     productId: "",
     quantity: "",
-    company_name: "",
   });
+
+  console.log("currentProduct", currentProduct);
+  console.log("createProduct", createProduct);
 
   const [products, setProducts] = useState([]);
 
@@ -161,7 +162,7 @@ const ReceivedProductTable = () => {
       ...rp,
       productId: rp.productId ? String(rp.productId) : "",
       quantity: rp.quantity ?? "",
-      company_name: rp.company_name ?? "",
+      supplier: rp.supplier ?? "",
     });
     setIsModalOpen(true);
   };
@@ -188,7 +189,8 @@ const ReceivedProductTable = () => {
       if (res.success) {
         toast.success("Successfully created received product");
         setIsModalOpen1(false);
-        setCreateProduct({ productId: "", quantity: "" });
+        setCreateProduct({ productId: "", quantity: "", supplier: "" });
+
         refetch?.();
       }
     } catch (err) {
@@ -200,15 +202,6 @@ const ReceivedProductTable = () => {
   const [updateReceivedProduct] = useUpdateReceivedProductMutation();
 
   const handleUpdateProduct = async () => {
-    if (!currentProduct?.productId)
-      return toast.error("Please select a product");
-
-    if (!currentProduct?.quantity || Number(currentProduct.quantity) <= 0)
-      return toast.error("Please enter a valid quantity");
-
-    if (!currentProduct?.company_name || currentProduct.company_name)
-      return toast.error("Please enter Company Name");
-
     try {
       const updatedProduct = {
         productId: Number(currentProduct.productId), // ✅ UPDATE uses Id
@@ -273,28 +266,8 @@ const ReceivedProductTable = () => {
 
   const handleNextSet = () =>
     setStartPage((prev) =>
-      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
-
-  const {
-    data: receivedProductRes,
-    isLoading: receivedProductLoading,
-    isError: receivedProductError,
-    error: receivedProductErrObj,
-  } = useGetAllReceivedProductWithoutQueryQuery();
-
-  const receivedProduct = receivedProductRes?.data || [];
-
-  // ✅ totals
-  const totalReceivedProductAmount = useMemo(() => {
-    return receivedProduct.reduce(
-      (sum, item) => sum + Number(item?.quantity || 0),
-      0
-    );
-  }, [receivedProduct]);
-
-  if (receivedProductError)
-    console.error("Purchase error:", receivedProductErrObj);
 
   return (
     <motion.div
@@ -320,9 +293,7 @@ const ReceivedProductTable = () => {
           </div>
 
           <span className="text-white font-semibold tabular-nums">
-            {receivedProductLoading
-              ? "Loading..."
-              : totalReceivedProductAmount.toFixed(2)}
+            {isLoading ? "Loading..." : data?.meta?.totalQuantity}
           </span>
         </div>
       </div>
@@ -381,7 +352,7 @@ const ReceivedProductTable = () => {
                 Date
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Company Name
+                Supplier
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Product
@@ -415,7 +386,7 @@ const ReceivedProductTable = () => {
                     : "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
-                  {rp.company_name}
+                  {rp.supplier}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
                   {resolveProductName(rp)}
@@ -519,7 +490,7 @@ const ReceivedProductTable = () => {
                 options={productDropdownOptions}
                 value={
                   productDropdownOptions.find(
-                    (o) => o.value === String(currentProduct?.productId)
+                    (o) => o.value === String(currentProduct?.productId),
                   ) || null
                 }
                 onChange={(selected) =>
@@ -532,21 +503,6 @@ const ReceivedProductTable = () => {
                 isClearable
                 className="text-black w-full"
                 isDisabled={isLoadingAllProducts}
-              />
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-white">Company Name:</label>
-              <input
-                type="text"
-                value={currentProduct?.company_name || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    company_name: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
               />
             </div>
 
@@ -604,7 +560,7 @@ const ReceivedProductTable = () => {
                   options={productDropdownOptions}
                   value={
                     productDropdownOptions.find(
-                      (o) => o.value === String(createProduct.productId)
+                      (o) => o.value === String(createProduct.productId),
                     ) || null
                   }
                   onChange={(selected) =>
@@ -617,23 +573,6 @@ const ReceivedProductTable = () => {
                   isClearable
                   className="text-black w-full"
                   isDisabled={isLoadingAllProducts}
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-white">
-                  Company Name:
-                </label>
-                <input
-                  type="text"
-                  value={createProduct?.company_name || ""}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...createProduct,
-                      company_name: e.target.value,
-                    })
-                  }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
                 />
               </div>
 

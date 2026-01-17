@@ -1,16 +1,15 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { BookOpen, Pencil, Plus, Search, Trash2 } from "lucide-react";
-import {
-  useDeleteBookMutation,
-  useGetAllBookQuery,
-  useInsertBookMutation,
-  useUpdateBookMutation,
-} from "../../features/book/book";
+import { LucideTruck, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
+import {
+  useDeleteSupplierMutation,
+  useGetAllSupplierQuery,
+  useInsertSupplierMutation,
+  useUpdateSupplierMutation,
+} from "../../features/supplier/supplier";
 
-const AccountingTable = () => {
+const SupplierTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
   const [isModalOpen1, setIsModalOpen1] = useState(false); // Add modal
 
@@ -47,19 +46,17 @@ const AccountingTable = () => {
   //     [currentPage, itemsPerPage, name]
   //   );
 
-  const { data, isLoading, isError, error, refetch } = useGetAllBookQuery({
+  const { data, isLoading, isError, error, refetch } = useGetAllSupplierQuery({
     page: currentPage,
     limit: itemsPerPage,
     searchTerm: name || undefined,
   });
 
-  const books = data?.data ?? [];
-
-  console.log("books", books);
+  const suppliers = data?.data ?? [];
 
   useEffect(() => {
     if (isError) {
-      console.error("Error fetching book data", error);
+      console.error("Error fetching supplier data", error);
     } else if (!isLoading && data?.meta?.total != null) {
       setTotalPages(Math.max(1, Math.ceil(data.meta.total / itemsPerPage)));
     }
@@ -68,26 +65,26 @@ const AccountingTable = () => {
   const handleModalClose = () => setIsModalOpen(false);
   const handleModalClose1 = () => setIsModalOpen1(false);
 
-  const handleEditBook = (item) => {
+  const handleEditSupplier = (item) => {
     setCurrentProduct(item);
     setIsModalOpen(true);
   };
 
-  const handleAddBook = () => {
+  const handleAddSupplier = () => {
     setCreateProduct({ name: "" });
     setIsModalOpen1(true);
   };
 
   // Create
-  const [insertBook] = useInsertBookMutation();
-  const handleCreateBook = async (e) => {
+  const [insertSupplier] = useInsertSupplierMutation();
+  const handleCreateSupplier = async (e) => {
     e.preventDefault();
     try {
       const payload = { name: createProduct.name };
 
-      const res = await insertBook(payload).unwrap();
+      const res = await insertSupplier(payload).unwrap();
       if (res?.success) {
-        toast.success("Successfully created book");
+        toast.success("Successfully created supplier");
         setIsModalOpen1(false);
         setCreateProduct({ name: "" });
         refetch?.();
@@ -100,20 +97,20 @@ const AccountingTable = () => {
   };
 
   // Update
-  const [updateBook] = useUpdateBookMutation();
-  const handleUpdateBook = async () => {
-    if (!currentProduct?.Id) return toast.error("Invalid book selected!");
+  const [updateSupplier] = useUpdateSupplierMutation();
+  const handleUpdateSupplier = async () => {
+    if (!currentProduct?.Id) return toast.error("Invalid supplier selected!");
 
     try {
       const updated = { name: currentProduct.name || "" };
 
-      const res = await updateBook({
+      const res = await updateSupplier({
         id: currentProduct.Id,
         data: updated,
       }).unwrap();
 
       if (res?.success) {
-        toast.success("Successfully updated book!");
+        toast.success("Successfully updated supplier!");
         setIsModalOpen(false);
         setCurrentProduct(null);
         refetch?.();
@@ -126,15 +123,17 @@ const AccountingTable = () => {
   };
 
   // Delete
-  const [deleteBook] = useDeleteBookMutation();
-  const handleDeleteBook = async (id) => {
-    const confirmDelete = window.confirm("Do you want to delete this book?");
+  const [deleteSupplier] = useDeleteSupplierMutation();
+  const handleDeleteSupplier = async (id) => {
+    const confirmDelete = window.confirm(
+      "Do you want to delete this supplier?",
+    );
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {
-      const res = await deleteBook(id).unwrap();
+      const res = await deleteSupplier(id).unwrap();
       if (res?.success) {
-        toast.success("Book deleted successfully!");
+        toast.success("Supplier deleted successfully!");
         refetch?.();
       } else {
         toast.error("Delete failed!");
@@ -177,7 +176,7 @@ const AccountingTable = () => {
               setCurrentPage(1);
               setStartPage(1);
             }}
-            placeholder="Search by book name..."
+            placeholder="Search by supplier name..."
             className="w-full rounded-md border border-gray-200 bg-white px-4 py-3 pr-12 text-sm text-gray-700 outline-none focus:border-gray-300"
           />
           <Search
@@ -188,46 +187,45 @@ const AccountingTable = () => {
 
         {/* Add button */}
         <button
-          onClick={handleAddBook}
+          onClick={handleAddSupplier}
           type="button"
           className="ml-6 inline-flex h-11 w-[320px] items-center justify-center gap-2 rounded bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700"
         >
           <Plus size={18} />
-          Add New Book
+          Add New Supplier
         </button>
       </div>
 
       {/* List */}
       <div className="mt-10">
-        {books.map((item) => (
+        {suppliers.map((item) => (
           <div
-            key={item.id}
+            key={item.Id}
             className="flex items-center justify-between border-b border-gray-100 py-6"
           >
             {/* Left */}
-            <Link to={`/book/${item.Id}`}>
-              <div className="flex items-center gap-5">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-50">
-                  <BookOpen className="text-indigo-600" size={18} />
-                </div>
 
-                <div>
-                  <div className="text-[16px] font-semibold text-white">
-                    {item.name}
-                  </div>
-                  <div className="mt-1 text-sm text-white">
-                    {item.createdAt
-                      ? new Date(item.createdAt).toLocaleDateString()
-                      : "-"}
-                  </div>
-                </div>
+            <div className="flex items-center gap-5">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-50">
+                <LucideTruck className="text-indigo-600" size={18} />
               </div>
-            </Link>
+
+              <div>
+                <div className="text-[16px] font-semibold text-white">
+                  {item.name}
+                </div>
+                {/* <div className="mt-1 text-sm text-white">
+                  {item.createdAt
+                    ? new Date(item.createdAt).toLocaleDateString()
+                    : "-"}
+                </div> */}
+              </div>
+            </div>
 
             {/* Right */}
             <div className="flex items-center gap-4 pr-2">
               <button
-                onClick={() => handleEditBook(item)}
+                onClick={() => handleEditSupplier(item)}
                 type="button"
                 className="inline-flex h-9 w-9 items-center justify-center rounded hover:bg-gray-50"
                 title="Edit"
@@ -236,7 +234,7 @@ const AccountingTable = () => {
               </button>
 
               <button
-                onClick={() => handleDeleteBook(item.Id)}
+                onClick={() => handleDeleteSupplier(item.Id)}
                 type="button"
                 className="inline-flex h-9 w-9 items-center justify-center rounded hover:bg-gray-50"
                 title="Delete"
@@ -247,7 +245,7 @@ const AccountingTable = () => {
           </div>
         ))}
 
-        {!isLoading && books.length === 0 && (
+        {!isLoading && suppliers.length === 0 && (
           <div className="py-10 text-sm text-gray-500">No data found</div>
         )}
       </div>
@@ -297,10 +295,12 @@ const AccountingTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">Rename Book</h2>
+            <h2 className="text-lg font-semibold text-white">
+              Rename Supplier
+            </h2>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Book Name</label>
+              <label className="block text-sm text-white">Supplier Name</label>
               <input
                 type="text"
                 value={currentProduct?.name || ""}
@@ -317,7 +317,7 @@ const AccountingTable = () => {
             <div className="mt-6 flex justify-end">
               <button
                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
-                onClick={handleUpdateBook}
+                onClick={handleUpdateSupplier}
               >
                 Save
               </button>
@@ -341,11 +341,13 @@ const AccountingTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">Add Book</h2>
+            <h2 className="text-lg font-semibold text-white">Add Supplier</h2>
 
-            <form onSubmit={handleCreateBook}>
+            <form onSubmit={handleCreateSupplier}>
               <div className="mt-4">
-                <label className="block text-sm text-white">Book Name</label>
+                <label className="block text-sm text-white">
+                  Supplier Name
+                </label>
                 <input
                   type="text"
                   value={createProduct.name}
@@ -378,4 +380,4 @@ const AccountingTable = () => {
   );
 };
 
-export default AccountingTable;
+export default SupplierTable;
