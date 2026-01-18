@@ -76,7 +76,7 @@ const GoogleTable = () => {
       console.error("Error fetching meta data", error);
     } else if (!isLoading && data) {
       const onlyGoogle = (data.data || []).filter(
-        (item) => item.platform === "Google"
+        (item) => item.platform === "Google",
       );
       setProducts(onlyGoogle);
       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
@@ -189,7 +189,7 @@ const GoogleTable = () => {
     setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
   const handleNextSet = () =>
     setStartPage((prev) =>
-      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
   const {
@@ -427,7 +427,7 @@ const GoogleTable = () => {
             transition={{ duration: 0.3 }}
           >
             <h2 className="text-lg font-semibold text-white">
-              Add Meta Expense
+              Add Google Expense
             </h2>
 
             <form onSubmit={handleCreateProduct}>

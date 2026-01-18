@@ -92,7 +92,7 @@ const AssetsPurchaseTable = () => {
       endDate: endDate || undefined,
       name: name || undefined, // ✅ send Id
     }),
-    [currentPage, itemsPerPage, startDate, endDate, name]
+    [currentPage, itemsPerPage, startDate, endDate, name],
   );
 
   const { data, isLoading, isError, error, refetch } =
@@ -225,7 +225,7 @@ const AssetsPurchaseTable = () => {
 
   const handleNextSet = () =>
     setStartPage((prev) =>
-      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
   // ✅ Select options use Id as value, show name as label
@@ -233,22 +233,6 @@ const AssetsPurchaseTable = () => {
     value: p.name,
     label: p.name,
   }));
-
-  const {
-    data: purchaseRes,
-    isLoading: purchaseLoading,
-    isError: purchaseError,
-    error: purchaseErrObj,
-  } = useGetAllAssetsPurchaseWithoutQueryQuery();
-
-  const purchases = purchaseRes?.data || [];
-
-  // ✅ totals
-  const totalPurchaseAmount = useMemo(() => {
-    return purchases.reduce((sum, item) => sum + Number(item?.total || 0), 0);
-  }, [purchases]);
-
-  if (purchaseError) console.error("Purchase error:", purchaseErrObj);
 
   return (
     <motion.div
@@ -273,7 +257,7 @@ const AssetsPurchaseTable = () => {
           </div>
 
           <span className="text-white font-semibold tabular-nums">
-            {purchaseLoading ? "Loading..." : totalPurchaseAmount.toFixed(2)}
+            {isLoading ? "Loading..." : data?.meta?.totalQuantity}
           </span>
         </div>
       </div>

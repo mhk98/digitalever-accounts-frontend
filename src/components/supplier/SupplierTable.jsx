@@ -54,6 +54,8 @@ const SupplierTable = () => {
 
   const suppliers = data?.data ?? [];
 
+  console.log("suppliers", suppliers);
+
   useEffect(() => {
     if (isError) {
       console.error("Error fetching supplier data", error);

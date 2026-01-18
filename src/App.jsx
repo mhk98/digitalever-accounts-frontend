@@ -30,6 +30,7 @@ import UsermanagementPage from "./pages/UsermanagementPage";
 import PettyCashPage from "./pages/PettyCashPage";
 import AssetsDamagePage from "./pages/AssetsDamagePage";
 import SupplierPage from "./pages/SupplierPage";
+import DamageProductPage from "./pages/DamageProductPage";
 
 function App() {
   return (
@@ -102,6 +103,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <PurchaseReturnProductPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/damage-product"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <DamageProductPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

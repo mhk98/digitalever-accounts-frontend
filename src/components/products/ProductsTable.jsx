@@ -280,7 +280,10 @@ const ProductsTable = () => {
           <thead>
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Name
+                Product
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Supplier
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Purchase
@@ -304,6 +307,9 @@ const ProductsTable = () => {
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
                   {product.name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
+                  {product.supplier}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {Number(product.purchase_price || 0).toFixed(2)}

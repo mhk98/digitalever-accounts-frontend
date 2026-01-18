@@ -8,7 +8,6 @@ import { useGetAllAssetsPurchaseWithoutQueryQuery } from "../../features/assetsP
 import {
   useDeleteAssetsSaleMutation,
   useGetAllAssetsSaleQuery,
-  useGetAllAssetsSaleWithoutQueryQuery,
   useInsertAssetsSaleMutation,
   useUpdateAssetsSaleMutation,
 } from "../../features/assetsSale/assetsSale";
@@ -263,29 +262,12 @@ const AssetsSaleTable = () => {
     setStartPage((p) => Math.max(p - pagesPerSet, 1));
   const handleNextSet = () =>
     setStartPage((p) =>
-      Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+      Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
   // ✅ totals (purchase total quantity)
 
-  const {
-    data: assetsSaleProductRes,
-    isLoading: assetsSaleLoading,
-    isError: assetsSaleError,
-    error: assetsSaleErrObj,
-  } = useGetAllAssetsSaleWithoutQueryQuery();
-
-  const assetsSaleProduct = assetsSaleProductRes?.data || [];
-
   // ✅ totals
-  const totalAssetsSaleAmount = useMemo(() => {
-    return assetsSaleProduct.reduce(
-      (sum, item) => sum + Number(item?.total || 0),
-      0
-    );
-  }, [assetsSaleProduct]);
-
-  if (assetsSaleError) console.error("Purchase error:", assetsSaleErrObj);
 
   return (
     <motion.div
@@ -307,13 +289,11 @@ const AssetsSaleTable = () => {
         <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
           <div className="flex items-center gap-2 text-gray-300">
             <ShoppingBasket size={18} className="text-amber-400" />
-            <span className="text-sm">Total Purchase</span>
+            <span className="text-sm">Total Sale</span>
           </div>
 
           <span className="text-white font-semibold tabular-nums">
-            {assetsSaleLoading
-              ? "Loading..."
-              : totalAssetsSaleAmount.toFixed(2)}
+            {isLoading ? "Loading..." : data?.meta?.totalQuantity}
           </span>
         </div>
       </div>
@@ -347,7 +327,7 @@ const AssetsSaleTable = () => {
             value={
               filterProductName
                 ? productDropdownOptions.find(
-                    (o) => o.label === filterProductName
+                    (o) => o.label === filterProductName,
                   )
                 : null
             }
@@ -391,7 +371,7 @@ const AssetsSaleTable = () => {
             {products.map((row) => {
               const rowId = row.Id ?? row.id;
               const total = Number(
-                row.total ?? Number(row.quantity || 0) * Number(row.price || 0)
+                row.total ?? Number(row.quantity || 0) * Number(row.price || 0),
               );
 
               return (
@@ -503,7 +483,7 @@ const AssetsSaleTable = () => {
                 value={
                   currentProduct.productId
                     ? productDropdownOptions.find(
-                        (o) => o.value === String(currentProduct.productId)
+                        (o) => o.value === String(currentProduct.productId),
                       )
                     : null
                 }
@@ -585,7 +565,7 @@ const AssetsSaleTable = () => {
                   value={
                     createProduct.productId
                       ? productDropdownOptions.find(
-                          (o) => o.value === String(createProduct.productId)
+                          (o) => o.value === String(createProduct.productId),
                         )
                       : null
                   }

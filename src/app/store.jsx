@@ -20,7 +20,8 @@ import { overviewApi } from "../features/overview/overview";
 import { assetsSaleApi } from "../features/assetsSale/assetsSale";
 import { assetsDamageApi } from "../features/assetsDamage/assetsDamage";
 import { supplierApi } from "../features/supplier/supplier";
-import { CategoryApi } from "../features/category/category";
+import { categoryApi } from "../features/category/category";
+import { damageProductApi } from "../features/damageProduct/damageProduct";
 
 const store = configureStore({
   reducer: {
@@ -29,6 +30,7 @@ const store = configureStore({
     [inTransitProductApi.reducerPath]: inTransitProductApi.reducer,
     [returnProductApi.reducerPath]: returnProductApi.reducer,
     [purchaseReturnProductApi.reducerPath]: purchaseReturnProductApi.reducer,
+    [damageProductApi.reducerPath]: damageProductApi.reducer,
     [confirmOrderApi.reducerPath]: confirmOrderApi.reducer,
     [metaApi.reducerPath]: metaApi.reducer,
     [assetsPurchaseApi.reducerPath]: assetsPurchaseApi.reducer,
@@ -39,7 +41,7 @@ const store = configureStore({
     [expenseApi.reducerPath]: expenseApi.reducer,
     [bookApi.reducerPath]: bookApi.reducer,
     [supplierApi.reducerPath]: supplierApi.reducer,
-    [CategoryApi.reducerPath]: CategoryApi.reducer,
+    [categoryApi.reducerPath]: categoryApi.reducer,
     [receiveableApi.reducerPath]: receiveableApi.reducer,
     [payableApi.reducerPath]: payableApi.reducer,
     [overviewApi.reducerPath]: overviewApi.reducer,
@@ -55,6 +57,7 @@ const store = configureStore({
       inTransitProductApi.middleware,
       returnProductApi.middleware,
       purchaseReturnProductApi.middleware,
+      damageProductApi.middleware,
       confirmOrderApi.middleware,
       metaApi.middleware,
       assetsPurchaseApi.middleware,
@@ -65,7 +68,7 @@ const store = configureStore({
       expenseApi.middleware,
       bookApi.middleware,
       supplierApi.middleware,
-      CategoryApi.middleware,
+      categoryApi.middleware,
       receiveableApi.middleware,
       payableApi.middleware,
       overviewApi.middleware,

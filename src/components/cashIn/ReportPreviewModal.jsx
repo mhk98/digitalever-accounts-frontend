@@ -68,7 +68,7 @@ const ReportPreviewModal = ({
           </div> */}
 
           {/* Top Bar */}
-          <div className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-900">
+          <div className="sticky top-14 z-50 flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-900">
             <div className="text-white font-semibold text-sm md:text-base truncate max-w-[60%]">
               {type === "sheet" ? title : "PDF Preview"}
             </div>
@@ -93,7 +93,7 @@ const ReportPreviewModal = ({
           </div>
 
           {/* Body */}
-          <div className="h-[75vh] w-full bg-gray-900">
+          <div className="h-[75vh] w-full bg-gray-900 mt-10">
             {loading && (
               <div className="h-full flex items-center justify-center text-white">
                 Generating report...

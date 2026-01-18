@@ -1,68 +1,56 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// Helper function to get the auth token (adjust the logic if needed)
+// Helper function to get the auth token
 const getAuthToken = () => {
-  return localStorage.getItem("token"); // Retrieve the token from localStorage or other storage
+  return localStorage.getItem("token"); // Modify this based on your token storage logic
 };
 
-export const CategoryApi = createApi({
-  reducerPath: "CategoryApi",
+export const categoryApi = createApi({
+  reducerPath: "categoryApi",
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:5000/api/v1/",
-
-    // Prepare headers to include Authorization token if present
     prepareHeaders: (headers) => {
-      const token = getAuthToken(); // Get the token from localStorage
+      const token = getAuthToken(); // Fetch the token
       if (token) {
-        headers.set("Authorization", `Bearer ${token}`); // Attach the token to the headers
+        // If the token exists, add it to the headers
+        headers.set("Authorization", `Bearer ${token}`);
       }
       return headers;
     },
   }),
 
-  tagTypes: ["Category"], // Define the tag type for cache management
+  tagTypes: ["category"], // Define the tag type for invalidation and refetching
   endpoints: (build) => ({
-    // Insert a new Category (POST request)
     insertCategory: build.mutation({
       query: (data) => ({
         url: "/category/create",
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["category"], // Invalidate the Category cache after insertion
+      invalidatesTags: ["category"], // Invalidate the Category tag after this mutation
     }),
 
-    // Delete a Category (DELETE request)
     deleteCategory: build.mutation({
       query: (id) => ({
         url: `/category/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["category"], // Invalidate the Category cache after deletion
+      invalidatesTags: ["category"], // Invalidate the Category tag after deletion
     }),
 
-    // Update Category details (PATCH request)
     updateCategory: build.mutation({
       query: ({ id, data }) => ({
         url: `/category/${id}`,
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["category"], // Invalidate the Category cache after update
-    }),
-
-    // Get a single Category (GET request)
-    getSingleCategory: build.query({
-      query: (id) => ({
-        url: `/category/${id}`,
-      }),
-      providesTags: ["category"], // Provides the 'Category' tag for caching and invalidation
+      invalidatesTags: ["category"], // Invalidate the Category tag after this mutation
     }),
 
     getAllCategory: build.query({
-      query: ({ page, limit, searchTerm }) => ({
+      query: ({ page = 1, limit = 200, startDate, endDate, name } = {}) => ({
         url: "/category",
-        params: { page, limit, searchTerm }, // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, name },
       }),
       providesTags: ["category"],
       refetchOnMountOrArgChange: true,
@@ -74,7 +62,6 @@ export const CategoryApi = createApi({
         url: "/category/all",
       }),
       providesTags: ["category"],
-
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
@@ -82,10 +69,9 @@ export const CategoryApi = createApi({
 });
 
 export const {
-  useInsertCategoryMutation,
   useGetAllCategoryQuery,
-  useGetSingleCategoryQuery,
+  useGetAllCategoryWithoutQueryQuery,
   useDeleteCategoryMutation,
   useUpdateCategoryMutation,
-  useGetAllCategoryWithoutQueryQuery,
-} = CategoryApi;
+  useInsertCategoryMutation,
+} = categoryApi;

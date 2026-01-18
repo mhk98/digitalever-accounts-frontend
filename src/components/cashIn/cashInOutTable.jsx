@@ -1228,6 +1228,8 @@ const CashInOutTable = () => {
     return merged;
   }, [categories]);
 
+  console.log("categories", categories);
+
   // ✅ Insert category mutation
   const [insertCategory, { isLoading: isAddingCategory }] =
     useInsertCategoryMutation();
@@ -1558,21 +1560,50 @@ const CashInOutTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <div className="my-6 flex items-center justify-between">
+      <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Left: Add button */}
         <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
+          className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition w-full sm:w-auto"
           onClick={handleAddProduct}
+          type="button"
         >
-          Add <Plus size={18} className="ms-2" />
+          Add <Plus size={18} className="ml-2" />
         </button>
 
-        <ReportMenu
-          isOpen={isReportMenuOpen}
-          setIsOpen={setIsReportMenuOpen}
-          onGoogleSheet={handleReportSheet}
-          onPdf={handleReportPdf}
-          disabled={isLoading || !id}
-        />
+        {/* Middle: Totals */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full sm:w-auto">
+          <div className="rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3">
+            <p className="text-xs text-gray-400">Total CashIn</p>
+            <p className="mt-1 text-lg font-semibold text-white tabular-nums">
+              {isLoading ? "Loading..." : data?.meta?.totalCashIn}
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3">
+            <p className="text-xs text-gray-400">Total CashOut</p>
+            <p className="mt-1 text-lg font-semibold text-white tabular-nums">
+              {isLoading ? "Loading..." : data?.meta?.totalCashOut}
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3">
+            <p className="text-xs text-gray-400">Net</p>
+            <p className="mt-1 text-lg font-semibold text-white tabular-nums">
+              {isLoading ? "Loading..." : data?.meta?.netBalance}
+            </p>
+          </div>
+        </div>
+
+        {/* Right: Report menu */}
+        <div className="flex justify-end">
+          <ReportMenu
+            isOpen={isReportMenuOpen}
+            setIsOpen={setIsReportMenuOpen}
+            onGoogleSheet={handleReportSheet}
+            onPdf={handleReportPdf}
+            disabled={isLoading || !id}
+          />
+        </div>
       </div>
 
       {/* Filters */}

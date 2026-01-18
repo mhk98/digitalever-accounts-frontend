@@ -166,6 +166,13 @@ export const cashInOutApi = createApi({
       // pollingInterval: 1000,
     }),
 
+    getSingleCashInOut: build.query({
+      query: (id) => ({
+        url: `/cash-in-out/${id}`,
+      }),
+      providesTags: ["cashInOut"], // Provides the 'supplier' tag for caching and invalidation
+    }),
+
     getAllCashInOutWithoutQuery: build.query({
       query: () => ({
         url: "/cash-in-out/all",
@@ -179,6 +186,7 @@ export const cashInOutApi = createApi({
 
 export const {
   useGetAllCashInOutQuery,
+  useGetSingleCashInOutQuery,
   useInsertCashInOutMutation,
   useUpdateCashInOutMutation,
   useDeleteCashInOutMutation,

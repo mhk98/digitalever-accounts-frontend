@@ -1,17 +1,17 @@
 // import { motion } from "framer-motion";
-// import { ClipboardCheck, Edit, Plus, Trash2 } from "lucide-react";
+// import { Edit, Plus, RotateCcw, Trash2 } from "lucide-react";
 // import { useEffect, useMemo, useState } from "react";
 // import toast from "react-hot-toast";
 // import Select from "react-select";
 // import {
-//   useDeleteConfirmOrderMutation,
-//   useGetAllConfirmOrderQuery,
-//   useInsertConfirmOrderMutation,
-//   useUpdateConfirmOrderMutation,
-// } from "../../features/confirmOrder/confirmOrder";
+//   useDeleteDamageProductMutation,
+//   useGetAllDamageProductQuery,
+//   useInsertDamageProductMutation,
+//   useUpdateDamageProductMutation,
+// } from "../../features/damageProduct/damageProduct";
 // import { useGetAllReceivedProductWithoutQueryQuery } from "../../features/receivedProduct/receivedProduct";
 
-// const ConfirmOrderTable = () => {
+// const DamageProductTable = () => {
 //   const [isModalOpen, setIsModalOpen] = useState(false);
 //   const [isModalOpen1, setIsModalOpen1] = useState(false);
 
@@ -136,7 +136,7 @@
 //   };
 
 //   const { data, isLoading, isError, error, refetch } =
-//     useGetAllConfirmOrderQuery(queryArgs);
+//     useGetAllDamageProductQuery(queryArgs);
 
 //   useEffect(() => {
 //     if (isError) {
@@ -165,7 +165,7 @@
 //   const handleModalClose = () => setIsModalOpen(false);
 
 //   // ✅ Insert
-//   const [insertConfirmOrder] = useInsertConfirmOrderMutation();
+//   const [insertDamageProduct] = useInsertDamageProductMutation();
 
 //   const handleCreateProduct = async (e) => {
 //     e.preventDefault();
@@ -180,7 +180,7 @@
 //         quantity: Number(createProduct.quantity),
 //       };
 
-//       const res = await insertConfirmOrder(payload).unwrap();
+//       const res = await insertDamageProduct(payload).unwrap();
 //       if (res.success) {
 //         toast.success("Successfully created received product");
 //         setIsModalOpen1(false);
@@ -193,7 +193,7 @@
 //   };
 
 //   // ✅ Update
-//   const [updateConfirmOrder] = useUpdateConfirmOrderMutation();
+//   const [updateDamageProduct] = useUpdateDamageProductMutation();
 
 //   const handleUpdateProduct = async () => {
 //     if (!currentProduct?.productId)
@@ -208,7 +208,7 @@
 //         quantity: Number(currentProduct.quantity),
 //       };
 
-//       const res = await updateConfirmOrder({
+//       const res = await updateDamageProduct({
 //         id: currentProduct.Id,
 //         data: updatedProduct,
 //       }).unwrap();
@@ -226,14 +226,14 @@
 //   };
 
 //   // ✅ Delete
-//   const [deleteConfirmOrder] = useDeleteConfirmOrderMutation();
+//   const [deleteDamageProduct] = useDeleteDamageProductMutation();
 
 //   const handleDeleteProduct = async (id) => {
 //     const confirmDelete = window.confirm("Do you want to delete this product?");
 //     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
 //     try {
-//       const res = await deleteConfirmOrder(id).unwrap();
+//       const res = await deleteDamageProduct(id).unwrap();
 //       if (res.success) {
 //         toast.success("Product deleted successfully!");
 //         refetch?.();
@@ -269,8 +269,6 @@
 //       Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
 //     );
 
-//   console.log("totalQuantity", data?.meta?.totalQuantity);
-
 //   return (
 //     <motion.div
 //       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
@@ -290,12 +288,12 @@
 
 //         <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
 //           <div className="flex items-center gap-2 text-gray-300">
-//             <ClipboardCheck size={18} className="text-amber-400" />
-//             <span className="text-sm">Total Confirm Order</span>
+//             <RotateCcw size={18} className="text-amber-400" />
+//             <span className="text-sm">Total Damage</span>
 //           </div>
 
 //           <span className="text-white font-semibold tabular-nums">
-//             {isLoading ? "Loading..." : data.meta.totalQuantity}
+//             {isLoading ? "Loading..." : data?.meta?.totalQuantity}
 //           </span>
 //         </div>
 //       </div>
@@ -551,7 +549,7 @@
 //             transition={{ duration: 0.3 }}
 //           >
 //             <h2 className="text-lg font-semibold text-white">
-//               Add Confirm Order
+//               Add Damage Product
 //             </h2>
 
 //             <form onSubmit={handleCreateProduct}>
@@ -617,7 +615,7 @@
 //   );
 // };
 
-// export default ConfirmOrderTable;
+// export default DamageProductTable;
 
 import { motion } from "framer-motion";
 import { Edit, Plus, RotateCcw, Trash2 } from "lucide-react";
@@ -627,11 +625,11 @@ import Select from "react-select";
 
 import { useGetAllReceivedProductWithoutQueryQuery } from "../../features/receivedProduct/receivedProduct";
 import {
-  useDeleteConfirmOrderMutation,
-  useGetAllConfirmOrderQuery,
-  useInsertConfirmOrderMutation,
-  useUpdateConfirmOrderMutation,
-} from "../../features/confirmOrder/confirmOrder";
+  useDeleteDamageProductMutation,
+  useGetAllDamageProductQuery,
+  useInsertDamageProductMutation,
+  useUpdateDamageProductMutation,
+} from "../../features/damageProduct/damageProduct";
 
 const PurchaseReturnProductTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -714,7 +712,7 @@ const PurchaseReturnProductTable = () => {
   };
 
   const { data, isLoading, isError, error, refetch } =
-    useGetAllConfirmOrderQuery(queryArgs);
+    useGetAllDamageProductQuery(queryArgs);
 
   useEffect(() => {
     if (isError) console.error("PurchaseReturn fetch error:", error);
@@ -757,9 +755,9 @@ const PurchaseReturnProductTable = () => {
   };
 
   // mutations
-  const [insertConfirmOrder] = useInsertConfirmOrderMutation();
-  const [updateConfirmOrder] = useUpdateConfirmOrderMutation();
-  const [deleteConfirmOrder] = useDeleteConfirmOrderMutation();
+  const [insertDamageProduct] = useInsertDamageProductMutation();
+  const [updateDamageProduct] = useUpdateDamageProductMutation();
+  const [deleteDamageProduct] = useDeleteDamageProductMutation();
 
   // ✅ create (send receivedId)
   const handleCreate = async (e) => {
@@ -775,7 +773,7 @@ const PurchaseReturnProductTable = () => {
         quantity: Number(createForm.quantity),
       };
 
-      const res = await insertConfirmOrder(payload).unwrap();
+      const res = await insertDamageProduct(payload).unwrap();
       if (res?.success) {
         toast.success("Created!");
         setCreateForm({ receivedId: "", quantity: "" });
@@ -800,7 +798,7 @@ const PurchaseReturnProductTable = () => {
         // receivedId: Number(currentItem.receivedId),
       };
 
-      const res = await updateConfirmOrder({
+      const res = await updateDamageProduct({
         id: currentItem.Id,
         data: payload,
       }).unwrap();
@@ -820,7 +818,7 @@ const PurchaseReturnProductTable = () => {
     if (!window.confirm("Do you want to delete this item?")) return;
 
     try {
-      const res = await deleteConfirmOrder(id).unwrap();
+      const res = await deleteDamageProduct(id).unwrap();
       if (res?.success) {
         toast.success("Deleted!");
         refetch?.();

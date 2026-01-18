@@ -165,6 +165,12 @@ const SIDEBAR_ITEMS = [
         href: "/confirm-order",
         roles: ["superAdmin", "admin", "inventor"],
       },
+      {
+        name: "Damage Product",
+        icon: ClipboardCheck,
+        href: "/damage-product",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
     ],
   },
   {
