@@ -14,6 +14,9 @@ import {
 const AssetsPurchaseTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
+  const [isModalOpen2, setIsModalOpen2] = useState(false);
+
+  const role = localStorage.getItem("role");
 
   const [currentProduct, setCurrentProduct] = useState(null);
 
@@ -111,11 +114,23 @@ const AssetsPurchaseTable = () => {
   const handleModalClose = () => setIsModalOpen(false);
   const handleAddProduct = () => setIsModalOpen1(true);
   const handleModalClose1 = () => setIsModalOpen1(false);
+  const handleDeleteClose = () => setIsModalOpen2(false);
+
+  const handleDeleteClick = (product) => {
+    setCurrentProduct({
+      ...product,
+      note: product.note ?? "",
+      status: product.status ?? "",
+    });
+    setIsModalOpen2(true);
+  };
 
   const handleEditClick = (product) => {
     setCurrentProduct({
       ...product,
       price: product.price ?? "",
+      note: product.note ?? "",
+      status: product.status ?? "",
       quantity: product.quantity ?? "",
     });
     setIsModalOpen(true);
@@ -153,6 +168,34 @@ const AssetsPurchaseTable = () => {
 
   // Update
   const [updateAssetsPurchase] = useUpdateAssetsPurchaseMutation();
+
+  const handleUpdateDelete = async () => {
+    if (!currentProduct?.Id) return toast.error("Invalid item!");
+    if (currentProduct?.note === "" || currentProduct?.note === null)
+      return toast.error("Note is required!");
+
+    try {
+      const payload = {
+        note: currentProduct.note,
+      };
+
+      const res = await updateAssetsPurchase({
+        id: currentProduct.Id,
+        data: payload,
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success("Successfully updated product!");
+        setIsModalOpen(false);
+        refetch?.();
+      } else {
+        toast.error(res?.message || "Update failed!");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
+  };
+
   const handleUpdateProduct = async () => {
     if (!currentProduct?.Id) return toast.error("Invalid item!");
     if (!currentProduct?.name?.trim()) return toast.error("Name is required!");
@@ -166,6 +209,8 @@ const AssetsPurchaseTable = () => {
         name: currentProduct.name.trim(),
         quantity: Number(currentProduct.quantity),
         price: Number(currentProduct.price),
+        note: currentProduct.note,
+        status: currentProduct.status,
       };
 
       const res = await updateAssetsPurchase({
@@ -324,6 +369,12 @@ const AssetsPurchaseTable = () => {
                 Total Price
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Note
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -349,6 +400,12 @@ const AssetsPurchaseTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {Number(product.total || 0).toFixed(2)}
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {product.note}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {product.status}
+                </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
@@ -357,12 +414,22 @@ const AssetsPurchaseTable = () => {
                   >
                     <Edit size={18} />
                   </button>
-                  <button
-                    onClick={() => handleDeleteProduct(product.Id)}
-                    className="text-red-600 hover:text-red-900 ms-4"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+
+                  {role === "superAdmin" ? (
+                    <button
+                      onClick={() => handleDeleteProduct(product.Id)}
+                      className="text-red-600 hover:text-red-900 ms-4"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleDeleteClick(product)}
+                      className="text-red-600 hover:text-red-900 ms-4"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </td>
               </motion.tr>
             ))}
@@ -473,6 +540,43 @@ const AssetsPurchaseTable = () => {
                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
+            {role !== "superAdmin" && (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
+
+            {role === "superAdmin" && (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            )}
 
             <div className="mt-6 flex justify-end">
               <button
@@ -484,6 +588,72 @@ const AssetsPurchaseTable = () => {
               <button
                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
                 onClick={handleModalClose}
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {isModalOpen2 && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <motion.div
+            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h2 className="text-lg font-semibold text-white">
+              Edit Purchase Asset
+            </h2>
+
+            {role === "superAdmin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                onClick={handleUpdateDelete}
+              >
+                Save
+              </button>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                onClick={handleDeleteClose}
               >
                 Cancel
               </button>

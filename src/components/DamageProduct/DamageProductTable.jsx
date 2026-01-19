@@ -745,6 +745,7 @@ const PurchaseReturnProductTable = () => {
   const openEdit = (rp) => {
     setCurrentItem({
       ...rp,
+      receivedId: String(rp.receivedId ?? rp.productId ?? ""),
       quantity: rp.quantity ?? "",
     });
     setIsEditOpen(true);
@@ -788,14 +789,14 @@ const PurchaseReturnProductTable = () => {
   // ✅ update (still send receivedId if backend supports, else remove receivedId)
   const handleUpdate = async () => {
     if (!currentItem?.Id) return toast.error("Invalid item");
+    if (!currentItem?.receivedId) return toast.error("Please select a product");
     if (!currentItem.quantity || Number(currentItem.quantity) <= 0)
       return toast.error("Please enter valid quantity");
 
     try {
       const payload = {
         quantity: Number(currentItem.quantity),
-        // ✅ If you add receivedId support in backend update, then send it too
-        // receivedId: Number(currentItem.receivedId),
+        receivedId: Number(currentItem.receivedId),
       };
 
       const res = await updateDamageProduct({
@@ -1064,7 +1065,29 @@ const PurchaseReturnProductTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <h2 className="text-lg font-semibold text-white">Edit</h2>
+            <h2 className="text-lg font-semibold text-white">Edit Product</h2>
+
+            <div className="mt-4">
+              <label className="block text-sm text-white">Name</label>
+              <Select
+                options={receivedDropdownOptions}
+                value={
+                  receivedDropdownOptions.find(
+                    (o) => o.value === String(currentItem.receivedId),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCurrentItem((p) => ({
+                    ...p,
+                    receivedId: selected?.value || "",
+                  }))
+                }
+                placeholder={receivedLoading ? "Loading..." : "Select Product"}
+                isClearable
+                className="text-black w-full"
+                isDisabled={receivedLoading}
+              />
+            </div>
 
             <div className="mt-4">
               <label className="block text-sm text-white">Quantity</label>
@@ -1106,11 +1129,11 @@ const PurchaseReturnProductTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <h2 className="text-lg font-semibold text-white">Add</h2>
+            <h2 className="text-lg font-semibold text-white">Add Product</h2>
 
             <form onSubmit={handleCreate}>
               <div className="mt-4">
-                <label className="block text-sm text-white">Product</label>
+                <label className="block text-sm text-white">Name</label>
                 <Select
                   options={receivedDropdownOptions}
                   value={

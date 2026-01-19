@@ -480,12 +480,10 @@ const ReceivedProductTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">
-              Edit Received Product
-            </h2>
+            <h2 className="text-lg font-semibold text-white">Edit Product</h2>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Product:</label>
+              <label className="block text-sm text-white">Name:</label>
               <Select
                 options={productDropdownOptions}
                 value={
@@ -549,13 +547,11 @@ const ReceivedProductTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">
-              Add Received Product
-            </h2>
+            <h2 className="text-lg font-semibold text-white">Add Product</h2>
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
-                <label className="block text-sm text-white">Product:</label>
+                <label className="block text-sm text-white">Name:</label>
                 <Select
                   options={productDropdownOptions}
                   value={
