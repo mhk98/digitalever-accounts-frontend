@@ -505,7 +505,7 @@ const MetaTable = () => {
       console.error("Error fetching meta data", error);
     } else if (!isLoading && data) {
       const onlyMeta = (data.data || []).filter(
-        (item) => item.platform === "Meta"
+        (item) => item.platform === "Meta",
       );
       setProducts(onlyMeta);
       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
@@ -516,12 +516,79 @@ const MetaTable = () => {
   const handleAddProduct = () => setIsModalOpen1(true);
   const handleModalClose1 = () => setIsModalOpen1(false);
 
+  const role = localStorage.getItem("role");
+  const [updateMeta] = useUpdateMetaMutation();
+  const [isModalOpen2, setIsModalOpen2] = useState(false);
+
+  const handleModalClose2 = () => setIsModalOpen2(false);
+
+  const handleEditClick1 = (rp) => {
+    setCurrentProduct({
+      ...rp,
+      note: rp.note ?? "",
+    });
+    setIsModalOpen2(true);
+  };
+
+  const handleUpdateProduct1 = async () => {
+    if (!currentProduct?.Id) return toast.error("Invalid item!");
+    if (currentProduct?.note === "" || currentProduct?.note === null)
+      return toast.error("Note is required!");
+
+    try {
+      const payload = {
+        note: currentProduct.note,
+      };
+
+      const res = await updateMeta({
+        id: currentProduct.Id,
+        data: payload,
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success("Successfully updated product!");
+        setIsModalOpen(false);
+        refetch?.();
+      } else {
+        toast.error(res?.message || "Update failed!");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
+  };
+
   const handleEditClick = (rp) => {
     setCurrentProduct({
       ...rp,
       amount: rp.amount ?? "",
     });
     setIsModalOpen(true);
+  };
+
+  const handleUpdateProduct = async () => {
+    if (!currentProduct?.Id) return toast.error("Invalid item!");
+    if (currentProduct?.note === "") return toast.error("Note is required!");
+    try {
+      const payload = {
+        amount: Number(currentProduct.amount),
+        note: currentProduct.note,
+      };
+
+      const res = await updateMeta({
+        id: currentProduct.Id,
+        data: payload,
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success("Successfully updated!");
+        setIsModalOpen(false);
+        refetch?.();
+      } else {
+        toast.error(res?.message || "Update failed!");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
   };
 
   const handleModalClose = () => setIsModalOpen(false);
@@ -550,33 +617,6 @@ const MetaTable = () => {
       }
     } catch (err) {
       toast.error(err?.data?.message || "Create failed!");
-    }
-  };
-
-  // ✅ Update
-  const [updateMeta] = useUpdateMetaMutation();
-  const handleUpdateProduct = async () => {
-    if (!currentProduct?.Id) return toast.error("Invalid item!");
-
-    try {
-      const payload = {
-        amount: Number(currentProduct.amount),
-      };
-
-      const res = await updateMeta({
-        id: currentProduct.Id,
-        data: payload,
-      }).unwrap();
-
-      if (res?.success) {
-        toast.success("Successfully updated!");
-        setIsModalOpen(false);
-        refetch?.();
-      } else {
-        toast.error(res?.message || "Update failed!");
-      }
-    } catch (err) {
-      toast.error(err?.data?.message || "Update failed!");
     }
   };
 
@@ -618,7 +658,7 @@ const MetaTable = () => {
     setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
   const handleNextSet = () =>
     setStartPage((prev) =>
-      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
   const {
@@ -710,6 +750,12 @@ const MetaTable = () => {
                 Amount
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Note
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -731,6 +777,12 @@ const MetaTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {Number(rp.amount || 0).toFixed(2)}
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {rp.note}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {rp.status}
+                </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
@@ -739,12 +791,21 @@ const MetaTable = () => {
                   >
                     <Edit size={18} />
                   </button>
-                  <button
-                    onClick={() => handleDeleteProduct(rp.Id)}
-                    className="text-red-600 hover:text-red-900 ms-4"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  {role === "superAdmin" || rp.status === "Approved" ? (
+                    <button
+                      onClick={() => handleDeleteProduct(rp.Id)}
+                      className="text-red-600 hover:text-red-900 ms-4"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleEditClick1(rp)}
+                      className="text-red-600 hover:text-red-900 ms-4"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </td>
               </motion.tr>
             ))}
@@ -828,6 +889,42 @@ const MetaTable = () => {
               />
             </div>
 
+            {role === "superAdmin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
+
             <div className="mt-6 flex justify-end">
               <button
                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
@@ -893,6 +990,74 @@ const MetaTable = () => {
                 </button>
               </div>
             </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+
+      {isModalOpen2 && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <motion.div
+            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h2 className="text-lg font-semibold text-white">
+              Delete Meta Expense
+            </h2>
+
+            {role === "superAdmin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                onClick={handleUpdateProduct1}
+              >
+                Save
+              </button>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                onClick={handleModalClose2}
+              >
+                Cancel
+              </button>
+            </div>
           </motion.div>
         </div>
       )}

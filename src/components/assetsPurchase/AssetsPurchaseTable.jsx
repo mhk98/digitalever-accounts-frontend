@@ -415,12 +415,12 @@ const AssetsPurchaseTable = () => {
                     <Edit size={18} />
                   </button>
 
-                  {role === "superAdmin" ? (
+                  {role === "superAdmin" || product.status === "Approved" ? (
                     <button
                       onClick={() => handleDeleteProduct(product.Id)}
                       className="text-red-600 hover:text-red-900 ms-4"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={18} /> Delete
                     </button>
                   ) : (
                     <button
@@ -540,24 +540,8 @@ const AssetsPurchaseTable = () => {
                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
-            {role !== "superAdmin" && (
-              <div className="mt-4">
-                <label className="block text-sm text-white">Note:</label>
-                <textarea
-                  type="text"
-                  value={currentProduct?.note || ""}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      note: e.target.value,
-                    })
-                  }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
-                />
-              </div>
-            )}
 
-            {role === "superAdmin" && (
+            {role === "superAdmin" ? (
               <div className="mt-4">
                 <label className="block text-sm text-white">Status</label>
                 <select
@@ -575,6 +559,21 @@ const AssetsPurchaseTable = () => {
                   <option value="Approved">Approved</option>
                   <option value="Pending">Pending</option>
                 </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
               </div>
             )}
 

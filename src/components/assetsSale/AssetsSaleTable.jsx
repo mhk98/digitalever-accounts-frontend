@@ -17,6 +17,7 @@ const AssetsSaleTable = () => {
   const [isModalOpen1, setIsModalOpen1] = useState(false);
 
   const [currentProduct, setCurrentProduct] = useState(null);
+  const role = localStorage.getItem("role");
 
   // ✅ INSERT form
   const [createProduct, setCreateProduct] = useState({
@@ -138,7 +139,50 @@ const AssetsSaleTable = () => {
 
   // ✅ Modals
   const handleAddProduct = () => setIsModalOpen1(true);
+  const handleModalClose = () => setIsModalOpen(false);
   const handleModalClose1 = () => setIsModalOpen1(false);
+
+  const [updateAssetsSale] = useUpdateAssetsSaleMutation();
+
+  const [isModalOpen2, setIsModalOpen2] = useState(false);
+
+  const handleModalClose2 = () => setIsModalOpen2(false);
+
+  const handleEditClick1 = (row) => {
+    setCurrentProduct({
+      ...row,
+      note: row.note ?? "",
+      status: row.status ?? "",
+    });
+    setIsModalOpen2(true);
+  };
+
+  const handleUpdateProduct1 = async () => {
+    if (!currentProduct?.Id) return toast.error("Invalid item!");
+    if (currentProduct?.note === "" || currentProduct?.note === null)
+      return toast.error("Note is required!");
+
+    try {
+      const payload = {
+        note: currentProduct.note,
+      };
+
+      const res = await updateAssetsSale({
+        id: currentProduct.Id,
+        data: payload,
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success("Successfully updated product!");
+        setIsModalOpen(false);
+        refetch?.();
+      } else {
+        toast.error(res?.message || "Update failed!");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
+  };
 
   const handleEditClick = (row) => {
     setCurrentProduct({
@@ -149,8 +193,41 @@ const AssetsSaleTable = () => {
     });
     setIsModalOpen(true);
   };
+  const handleUpdateProduct = async () => {
+    const rowId = currentProduct?.Id ?? currentProduct?.id;
+    if (!rowId) return toast.error("Invalid row!");
+    if (!currentProduct?.productId)
+      return toast.error("Please select a product");
+    if (!currentProduct?.quantity || Number(currentProduct.quantity) <= 0)
+      return toast.error("Please enter a valid quantity");
+    if (currentProduct.price === "" || Number(currentProduct.price) < 0)
+      return toast.error("Please enter a valid price");
 
-  const handleModalClose = () => setIsModalOpen(false);
+    try {
+      const payload = {
+        productId: Number(currentProduct.productId),
+        quantity: Number(currentProduct.quantity),
+        note: currentProduct.note,
+        status: currentProduct.status,
+        price: Number(currentProduct.price),
+      };
+
+      const res = await updateAssetsSale({
+        id: rowId,
+        data: payload,
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success("Successfully updated!");
+        setIsModalOpen(false);
+        refetch?.();
+      } else {
+        toast.error(res?.message || "Update failed!");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
+  };
 
   // ✅ Insert
   const [insertAssetsSale] = useInsertAssetsSaleMutation();
@@ -183,43 +260,6 @@ const AssetsSaleTable = () => {
       }
     } catch (err) {
       toast.error(err?.data?.message || "Create failed!");
-    }
-  };
-
-  // ✅ Update
-  const [updateAssetsSale] = useUpdateAssetsSaleMutation();
-
-  const handleUpdateProduct = async () => {
-    const rowId = currentProduct?.Id ?? currentProduct?.id;
-    if (!rowId) return toast.error("Invalid row!");
-    if (!currentProduct?.productId)
-      return toast.error("Please select a product");
-    if (!currentProduct?.quantity || Number(currentProduct.quantity) <= 0)
-      return toast.error("Please enter a valid quantity");
-    if (currentProduct.price === "" || Number(currentProduct.price) < 0)
-      return toast.error("Please enter a valid price");
-
-    try {
-      const payload = {
-        productId: Number(currentProduct.productId),
-        quantity: Number(currentProduct.quantity),
-        price: Number(currentProduct.price),
-      };
-
-      const res = await updateAssetsSale({
-        id: rowId,
-        data: payload,
-      }).unwrap();
-
-      if (res?.success) {
-        toast.success("Successfully updated!");
-        setIsModalOpen(false);
-        refetch?.();
-      } else {
-        toast.error(res?.message || "Update failed!");
-      }
-    } catch (err) {
-      toast.error(err?.data?.message || "Update failed!");
     }
   };
 
@@ -404,12 +444,28 @@ const AssetsSaleTable = () => {
                     >
                       <Edit size={18} />
                     </button>
-                    <button
+                    {/* <button
                       onClick={() => handleDeleteProduct(rowId)}
                       className="text-red-600 hover:text-red-900 ms-4"
                     >
                       <Trash2 size={18} />
-                    </button>
+                    </button> */}
+
+                    {role === "superAdmin" || row.status === "Approved" ? (
+                      <button
+                        onClick={() => handleDeleteProduct(rowId)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleEditClick1(row)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </td>
                 </motion.tr>
               );
@@ -528,6 +584,42 @@ const AssetsSaleTable = () => {
               />
             </div>
 
+            {role === "superAdmin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
+
             <div className="mt-6 flex justify-end">
               <button
                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
@@ -629,6 +721,72 @@ const AssetsSaleTable = () => {
                 </button>
               </div>
             </form>
+          </motion.div>
+        </div>
+      )}
+
+      {isModalOpen2 && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <motion.div
+            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h2 className="text-lg font-semibold text-white">
+              Edit Purchase Asset
+            </h2>
+
+            {role === "superAdmin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                onClick={handleUpdateProduct1}
+              >
+                Save
+              </button>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                onClick={handleModalClose2}
+              >
+                Cancel
+              </button>
+            </div>
           </motion.div>
         </div>
       )}

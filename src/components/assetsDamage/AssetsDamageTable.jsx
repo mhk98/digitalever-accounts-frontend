@@ -15,6 +15,8 @@ import {
 const AssetsDamageTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
+  const [isModalOpen2, setIsModalOpen2] = useState(false);
+  const role = localStorage.getItem("role");
 
   const [currentProduct, setCurrentProduct] = useState(null);
 
@@ -141,7 +143,16 @@ const AssetsDamageTable = () => {
   // ✅ Modals
   const handleAddProduct = () => setIsModalOpen1(true);
   const handleModalClose1 = () => setIsModalOpen1(false);
+  const handleDeleteClose = () => setIsModalOpen2(false);
 
+  const handleDeleteClick = (row) => {
+    setCurrentProduct({
+      ...row,
+      note: row.note ?? "",
+      status: row.status ?? "",
+    });
+    setIsModalOpen2(true);
+  };
   const handleEditClick = (row) => {
     setCurrentProduct({
       ...row,
@@ -190,6 +201,33 @@ const AssetsDamageTable = () => {
 
   // ✅ Update
   const [updateAssetsDamage] = useUpdateAssetsDamageMutation();
+
+  const handleUpdateDelete = async () => {
+    if (!currentProduct?.Id) return toast.error("Invalid item!");
+    if (currentProduct?.note === "" || currentProduct?.note === null)
+      return toast.error("Note is required!");
+
+    try {
+      const payload = {
+        note: currentProduct.note,
+      };
+
+      const res = await updateAssetsDamage({
+        id: currentProduct.Id,
+        data: payload,
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success("Successfully updated product!");
+        setIsModalOpen(false);
+        refetch?.();
+      } else {
+        toast.error(res?.message || "Update failed!");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
+  };
 
   const handleUpdateProduct = async () => {
     const rowId = currentProduct?.Id ?? currentProduct?.id;
@@ -402,12 +440,29 @@ const AssetsDamageTable = () => {
                     >
                       <Edit size={18} />
                     </button>
-                    <button
+
+                    {/* <button
                       onClick={() => handleDeleteProduct(rowId)}
                       className="text-red-600 hover:text-red-900 ms-4"
                     >
                       <Trash2 size={18} />
-                    </button>
+                    </button> */}
+
+                    {role === "superAdmin" || row.status === "Approved" ? (
+                      <button
+                        onClick={() => handleDeleteProduct(rowId)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleDeleteClick(row)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </td>
                 </motion.tr>
               );
@@ -526,6 +581,42 @@ const AssetsDamageTable = () => {
               />
             </div>
 
+            {role === "superAdmin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
+
             <div className="mt-6 flex justify-end">
               <button
                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
@@ -627,6 +718,73 @@ const AssetsDamageTable = () => {
                 </button>
               </div>
             </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Edit Delete */}
+      {isModalOpen2 && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <motion.div
+            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h2 className="text-lg font-semibold text-white">
+              Edit Purchase Asset
+            </h2>
+
+            {role === "superAdmin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                onClick={handleUpdateDelete}
+              >
+                Save
+              </button>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                onClick={handleDeleteClose}
+              >
+                Cancel
+              </button>
+            </div>
           </motion.div>
         </div>
       )}
