@@ -151,6 +151,9 @@ const AssetsSaleTable = () => {
   const handleEditClick1 = (row) => {
     setCurrentProduct({
       ...row,
+      productId: String(row.productId ?? ""),
+      quantity: row.quantity ?? "",
+      price: row.price ?? "",
       note: row.note ?? "",
       status: row.status ?? "",
     });
@@ -164,7 +167,11 @@ const AssetsSaleTable = () => {
 
     try {
       const payload = {
+        productId: Number(currentProduct.productId),
+        quantity: Number(currentProduct.quantity),
         note: currentProduct.note,
+        status: currentProduct.status,
+        price: Number(currentProduct.price),
       };
 
       const res = await updateAssetsSale({
@@ -174,7 +181,7 @@ const AssetsSaleTable = () => {
 
       if (res?.success) {
         toast.success("Successfully updated product!");
-        setIsModalOpen(false);
+        setIsModalOpen2(false);
         refetch?.();
       } else {
         toast.error(res?.message || "Update failed!");
@@ -190,6 +197,8 @@ const AssetsSaleTable = () => {
       productId: String(row.productId ?? ""),
       quantity: row.quantity ?? "",
       price: row.price ?? "",
+      status: row.status ?? "",
+      note: row.note ?? "",
     });
     setIsModalOpen(true);
   };
@@ -402,6 +411,12 @@ const AssetsSaleTable = () => {
                 Total Price
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Note
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -435,6 +450,12 @@ const AssetsSaleTable = () => {
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {total.toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {row.note}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {row.status}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

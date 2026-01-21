@@ -15,6 +15,7 @@ import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supp
 const ProductsTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
+  const role = localStorage.getItem("role");
 
   const [currentProduct, setCurrentProduct] = useState(null);
 
@@ -318,20 +319,22 @@ const ProductsTable = () => {
                   {Number(product.sale_price || 0).toFixed(2)}
                 </td>
 
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => handleEditClick(product)}
-                    className="text-indigo-600 hover:text-indigo-900"
-                  >
-                    <Edit size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteProduct(product.Id)}
-                    className="text-red-600 hover:text-red-900 ms-4"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </td>
+                {(role === "superAdmin" || role === "admin") && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => handleEditClick(product)}
+                      className="text-indigo-600 hover:text-indigo-900"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProduct(product.Id)}
+                      className="text-red-600 hover:text-red-900 ms-4"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                )}
               </motion.tr>
             ))}
           </tbody>

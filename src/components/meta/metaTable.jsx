@@ -525,6 +525,8 @@ const MetaTable = () => {
   const handleEditClick1 = (rp) => {
     setCurrentProduct({
       ...rp,
+      amount: rp.amount ?? "",
+      status: rp.status ?? "",
       note: rp.note ?? "",
     });
     setIsModalOpen2(true);
@@ -537,7 +539,9 @@ const MetaTable = () => {
 
     try {
       const payload = {
+        amount: Number(currentProduct.amount),
         note: currentProduct.note,
+        status: currentProduct.status,
       };
 
       const res = await updateMeta({
@@ -547,7 +551,7 @@ const MetaTable = () => {
 
       if (res?.success) {
         toast.success("Successfully updated product!");
-        setIsModalOpen(false);
+        setIsModalOpen2(false);
         refetch?.();
       } else {
         toast.error(res?.message || "Update failed!");
@@ -561,6 +565,8 @@ const MetaTable = () => {
     setCurrentProduct({
       ...rp,
       amount: rp.amount ?? "",
+      status: rp.status ?? "",
+      note: rp.note ?? "",
     });
     setIsModalOpen(true);
   };
@@ -572,6 +578,7 @@ const MetaTable = () => {
       const payload = {
         amount: Number(currentProduct.amount),
         note: currentProduct.note,
+        status: currentProduct.status,
       };
 
       const res = await updateMeta({

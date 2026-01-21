@@ -14,7 +14,7 @@ import {
 const AssetsPurchaseTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
-  const [isModalOpen2, setIsModalOpen2] = useState(false);
+  // const [isModalOpen2, setIsModalOpen2] = useState(false);
 
   const role = localStorage.getItem("role");
 
@@ -114,15 +114,63 @@ const AssetsPurchaseTable = () => {
   const handleModalClose = () => setIsModalOpen(false);
   const handleAddProduct = () => setIsModalOpen1(true);
   const handleModalClose1 = () => setIsModalOpen1(false);
-  const handleDeleteClose = () => setIsModalOpen2(false);
+  // const handleDeleteClose = () => setIsModalOpen2(false);
 
-  const handleDeleteClick = (product) => {
+  // const handleDeleteClick = (product) => {
+  //   setCurrentProduct({
+  //     ...product,
+  //     note: product.note ?? "",
+  //     status: product.status ?? "",
+  //   });
+  //   setIsModalOpen2(true);
+  // };
+
+  const [updateAssetsPurchase] = useUpdateAssetsPurchaseMutation();
+
+  const [isModalOpen2, setIsModalOpen2] = useState(false);
+
+  const handleModalClose2 = () => setIsModalOpen2(false);
+
+  const handleEditClick1 = (product) => {
     setCurrentProduct({
       ...product,
+      price: product.price ?? "",
       note: product.note ?? "",
       status: product.status ?? "",
+      quantity: product.quantity ?? "",
     });
     setIsModalOpen2(true);
+  };
+
+  const handleUpdateProduct1 = async () => {
+    if (!currentProduct?.Id) return toast.error("Invalid item!");
+    if (currentProduct?.note === "" || currentProduct?.note === null)
+      return toast.error("Note is required!");
+
+    try {
+      const payload = {
+        name: currentProduct.name.trim(),
+        quantity: Number(currentProduct.quantity),
+        price: Number(currentProduct.price),
+        note: currentProduct.note,
+        status: currentProduct.status,
+      };
+
+      const res = await updateAssetsPurchase({
+        id: currentProduct.Id,
+        data: payload,
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success("Successfully updated product!");
+        setIsModalOpen2(false);
+        refetch?.();
+      } else {
+        toast.error(res?.message || "Update failed!");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
   };
 
   const handleEditClick = (product) => {
@@ -134,66 +182,6 @@ const AssetsPurchaseTable = () => {
       quantity: product.quantity ?? "",
     });
     setIsModalOpen(true);
-  };
-
-  // Insert
-  const [insertAssetsPurchase] = useInsertAssetsPurchaseMutation();
-  const handleCreateProduct = async (e) => {
-    e.preventDefault();
-
-    if (!createProduct.name?.trim()) return toast.error("Name is required!");
-    if (!createProduct.price) return toast.error("Price is required!");
-    if (!createProduct.quantity) return toast.error(" Quantity is required!");
-
-    try {
-      const payload = {
-        name: createProduct.name.trim(),
-        quantity: Number(createProduct.quantity),
-        price: Number(createProduct.price),
-      };
-
-      const res = await insertAssetsPurchase(payload).unwrap();
-      if (res?.success) {
-        toast.success("Successfully created product");
-        setIsModalOpen1(false);
-        setCreateProduct({ name: "", price: "", quantity: "" });
-        refetch?.();
-      } else {
-        toast.error(res?.message || "Create failed!");
-      }
-    } catch (err) {
-      toast.error(err?.data?.message || "Create failed!");
-    }
-  };
-
-  // Update
-  const [updateAssetsPurchase] = useUpdateAssetsPurchaseMutation();
-
-  const handleUpdateDelete = async () => {
-    if (!currentProduct?.Id) return toast.error("Invalid item!");
-    if (currentProduct?.note === "" || currentProduct?.note === null)
-      return toast.error("Note is required!");
-
-    try {
-      const payload = {
-        note: currentProduct.note,
-      };
-
-      const res = await updateAssetsPurchase({
-        id: currentProduct.Id,
-        data: payload,
-      }).unwrap();
-
-      if (res?.success) {
-        toast.success("Successfully updated product!");
-        setIsModalOpen(false);
-        refetch?.();
-      } else {
-        toast.error(res?.message || "Update failed!");
-      }
-    } catch (err) {
-      toast.error(err?.data?.message || "Update failed!");
-    }
   };
 
   const handleUpdateProduct = async () => {
@@ -229,6 +217,64 @@ const AssetsPurchaseTable = () => {
       toast.error(err?.data?.message || "Update failed!");
     }
   };
+  // Insert
+  const [insertAssetsPurchase] = useInsertAssetsPurchaseMutation();
+  const handleCreateProduct = async (e) => {
+    e.preventDefault();
+
+    if (!createProduct.name?.trim()) return toast.error("Name is required!");
+    if (!createProduct.price) return toast.error("Price is required!");
+    if (!createProduct.quantity) return toast.error(" Quantity is required!");
+
+    try {
+      const payload = {
+        name: createProduct.name.trim(),
+        quantity: Number(createProduct.quantity),
+        price: Number(createProduct.price),
+      };
+
+      const res = await insertAssetsPurchase(payload).unwrap();
+      if (res?.success) {
+        toast.success("Successfully created product");
+        setIsModalOpen1(false);
+        setCreateProduct({ name: "", price: "", quantity: "" });
+        refetch?.();
+      } else {
+        toast.error(res?.message || "Create failed!");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Create failed!");
+    }
+  };
+
+  // Update
+
+  // const handleUpdateDelete = async () => {
+  //   if (!currentProduct?.Id) return toast.error("Invalid item!");
+  //   if (currentProduct?.note === "" || currentProduct?.note === null)
+  //     return toast.error("Note is required!");
+
+  //   try {
+  //     const payload = {
+  //       note: currentProduct.note,
+  //     };
+
+  //     const res = await updateAssetsPurchase({
+  //       id: currentProduct.Id,
+  //       data: payload,
+  //     }).unwrap();
+
+  //     if (res?.success) {
+  //       toast.success("Successfully updated product!");
+  //       setIsModalOpen(false);
+  //       refetch?.();
+  //     } else {
+  //       toast.error(res?.message || "Update failed!");
+  //     }
+  //   } catch (err) {
+  //     toast.error(err?.data?.message || "Update failed!");
+  //   }
+  // };
 
   // Delete
   const [deleteAssetsPurchase] = useDeleteAssetsPurchaseMutation();
@@ -420,11 +466,11 @@ const AssetsPurchaseTable = () => {
                       onClick={() => handleDeleteProduct(product.Id)}
                       className="text-red-600 hover:text-red-900 ms-4"
                     >
-                      <Trash2 size={18} /> Delete
+                      <Trash2 size={18} />
                     </button>
                   ) : (
                     <button
-                      onClick={() => handleDeleteClick(product)}
+                      onClick={() => handleEditClick1(product)}
                       className="text-red-600 hover:text-red-900 ms-4"
                     >
                       <Trash2 size={18} />
@@ -646,13 +692,13 @@ const AssetsPurchaseTable = () => {
             <div className="mt-6 flex justify-end">
               <button
                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
-                onClick={handleUpdateDelete}
+                onClick={handleUpdateProduct1}
               >
                 Save
               </button>
               <button
                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
-                onClick={handleDeleteClose}
+                onClick={handleModalClose2}
               >
                 Cancel
               </button>

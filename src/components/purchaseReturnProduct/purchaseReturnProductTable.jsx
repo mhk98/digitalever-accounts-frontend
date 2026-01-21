@@ -641,8 +641,9 @@ import { useGetAllReceivedProductWithoutQueryQuery } from "../../features/receiv
 
 const PurchaseReturnProductTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isEditOpen1, setIsEditOpen1] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
-
+  const role = localStorage.getItem("role");
   const [currentItem, setCurrentItem] = useState(null);
 
   // ✅ UI uses receivedId (ReceivedProduct.Id)
@@ -755,11 +756,28 @@ const PurchaseReturnProductTable = () => {
       ...rp,
       receivedId: String(rp.receivedId ?? rp.productId ?? ""),
       quantity: rp.quantity ?? "",
+      note: rp.note ?? "",
+      status: rp.status ?? "",
     });
     setIsEditOpen(true);
   };
   const closeEdit = () => {
     setIsEditOpen(false);
+    setCurrentItem(null);
+  };
+
+  const openEdit1 = (rp) => {
+    setCurrentItem({
+      ...rp,
+      receivedId: String(rp.receivedId ?? rp.productId ?? ""),
+      quantity: rp.quantity ?? "",
+      note: rp.note ?? "",
+      status: rp.status ?? "",
+    });
+    setIsEditOpen1(true);
+  };
+  const closeEdit1 = () => {
+    setIsEditOpen1(false);
     setCurrentItem(null);
   };
 
@@ -803,6 +821,37 @@ const PurchaseReturnProductTable = () => {
 
     try {
       const payload = {
+        note: currentItem.note,
+        status: currentItem.status,
+        quantity: Number(currentItem.quantity),
+        receivedId: Number(currentItem.receivedId),
+      };
+
+      const res = await updatePurchaseReturn({
+        id: currentItem.Id,
+        data: payload,
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success("Updated!");
+        closeEdit();
+        refetch?.();
+      } else toast.error(res?.message || "Update failed!");
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
+  };
+
+  const handleUpdate1 = async () => {
+    if (!currentItem?.Id) return toast.error("Invalid item");
+    if (!currentItem?.receivedId) return toast.error("Please select a product");
+    if (!currentItem.quantity || Number(currentItem.quantity) <= 0)
+      return toast.error("Please enter valid quantity");
+
+    try {
+      const payload = {
+        note: currentItem.note,
+        status: currentItem.status,
         quantity: Number(currentItem.quantity),
         receivedId: Number(currentItem.receivedId),
       };
@@ -958,6 +1007,12 @@ const PurchaseReturnProductTable = () => {
                 Sale Price
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Note
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -996,6 +1051,12 @@ const PurchaseReturnProductTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {rp.note}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {rp.status}
+                </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
@@ -1004,12 +1065,24 @@ const PurchaseReturnProductTable = () => {
                   >
                     <Edit size={18} />
                   </button>
-                  <button
-                    onClick={() => handleDelete(rp.Id)}
-                    className="text-red-400 hover:text-red-300 ms-4"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+
+                  {role === "superAdmin" ||
+                  role === "admin" ||
+                  rp.status === "Approved" ? (
+                    <button
+                      onClick={() => handleDelete(rp.Id)}
+                      className="text-red-400 hover:text-red-300 ms-4"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => openEdit1(rp)}
+                      className="text-red-600 hover:text-red-900 ms-4"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </td>
               </motion.tr>
             ))}
@@ -1110,6 +1183,42 @@ const PurchaseReturnProductTable = () => {
               />
             </div>
 
+            {role === "superAdmin" || role === "admin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentItem.status || ""}
+                  onChange={(e) =>
+                    setCurrentItem({
+                      ...currentItem,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentItem?.note || ""}
+                  onChange={(e) =>
+                    setCurrentItem({
+                      ...currentItem,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
+
             <div className="mt-6 flex justify-end">
               <button
                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
@@ -1120,6 +1229,50 @@ const PurchaseReturnProductTable = () => {
               <button
                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
                 onClick={closeEdit}
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {isEditOpen1 && currentItem && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+          <motion.div
+            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3"
+            initial={{ opacity: 0, y: -40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <h2 className="text-lg font-semibold text-white">Edit Product</h2>
+
+            <div className="mt-4">
+              <label className="block text-sm text-white">Note:</label>
+              <textarea
+                type="text"
+                value={currentItem?.note || ""}
+                onChange={(e) =>
+                  setCurrentItem({
+                    ...currentItem,
+                    note: e.target.value,
+                  })
+                }
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+              />
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                onClick={handleUpdate1}
+              >
+                Save
+              </button>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                onClick={closeEdit1}
               >
                 Cancel
               </button>
