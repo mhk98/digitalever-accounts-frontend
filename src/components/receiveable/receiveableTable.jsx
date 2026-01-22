@@ -1,11 +1,10 @@
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2, TrendingUp } from "lucide-react";
+import { Edit, Notebook, Plus, Trash2, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   useDeleteReceiveableMutation,
   useGetAllReceiveableQuery,
-  useGetAllReceiveableWithoutQueryQuery,
   useInsertReceiveableMutation,
   useUpdateReceiveableMutation,
 } from "../../features/receiveable/receiveable";
@@ -13,6 +12,8 @@ import {
 const ReceiveableTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
+  const [isModalOpen2, setIsModalOpen2] = useState(false);
+  const role = localStorage.getItem("role");
   const [currentProduct, setCurrentProduct] = useState(null);
 
   const [createProduct, setCreateProduct] = useState({
@@ -93,14 +94,31 @@ const ReceiveableTable = () => {
   const handleAddProduct = () => setIsModalOpen1(true);
   const handleModalClose1 = () => setIsModalOpen1(false);
   const handleModalClose = () => setIsModalOpen(false);
+  const handleModalClose2 = () => setIsModalOpen2(false);
 
   const handleEditClick = (rp) => {
     setCurrentProduct({
       ...rp,
+      name: rp.name ?? "",
       amount: rp.amount ?? "",
+      remarks: rp.remarks ?? "",
+      note: rp.note ?? "",
+      status: rp.status ?? "",
       file: null, // ✅ new upload
     });
     setIsModalOpen(true);
+  };
+  const handleEditClick1 = (rp) => {
+    setCurrentProduct({
+      ...rp,
+      name: rp.name ?? "",
+      amount: rp.amount ?? "",
+      remarks: rp.remarks ?? "",
+      note: rp.note ?? "",
+      status: rp.status ?? "",
+      file: null, // ✅ new upload
+    });
+    setIsModalOpen2(true);
   };
 
   // insert
@@ -138,6 +156,7 @@ const ReceiveableTable = () => {
 
   // update (amount + remarks + optional file)
   const [updateReceiveable] = useUpdateReceiveableMutation();
+
   const handleUpdateProduct = async () => {
     const rowId = currentProduct?.Id ?? currentProduct?.id;
     if (!rowId) return toast.error("Invalid item!");
@@ -148,6 +167,8 @@ const ReceiveableTable = () => {
         const fd = new FormData();
         fd.append("name", currentProduct?.name?.trim() || "");
         fd.append("remarks", currentProduct?.remarks?.trim() || "");
+        fd.append("note", currentProduct?.note?.trim() || "");
+        fd.append("status", currentProduct?.status?.trim() || "");
         fd.append("amount", String(Number(currentProduct?.amount || 0)));
         fd.append("file", currentProduct.file);
 
@@ -165,6 +186,54 @@ const ReceiveableTable = () => {
         name: currentProduct?.name?.trim() || "",
         remarks: currentProduct?.remarks?.trim() || "",
         amount: Number(currentProduct?.amount || 0),
+        note: currentProduct?.note?.trim() || "",
+        status: currentProduct?.status?.trim() || "",
+      };
+
+      const res = await updateReceiveable({
+        id: rowId,
+        data: payload,
+      }).unwrap();
+      if (res?.success) {
+        toast.success("Updated!");
+        setIsModalOpen(false);
+        refetch?.();
+      } else toast.error(res?.message || "Update failed!");
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
+  };
+  const handleUpdateProduct1 = async () => {
+    const rowId = currentProduct?.Id ?? currentProduct?.id;
+    if (!rowId) return toast.error("Invalid item!");
+
+    try {
+      // ✅ if file exists -> FormData
+      if (currentProduct?.file instanceof File) {
+        const fd = new FormData();
+        fd.append("name", currentProduct?.name?.trim() || "");
+        fd.append("remarks", currentProduct?.remarks?.trim() || "");
+        fd.append("note", currentProduct?.note?.trim() || "");
+        fd.append("status", currentProduct?.status?.trim() || "");
+        fd.append("amount", String(Number(currentProduct?.amount || 0)));
+        fd.append("file", currentProduct.file);
+
+        const res = await updateReceiveable({ id: rowId, data: fd }).unwrap();
+        if (res?.success) {
+          toast.success("Updated!");
+          setIsModalOpen2(false);
+          refetch?.();
+        } else toast.error(res?.message || "Update failed!");
+        return;
+      }
+
+      // ✅ no file -> JSON
+      const payload = {
+        name: currentProduct?.name?.trim() || "",
+        remarks: currentProduct?.remarks?.trim() || "",
+        amount: Number(currentProduct?.amount || 0),
+        note: currentProduct?.note?.trim() || "",
+        status: currentProduct?.status?.trim() || "",
       };
 
       const res = await updateReceiveable({
@@ -218,25 +287,6 @@ const ReceiveableTable = () => {
       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
-  const {
-    data: receiveableRes,
-    isLoading: receiveableLoading,
-    isError: receiveableError,
-    error: receiveableErrObj,
-  } = useGetAllReceiveableWithoutQueryQuery();
-
-  const receiveable = receiveableRes?.data || [];
-
-  // ✅ totals
-  const totalReceiveableAmount = useMemo(() => {
-    return receiveable.reduce(
-      (sum, item) => sum + Number(item?.amount || 0),
-      0,
-    );
-  }, [receiveable]);
-
-  if (receiveableError) console.error("Purchase error:", receiveableErrObj);
-
   return (
     <motion.div
       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
@@ -261,9 +311,7 @@ const ReceiveableTable = () => {
           </div>
 
           <span className="text-white font-semibold tabular-nums">
-            {receiveableLoading
-              ? "Loading..."
-              : totalReceiveableAmount.toFixed(2)}
+            {isLoading ? "Loading..." : data?.meta?.totalAmount}
           </span>
         </div>
       </div>
@@ -324,6 +372,10 @@ const ReceiveableTable = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Amount
+              </th>
+
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Actions
@@ -399,19 +451,42 @@ const ReceiveableTable = () => {
                     {Number(rp.amount || 0).toFixed(2)}
                   </td>
 
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {rp.status}
+                  </td>
+
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {rp.note && (
+                      <button
+                        className="text-white-600 hover:text-white-900"
+                        title={rp.note}
+                      >
+                        <Notebook size={18} />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleEditClick(rp)}
                       className="text-indigo-600 hover:text-indigo-900"
                     >
                       <Edit size={18} />
                     </button>
-                    <button
-                      onClick={() => handleDeleteProduct(rowId)}
-                      className="text-red-600 hover:text-red-900 ms-4"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    {role === "superAdmin" ||
+                    role === "admin" ||
+                    rp.status === "Approved" ? (
+                      <button
+                        onClick={() => handleDeleteProduct(rowId)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleEditClick1(rp)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </td>
                 </motion.tr>
               );
@@ -479,7 +554,7 @@ const ReceiveableTable = () => {
             <h2 className="text-lg font-semibold text-white">Edit</h2>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Name</label>
+              <label className="block text-sm text-white">Company Name</label>
               <input
                 type="text"
                 value={currentProduct?.name || ""}
@@ -520,6 +595,42 @@ const ReceiveableTable = () => {
                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
+
+            {role === "superAdmin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
 
             <div className="mt-4">
               <label className="block text-sm text-white">
@@ -576,7 +687,7 @@ const ReceiveableTable = () => {
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
-                <label className="block text-sm text-white">Name</label>
+                <label className="block text-sm text-white">Company Name</label>
                 <input
                   type="text"
                   value={createProduct.name}
@@ -659,6 +770,73 @@ const ReceiveableTable = () => {
                 </button>
               </div>
             </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {isModalOpen2 && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <motion.div
+            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h2 className="text-lg font-semibold text-white">
+              Delete Meta Expense
+            </h2>
+
+            {role === "superAdmin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                onClick={handleUpdateProduct1}
+              >
+                Save
+              </button>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                onClick={handleModalClose2}
+              >
+                Cancel
+              </button>
+            </div>
           </motion.div>
         </div>
       )}

@@ -31,6 +31,7 @@ import PettyCashPage from "./pages/PettyCashPage";
 import AssetsDamagePage from "./pages/AssetsDamagePage";
 import SupplierPage from "./pages/SupplierPage";
 import DamageProductPage from "./pages/DamageProductPage";
+import EmployeePage from "./pages/EmployeePage";
 
 function App() {
   return (
@@ -53,6 +54,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <OverviewPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/employee"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <EmployeePage />
                   </SidebarLayout>
                 </RequireAuth>
               }

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit, PackageSearch, Plus, Trash2 } from "lucide-react";
+import { Edit, Notebook, PackageSearch, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -327,9 +327,7 @@ const SEOTable = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Amount
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Note
-              </th>
+
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Status
               </th>
@@ -355,13 +353,19 @@ const SEOTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {Number(rp.amount || 0).toFixed(2)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {rp.note}
-                </td>
+
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {rp.status}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  {rp.note && (
+                    <button
+                      className="text-white-600 hover:text-white-900"
+                      title={rp.note}
+                    >
+                      <Notebook size={18} />
+                    </button>
+                  )}
                   <button
                     onClick={() => handleEditClick(rp)}
                     className="text-indigo-600 hover:text-indigo-900"

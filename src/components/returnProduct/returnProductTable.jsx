@@ -576,7 +576,7 @@
 // export default PurchaseReturnProductTable;
 
 import { motion } from "framer-motion";
-import { Edit, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Edit, Notebook, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -880,7 +880,7 @@ const PurchaseReturnProductTable = () => {
         <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
           <div className="flex items-center gap-2 text-gray-300">
             <RotateCcw size={18} className="text-amber-400" />
-            <span className="text-sm">Total Purchase Return</span>
+            <span className="text-sm">Total Return Product</span>
           </div>
           <span className="text-white font-semibold tabular-nums">
             {isLoading ? "Loading..." : (data?.meta?.totalQuantity ?? 0)}
@@ -956,9 +956,7 @@ const PurchaseReturnProductTable = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Sale Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Note
-              </th>
+
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Status
               </th>
@@ -1001,14 +999,20 @@ const PurchaseReturnProductTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {rp.note}
-                </td>
+
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {rp.status}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  {rp.note && (
+                    <button
+                      className="text-white-600 hover:text-white-900"
+                      title={rp.note}
+                    >
+                      <Notebook size={18} />
+                    </button>
+                  )}
                   <button
                     onClick={() => openEdit(rp)}
                     className="text-indigo-400 hover:text-indigo-300"

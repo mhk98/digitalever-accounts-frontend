@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2 } from "lucide-react";
+import { Edit, Notebook, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -141,13 +141,104 @@ const PettyCashTable = () => {
   const handleAddProduct = () => setIsModalOpen1(true);
   const handleModalClose1 = () => setIsModalOpen1(false);
 
+  const role = localStorage.getItem("role");
+  const [updatePettyCash] = useUpdatePettyCashMutation();
+  const [isModalOpen2, setIsModalOpen2] = useState(false);
+
+  const handleModalClose2 = () => setIsModalOpen2(false);
+
+  const handleEditClick1 = (rp) => {
+    setCurrentProduct({
+      ...rp,
+      paymentMode: rp.paymentMode ?? "",
+      paymentStatus: rp.paymentStatus ?? "",
+      note: rp.note ?? "",
+      status: rp.status ?? "",
+      bankName: rp.bankName ?? "",
+      remarks: rp.remarks ?? "",
+      amount: rp.amount ?? "",
+      file: null,
+    });
+    setIsModalOpen2(true);
+  };
+
+  const handleUpdateProduct1 = async () => {
+    const rowId = currentProduct?.Id ?? currentProduct?.id;
+    if (!rowId) return toast.error("Invalid item!");
+
+    try {
+      // ✅ safest: FormData (update এ ফাইল দিলেও যাবে)
+      const formData = new FormData();
+      formData.append("paymentMode", currentProduct.paymentMode);
+      formData.append("paymentStatus", currentProduct.paymentStatus);
+      formData.append("note", currentProduct.note);
+      formData.append("status", currentProduct.status);
+      formData.append(
+        "bankName",
+        currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
+      );
+      formData.append("remarks", currentProduct.remarks?.trim() || "");
+      formData.append("amount", String(Number(currentProduct.amount)));
+      if (currentProduct.file) formData.append("file", currentProduct.file);
+
+      const res = await updatePettyCash({ id: rowId, data: formData }).unwrap();
+
+      if (res?.success) {
+        toast.success("Updated!");
+        setIsModalOpen(false);
+        setCurrentProduct(null);
+        refetch?.();
+      } else toast.error(res?.message || "Update failed!");
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
+  };
+
   const handleEditClick = (rp) => {
     setCurrentProduct({
       ...rp,
-      amount: rp.amount ?? "",
+      paymentMode: rp.paymentMode ?? "",
+      paymentStatus: rp.paymentStatus ?? "",
+      note: rp.note ?? "",
+      status: rp.status ?? "",
       bankName: rp.bankName ?? "",
+      remarks: rp.remarks ?? "",
+      amount: rp.amount ?? "",
+      file: null,
     });
     setIsModalOpen(true);
+  };
+
+  const handleUpdateProduct = async () => {
+    const rowId = currentProduct?.Id ?? currentProduct?.id;
+    if (!rowId) return toast.error("Invalid item!");
+
+    try {
+      // ✅ safest: FormData (update এ ফাইল দিলেও যাবে)
+      const formData = new FormData();
+      formData.append("paymentMode", currentProduct.paymentMode);
+      formData.append("paymentStatus", currentProduct.paymentStatus);
+      formData.append("note", currentProduct.note);
+      formData.append("status", currentProduct.status);
+      formData.append(
+        "bankName",
+        currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
+      );
+      formData.append("remarks", currentProduct.remarks?.trim() || "");
+      formData.append("amount", String(Number(currentProduct.amount)));
+      if (currentProduct.file) formData.append("file", currentProduct.file);
+
+      const res = await updatePettyCash({ id: rowId, data: formData }).unwrap();
+
+      if (res?.success) {
+        toast.success("Updated!");
+        setIsModalOpen(false);
+        setCurrentProduct(null);
+        refetch?.();
+      } else toast.error(res?.message || "Update failed!");
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
   };
 
   // insert
@@ -193,46 +284,6 @@ const PettyCashTable = () => {
       } else toast.error(res?.message || "Create failed!");
     } catch (err) {
       toast.error(err?.data?.message || "Create failed!");
-    }
-  };
-
-  // update
-  const [updatePettyCash] = useUpdatePettyCashMutation();
-  const handleUpdateProduct = async () => {
-    const rowId = currentProduct?.Id ?? currentProduct?.id;
-    if (!rowId) return toast.error("Invalid item!");
-
-    if (!currentProduct.amount) return toast.error("Amount is required!");
-    if (!currentProduct.paymentMode)
-      return toast.error("Payment Mode is required!");
-    if (!currentProduct.paymentStatus)
-      return toast.error("Payment Status is required!");
-    if (currentProduct.paymentMode === "Bank" && !currentProduct.bankName)
-      return toast.error("Bank Name is required!");
-
-    try {
-      // ✅ safest: FormData (update এ ফাইল দিলেও যাবে)
-      const formData = new FormData();
-      formData.append("paymentMode", currentProduct.paymentMode);
-      formData.append("paymentStatus", currentProduct.paymentStatus);
-      formData.append(
-        "bankName",
-        currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
-      );
-      formData.append("remarks", currentProduct.remarks?.trim() || "");
-      formData.append("amount", String(Number(currentProduct.amount)));
-      if (currentProduct.file) formData.append("file", currentProduct.file);
-
-      const res = await updatePettyCash({ id: rowId, data: formData }).unwrap();
-
-      if (res?.success) {
-        toast.success("Updated!");
-        setIsModalOpen(false);
-        setCurrentProduct(null);
-        refetch?.();
-      } else toast.error(res?.message || "Update failed!");
-    } catch (err) {
-      toast.error(err?.data?.message || "Update failed!");
     }
   };
 
@@ -500,6 +551,10 @@ const PettyCashTable = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Amount
               </th>
+
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Status
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
@@ -582,19 +637,43 @@ const PettyCashTable = () => {
                     {Number(rp.amount || 0).toFixed(2)}
                   </td>
 
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {rp.status}
+                  </td>
+
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {rp.note && (
+                      <button
+                        className="text-white-600 hover:text-white-900"
+                        title={rp.note}
+                      >
+                        <Notebook size={18} />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleEditClick(rp)}
                       className="text-indigo-600 hover:text-indigo-900"
                     >
                       <Edit size={18} />
                     </button>
-                    <button
-                      onClick={() => handleDeleteProduct(rowId)}
-                      className="text-red-600 hover:text-red-900 ms-4"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+
+                    {role === "superAdmin" ||
+                    role === "admin" ||
+                    rp.status === "Approved" ? (
+                      <button
+                        onClick={() => handleDeleteProduct(rowId)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleEditClick1(rp)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </td>
                 </motion.tr>
               );
@@ -759,6 +838,42 @@ const PettyCashTable = () => {
               />
             </div>
 
+            {role === "superAdmin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
+
             <div className="mt-4">
               <label className="block text-sm text-white">
                 Upload Document
@@ -812,7 +927,7 @@ const PettyCashTable = () => {
             transition={{ duration: 0.3 }}
           >
             <h2 className="text-lg font-semibold text-white">
-              Add Cash In/Out
+              Add Petty Cash In/Out
             </h2>
 
             <form onSubmit={handleCreateProduct}>
@@ -959,6 +1074,72 @@ const PettyCashTable = () => {
         </div>
       )}
 
+      {/* Delete Modal */}
+      {isModalOpen2 && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <motion.div
+            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h2 className="text-lg font-semibold text-white">
+              Delete Petty Cash In/Out
+            </h2>
+
+            {role === "superAdmin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                onClick={handleUpdateProduct1}
+              >
+                Save
+              </button>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                onClick={handleModalClose2}
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
       <ReportPreviewModal
         open={isReportPreviewOpen}
         onClose={closeReportPreview}

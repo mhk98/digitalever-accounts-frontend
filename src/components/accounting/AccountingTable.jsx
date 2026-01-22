@@ -14,6 +14,7 @@ const AccountingTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
   const [isModalOpen1, setIsModalOpen1] = useState(false); // Add modal
 
+  const role = localStorage.getItem("role");
   const [currentProduct, setCurrentProduct] = useState(null);
 
   const [createProduct, setCreateProduct] = useState({ name: "" });
@@ -225,25 +226,28 @@ const AccountingTable = () => {
             </Link>
 
             {/* Right */}
-            <div className="flex items-center gap-4 pr-2">
-              <button
-                onClick={() => handleEditBook(item)}
-                type="button"
-                className="inline-flex h-9 w-9 items-center justify-center rounded hover:bg-gray-50"
-                title="Edit"
-              >
-                <Pencil className="text-indigo-600" size={18} />
-              </button>
 
-              <button
-                onClick={() => handleDeleteBook(item.Id)}
-                type="button"
-                className="inline-flex h-9 w-9 items-center justify-center rounded hover:bg-gray-50"
-                title="Delete"
-              >
-                <Trash2 className="text-red-600" size={18} />
-              </button>
-            </div>
+            {(role === "superAdmin" || role === "admin") && (
+              <div className="flex items-center gap-4 pr-2">
+                <button
+                  onClick={() => handleEditBook(item)}
+                  type="button"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded hover:bg-gray-50"
+                  title="Edit"
+                >
+                  <Pencil className="text-indigo-600" size={18} />
+                </button>
+
+                <button
+                  onClick={() => handleDeleteBook(item.Id)}
+                  type="button"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded hover:bg-gray-50"
+                  title="Delete"
+                >
+                  <Trash2 className="text-red-600" size={18} />
+                </button>
+              </div>
+            )}
           </div>
         ))}
 

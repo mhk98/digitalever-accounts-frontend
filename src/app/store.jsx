@@ -1,7 +1,7 @@
 // import cartSlice from "@/Redux-Thunk/reducers/cartSlice";
 
 import { configureStore } from "@reduxjs/toolkit";
-import { productApi } from "../features/product/product";
+import { employeeApi, productApi } from "../features/product/product";
 import { authApi } from "../features/auth/auth";
 import { receivedProductApi } from "../features/receivedProduct/receivedProduct";
 import { inTransitProductApi } from "../features/inTransitProduct/inTransitProduct";
@@ -45,6 +45,7 @@ const store = configureStore({
     [receiveableApi.reducerPath]: receiveableApi.reducer,
     [payableApi.reducerPath]: payableApi.reducer,
     [overviewApi.reducerPath]: overviewApi.reducer,
+    [employeeApi.reducerPath]: employeeApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
   },
 
@@ -72,6 +73,7 @@ const store = configureStore({
       receiveableApi.middleware,
       payableApi.middleware,
       overviewApi.middleware,
+      employeeApi.middleware,
       authApi.middleware,
     ),
 });

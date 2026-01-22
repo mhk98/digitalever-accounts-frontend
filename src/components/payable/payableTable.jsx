@@ -1,11 +1,675 @@
+// import { motion } from "framer-motion";
+// import { Edit, Plus, Trash2, TrendingDown } from "lucide-react";
+// import { useEffect, useMemo, useState } from "react";
+// import toast from "react-hot-toast";
+// import {
+//   useDeletePayableMutation,
+//   useGetAllPayableQuery,
+//   useGetAllPayableWithoutQueryQuery,
+//   useInsertPayableMutation,
+//   useUpdatePayableMutation,
+// } from "../../features/payable/payable";
+
+// const PayableTable = () => {
+//   const [isModalOpen, setIsModalOpen] = useState(false);
+//   const [isModalOpen1, setIsModalOpen1] = useState(false);
+//   const [currentProduct, setCurrentProduct] = useState(null);
+
+//   const [createProduct, setCreateProduct] = useState({
+//     name: "",
+//     remarks: "",
+//     amount: "",
+//     file: null,
+//   });
+
+//   const [products, setProducts] = useState([]);
+
+//   // filters
+//   const [startDate, setStartDate] = useState("");
+//   const [endDate, setEndDate] = useState("");
+//   const [filterName, setFilterName] = useState("");
+
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const [startPage, setStartPage] = useState(1);
+//   const [totalPages, setTotalPages] = useState(1);
+//   const [pagesPerSet, setPagesPerSet] = useState(10);
+//   const itemsPerPage = 10;
+
+//   // responsive pagesPerSet
+//   useEffect(() => {
+//     const updatePagesPerSet = () => {
+//       if (window.innerWidth < 640) setPagesPerSet(5);
+//       else if (window.innerWidth < 1024) setPagesPerSet(7);
+//       else setPagesPerSet(10);
+//     };
+//     updatePagesPerSet();
+//     window.addEventListener("resize", updatePagesPerSet);
+//     return () => window.removeEventListener("resize", updatePagesPerSet);
+//   }, []);
+
+//   // reset page when filters change
+//   useEffect(() => {
+//     setCurrentPage(1);
+//     setStartPage(1);
+//   }, [startDate, endDate, filterName]);
+
+//   // fix endDate
+//   useEffect(() => {
+//     if (startDate && endDate && startDate > endDate) setEndDate(startDate);
+//   }, [startDate, endDate]);
+
+//   // ✅ query args (start/end + name)
+//   const queryArgs = useMemo(() => {
+//     const args = {
+//       page: currentPage,
+//       limit: itemsPerPage,
+//       startDate: startDate || undefined,
+//       endDate: endDate || undefined,
+//       searchTerm: filterName?.trim() || undefined, // ✅ name filter
+//       // যদি backend "name" নেয়, তাহলে: name: filterName?.trim() || undefined
+//     };
+
+//     Object.keys(args).forEach((k) => {
+//       if (args[k] === undefined || args[k] === null || args[k] === "") {
+//         delete args[k];
+//       }
+//     });
+
+//     return args;
+//   }, [currentPage, startDate, endDate, filterName]);
+
+//   const { data, isLoading, isError, error, refetch } =
+//     useGetAllPayableQuery(queryArgs);
+
+//   useEffect(() => {
+//     if (isError) console.error("Error:", error);
+//     if (!isLoading && data) {
+//       setProducts(data?.data ?? []);
+//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//     }
+//   }, [data, isLoading, isError, error]);
+
+//   // modals
+//   const handleAddProduct = () => setIsModalOpen1(true);
+//   const handleModalClose1 = () => setIsModalOpen1(false);
+//   const handleModalClose = () => setIsModalOpen(false);
+
+//   const handleEditClick = (rp) => {
+//     setCurrentProduct({
+//       ...rp,
+//       amount: rp.amount ?? "",
+//       file: null, // ✅ new upload
+//     });
+//     setIsModalOpen(true);
+//   };
+
+//   // insert
+//   const [insertPayable] = useInsertPayableMutation();
+//   const handleCreateProduct = async (e) => {
+//     e.preventDefault();
+
+//     if (!createProduct.name.trim()) return toast.error("Name is required!");
+//     if (!createProduct.amount) return toast.error("Amount is required!");
+
+//     try {
+//       const formData = new FormData();
+//       formData.append("name", createProduct.name.trim());
+//       formData.append("remarks", createProduct.remarks?.trim() || "");
+//       formData.append("amount", String(Number(createProduct.amount)));
+
+//       if (createProduct.file) formData.append("file", createProduct.file);
+
+//       const res = await insertPayable(formData).unwrap();
+//       if (res?.success) {
+//         toast.success("Successfully created!");
+//         setIsModalOpen1(false);
+//         setCreateProduct({
+//           name: "",
+//           remarks: "",
+//           amount: "",
+//           file: null,
+//         });
+//         refetch?.();
+//       } else toast.error(res?.message || "Create failed!");
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Create failed!");
+//     }
+//   };
+
+//   // update (amount + remarks + optional file)
+//   const [updatePayable] = useUpdatePayableMutation();
+//   const handleUpdateProduct = async () => {
+//     const rowId = currentProduct?.Id ?? currentProduct?.id;
+//     if (!rowId) return toast.error("Invalid item!");
+
+//     try {
+//       // ✅ if file exists -> FormData
+//       if (currentProduct?.file instanceof File) {
+//         const fd = new FormData();
+//         fd.append("name", currentProduct?.name?.trim() || "");
+//         fd.append("remarks", currentProduct?.remarks?.trim() || "");
+//         fd.append("amount", String(Number(currentProduct?.amount || 0)));
+//         fd.append("file", currentProduct.file);
+
+//         const res = await updatePayable({ id: rowId, data: fd }).unwrap();
+//         if (res?.success) {
+//           toast.success("Updated!");
+//           setIsModalOpen(false);
+//           refetch?.();
+//         } else toast.error(res?.message || "Update failed!");
+//         return;
+//       }
+
+//       // ✅ no file -> JSON
+//       const payload = {
+//         name: currentProduct?.name?.trim() || "",
+//         remarks: currentProduct?.remarks?.trim() || "",
+//         amount: Number(currentProduct?.amount || 0),
+//       };
+
+//       const res = await updatePayable({
+//         id: rowId,
+//         data: payload,
+//       }).unwrap();
+//       if (res?.success) {
+//         toast.success("Updated!");
+//         setIsModalOpen(false);
+//         refetch?.();
+//       } else toast.error(res?.message || "Update failed!");
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Update failed!");
+//     }
+//   };
+
+//   // delete
+//   const [deletePayable] = useDeletePayableMutation();
+//   const handleDeleteProduct = async (rowId) => {
+//     if (!window.confirm("Do you want to delete this item?")) return;
+//     try {
+//       const res = await deletePayable(rowId).unwrap();
+//       if (res?.success) {
+//         toast.success("Deleted!");
+//         refetch?.();
+//       } else toast.error(res?.message || "Delete failed!");
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Delete failed!");
+//     }
+//   };
+
+//   const clearFilters = () => {
+//     setStartDate("");
+//     setEndDate("");
+//     setFilterName("");
+//   };
+
+//   // pagination
+//   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
+
+//   const handlePageChange = (pageNumber) => {
+//     setCurrentPage(pageNumber);
+//     if (pageNumber < startPage) setStartPage(pageNumber);
+//     else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
+//   };
+
+//   const handlePreviousSet = () =>
+//     setStartPage((p) => Math.max(p - pagesPerSet, 1));
+//   const handleNextSet = () =>
+//     setStartPage((p) =>
+//       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
+//     );
+
+//   const {
+//     data: payableRes,
+//     isLoading: payableLoading,
+//     isError: payableError,
+//     error: payableErrObj,
+//   } = useGetAllPayableWithoutQueryQuery();
+
+//   const payable = payableRes?.data || [];
+
+//   // ✅ totals
+//   const totalPayableAmount = useMemo(() => {
+//     return payable.reduce((sum, item) => sum + Number(item?.amount || 0), 0);
+//   }, [payable]);
+
+//   if (payableError) console.error("Purchase error:", payableErrObj);
+
+//   return (
+//     <motion.div
+//       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
+//       initial={{ opacity: 0, y: 20 }}
+//       animate={{ opacity: 1, y: 0 }}
+//       transition={{ delay: 0.2 }}
+//     >
+//       {/* Add Button */}
+//       <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+//         <button
+//           type="button"
+//           onClick={handleAddProduct}
+//           className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
+//         >
+//           Add <Plus size={18} className="ml-2" />
+//         </button>
+
+//         <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
+//           <div className="flex items-center gap-2 text-gray-300">
+//             <TrendingDown size={18} className="text-amber-400" />
+//             <span className="text-sm">Total Payable Amount</span>
+//           </div>
+
+//           <span className="text-white font-semibold tabular-nums">
+//             {payableLoading ? "Loading..." : totalPayableAmount.toFixed(2)}
+//           </span>
+//         </div>
+//       </div>
+
+//       {/* ✅ Filters: start + end + name */}
+//       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
+//         <div className="flex items-center justify-center">
+//           <label className="mr-2 text-sm text-white">Start:</label>
+//           <input
+//             type="date"
+//             value={startDate}
+//             onChange={(e) => setStartDate(e.target.value)}
+//             className="border border-gray-300 rounded p-1 text-black bg-white"
+//           />
+//         </div>
+
+//         <div className="flex items-center justify-center">
+//           <label className="mr-2 text-sm text-white">End:</label>
+//           <input
+//             type="date"
+//             value={endDate}
+//             onChange={(e) => setEndDate(e.target.value)}
+//             className="border border-gray-300 rounded p-1 text-black bg-white"
+//           />
+//         </div>
+
+//         <div className="flex items-center justify-center">
+//           <input
+//             type="text"
+//             value={filterName}
+//             onChange={(e) => setFilterName(e.target.value)}
+//             placeholder="Search by name..."
+//             className="border border-gray-300 rounded p-2 text-black bg-white w-full"
+//           />
+//         </div>
+
+//         <button
+//           className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
+//           onClick={clearFilters}
+//         >
+//           Clear Filters
+//         </button>
+//       </div>
+
+//       {/* Table */}
+//       <div className="overflow-x-auto">
+//         <table className="min-w-full divide-y divide-gray-700">
+//           <thead>
+//             <tr>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Name
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Document
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Remarks
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Amount
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Actions
+//               </th>
+//             </tr>
+//           </thead>
+
+//           <tbody className="divide-y divide-gray-700">
+//             {products.map((rp) => {
+//               const rowId = rp.Id ?? rp.id;
+
+//               const safePath = String(rp.file || "").replace(/\\/g, "/");
+//               const fileUrl = safePath
+//                 ? `http://localhost:5000/${safePath}`
+//                 : "";
+//               const ext = safePath.split(".").pop()?.toLowerCase();
+//               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
+//                 ext,
+//               );
+//               const isPdf = ext === "pdf";
+
+//               return (
+//                 <motion.tr
+//                   key={rowId}
+//                   initial={{ opacity: 0 }}
+//                   animate={{ opacity: 1 }}
+//                   transition={{ duration: 0.3 }}
+//                 >
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.name}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {!safePath ? (
+//                       "-"
+//                     ) : isImage ? (
+//                       <a href={fileUrl} target="_blank" rel="noreferrer">
+//                         <img
+//                           src={fileUrl}
+//                           alt="document"
+//                           className="h-12 w-12 object-cover rounded border border-gray-600 hover:opacity-80"
+//                           onError={(e) => {
+//                             e.currentTarget.style.display = "none";
+//                           }}
+//                         />
+//                       </a>
+//                     ) : isPdf ? (
+//                       <a
+//                         href={fileUrl}
+//                         target="_blank"
+//                         rel="noreferrer"
+//                         className="px-3 py-1 rounded bg-indigo-600 text-white text-xs hover:bg-indigo-700"
+//                       >
+//                         View PDF
+//                       </a>
+//                     ) : (
+//                       <a
+//                         href={fileUrl}
+//                         target="_blank"
+//                         rel="noreferrer"
+//                         className="text-indigo-400 underline"
+//                       >
+//                         Open File
+//                       </a>
+//                     )}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.remarks || "-"}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {Number(rp.amount || 0).toFixed(2)}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+//                     <button
+//                       onClick={() => handleEditClick(rp)}
+//                       className="text-indigo-600 hover:text-indigo-900"
+//                     >
+//                       <Edit size={18} />
+//                     </button>
+//                     <button
+//                       onClick={() => handleDeleteProduct(rowId)}
+//                       className="text-red-600 hover:text-red-900 ms-4"
+//                     >
+//                       <Trash2 size={18} />
+//                     </button>
+//                   </td>
+//                 </motion.tr>
+//               );
+//             })}
+
+//             {!isLoading && products.length === 0 && (
+//               <tr>
+//                 <td
+//                   colSpan={5}
+//                   className="px-6 py-6 text-center text-sm text-gray-300"
+//                 >
+//                   No data found
+//                 </td>
+//               </tr>
+//             )}
+//           </tbody>
+//         </table>
+//       </div>
+
+//       {/* Pagination */}
+//       <div className="flex items-center justify-center space-x-2 mt-6">
+//         <button
+//           onClick={handlePreviousSet}
+//           disabled={startPage === 1}
+//           className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+//         >
+//           Prev
+//         </button>
+
+//         {[...Array(endPage - startPage + 1)].map((_, index) => {
+//           const pageNum = startPage + index;
+//           return (
+//             <button
+//               key={pageNum}
+//               onClick={() => handlePageChange(pageNum)}
+//               className={`px-3 py-2 text-black rounded-md ${
+//                 pageNum === currentPage
+//                   ? "bg-white"
+//                   : "bg-indigo-500 hover:bg-indigo-400"
+//               }`}
+//             >
+//               {pageNum}
+//             </button>
+//           );
+//         })}
+
+//         <button
+//           onClick={handleNextSet}
+//           disabled={endPage === totalPages}
+//           className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+//         >
+//           Next
+//         </button>
+//       </div>
+
+//       {/* ✅ Edit Modal */}
+//       {isModalOpen && (
+//         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+//           <motion.div
+//             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+//             initial={{ opacity: 0, y: -50 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             transition={{ duration: 0.3 }}
+//           >
+//             <h2 className="text-lg font-semibold text-white">Edit</h2>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Name</label>
+//               <input
+//                 type="text"
+//                 value={currentProduct?.name || ""}
+//                 onChange={(e) =>
+//                   setCurrentProduct({ ...currentProduct, name: e.target.value })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+//               />
+//             </div>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Amount:</label>
+//               <input
+//                 type="number"
+//                 step="0.01"
+//                 value={currentProduct?.amount || ""}
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     amount: e.target.value,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+//               />
+//             </div>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Remarks</label>
+//               <input
+//                 type="text"
+//                 value={currentProduct?.remarks || ""}
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     remarks: e.target.value,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+//               />
+//             </div>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">
+//                 Upload Document
+//               </label>
+//               <input
+//                 type="file"
+//                 accept=".jpg,.jpeg,.png,.pdf"
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     file: e.target.files?.[0] || null,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//               />
+//               {currentProduct?.file && (
+//                 <p className="mt-2 text-xs text-gray-300">
+//                   Selected: {currentProduct.file.name}
+//                 </p>
+//               )}
+//             </div>
+
+//             <div className="mt-6 flex justify-end">
+//               <button
+//                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+//                 onClick={handleUpdateProduct}
+//               >
+//                 Save
+//               </button>
+//               <button
+//                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+//                 onClick={handleModalClose}
+//               >
+//                 Cancel
+//               </button>
+//             </div>
+//           </motion.div>
+//         </div>
+//       )}
+
+//       {/* ✅ Add Modal */}
+//       {isModalOpen1 && (
+//         <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
+//           <motion.div
+//             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+//             initial={{ opacity: 0, y: -50 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             transition={{ duration: 0.3 }}
+//           >
+//             <h2 className="text-lg font-semibold text-white">
+//               Add Receiveable Information
+//             </h2>
+
+//             <form onSubmit={handleCreateProduct}>
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Name</label>
+//                 <input
+//                   type="text"
+//                   value={createProduct.name}
+//                   onChange={(e) =>
+//                     setCreateProduct({ ...createProduct, name: e.target.value })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+//                   required
+//                 />
+//               </div>
+
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Remarks</label>
+//                 <input
+//                   type="text"
+//                   value={createProduct.remarks}
+//                   onChange={(e) =>
+//                     setCreateProduct({
+//                       ...createProduct,
+//                       remarks: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+//                   required
+//                 />
+//               </div>
+
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Amount</label>
+//                 <input
+//                   type="number"
+//                   step="0.01"
+//                   value={createProduct.amount}
+//                   onChange={(e) =>
+//                     setCreateProduct({
+//                       ...createProduct,
+//                       amount: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+//                   required
+//                 />
+//               </div>
+
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">
+//                   Upload Document
+//                 </label>
+//                 <input
+//                   type="file"
+//                   accept=".jpg,.jpeg,.png,.pdf"
+//                   onChange={(e) =>
+//                     setCreateProduct({
+//                       ...createProduct,
+//                       file: e.target.files?.[0] || null,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                 />
+//                 {createProduct.file && (
+//                   <p className="mt-2 text-xs text-gray-300">
+//                     Selected: {createProduct.file.name}
+//                   </p>
+//                 )}
+//               </div>
+
+//               <div className="mt-6 flex justify-end">
+//                 <button
+//                   type="submit"
+//                   className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+//                 >
+//                   Save
+//                 </button>
+//                 <button
+//                   type="button"
+//                   className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+//                   onClick={handleModalClose1}
+//                 >
+//                   Cancel
+//                 </button>
+//               </div>
+//             </form>
+//           </motion.div>
+//         </div>
+//       )}
+//     </motion.div>
+//   );
+// };
+
+// export default PayableTable;
+
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2, TrendingDown } from "lucide-react";
+import { Edit, Notebook, Plus, Trash2, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   useDeletePayableMutation,
   useGetAllPayableQuery,
-  useGetAllPayableWithoutQueryQuery,
   useInsertPayableMutation,
   useUpdatePayableMutation,
 } from "../../features/payable/payable";
@@ -13,6 +677,8 @@ import {
 const PayableTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
+  const [isModalOpen2, setIsModalOpen2] = useState(false);
+  const role = localStorage.getItem("role");
   const [currentProduct, setCurrentProduct] = useState(null);
 
   const [createProduct, setCreateProduct] = useState({
@@ -93,14 +759,31 @@ const PayableTable = () => {
   const handleAddProduct = () => setIsModalOpen1(true);
   const handleModalClose1 = () => setIsModalOpen1(false);
   const handleModalClose = () => setIsModalOpen(false);
+  const handleModalClose2 = () => setIsModalOpen2(false);
 
   const handleEditClick = (rp) => {
     setCurrentProduct({
       ...rp,
+      name: rp.name ?? "",
       amount: rp.amount ?? "",
+      remarks: rp.remarks ?? "",
+      note: rp.note ?? "",
+      status: rp.status ?? "",
       file: null, // ✅ new upload
     });
     setIsModalOpen(true);
+  };
+  const handleEditClick1 = (rp) => {
+    setCurrentProduct({
+      ...rp,
+      name: rp.name ?? "",
+      amount: rp.amount ?? "",
+      remarks: rp.remarks ?? "",
+      note: rp.note ?? "",
+      status: rp.status ?? "",
+      file: null, // ✅ new upload
+    });
+    setIsModalOpen2(true);
   };
 
   // insert
@@ -121,7 +804,7 @@ const PayableTable = () => {
 
       const res = await insertPayable(formData).unwrap();
       if (res?.success) {
-        toast.success("Successfully created!");
+        toast.success("Successfully Created!");
         setIsModalOpen1(false);
         setCreateProduct({
           name: "",
@@ -138,6 +821,7 @@ const PayableTable = () => {
 
   // update (amount + remarks + optional file)
   const [updatePayable] = useUpdatePayableMutation();
+
   const handleUpdateProduct = async () => {
     const rowId = currentProduct?.Id ?? currentProduct?.id;
     if (!rowId) return toast.error("Invalid item!");
@@ -148,6 +832,8 @@ const PayableTable = () => {
         const fd = new FormData();
         fd.append("name", currentProduct?.name?.trim() || "");
         fd.append("remarks", currentProduct?.remarks?.trim() || "");
+        fd.append("note", currentProduct?.note?.trim() || "");
+        fd.append("status", currentProduct?.status?.trim() || "");
         fd.append("amount", String(Number(currentProduct?.amount || 0)));
         fd.append("file", currentProduct.file);
 
@@ -165,6 +851,54 @@ const PayableTable = () => {
         name: currentProduct?.name?.trim() || "",
         remarks: currentProduct?.remarks?.trim() || "",
         amount: Number(currentProduct?.amount || 0),
+        note: currentProduct?.note?.trim() || "",
+        status: currentProduct?.status?.trim() || "",
+      };
+
+      const res = await updatePayable({
+        id: rowId,
+        data: payload,
+      }).unwrap();
+      if (res?.success) {
+        toast.success("Updated!");
+        setIsModalOpen(false);
+        refetch?.();
+      } else toast.error(res?.message || "Update failed!");
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
+  };
+  const handleUpdateProduct1 = async () => {
+    const rowId = currentProduct?.Id ?? currentProduct?.id;
+    if (!rowId) return toast.error("Invalid item!");
+
+    try {
+      // ✅ if file exists -> FormData
+      if (currentProduct?.file instanceof File) {
+        const fd = new FormData();
+        fd.append("name", currentProduct?.name?.trim() || "");
+        fd.append("remarks", currentProduct?.remarks?.trim() || "");
+        fd.append("note", currentProduct?.note?.trim() || "");
+        fd.append("status", currentProduct?.status?.trim() || "");
+        fd.append("amount", String(Number(currentProduct?.amount || 0)));
+        fd.append("file", currentProduct.file);
+
+        const res = await updatePayable({ id: rowId, data: fd }).unwrap();
+        if (res?.success) {
+          toast.success("Updated!");
+          setIsModalOpen2(false);
+          refetch?.();
+        } else toast.error(res?.message || "Update failed!");
+        return;
+      }
+
+      // ✅ no file -> JSON
+      const payload = {
+        name: currentProduct?.name?.trim() || "",
+        remarks: currentProduct?.remarks?.trim() || "",
+        amount: Number(currentProduct?.amount || 0),
+        note: currentProduct?.note?.trim() || "",
+        status: currentProduct?.status?.trim() || "",
       };
 
       const res = await updatePayable({
@@ -218,21 +952,16 @@ const PayableTable = () => {
       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
-  const {
-    data: payableRes,
-    isLoading: payableLoading,
-    isError: payableError,
-    error: payableErrObj,
-  } = useGetAllPayableWithoutQueryQuery();
+  // const {
+  //   data: payableRes,
+  //   isLoading: payableLoading,
+  //   isError: payableError,
+  //   error: payableErrObj,
+  // } = useGetAllPayableQuery();
 
-  const payable = payableRes?.data || [];
+  // const payable = payableRes?.data || [];
 
-  // ✅ totals
-  const totalPayableAmount = useMemo(() => {
-    return payable.reduce((sum, item) => sum + Number(item?.amount || 0), 0);
-  }, [payable]);
-
-  if (payableError) console.error("Purchase error:", payableErrObj);
+  // if (payableError) console.error("Purchase error:", payableErrObj);
 
   return (
     <motion.div
@@ -253,12 +982,12 @@ const PayableTable = () => {
 
         <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
           <div className="flex items-center gap-2 text-gray-300">
-            <TrendingDown size={18} className="text-amber-400" />
+            <TrendingUp size={18} className="text-amber-400" />
             <span className="text-sm">Total Payable Amount</span>
           </div>
 
           <span className="text-white font-semibold tabular-nums">
-            {payableLoading ? "Loading..." : totalPayableAmount.toFixed(2)}
+            {isLoading ? "Loading..." : data?.meta?.totalAmount}
           </span>
         </div>
       </div>
@@ -319,6 +1048,10 @@ const PayableTable = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Amount
+              </th>
+
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Actions
@@ -394,19 +1127,42 @@ const PayableTable = () => {
                     {Number(rp.amount || 0).toFixed(2)}
                   </td>
 
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {rp.status}
+                  </td>
+
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {rp.note && (
+                      <button
+                        className="text-white-600 hover:text-white-900"
+                        title={rp.note}
+                      >
+                        <Notebook size={18} />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleEditClick(rp)}
                       className="text-indigo-600 hover:text-indigo-900"
                     >
                       <Edit size={18} />
                     </button>
-                    <button
-                      onClick={() => handleDeleteProduct(rowId)}
-                      className="text-red-600 hover:text-red-900 ms-4"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    {role === "superAdmin" ||
+                    role === "admin" ||
+                    rp.status === "Approved" ? (
+                      <button
+                        onClick={() => handleDeleteProduct(rowId)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleEditClick1(rp)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </td>
                 </motion.tr>
               );
@@ -474,14 +1230,14 @@ const PayableTable = () => {
             <h2 className="text-lg font-semibold text-white">Edit</h2>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Name</label>
+              <label className="block text-sm text-white">Company Name</label>
               <input
                 type="text"
                 value={currentProduct?.name || ""}
                 onChange={(e) =>
                   setCurrentProduct({ ...currentProduct, name: e.target.value })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
@@ -497,7 +1253,7 @@ const PayableTable = () => {
                     amount: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
 
@@ -512,9 +1268,45 @@ const PayableTable = () => {
                     remarks: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
               />
             </div>
+
+            {role === "superAdmin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
 
             <div className="mt-4">
               <label className="block text-sm text-white">
@@ -566,19 +1358,19 @@ const PayableTable = () => {
             transition={{ duration: 0.3 }}
           >
             <h2 className="text-lg font-semibold text-white">
-              Add Receiveable Information
+              Add Payable Information
             </h2>
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
-                <label className="block text-sm text-white">Name</label>
+                <label className="block text-sm text-white">Company Name</label>
                 <input
                   type="text"
                   value={createProduct.name}
                   onChange={(e) =>
                     setCreateProduct({ ...createProduct, name: e.target.value })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>
@@ -594,7 +1386,7 @@ const PayableTable = () => {
                       remarks: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>
@@ -611,7 +1403,7 @@ const PayableTable = () => {
                       amount: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>
@@ -654,6 +1446,73 @@ const PayableTable = () => {
                 </button>
               </div>
             </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {isModalOpen2 && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <motion.div
+            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h2 className="text-lg font-semibold text-white">
+              Delete Meta Expense
+            </h2>
+
+            {role === "superAdmin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Status</label>
+                <select
+                  value={currentProduct.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <label className="block text-sm text-white">Note:</label>
+                <textarea
+                  type="text"
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                />
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                onClick={handleUpdateProduct1}
+              >
+                Save
+              </button>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                onClick={handleModalClose2}
+              >
+                Cancel
+              </button>
+            </div>
           </motion.div>
         </div>
       )}

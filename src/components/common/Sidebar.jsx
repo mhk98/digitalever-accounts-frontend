@@ -22,6 +22,7 @@ import {
   TrendingDown,
   PackageSearch,
   TriangleAlert,
+  User2Icon,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -60,28 +61,35 @@ const SIDEBAR_ITEMS = [
     roles: ["superAdmin", "admin"],
   },
   {
+    name: "Employee",
+    icon: User2Icon,
+    color: "#6366f1",
+    href: "/employee",
+    roles: ["superAdmin", "admin", "accountant"],
+  },
+  {
     name: "Assets",
     icon: Building2,
     color: "#EC4899",
-    roles: ["superAdmin", "admin"],
+    roles: ["superAdmin", "admin", "inventor"],
     children: [
       {
         name: "Purchase",
         icon: ShoppingBasket,
         href: "/assets-purchase",
-        roles: ["superAdmin", "admin"],
+        roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Sale",
         icon: BadgeDollarSign,
         href: "/assets-sale",
-        roles: ["superAdmin", "admin"],
+        roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Damage",
         icon: TriangleAlert,
         href: "/assets-damage",
-        roles: ["superAdmin", "admin"],
+        roles: ["superAdmin", "admin", "inventor"],
       },
     ],
   },
@@ -177,19 +185,19 @@ const SIDEBAR_ITEMS = [
     name: "Accounting",
     icon: Wallet,
     color: "#3B82F6",
-    roles: ["superAdmin", "admin"],
+    roles: ["superAdmin", "admin", "accountant"],
     children: [
       {
         name: "Book",
         icon: BookOpen,
         href: "/book",
-        roles: ["superAdmin", "admin", "inventor"],
+        roles: ["superAdmin", "admin", "accountant"],
       },
       {
         name: "Petty Cash",
         icon: HandCoins,
         href: "/petty-cash",
-        roles: ["superAdmin", "admin", "inventor"],
+        roles: ["superAdmin", "admin", "accountant"],
       },
     ],
   },
