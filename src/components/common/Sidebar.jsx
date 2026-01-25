@@ -23,6 +23,7 @@ import {
   PackageSearch,
   TriangleAlert,
   User2Icon,
+  ShoppingCart,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -94,7 +95,7 @@ const SIDEBAR_ITEMS = [
     ],
   },
   {
-    name: "Digital Marketing Expense",
+    name: "DM Expense",
     icon: Megaphone,
     color: "#EC4899",
     roles: ["superAdmin", "admin"],
@@ -124,6 +125,13 @@ const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin", "marketer"],
       },
     ],
+  },
+  {
+    name: "POS",
+    icon: ShoppingCart,
+    color: "#6366f1",
+    href: "/pos",
+    roles: ["superAdmin", "admin", "inventor"],
   },
   {
     name: "Inventory",

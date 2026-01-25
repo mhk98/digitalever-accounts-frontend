@@ -355,8 +355,8 @@ const AssetsPurchaseTable = () => {
 
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
-        <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">From:</label>
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-400 mb-1">From</label>
           <input
             type="date"
             value={startDate}
@@ -365,8 +365,8 @@ const AssetsPurchaseTable = () => {
           />
         </div>
 
-        <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">To:</label>
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-400 mb-1">To</label>
           <input
             type="date"
             value={endDate}
@@ -376,21 +376,21 @@ const AssetsPurchaseTable = () => {
         </div>
 
         {/* ✅ Filter by productId */}
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center mt-6">
           <Select
             options={productOptions}
             value={productOptions.find((o) => o.value === name) || null}
             onChange={(selected) =>
               setName(selected?.value ? String(selected.value) : "")
             }
-            placeholder="Select Product"
+            placeholder="Select Assets"
             isClearable
             className="text-black w-full"
           />
         </div>
 
         <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
+          className="flex items-center mt-6 bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
           onClick={clearFilters}
         >
           Clear Filters

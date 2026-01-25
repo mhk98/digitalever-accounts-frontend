@@ -7,13 +7,13 @@ import Header from "../components/common/Header";
 import PurchaseTable from "../components/purchase/PurchaseTable";
 
 const PurchasePage = () => {
-	return (
-		<div className='flex-1 relative z-10'>
-			<Header title='Purchase' />
+  return (
+    <div className="flex-1 relative z-10">
+      <Header title="Purchase" />
 
-			<main className='max-w-7xl mx-auto py-6 px-4 lg:px-8'>
-				{/* STATS */}
-				{/* <motion.div
+      <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
+        {/* STATS */}
+        {/* <motion.div
 					className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8'
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -25,15 +25,15 @@ const PurchasePage = () => {
 					<StatCard name='Total Revenue' icon={DollarSign} value={"$543,210"} color='#EF4444' />
 				</motion.div> */}
 
-				<PurchaseTable />
+        <PurchaseTable />
 
-				{/* CHARTS */}
-				{/* <div className='grid grid-col-1 lg:grid-cols-2 gap-8'>
+        {/* CHARTS */}
+        {/* <div className='grid grid-col-1 lg:grid-cols-2 gap-8'>
 					<SalesTrendChart />
 					<CategoryDistributionChart />
 				</div> */}
-			</main>
-		</div>
-	);
+      </main>
+    </div>
+  );
 };
 export default PurchasePage;

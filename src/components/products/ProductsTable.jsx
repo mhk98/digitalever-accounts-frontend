@@ -237,27 +237,27 @@ const ProductsTable = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
-        <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">Start Date:</label>
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-400 mb-1">From</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="border border-gray-300 rounded p-1 text-black bg-white"
+            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
           />
         </div>
 
-        <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">End Date:</label>
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-400 mb-1">To</label>
           <input
             type="date"
-            value={endDate}
+            value={startDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="border border-gray-300 rounded p-1 text-black bg-white"
+            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
           />
         </div>
 
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center mt-6">
           <Select
             options={productOptions}
             value={productOptions.find((o) => o.value === name) || null}
@@ -269,7 +269,7 @@ const ProductsTable = () => {
         </div>
 
         <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
+          className="flex items-center mt-6 bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
           onClick={clearFilters}
         >
           Clear Filters

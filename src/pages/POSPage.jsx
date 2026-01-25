@@ -1,15 +1,15 @@
-import CashInOutTable from "../components/cashIn/cashInOutTable";
 import Header from "../components/common/Header";
+import SellPosTable from "../components/sellPos/sellPosTable";
 
-const CashInOutPage = () => {
+const POSPage = () => {
   return (
     <div className="flex-1 relative z-10">
-      <Header title="Product" />
+      <Header title="POS" />
 
       <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
-        <CashInOutTable />
+        <SellPosTable />
       </main>
     </div>
   );
 };
-export default CashInOutPage;
+export default POSPage;

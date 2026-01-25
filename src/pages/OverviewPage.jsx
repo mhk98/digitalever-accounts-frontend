@@ -391,7 +391,7 @@ const OverviewPage = () => {
   // ✅ values (fallback 0)
   const remainingAmount = Number(summary?.remainingAmount || 0);
   const inventoryValue = Number(
-    summary?.remainingInventoryStock_AfterMinus_InventoryExpense || 0
+    summary?.remainingInventoryStock_AfterMinus_InventoryExpense || 0,
   );
   const totalMetaAmount = Number(summary?.totalMetaAmount || 0);
   const totalReceiveableAmount = Number(summary?.totalReceiveableAmount || 0);

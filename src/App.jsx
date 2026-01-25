@@ -32,6 +32,7 @@ import AssetsDamagePage from "./pages/AssetsDamagePage";
 import SupplierPage from "./pages/SupplierPage";
 import DamageProductPage from "./pages/DamageProductPage";
 import EmployeePage from "./pages/EmployeePage";
+import POSPage from "./pages/POSPage";
 
 function App() {
   return (
@@ -64,6 +65,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <EmployeePage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/pos"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <POSPage />
                   </SidebarLayout>
                 </RequireAuth>
               }
