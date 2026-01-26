@@ -55,6 +55,7 @@ const PettyCashTable = () => {
   const [endDate, setEndDate] = useState("");
   const [filterPaymentMode, setFilterPaymentMode] = useState("");
   const [filterPaymentStatus, setFilterPaymentStatus] = useState("");
+  const userId = localStorage.getItem("userId");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
@@ -157,6 +158,7 @@ const PettyCashTable = () => {
       bankName: rp.bankName ?? "",
       remarks: rp.remarks ?? "",
       amount: rp.amount ?? "",
+      userId: userId,
       file: null,
     });
     setIsModalOpen2(true);
@@ -173,6 +175,7 @@ const PettyCashTable = () => {
       formData.append("paymentStatus", currentProduct.paymentStatus);
       formData.append("note", currentProduct.note);
       formData.append("status", currentProduct.status);
+      formData.append("userId", userId);
       formData.append(
         "bankName",
         currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
@@ -204,6 +207,7 @@ const PettyCashTable = () => {
       bankName: rp.bankName ?? "",
       remarks: rp.remarks ?? "",
       amount: rp.amount ?? "",
+      userId: userId,
       file: null,
     });
     setIsModalOpen(true);
@@ -220,6 +224,7 @@ const PettyCashTable = () => {
       formData.append("paymentStatus", currentProduct.paymentStatus);
       formData.append("note", currentProduct.note);
       formData.append("status", currentProduct.status);
+      formData.append("userId", userId);
       formData.append(
         "bankName",
         currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",

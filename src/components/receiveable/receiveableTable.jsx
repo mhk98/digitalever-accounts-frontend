@@ -15,6 +15,7 @@ const ReceiveableTable = () => {
   const [isModalOpen2, setIsModalOpen2] = useState(false);
   const role = localStorage.getItem("role");
   const [currentProduct, setCurrentProduct] = useState(null);
+  const userId = localStorage.getItem("userId");
 
   const [createProduct, setCreateProduct] = useState({
     name: "",
@@ -104,6 +105,7 @@ const ReceiveableTable = () => {
       remarks: rp.remarks ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
+      userId: userId,
       file: null, // ✅ new upload
     });
     setIsModalOpen(true);
@@ -116,6 +118,7 @@ const ReceiveableTable = () => {
       remarks: rp.remarks ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
+      userId: userId,
       file: null, // ✅ new upload
     });
     setIsModalOpen2(true);
@@ -169,6 +172,7 @@ const ReceiveableTable = () => {
         fd.append("remarks", currentProduct?.remarks?.trim() || "");
         fd.append("note", currentProduct?.note?.trim() || "");
         fd.append("status", currentProduct?.status?.trim() || "");
+        fd.append("userId", userId);
         fd.append("amount", String(Number(currentProduct?.amount || 0)));
         fd.append("file", currentProduct.file);
 
@@ -215,6 +219,7 @@ const ReceiveableTable = () => {
         fd.append("remarks", currentProduct?.remarks?.trim() || "");
         fd.append("note", currentProduct?.note?.trim() || "");
         fd.append("status", currentProduct?.status?.trim() || "");
+        fd.append("userId", userId);
         fd.append("amount", String(Number(currentProduct?.amount || 0)));
         fd.append("file", currentProduct.file);
 

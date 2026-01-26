@@ -18,6 +18,7 @@ const AssetsSaleTable = () => {
 
   const [currentProduct, setCurrentProduct] = useState(null);
   const role = localStorage.getItem("role");
+  const userId = localStorage.getItem("userId");
 
   // ✅ INSERT form
   const [createProduct, setCreateProduct] = useState({
@@ -156,6 +157,7 @@ const AssetsSaleTable = () => {
       price: row.price ?? "",
       note: row.note ?? "",
       status: row.status ?? "",
+      userId: userId,
     });
     setIsModalOpen2(true);
   };
@@ -172,6 +174,7 @@ const AssetsSaleTable = () => {
         note: currentProduct.note,
         status: currentProduct.status,
         price: Number(currentProduct.price),
+        userId: userId,
       };
 
       const res = await updateAssetsSale({
@@ -199,6 +202,7 @@ const AssetsSaleTable = () => {
       price: row.price ?? "",
       status: row.status ?? "",
       note: row.note ?? "",
+      userId: userId,
     });
     setIsModalOpen(true);
   };
@@ -219,6 +223,7 @@ const AssetsSaleTable = () => {
         note: currentProduct.note,
         status: currentProduct.status,
         price: Number(currentProduct.price),
+        userId: userId,
       };
 
       const res = await updateAssetsSale({

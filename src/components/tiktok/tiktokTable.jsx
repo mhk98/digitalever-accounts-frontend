@@ -15,6 +15,8 @@ const TiktokTable = () => {
   const [isModalOpen1, setIsModalOpen1] = useState(false);
 
   const role = localStorage.getItem("role");
+  const userId = localStorage.getItem("userId");
+
   const [updateMeta] = useUpdateMetaMutation();
   const [isModalOpen2, setIsModalOpen2] = useState(false);
 
@@ -26,6 +28,7 @@ const TiktokTable = () => {
       amount: rp.amount ?? "",
       status: rp.status ?? "",
       note: rp.note ?? "",
+      userId: userId,
     });
     setIsModalOpen2(true);
   };
@@ -40,6 +43,7 @@ const TiktokTable = () => {
         amount: Number(currentProduct.amount),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateMeta({
@@ -65,6 +69,7 @@ const TiktokTable = () => {
       amount: rp.amount ?? "",
       status: rp.status ?? "",
       note: rp.note ?? "",
+      userId: userId,
     });
     setIsModalOpen(true);
   };
@@ -76,6 +81,7 @@ const TiktokTable = () => {
         amount: Number(currentProduct.amount),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateMeta({

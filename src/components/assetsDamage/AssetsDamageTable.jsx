@@ -17,6 +17,7 @@ const AssetsDamageTable = () => {
   const [isModalOpen1, setIsModalOpen1] = useState(false);
   const [isModalOpen2, setIsModalOpen2] = useState(false);
   const role = localStorage.getItem("role");
+  const userId = localStorage.getItem("userId");
 
   const [currentProduct, setCurrentProduct] = useState(null);
 
@@ -151,6 +152,7 @@ const AssetsDamageTable = () => {
       productId: String(row.productId ?? ""),
       quantity: row.quantity ?? "",
       price: row.price ?? "",
+      userId: userId,
     });
     setIsModalOpen2(true);
   };
@@ -160,6 +162,7 @@ const AssetsDamageTable = () => {
       productId: String(row.productId ?? ""),
       quantity: row.quantity ?? "",
       price: row.price ?? "",
+      userId: userId,
     });
     setIsModalOpen(true);
   };
@@ -215,6 +218,7 @@ const AssetsDamageTable = () => {
         price: Number(currentProduct.price),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateAssetsDamage({
@@ -251,6 +255,7 @@ const AssetsDamageTable = () => {
         price: Number(currentProduct.price),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateAssetsDamage({

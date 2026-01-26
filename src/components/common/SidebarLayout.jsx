@@ -1,7 +1,7 @@
 // SidebarLayout.js (to wrap your main content with the sidebar)
 // eslint-disable-next-line no-unused-vars
-import React from 'react';
-import Sidebar from './Sidebar'; // Assuming you have Sidebar component
+
+import Sidebar from "./Sidebar"; // Assuming you have Sidebar component
 
 const SidebarLayout = ({ children }) => {
   return (

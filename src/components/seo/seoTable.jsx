@@ -13,8 +13,8 @@ import {
 const SEOTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
-
   const [currentProduct, setCurrentProduct] = useState(null);
+  const userId = localStorage.getItem("userId");
 
   // ✅ Add form state
   const [createProduct, setCreateProduct] = useState({
@@ -99,6 +99,7 @@ const SEOTable = () => {
       amount: rp.amount ?? "",
       status: rp.status ?? "",
       note: rp.note ?? "",
+      userId: userId,
     });
     setIsModalOpen2(true);
   };
@@ -113,6 +114,7 @@ const SEOTable = () => {
         amount: Number(currentProduct.amount),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateMeta({
@@ -140,6 +142,7 @@ const SEOTable = () => {
         amount: Number(currentProduct.amount),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateMeta({
@@ -165,6 +168,7 @@ const SEOTable = () => {
       amount: rp.amount ?? "",
       status: rp.status ?? "",
       note: rp.note ?? "",
+      userId: userId,
     });
     setIsModalOpen(true);
   };

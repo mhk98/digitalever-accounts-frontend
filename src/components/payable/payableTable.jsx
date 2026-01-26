@@ -679,6 +679,8 @@ const PayableTable = () => {
   const [isModalOpen1, setIsModalOpen1] = useState(false);
   const [isModalOpen2, setIsModalOpen2] = useState(false);
   const role = localStorage.getItem("role");
+  const userId = localStorage.getItem("userId");
+
   const [currentProduct, setCurrentProduct] = useState(null);
 
   const [createProduct, setCreateProduct] = useState({
@@ -769,6 +771,7 @@ const PayableTable = () => {
       remarks: rp.remarks ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
+      userId: userId,
       file: null, // ✅ new upload
     });
     setIsModalOpen(true);
@@ -781,6 +784,7 @@ const PayableTable = () => {
       remarks: rp.remarks ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
+      userId: userId,
       file: null, // ✅ new upload
     });
     setIsModalOpen2(true);
@@ -834,6 +838,7 @@ const PayableTable = () => {
         fd.append("remarks", currentProduct?.remarks?.trim() || "");
         fd.append("note", currentProduct?.note?.trim() || "");
         fd.append("status", currentProduct?.status?.trim() || "");
+        fd.append("userId", userId);
         fd.append("amount", String(Number(currentProduct?.amount || 0)));
         fd.append("file", currentProduct.file);
 
@@ -853,6 +858,7 @@ const PayableTable = () => {
         amount: Number(currentProduct?.amount || 0),
         note: currentProduct?.note?.trim() || "",
         status: currentProduct?.status?.trim() || "",
+        userId: userId,
       };
 
       const res = await updatePayable({
@@ -880,6 +886,7 @@ const PayableTable = () => {
         fd.append("remarks", currentProduct?.remarks?.trim() || "");
         fd.append("note", currentProduct?.note?.trim() || "");
         fd.append("status", currentProduct?.status?.trim() || "");
+        fd.append("userId", userId);
         fd.append("amount", String(Number(currentProduct?.amount || 0)));
         fd.append("file", currentProduct.file);
 
@@ -899,6 +906,7 @@ const PayableTable = () => {
         amount: Number(currentProduct?.amount || 0),
         note: currentProduct?.note?.trim() || "",
         status: currentProduct?.status?.trim() || "",
+        userId: userId,
       };
 
       const res = await updatePayable({

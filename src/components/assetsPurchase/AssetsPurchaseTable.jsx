@@ -17,6 +17,7 @@ const AssetsPurchaseTable = () => {
   // const [isModalOpen2, setIsModalOpen2] = useState(false);
 
   const role = localStorage.getItem("role");
+  const userId = localStorage.getItem("userId");
 
   const [currentProduct, setCurrentProduct] = useState(null);
 
@@ -138,6 +139,7 @@ const AssetsPurchaseTable = () => {
       note: product.note ?? "",
       status: product.status ?? "",
       quantity: product.quantity ?? "",
+      userId: userId,
     });
     setIsModalOpen2(true);
   };
@@ -154,6 +156,7 @@ const AssetsPurchaseTable = () => {
         price: Number(currentProduct.price),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateAssetsPurchase({
@@ -180,6 +183,7 @@ const AssetsPurchaseTable = () => {
       note: product.note ?? "",
       status: product.status ?? "",
       quantity: product.quantity ?? "",
+      userId: userId,
     });
     setIsModalOpen(true);
   };
@@ -199,6 +203,7 @@ const AssetsPurchaseTable = () => {
         price: Number(currentProduct.price),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateAssetsPurchase({

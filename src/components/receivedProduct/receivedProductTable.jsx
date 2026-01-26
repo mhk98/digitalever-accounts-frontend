@@ -15,8 +15,8 @@ import {
 const ReceivedProductTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
-
   const [currentProduct, setCurrentProduct] = useState(null);
+  const userId = localStorage.getItem("userId");
 
   // ✅ Add form (INSERT) -> productId (Id)
   const [createProduct, setCreateProduct] = useState({
@@ -169,6 +169,7 @@ const ReceivedProductTable = () => {
       productId: rp.productId ? String(rp.productId) : "",
       quantity: rp.quantity ?? "",
       supplier: rp.supplier ?? "",
+      userId: userId,
     });
     setIsModalOpen2(true);
   };
@@ -184,6 +185,7 @@ const ReceivedProductTable = () => {
         quantity: Number(currentProduct.quantity),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateReceivedProduct({
@@ -209,6 +211,7 @@ const ReceivedProductTable = () => {
       productId: rp.productId ? String(rp.productId) : "",
       quantity: rp.quantity ?? "",
       supplier: rp.supplier ?? "",
+      userId: userId,
     });
     setIsModalOpen(true);
   };
@@ -219,6 +222,7 @@ const ReceivedProductTable = () => {
         quantity: Number(currentProduct.quantity),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateReceivedProduct({

@@ -59,6 +59,8 @@ const CashInOutTable = () => {
   const [isModalOpen2, setIsModalOpen2] = useState(false); // delete
   const [currentProduct, setCurrentProduct] = useState(null);
 
+  const userId = localStorage.getItem("userId");
+
   const [createProduct, setCreateProduct] = useState({
     paymentMode: "",
     paymentStatus: "",
@@ -270,6 +272,7 @@ const CashInOutTable = () => {
       bankAccount: rp.bankAccount ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
+      userId: userId,
       categoryId: String(
         rp.categoryId ?? rp.category?.Id ?? rp.category?.id ?? "",
       ),
@@ -289,6 +292,7 @@ const CashInOutTable = () => {
       bankAccount: rp.bankAccount ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
+      userId: userId,
       categoryId: String(
         rp.categoryId ?? rp.category?.Id ?? rp.category?.id ?? "",
       ),
@@ -327,6 +331,7 @@ const CashInOutTable = () => {
       formData.append("paymentStatus", currentProduct.paymentStatus);
       formData.append("note", currentProduct.note);
       formData.append("status", currentProduct.status);
+      formData.append("userId", userId);
       formData.append(
         "bankName",
         currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
@@ -381,6 +386,7 @@ const CashInOutTable = () => {
       formData.append("paymentStatus", currentProduct.paymentStatus);
       formData.append("note", currentProduct.note);
       formData.append("status", currentProduct.status);
+      formData.append("userId", userId);
       formData.append(
         "bankName",
         currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",

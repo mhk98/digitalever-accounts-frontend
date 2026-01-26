@@ -595,6 +595,7 @@ const PurchaseReturnProductTable = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const role = localStorage.getItem("role");
   const [currentItem, setCurrentItem] = useState(null);
+  const userId = localStorage.getItem("userId");
 
   // ✅ UI uses receivedId (ReceivedProduct.Id)
   const [createForm, setCreateForm] = useState({
@@ -708,6 +709,7 @@ const PurchaseReturnProductTable = () => {
       quantity: rp.quantity ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
+      userId: userId,
     });
     setIsEditOpen(true);
   };
@@ -723,6 +725,7 @@ const PurchaseReturnProductTable = () => {
       quantity: rp.quantity ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
+      userId: userId,
     });
     setIsEditOpen1(true);
   };
@@ -775,6 +778,7 @@ const PurchaseReturnProductTable = () => {
         status: currentItem.status,
         quantity: Number(currentItem.quantity),
         receivedId: Number(currentItem.receivedId),
+        userId: userId,
       };
 
       const res = await updateReturnProduct({
@@ -804,6 +808,7 @@ const PurchaseReturnProductTable = () => {
         status: currentItem.status,
         quantity: Number(currentItem.quantity),
         receivedId: Number(currentItem.receivedId),
+        userId: userId,
       };
 
       const res = await updateReturnProduct({

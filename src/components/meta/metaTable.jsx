@@ -442,6 +442,7 @@ import {
 const MetaTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
+  const userId = localStorage.getItem("userId");
 
   const [currentProduct, setCurrentProduct] = useState(null);
 
@@ -528,6 +529,7 @@ const MetaTable = () => {
       amount: rp.amount ?? "",
       status: rp.status ?? "",
       note: rp.note ?? "",
+      userId: userId,
     });
     setIsModalOpen2(true);
   };
@@ -542,6 +544,7 @@ const MetaTable = () => {
         amount: Number(currentProduct.amount),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateMeta({
@@ -567,6 +570,7 @@ const MetaTable = () => {
       amount: rp.amount ?? "",
       status: rp.status ?? "",
       note: rp.note ?? "",
+      userId: userId,
     });
     setIsModalOpen(true);
   };
@@ -579,6 +583,7 @@ const MetaTable = () => {
         amount: Number(currentProduct.amount),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateMeta({

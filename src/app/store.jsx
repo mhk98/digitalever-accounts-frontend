@@ -23,6 +23,7 @@ import { categoryApi } from "../features/category/category";
 import { damageProductApi } from "../features/damageProduct/damageProduct";
 import { productApi } from "../features/product/product";
 import { employeeApi } from "../features/employee/employee";
+import { notificationApi } from "../features/notification/notification";
 
 const store = configureStore({
   reducer: {
@@ -47,6 +48,7 @@ const store = configureStore({
     [payableApi.reducerPath]: payableApi.reducer,
     [overviewApi.reducerPath]: overviewApi.reducer,
     [employeeApi.reducerPath]: employeeApi.reducer,
+    [notificationApi.reducerPath]: notificationApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
   },
 
@@ -75,6 +77,7 @@ const store = configureStore({
       payableApi.middleware,
       overviewApi.middleware,
       employeeApi.middleware,
+      notificationApi.middleware,
       authApi.middleware,
     ),
 });

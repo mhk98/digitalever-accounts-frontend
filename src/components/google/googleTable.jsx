@@ -13,13 +13,11 @@ import {
 const GoogleTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
-
   const [currentProduct, setCurrentProduct] = useState(null);
-
-  // ✅ Add form state
   const [createProduct, setCreateProduct] = useState({
     amount: "",
   });
+  const userId = localStorage.getItem("userId");
 
   const [products, setProducts] = useState([]);
 
@@ -99,6 +97,7 @@ const GoogleTable = () => {
       amount: rp.amount ?? "",
       status: rp.status ?? "",
       note: rp.note ?? "",
+      userId: userId,
     });
     setIsModalOpen2(true);
   };
@@ -113,6 +112,7 @@ const GoogleTable = () => {
         amount: Number(currentProduct.amount),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateMeta({
@@ -138,6 +138,7 @@ const GoogleTable = () => {
       amount: rp.amount ?? "",
       status: rp.status ?? "",
       note: rp.note ?? "",
+      userId: userId,
     });
     setIsModalOpen(true);
   };
@@ -150,6 +151,7 @@ const GoogleTable = () => {
         amount: Number(currentProduct.amount),
         note: currentProduct.note,
         status: currentProduct.status,
+        userId: userId,
       };
 
       const res = await updateMeta({

@@ -1044,9 +1044,10 @@ const EmployeeTable = () => {
   const role = localStorage.getItem("role");
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditModalOpen1, setIsEditModalOpen1] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
   const [currentEmployee, setCurrentEmployee] = useState(null);
+  const userId = localStorage.getItem("userId");
 
   const emptyEmployee = {
     name: "",
@@ -1063,6 +1064,7 @@ const EmployeeTable = () => {
     unapproval_absent: "",
     net_salary: "",
     note: "",
+    remarks: "",
   };
 
   const [createEmployee, setCreateEmployee] = useState(emptyEmployee);
@@ -1247,8 +1249,9 @@ const EmployeeTable = () => {
       unapproval_absent: employee.unapproval_absent ?? "",
       net_salary: employee.net_salary ?? "",
       note: employee.note ?? "",
+      remarks: employee.remarks ?? "",
+      userId: userId,
     };
-
     // ensure calculated fields are always correct
     const s = calcSalary(normalized);
     setCurrentEmployee({
@@ -1259,8 +1262,40 @@ const EmployeeTable = () => {
 
     setIsEditModalOpen(true);
   };
+  const handleEditClick1 = (employee) => {
+    const normalized = {
+      ...employee,
+      name: employee.name ?? "",
+      employee_id: employee.employee_id ?? "",
+      basic_salary: employee.basic_salary ?? "",
+      incentive: employee.incentive ?? "",
+      holiday_payment: employee.holiday_payment ?? "",
+      total_salary: employee.total_salary ?? "",
+      advance: employee.advance ?? "",
+      late: employee.late ?? "",
+      early_leave: employee.early_leave ?? "",
+      absent: employee.absent ?? "",
+      friday_absent: employee.friday_absent ?? "",
+      unapproval_absent: employee.unapproval_absent ?? "",
+      net_salary: employee.net_salary ?? "",
+      note: employee.note ?? "",
+      remarks: employee.remarks ?? "",
+      userId: userId,
+    };
+
+    // ensure calculated fields are always correct
+    const s = calcSalary(normalized);
+    setCurrentEmployee({
+      ...normalized,
+      total_salary: s.total_salary.toFixed(2),
+      net_salary: s.net_salary.toFixed(2),
+    });
+
+    setIsEditModalOpen1(true);
+  };
 
   const closeEditModal = () => setIsEditModalOpen(false);
+  const closeEditModal1 = () => setIsEditModalOpen1(false);
   const openAddModal = () => setIsAddModalOpen(true);
   const closeAddModal = () => setIsAddModalOpen(false);
 
@@ -1319,6 +1354,7 @@ const EmployeeTable = () => {
         name: currentEmployee.name || "",
         employee_id: currentEmployee.employee_id || "",
         note: currentEmployee.note || "",
+        remarks: currentEmployee.remarks || "",
 
         basic_salary: Number(currentEmployee.basic_salary) || 0,
         incentive: Number(currentEmployee.incentive) || 0,
@@ -1333,6 +1369,7 @@ const EmployeeTable = () => {
 
         total_salary: s.total_salary,
         net_salary: s.net_salary,
+        userId: userId,
       };
 
       const res = await updateEmployee({
@@ -1343,6 +1380,49 @@ const EmployeeTable = () => {
       if (res.success) {
         toast.success("Successfully updated employee!");
         setIsEditModalOpen(false);
+        refetch?.();
+      } else {
+        toast.error("Update failed!");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
+  };
+  const handleUpdateEmployee1 = async () => {
+    if (!currentEmployee) return;
+    try {
+      const s = calcSalary(currentEmployee);
+
+      const updatedEmployee = {
+        name: currentEmployee.name || "",
+        employee_id: currentEmployee.employee_id || "",
+        note: currentEmployee.note || "",
+        remarks: currentEmployee.remarks || "",
+
+        basic_salary: Number(currentEmployee.basic_salary) || 0,
+        incentive: Number(currentEmployee.incentive) || 0,
+        holiday_payment: Number(currentEmployee.holiday_payment) || 0,
+
+        advance: Number(currentEmployee.advance) || 0,
+        late: Number(currentEmployee.late) || 0,
+        early_leave: Number(currentEmployee.early_leave) || 0,
+        absent: Number(currentEmployee.absent) || 0,
+        friday_absent: Number(currentEmployee.friday_absent) || 0,
+        unapproval_absent: Number(currentEmployee.unapproval_absent) || 0,
+
+        total_salary: s.total_salary,
+        net_salary: s.net_salary,
+        userId: userId,
+      };
+
+      const res = await updateEmployee({
+        id: currentEmployee.Id,
+        data: updatedEmployee,
+      }).unwrap();
+
+      if (res.success) {
+        toast.success("Successfully updated employee!");
+        setIsEditModalOpen1(false);
         refetch?.();
       } else {
         toast.error("Update failed!");
@@ -1636,12 +1716,30 @@ const EmployeeTable = () => {
                     >
                       <Edit size={18} />
                     </button>
-                    <button
+                    {/* <button
                       onClick={() => handleDeleteEmployee(emp.Id)}
                       className="text-red-600 hover:text-red-900 ms-4"
                     >
                       <Trash2 size={18} />
-                    </button>
+                    </button> */}
+
+                    {role === "superAdmin" ||
+                    role === "admin" ||
+                    emp.status === "Approved" ? (
+                      <button
+                        onClick={() => handleDeleteEmployee(emp.Id)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleEditClick1(emp)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </td>
                 )}
               </motion.tr>
@@ -1882,19 +1980,55 @@ const EmployeeTable = () => {
               </div>
 
               <div className="md:col-span-3">
-                <label className="block text-sm text-white">Note:</label>
+                <label className="block text-sm text-white">Remarks:</label>
                 <textarea
-                  value={currentEmployee.note}
+                  value={currentEmployee.remarks}
                   onChange={(e) =>
                     setCurrentEmployee({
                       ...currentEmployee,
-                      note: e.target.value,
+                      remarks: e.target.value,
                     })
                   }
                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
                   rows={3}
                 />
               </div>
+
+              {role === "superAdmin" ? (
+                <div className="mt-4">
+                  <label className="block text-sm text-white">Status</label>
+                  <select
+                    value={currentEmployee.status || ""}
+                    onChange={(e) =>
+                      setCurrentEmployee({
+                        ...currentEmployee,
+                        status: e.target.value,
+                      })
+                    }
+                    className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                    required
+                  >
+                    <option value="">Select Status</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <label className="block text-sm text-white">Note:</label>
+                  <textarea
+                    type="text"
+                    value={currentEmployee?.note || ""}
+                    onChange={(e) =>
+                      setCurrentEmployee({
+                        ...currentEmployee,
+                        note: e.target.value,
+                      })
+                    }
+                    className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="mt-6 flex justify-end">
@@ -1908,6 +2042,75 @@ const EmployeeTable = () => {
                 type="button"
                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
                 onClick={closeEditModal}
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      {/* -------------------- Delete Modal -------------------- */}
+      {isEditModalOpen1 && currentEmployee && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <motion.div
+            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-3/4 lg:w-2/3"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h2 className="text-lg font-semibold text-white">
+              Delete Employee
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+              {role === "superAdmin" ? (
+                <div className="mt-4">
+                  <label className="block text-sm text-white">Status</label>
+                  <select
+                    value={currentEmployee.status || ""}
+                    onChange={(e) =>
+                      setCurrentEmployee({
+                        ...currentEmployee,
+                        status: e.target.value,
+                      })
+                    }
+                    className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                    required
+                  >
+                    <option value="">Select Status</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <label className="block text-sm text-white">Note:</label>
+                  <textarea
+                    type="text"
+                    value={currentEmployee?.note || ""}
+                    onChange={(e) =>
+                      setCurrentEmployee({
+                        ...currentEmployee,
+                        note: e.target.value,
+                      })
+                    }
+                    className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                onClick={handleUpdateEmployee1}
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                onClick={closeEditModal1}
               >
                 Cancel
               </button>
@@ -2115,13 +2318,13 @@ const EmployeeTable = () => {
               </div>
 
               <div className="md:col-span-3">
-                <label className="block text-sm text-white">Note:</label>
+                <label className="block text-sm text-white">Remarks:</label>
                 <textarea
-                  value={createEmployee.note}
+                  value={createEmployee.remarks}
                   onChange={(e) =>
                     setCreateEmployee({
                       ...createEmployee,
-                      note: e.target.value,
+                      remarks: e.target.value,
                     })
                   }
                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
