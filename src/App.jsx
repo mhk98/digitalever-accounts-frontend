@@ -33,6 +33,7 @@ import SupplierPage from "./pages/SupplierPage";
 import DamageProductPage from "./pages/DamageProductPage";
 import EmployeePage from "./pages/EmployeePage";
 import POSPage from "./pages/POSPage";
+import WarehousePage from "./pages/WarehousePage";
 
 function App() {
   return (
@@ -235,6 +236,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <CashInOutPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/warehouse"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <WarehousePage />
                   </SidebarLayout>
                 </RequireAuth>
               }

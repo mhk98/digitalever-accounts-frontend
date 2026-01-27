@@ -11,6 +11,7 @@ import {
 import toast from "react-hot-toast";
 import Select from "react-select";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
+import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 
 const ProductsTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,6 +30,7 @@ const ProductsTable = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [name, setName] = useState("");
+  const [warehouse, setWarehouse] = useState("");
 
   console.log("startDate:", startDate);
   console.log("endDate:", endDate);
@@ -80,6 +82,7 @@ const ProductsTable = () => {
     startDate: startDate || undefined,
     endDate: endDate || undefined,
     name: name?.trim() ? name.trim() : undefined,
+    warehouseId: warehouse || undefined,
   };
 
   const { data, isLoading, isError, error, refetch } =
@@ -115,6 +118,7 @@ const ProductsTable = () => {
         ...createProduct,
         purchase_price: Number(createProduct.purchase_price),
         sale_price: Number(createProduct.sale_price),
+        warehouseId: createProduct.warehouseId,
       };
 
       const res = await insertProduct(payload).unwrap();
@@ -140,6 +144,7 @@ const ProductsTable = () => {
         name: currentProduct.name,
         purchase_price: Number(currentProduct.purchase_price),
         sale_price: Number(currentProduct.sale_price),
+        warehouseId: currentProduct.warehouseId,
       };
 
       const res = await updateProduct({
@@ -181,6 +186,7 @@ const ProductsTable = () => {
     setStartDate("");
     setEndDate("");
     setName("");
+    setWarehouse("");
   };
 
   const handlePageChange = (pageNumber) => {
@@ -220,6 +226,31 @@ const ProductsTable = () => {
   }, [isErrorSupplier, errorSupplier]);
 
   console.log("suppliers", suppliers);
+
+  const {
+    data: allWarehousesRes,
+    isLoading: isLoadingWarehouse,
+    isError: isErrorWarehouse,
+    error: errorWarehouse,
+  } = useGetAllWirehouseWithoutQueryQuery();
+
+  const warehouses = allWarehousesRes?.data || [];
+
+  console.log("warehouses", warehouses);
+
+  useEffect(() => {
+    if (isErrorWarehouse) {
+      console.error("Error fetching warehouses", errorWarehouse);
+    }
+  }, [isErrorWarehouse, errorWarehouse]);
+
+  console.log("warehouses", warehouses);
+
+  const warehouseOptions = warehouses.map((warehouse) => ({
+    value: warehouse.Id,
+    label: warehouse.name,
+  }));
+
   return (
     <motion.div
       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
@@ -254,6 +285,17 @@ const ProductsTable = () => {
             value={startDate}
             onChange={(e) => setEndDate(e.target.value)}
             className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+          />
+        </div>
+
+        <div className="flex items-center justify-center mt-6">
+          <Select
+            options={warehouseOptions}
+            value={warehouseOptions.find((o) => o.value === warehouse) || null}
+            onChange={(selected) => setWarehouse(selected?.value || "")}
+            placeholder="Select Warehouse"
+            isClearable
+            className="text-black w-full"
           />
         </div>
 
@@ -400,6 +442,33 @@ const ProductsTable = () => {
             </div>
 
             <div className="mt-4">
+              <label className="block text-sm text-white">Warehouse:</label>
+              <select
+                value={createProduct.warehouse}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...createProduct,
+                    warehouse: e.target.value,
+                  })
+                }
+                className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                required
+              >
+                <option value="">Select Warehouse</option>
+
+                {isLoadingWarehouse ? (
+                  <option disabled>Loading...</option>
+                ) : (
+                  warehouses?.map((warehouse) => (
+                    <option key={warehouse.Id} value={warehouse.Id}>
+                      {warehouse.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            <div className="mt-4">
               <label className="block text-sm text-white">Supplier:</label>
               <select
                 value={createProduct.supplier}
@@ -502,6 +571,34 @@ const ProductsTable = () => {
                   required
                 />
               </div>
+
+              <div className="mt-4">
+                <label className="block text-sm text-white">Warehouse:</label>
+                <select
+                  value={createProduct.warehouse || ""}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      warehouse: e.target.value,
+                    })
+                  }
+                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  required
+                >
+                  <option value="">Select Warehouse</option>
+
+                  {isLoadingWarehouse ? (
+                    <option disabled>Loading...</option>
+                  ) : (
+                    warehouses?.map((warehouse) => (
+                      <option key={warehouse.Id} value={warehouse.Id}>
+                        {warehouse.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
               <div className="mt-4">
                 <label className="block text-sm text-white">Supplier:</label>
                 <select
@@ -528,6 +625,7 @@ const ProductsTable = () => {
                   )}
                 </select>
               </div>
+
               <div className="mt-4">
                 <label className="block text-sm text-white">
                   Purchase Price:

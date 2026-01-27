@@ -48,9 +48,9 @@ export const productApi = createApi({
     }),
 
     getAllProduct: build.query({
-      query: ({ page, limit, startDate, endDate, name }) => ({
+      query: ({ page, limit, startDate, endDate, name, warehouseId }) => ({
         url: "/product",
-        params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, name, warehouseId }, // Pass the page and limit as query params
       }),
       providesTags: ["product"],
       refetchOnMountOrArgChange: true,

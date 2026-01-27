@@ -116,7 +116,7 @@ const Header = () => {
   };
 
   return (
-    <header className="w-full bg-[#3c3f41] border-b border-white/10">
+    <header className="w-full bg-gray-800 bg-opacity-50 border-b border-white/10">
       <div className="h-14 px-4 flex items-center justify-between gap-3">
         {/* Left (optional brand / spacer) */}
         <div className="min-w-[120px]" />

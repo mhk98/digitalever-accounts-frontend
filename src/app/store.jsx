@@ -24,6 +24,7 @@ import { damageProductApi } from "../features/damageProduct/damageProduct";
 import { productApi } from "../features/product/product";
 import { employeeApi } from "../features/employee/employee";
 import { notificationApi } from "../features/notification/notification";
+import { wirehouseApi } from "../features/wirehouse/wirehouse";
 
 const store = configureStore({
   reducer: {
@@ -43,6 +44,7 @@ const store = configureStore({
     [expenseApi.reducerPath]: expenseApi.reducer,
     [bookApi.reducerPath]: bookApi.reducer,
     [supplierApi.reducerPath]: supplierApi.reducer,
+    [wirehouseApi.reducerPath]: wirehouseApi.reducer,
     [categoryApi.reducerPath]: categoryApi.reducer,
     [receiveableApi.reducerPath]: receiveableApi.reducer,
     [payableApi.reducerPath]: payableApi.reducer,
@@ -72,6 +74,7 @@ const store = configureStore({
       expenseApi.middleware,
       bookApi.middleware,
       supplierApi.middleware,
+      wirehouseApi.middleware,
       categoryApi.middleware,
       receiveableApi.middleware,
       payableApi.middleware,
