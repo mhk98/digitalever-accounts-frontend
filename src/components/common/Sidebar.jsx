@@ -388,11 +388,13 @@ import {
   PanelLeftOpen,
   Warehouse,
   ShoppingBag,
+  Bell,
 } from "lucide-react";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
+import { useGetAllLogoQuery } from "../../features/logo/logo";
 
 /**
  * Modern + Luxury sidebar
@@ -597,6 +599,42 @@ const SIDEBAR_ITEMS = [
     ],
   },
   {
+    name: "Notifications",
+    icon: Bell,
+    color: "#3B82F6",
+    href: "/notifications",
+    roles: [
+      "superAdmin",
+      "admin",
+      "marketer",
+      "leader",
+      "inventor",
+      "accountant",
+      "staff",
+      "user",
+    ],
+  },
+  {
+    name: "Settings",
+    icon: CreditCard,
+    color: "#3B82F6",
+    roles: ["superAdmin", "accountant"],
+    children: [
+      {
+        name: "Salary",
+        icon: TrendingUp,
+        href: "/salary",
+        roles: ["superAdmin", "admin", "accountant"],
+      },
+      {
+        name: "Logo",
+        icon: TrendingDown,
+        href: "/logo",
+        roles: ["superAdmin", "admin", "accountant"],
+      },
+    ],
+  },
+  {
     name: "Profile",
     icon: UserCog,
     color: "#3B82F6",
@@ -696,6 +734,17 @@ const Sidebar = () => {
     if (first) setOpenMenu(first.name);
   };
 
+  const [logo, setLogo] = useState([]);
+
+  const { data, isLoading, isError, error } = useGetAllLogoQuery();
+
+  useEffect(() => {
+    if (isError) console.error("Error:", error);
+    if (!isLoading && data) {
+      setLogo(data?.data?.file ?? []);
+    }
+  }, [data, isLoading, isError, error]);
+
   return (
     <motion.aside
       className="relative z-10 h-screen"
@@ -710,7 +759,7 @@ const Sidebar = () => {
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl overflow-hidden border border-gray-800/60 shadow">
                 <img
-                  src="https://u6mqr.sgp1.cdn.digitaloceanspaces.com/site-config/a76963b5-b534-4150-bc30-88ad12eca720.jpeg"
+                  src={`http://localhost:5000/${logo}`}
                   alt="Logo"
                   className="h-full w-full object-cover"
                 />

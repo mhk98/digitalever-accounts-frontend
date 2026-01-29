@@ -1039,6 +1039,7 @@ import {
   useInsertEmployeeMutation,
   useUpdateEmployeeMutation,
 } from "../../features/employee/employee";
+import { useGetAllSalaryQuery } from "../../features/salary/salary";
 
 const EmployeeTable = () => {
   const role = localStorage.getItem("role");
@@ -1083,6 +1084,23 @@ const EmployeeTable = () => {
   const [pagesPerSet, setPagesPerSet] = useState(10);
   const [itemsPerPage] = useState(10);
 
+  const [fine, setFine] = useState([]);
+
+  const {
+    data: fineData,
+    isLoading: fineLoading,
+    error: error1,
+  } = useGetAllSalaryQuery();
+
+  useEffect(() => {
+    if (error1) {
+      console.error("Error fetching meta data", error1);
+    } else if (!fineLoading && fineData) {
+      setFine(fineData.data);
+    }
+  }, [fineData, fineLoading, error1]);
+
+  console.log("fine", fine);
   // ----------------------------
   // Salary Calculation (FINAL)
   // ----------------------------
@@ -1106,11 +1124,11 @@ const EmployeeTable = () => {
     const total_salary = basic_salary + holiday_salary + incentive;
 
     // cut days (your rules)
-    const lateCutDays = Math.floor(late / 3); // 3 late => 1 day cut
-    const earlyLeaveCutDays = Math.floor(early_leave / 3); // 3 early leave => 1 day cut
-    const absentCutDays = absent * 1; // 1 absent => 1 day cut
-    const fridayAbsentCutDays = friday_absent * 3; // 1 friday absent => 3 days cut
-    const unapprovalAbsentCutDays = unapproval_absent * 3; // 1 unapproval absent => 3 days cut
+    const lateCutDays = late * fine.late;
+    const earlyLeaveCutDays = early_leave * fine.early_leave;
+    const absentCutDays = absent * fine.absent;
+    const fridayAbsentCutDays = friday_absent * fine.friday_absent;
+    const unapprovalAbsentCutDays = unapproval_absent * fine.unapproval_absent;
 
     const totalCutDays =
       lateCutDays +
@@ -1119,17 +1137,17 @@ const EmployeeTable = () => {
       fridayAbsentCutDays +
       unapprovalAbsentCutDays;
 
-    const cutAmount = perDay * totalCutDays;
+    // const cutAmount = perDay * totalCutDays;
 
     // net = total_salary - cutAmount - advance
-    const net_salary = total_salary - cutAmount - advance;
+    const net_salary = total_salary - totalCutDays - advance;
 
     const safe = (n) => (Number.isFinite(n) ? n : 0);
 
     return {
       perDay: safe(perDay),
       total_salary: safe(total_salary),
-      cutAmount: safe(cutAmount),
+      cutAmount: safe(totalCutDays),
       net_salary: Math.max(safe(net_salary), 0),
     };
   };
@@ -1489,45 +1507,138 @@ const EmployeeTable = () => {
     setInvoiceEmployee(null);
   };
 
+  // const downloadInvoicePDF = async () => {
+  //   if (!invoiceRef.current || !invoiceEmployee) return;
+
+  //   const canvas = await html2canvas(invoiceRef.current, {
+  //     scale: 2,
+  //     useCORS: true,
+  //   });
+
+  //   const imgData = canvas.toDataURL("image/png");
+  //   const pdf = new jsPDF("p", "mm", "a4");
+
+  //   const pdfWidth = pdf.internal.pageSize.getWidth();
+  //   const pdfHeight = pdf.internal.pageSize.getHeight();
+
+  //   const imgProps = pdf.getImageProperties(imgData);
+  //   const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+  //   let position = 0;
+
+  //   // Single page (যদি বড় হয়, নিচে multi-page logic দিলাম)
+  //   if (imgHeight <= pdfHeight) {
+  //     pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+  //   } else {
+  //     // multi-page
+  //     let heightLeft = imgHeight;
+
+  //     pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+  //     heightLeft -= pdfHeight;
+
+  //     while (heightLeft > 0) {
+  //       position = position - pdfHeight;
+  //       pdf.addPage();
+  //       pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+  //       heightLeft -= pdfHeight;
+  //     }
+  //   }
+
+  //   const fileName = `Invoice_${invoiceEmployee?.employee_id || "EMP"}_${Date.now()}.pdf`;
+  //   pdf.save(fileName);
+  // };
+
   const downloadInvoicePDF = async () => {
-    if (!invoiceRef.current || !invoiceEmployee) return;
+    try {
+      if (!invoiceRef.current || !invoiceEmployee) return;
 
-    const canvas = await html2canvas(invoiceRef.current, {
-      scale: 2,
-      useCORS: true,
-    });
+      // fonts ready থাকলে wait
+      if (document.fonts?.ready) await document.fonts.ready;
 
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
+      const canvas = await html2canvas(invoiceRef.current, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
+        // scroll issue avoid
+        scrollX: 0,
+        scrollY: -window.scrollY,
 
-    const imgProps = pdf.getImageProperties(imgData);
-    const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        // ✅ FIX: remove oklch from cloned DOM
+        onclone: (clonedDoc) => {
+          // whole page force white (important)
+          clonedDoc.documentElement.style.background = "#ffffff";
+          clonedDoc.body.style.background = "#ffffff";
 
-    let position = 0;
+          const style = clonedDoc.createElement("style");
+          style.setAttribute("data-html2canvas-fix", "true");
 
-    // Single page (যদি বড় হয়, নিচে multi-page logic দিলাম)
-    if (imgHeight <= pdfHeight) {
-      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
-    } else {
-      // multi-page
+          style.innerHTML = `
+          /* Force everything inside invoice to safe colors (no oklch) */
+          #invoiceCapture, #invoiceCapture * {
+            color: #000 !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            border-color: #d1d5db !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+            filter: none !important;
+            outline: none !important;
+          }
+
+          #invoiceCapture {
+            background: #fff !important;
+            background-color: #fff !important;
+          }
+
+          /* pseudo elements sometimes hold oklch too */
+          #invoiceCapture *::before,
+          #invoiceCapture *::after {
+            color: #000 !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            border-color: #d1d5db !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+            filter: none !important;
+            outline: none !important;
+          }
+        `;
+
+          clonedDoc.head.appendChild(style);
+        },
+      });
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.98);
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
       let heightLeft = imgHeight;
+      let position = 0;
 
-      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
       heightLeft -= pdfHeight;
 
       while (heightLeft > 0) {
-        position = position - pdfHeight;
+        position -= pdfHeight;
         pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
       }
-    }
 
-    const fileName = `Invoice_${invoiceEmployee?.employee_id || "EMP"}_${Date.now()}.pdf`;
-    pdf.save(fileName);
+      const fileName = `Invoice_${invoiceEmployee?.employee_id || "EMP"}_${Date.now()}.pdf`;
+      pdf.save(fileName);
+    } catch (err) {
+      console.error(err);
+      toast.error("PDF download failed! Console এ error দেখুন.");
+    }
   };
 
   return (
@@ -1700,48 +1811,46 @@ const EmployeeTable = () => {
                   {emp.note}
                 </td>
 
-                {(role === "superAdmin" || role === "admin") && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => openInvoice(emp)}
-                      className="text-green-500 hover:text-green-300 ms-4"
-                      title="Invoice"
-                    >
-                      <FileText size={18} />
-                    </button>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button
+                    onClick={() => openInvoice(emp)}
+                    className="text-green-500 hover:text-green-300"
+                    title="Invoice"
+                  >
+                    <FileText size={18} />
+                  </button>
 
-                    <button
-                      onClick={() => handleEditClick(emp)}
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                      <Edit size={18} />
-                    </button>
-                    {/* <button
+                  <button
+                    onClick={() => handleEditClick(emp)}
+                    className="text-indigo-600 hover:text-indigo-900 ms-4"
+                  >
+                    <Edit size={18} />
+                  </button>
+                  {/* <button
                       onClick={() => handleDeleteEmployee(emp.Id)}
                       className="text-red-600 hover:text-red-900 ms-4"
                     >
                       <Trash2 size={18} />
                     </button> */}
 
-                    {role === "superAdmin" ||
-                    role === "admin" ||
-                    emp.status === "Approved" ? (
-                      <button
-                        onClick={() => handleDeleteEmployee(emp.Id)}
-                        className="text-red-600 hover:text-red-900 ms-4"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleEditClick1(emp)}
-                        className="text-red-600 hover:text-red-900 ms-4"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    )}
-                  </td>
-                )}
+                  {role === "superAdmin" ||
+                  role === "admin" ||
+                  emp.status === "Approved" ? (
+                    <button
+                      onClick={() => handleDeleteEmployee(emp.Id)}
+                      className="text-red-600 hover:text-red-900 ms-4"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleEditClick1(emp)}
+                      className="text-red-600 hover:text-red-900 ms-4"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </td>
               </motion.tr>
             ))}
           </tbody>
@@ -1786,14 +1895,16 @@ const EmployeeTable = () => {
 
       {/* -------------------- Edit Modal -------------------- */}
       {isEditModalOpen && currentEmployee && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed top-36 inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <motion.div
             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-3/4 lg:w-2/3"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">Edit Employee</h2>
+            <h2 className="text-lg font-semibold text-white">
+              Edit Employee Salary Calculation
+            </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
               <div>
@@ -1995,7 +2106,7 @@ const EmployeeTable = () => {
               </div>
 
               {role === "superAdmin" ? (
-                <div className="mt-4">
+                <div className="mt-4 ">
                   <label className="block text-sm text-white">Status</label>
                   <select
                     value={currentEmployee.status || ""}
@@ -2014,7 +2125,7 @@ const EmployeeTable = () => {
                   </select>
                 </div>
               ) : (
-                <div className="mt-4">
+                <div className="mt-4 md:col-span-3">
                   <label className="block text-sm text-white">Note:</label>
                   <textarea
                     type="text"
@@ -2025,7 +2136,7 @@ const EmployeeTable = () => {
                         note: e.target.value,
                       })
                     }
-                    className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                    className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
                   />
                 </div>
               )}
@@ -2050,6 +2161,7 @@ const EmployeeTable = () => {
         </div>
       )}
       {/* -------------------- Delete Modal -------------------- */}
+
       {isEditModalOpen1 && currentEmployee && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <motion.div
@@ -2083,7 +2195,7 @@ const EmployeeTable = () => {
                   </select>
                 </div>
               ) : (
-                <div className="mt-4">
+                <div className="mt-4 md:col-span-3">
                   <label className="block text-sm text-white">Note:</label>
                   <textarea
                     type="text"
@@ -2094,7 +2206,7 @@ const EmployeeTable = () => {
                         note: e.target.value,
                       })
                     }
-                    className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                    className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
                   />
                 </div>
               )}
@@ -2353,7 +2465,7 @@ const EmployeeTable = () => {
       )}
 
       {isInvoiceOpen && invoiceEmployee && (
-        <div className="fixed top-28 inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
+        <div className="fixed top-52 inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
           <motion.div
             className="bg-gray-900 rounded-lg p-4 shadow-lg w-full max-w-3xl border border-gray-700"
             initial={{ opacity: 0, y: -30 }}
@@ -2372,6 +2484,7 @@ const EmployeeTable = () => {
                 >
                   Download PDF
                 </button>
+
                 <button
                   onClick={closeInvoice}
                   className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded"
@@ -2382,7 +2495,11 @@ const EmployeeTable = () => {
             </div>
 
             {/* Invoice Content */}
-            <div ref={invoiceRef} className="bg-white text-black rounded p-6 ">
+            <div
+              id="invoiceCapture"
+              ref={invoiceRef}
+              className="bg-white text-black rounded p-6"
+            >
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-xl font-bold">Holy Gift</h3>
@@ -2404,7 +2521,7 @@ const EmployeeTable = () => {
 
               <hr className="my-4" />
 
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="flex justify-between gap-3 text-sm">
                 <p>
                   <b>Employee:</b> {invoiceEmployee.name}
                 </p>
@@ -2424,18 +2541,21 @@ const EmployeeTable = () => {
                       {Number(invoiceEmployee.basic_salary || 0).toFixed(2)}
                     </td>
                   </tr>
+
                   <tr className="border-b">
                     <td className="p-2 font-semibold">Incentive</td>
                     <td className="p-2 text-right">
                       {Number(invoiceEmployee.incentive || 0).toFixed(2)}
                     </td>
                   </tr>
+
                   <tr className="border-b">
                     <td className="p-2 font-semibold">Holiday Days</td>
                     <td className="p-2 text-right">
                       {Number(invoiceEmployee.holiday_payment || 0)}
                     </td>
                   </tr>
+
                   <tr className="border-b">
                     <td className="p-2 font-semibold">Advance</td>
                     <td className="p-2 text-right">
@@ -2445,28 +2565,38 @@ const EmployeeTable = () => {
 
                   <tr className="border-b">
                     <td className="p-2 font-semibold">Late (days)</td>
-                    <td className="p-2 text-right">{invoiceEmployee.late}</td>
+                    <td className="p-2 text-right">
+                      {Number(invoiceEmployee.late || 0)}
+                    </td>
                   </tr>
+
                   <tr className="border-b">
                     <td className="p-2 font-semibold">Early Leave (days)</td>
                     <td className="p-2 text-right">
-                      {invoiceEmployee.early_leave}
+                      {Number(invoiceEmployee.early_leave || 0)}
                     </td>
                   </tr>
+
                   <tr className="border-b">
                     <td className="p-2 font-semibold">Absent (days)</td>
-                    <td className="p-2 text-right">{invoiceEmployee.absent}</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="p-2 font-semibold">Friday Absent (days)</td>
                     <td className="p-2 text-right">
-                      {invoiceEmployee.friday_absent}
+                      {Number(invoiceEmployee.absent || 0)}
                     </td>
                   </tr>
+
                   <tr className="border-b">
                     <td className="p-2 font-semibold">Friday Absent (days)</td>
                     <td className="p-2 text-right">
-                      {invoiceEmployee.unapproval_absent}
+                      {Number(invoiceEmployee.friday_absent || 0)}
+                    </td>
+                  </tr>
+
+                  <tr className="border-b">
+                    <td className="p-2 font-semibold">
+                      Unapproval Absent (days)
+                    </td>
+                    <td className="p-2 text-right">
+                      {Number(invoiceEmployee.unapproval_absent || 0)}
                     </td>
                   </tr>
 
@@ -2476,6 +2606,7 @@ const EmployeeTable = () => {
                       {Number(invoiceEmployee.total_salary || 0).toFixed(2)}
                     </td>
                   </tr>
+
                   <tr>
                     <td className="p-2 font-bold text-lg">Net Salary</td>
                     <td className="p-2 text-right font-bold text-lg">
@@ -2485,11 +2616,21 @@ const EmployeeTable = () => {
                 </tbody>
               </table>
 
+              {/* Note */}
               <p className="text-xs mt-4 text-gray-600">
                 <span className="font-bold">Note: </span>
-                {/* This invoice is system generated By Digital Ever. */}
                 {invoiceEmployee.note}
               </p>
+
+              {/* ✅ Signature Area */}
+              <div className="mt-10 grid grid-cols-2 gap-10 text-sm">
+                <div className="border-t border-gray-400 pt-2 text-center">
+                  Employee Signature
+                </div>
+                <div className="border-t border-gray-400 pt-2 text-center">
+                  Authorized Signature
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>
