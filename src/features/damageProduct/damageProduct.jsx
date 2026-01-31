@@ -1,25 +1,6 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { baseApi } from "../baseApi/api";
 
-// Helper function to get the auth token
-const getAuthToken = () => {
-  return localStorage.getItem("token"); // Modify this based on your token storage logic
-};
-
-export const damageProductApi = createApi({
-  reducerPath: "damageProductApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1/",
-    prepareHeaders: (headers) => {
-      const token = getAuthToken(); // Fetch the token
-      if (token) {
-        // If the token exists, add it to the headers
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-
-  tagTypes: ["damage-product"], // Define the tag type for invalidation and refetching
+export const damageProductApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     insertDamageProduct: build.mutation({
       query: (data) => ({
@@ -27,7 +8,10 @@ export const damageProductApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["damage-product"], // Invalidate the damage-product tag after this mutation
+      invalidatesTags: [
+        { type: "DamageProduct", id: "LIST" },
+        { type: "ReceivedProduct", id: "LIST" }, // ✅ receive stock affected
+      ],
     }),
 
     deleteDamageProduct: build.mutation({
@@ -35,7 +19,12 @@ export const damageProductApi = createApi({
         url: `/damage-product/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["damage-product"], // Invalidate the damage-product tag after deletion
+      invalidatesTags: (res, err, id) => [
+        { type: "DamageProduct", id },
+        { type: "DamageProduct", id: "LIST" },
+
+        { type: "ReceivedProduct", id: "LIST" }, // ✅ stock return/update
+      ],
     }),
 
     updateDamageProduct: build.mutation({
@@ -44,26 +33,43 @@ export const damageProductApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["damage-product"], // Invalidate the damage-product tag after this mutation
+      invalidatesTags: (res, err, arg) => [
+        { type: "DamageProduct", id: arg.id },
+        { type: "DamageProduct", id: "LIST" },
+
+        { type: "ReceivedProduct", id: "LIST" }, // ✅ if update changes qty/status
+      ],
     }),
 
     getAllDamageProduct: build.query({
-      query: ({ page, limit, startDate, endDate, name }) => ({
-        url: "/damage-product",
-        params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
-      }),
-      providesTags: ["damage-product"],
+      query: (arg = {}) => {
+        const { page, limit, startDate, endDate, name, searchTerm } = arg;
+        const params = { page, limit, startDate, endDate, name, searchTerm };
+
+        Object.keys(params).forEach((k) => {
+          if (params[k] === undefined || params[k] === null || params[k] === "")
+            delete params[k];
+        });
+
+        return { url: "/damage-product/", params };
+      },
+      providesTags: (result) =>
+        result?.data
+          ? [
+              { type: "DamageProduct", id: "LIST" },
+              ...result.data.map((r) => ({
+                type: "DamageProduct",
+                id: r.Id,
+              })),
+            ]
+          : [{ type: "DamageProduct", id: "LIST" }],
       refetchOnMountOrArgChange: true,
-      pollingInterval: 1000,
     }),
 
     getAllDamageProductWithoutQuery: build.query({
-      query: () => ({
-        url: "/damage-product/all",
-      }),
-      providesTags: ["damage-product"],
+      query: () => ({ url: "/damage-product/all" }),
+      providesTags: [{ type: "DamageProduct", id: "LIST" }],
       refetchOnMountOrArgChange: true,
-      pollingInterval: 1000,
     }),
   }),
 });

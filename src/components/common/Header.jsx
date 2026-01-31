@@ -37,7 +37,7 @@
 //         <div className="w-10 rounded-full">
 //           <img
 //             alt="Tailwind CSS Navbar component"
-//             src={`http://localhost:5000/${profileImage}`}/>P
+//             src={`https://api.digitalever.com.bd/${profileImage}`}/>P
 //         </div>
 //       </div> */}
 //             {/* <ul
@@ -99,7 +99,9 @@ const Header = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/v1/user/${userId}`);
+        const res = await fetch(
+          `https://api.digitalever.com.bd/api/v1/user/${userId}`,
+        );
         const data = await res.json();
         setUser(data.data);
       } catch (err) {

@@ -1023,14 +1023,12 @@
 // export default EmployeeTable;
 
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Edit, Plus, Trash2, FileText } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
-import { FileText } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { useRef } from "react";
 
 import {
   useDeleteEmployeeMutation,
@@ -1043,12 +1041,29 @@ import { useGetAllSalaryQuery } from "../../features/salary/salary";
 
 const EmployeeTable = () => {
   const role = localStorage.getItem("role");
+  const userId = localStorage.getItem("userId");
 
+  // ----------------------------
+  // Modals
+  // ----------------------------
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEditModalOpen1, setIsEditModalOpen1] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Invoice (single)
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  const [invoiceEmployee, setInvoiceEmployee] = useState(null);
+  const invoiceRef = useRef(null);
+
+  // Invoice (bulk)
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [isBulkInvoiceOpen, setIsBulkInvoiceOpen] = useState(false);
+  const bulkInvoiceRef = useRef(null);
+
+  // ----------------------------
+  // Employee state
+  // ----------------------------
   const [currentEmployee, setCurrentEmployee] = useState(null);
-  const userId = localStorage.getItem("userId");
 
   const emptyEmployee = {
     name: "",
@@ -1078,37 +1093,66 @@ const EmployeeTable = () => {
   const [endDate, setEndDate] = useState("");
   const [name, setName] = useState("");
 
+  // ✅ Per-page user selectable
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
-  const [itemsPerPage] = useState(10);
 
-  const [fine, setFine] = useState([]);
+  // ----------------------------
+  // Fine meta (IMPORTANT FIX)
+  // ----------------------------
+  // ✅ fine অবশ্যই object হবে, না হলে fine.late undefined হবে
+  const [fine, setFine] = useState({
+    late: 0,
+    early_leave: 0,
+    absent: 0,
+    friday_absent: 0,
+    unapproval_absent: 0,
+  });
 
   const {
     data: fineData,
     isLoading: fineLoading,
-    error: error1,
+    error: fineError,
   } = useGetAllSalaryQuery();
 
   useEffect(() => {
-    if (error1) {
-      console.error("Error fetching meta data", error1);
-    } else if (!fineLoading && fineData) {
-      setFine(fineData.data);
+    if (fineError) {
+      console.error("Error fetching fine meta", fineError);
+      return;
     }
-  }, [fineData, fineLoading, error1]);
+    if (!fineLoading && fineData?.data) {
+      // ✅ তোমার API shape অনুযায়ী adjust:
+      // যদি fineData.data = {late:..., absent:...} -> সরাসরি বসবে
+      // যদি array আসে -> প্রথমটা নাও
+      const payload = Array.isArray(fineData.data)
+        ? fineData.data[0]
+        : fineData.data;
 
-  console.log("fine", fine);
+      setFine((prev) => ({
+        late: Number(payload?.late ?? prev.late ?? 0),
+        early_leave: Number(payload?.early_leave ?? prev.early_leave ?? 0),
+        absent: Number(payload?.absent ?? prev.absent ?? 0),
+        friday_absent: Number(
+          payload?.friday_absent ?? prev.friday_absent ?? 0,
+        ),
+        unapproval_absent: Number(
+          payload?.unapproval_absent ?? prev.unapproval_absent ?? 0,
+        ),
+      }));
+    }
+  }, [fineData, fineLoading, fineError]);
+
   // ----------------------------
-  // Salary Calculation (FINAL)
+  // Salary Calculation
   // ----------------------------
   const calcSalary = (p) => {
     const basic_salary = Number(p.basic_salary) || 0;
     const incentive = Number(p.incentive) || 0;
     const holiday_days = Number(p.holiday_payment) || 0;
-
     const advance = Number(p.advance) || 0;
 
     const late = Number(p.late) || 0;
@@ -1119,40 +1163,36 @@ const EmployeeTable = () => {
 
     const perDay = basic_salary / 30;
 
-    // total salary = holiday_days * perDay
     const holiday_salary = perDay * holiday_days;
     const total_salary = basic_salary + holiday_salary + incentive;
 
-    // cut days (your rules)
-    const lateCutDays = late * fine.late;
-    const earlyLeaveCutDays = early_leave * fine.early_leave;
-    const absentCutDays = absent * fine.absent;
-    const fridayAbsentCutDays = friday_absent * fine.friday_absent;
-    const unapprovalAbsentCutDays = unapproval_absent * fine.unapproval_absent;
+    // ✅ cut amount (BDT) - fine values should be BDT (or points) per incident/day
+    const lateCut = late * (Number(fine.late) || 0);
+    const earlyLeaveCut = early_leave * (Number(fine.early_leave) || 0);
+    const absentCut = absent * (Number(fine.absent) || 0);
+    const fridayAbsentCut = friday_absent * (Number(fine.friday_absent) || 0);
+    const unapprovalAbsentCut =
+      unapproval_absent * (Number(fine.unapproval_absent) || 0);
 
-    const totalCutDays =
-      lateCutDays +
-      earlyLeaveCutDays +
-      absentCutDays +
-      fridayAbsentCutDays +
-      unapprovalAbsentCutDays;
+    const totalCutAmount =
+      lateCut +
+      earlyLeaveCut +
+      absentCut +
+      fridayAbsentCut +
+      unapprovalAbsentCut;
 
-    // const cutAmount = perDay * totalCutDays;
-
-    // net = total_salary - cutAmount - advance
-    const net_salary = total_salary - totalCutDays - advance;
+    const net_salary = total_salary - totalCutAmount - advance;
 
     const safe = (n) => (Number.isFinite(n) ? n : 0);
 
     return {
       perDay: safe(perDay),
       total_salary: safe(total_salary),
-      cutAmount: safe(totalCutDays),
+      cutAmount: safe(totalCutAmount),
       net_salary: Math.max(safe(net_salary), 0),
     };
   };
 
-  // Add modal: one updater for all salary-related fields
   const updateCreateField = (key, value) => {
     setCreateEmployee((prev) => {
       const next = { ...prev, [key]: value };
@@ -1165,7 +1205,6 @@ const EmployeeTable = () => {
     });
   };
 
-  // Edit modal: one updater for all salary-related fields
   const updateCurrentField = (key, value) => {
     setCurrentEmployee((prev) => {
       const next = { ...prev, [key]: value };
@@ -1209,11 +1248,11 @@ const EmployeeTable = () => {
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
 
-  // filter change হলে page 1 এ ফেরত
+  // filter change হলে page 1
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate, name]);
+  }, [startDate, endDate, name, itemsPerPage]);
 
   const queryArgs = {
     page: currentPage,
@@ -1270,7 +1309,7 @@ const EmployeeTable = () => {
       remarks: employee.remarks ?? "",
       userId: userId,
     };
-    // ensure calculated fields are always correct
+
     const s = calcSalary(normalized);
     setCurrentEmployee({
       ...normalized,
@@ -1280,35 +1319,18 @@ const EmployeeTable = () => {
 
     setIsEditModalOpen(true);
   };
+
   const handleEditClick1 = (employee) => {
     const normalized = {
       ...employee,
       name: employee.name ?? "",
       employee_id: employee.employee_id ?? "",
-      basic_salary: employee.basic_salary ?? "",
-      incentive: employee.incentive ?? "",
-      holiday_payment: employee.holiday_payment ?? "",
-      total_salary: employee.total_salary ?? "",
-      advance: employee.advance ?? "",
-      late: employee.late ?? "",
-      early_leave: employee.early_leave ?? "",
-      absent: employee.absent ?? "",
-      friday_absent: employee.friday_absent ?? "",
-      unapproval_absent: employee.unapproval_absent ?? "",
-      net_salary: employee.net_salary ?? "",
       note: employee.note ?? "",
       remarks: employee.remarks ?? "",
       userId: userId,
     };
 
-    // ensure calculated fields are always correct
-    const s = calcSalary(normalized);
-    setCurrentEmployee({
-      ...normalized,
-      total_salary: s.total_salary.toFixed(2),
-      net_salary: s.net_salary.toFixed(2),
-    });
-
+    setCurrentEmployee(normalized);
     setIsEditModalOpen1(true);
   };
 
@@ -1331,10 +1353,10 @@ const EmployeeTable = () => {
 
       const payload = {
         ...createEmployee,
-
         name: createEmployee.name || "",
         employee_id: createEmployee.employee_id || "",
         note: createEmployee.note || "",
+        remarks: createEmployee.remarks || "",
 
         basic_salary: Number(createEmployee.basic_salary) || 0,
         incentive: Number(createEmployee.incentive) || 0,
@@ -1349,6 +1371,7 @@ const EmployeeTable = () => {
 
         total_salary: s.total_salary,
         net_salary: s.net_salary,
+        userId: userId,
       };
 
       const res = await insertEmployee(payload).unwrap();
@@ -1387,6 +1410,7 @@ const EmployeeTable = () => {
 
         total_salary: s.total_salary,
         net_salary: s.net_salary,
+        status: currentEmployee.status,
         userId: userId,
       };
 
@@ -1406,30 +1430,16 @@ const EmployeeTable = () => {
       toast.error(err?.data?.message || "Update failed!");
     }
   };
+
+  // This is your "Delete modal save" (actually update note/status)
   const handleUpdateEmployee1 = async () => {
     if (!currentEmployee) return;
     try {
-      const s = calcSalary(currentEmployee);
-
       const updatedEmployee = {
         name: currentEmployee.name || "",
         employee_id: currentEmployee.employee_id || "",
         note: currentEmployee.note || "",
-        remarks: currentEmployee.remarks || "",
-
-        basic_salary: Number(currentEmployee.basic_salary) || 0,
-        incentive: Number(currentEmployee.incentive) || 0,
-        holiday_payment: Number(currentEmployee.holiday_payment) || 0,
-
-        advance: Number(currentEmployee.advance) || 0,
-        late: Number(currentEmployee.late) || 0,
-        early_leave: Number(currentEmployee.early_leave) || 0,
-        absent: Number(currentEmployee.absent) || 0,
-        friday_absent: Number(currentEmployee.friday_absent) || 0,
-        unapproval_absent: Number(currentEmployee.unapproval_absent) || 0,
-
-        total_salary: s.total_salary,
-        net_salary: s.net_salary,
+        status: currentEmployee.status,
         userId: userId,
       };
 
@@ -1439,7 +1449,7 @@ const EmployeeTable = () => {
       }).unwrap();
 
       if (res.success) {
-        toast.success("Successfully updated employee!");
+        toast.success("Successfully updated!");
         setIsEditModalOpen1(false);
         refetch?.();
       } else {
@@ -1494,65 +1504,23 @@ const EmployeeTable = () => {
       Math.min(prev + pagesPerSet, totalPages - pagesPerSet + 1),
     );
 
-  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
-  const [invoiceEmployee, setInvoiceEmployee] = useState(null);
-  const invoiceRef = useRef(null);
-
+  // ----------------------------
+  // Invoice: single
+  // ----------------------------
   const openInvoice = (emp) => {
     setInvoiceEmployee(emp);
     setIsInvoiceOpen(true);
   };
+
   const closeInvoice = () => {
     setIsInvoiceOpen(false);
     setInvoiceEmployee(null);
   };
 
-  // const downloadInvoicePDF = async () => {
-  //   if (!invoiceRef.current || !invoiceEmployee) return;
-
-  //   const canvas = await html2canvas(invoiceRef.current, {
-  //     scale: 2,
-  //     useCORS: true,
-  //   });
-
-  //   const imgData = canvas.toDataURL("image/png");
-  //   const pdf = new jsPDF("p", "mm", "a4");
-
-  //   const pdfWidth = pdf.internal.pageSize.getWidth();
-  //   const pdfHeight = pdf.internal.pageSize.getHeight();
-
-  //   const imgProps = pdf.getImageProperties(imgData);
-  //   const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-  //   let position = 0;
-
-  //   // Single page (যদি বড় হয়, নিচে multi-page logic দিলাম)
-  //   if (imgHeight <= pdfHeight) {
-  //     pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
-  //   } else {
-  //     // multi-page
-  //     let heightLeft = imgHeight;
-
-  //     pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
-  //     heightLeft -= pdfHeight;
-
-  //     while (heightLeft > 0) {
-  //       position = position - pdfHeight;
-  //       pdf.addPage();
-  //       pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
-  //       heightLeft -= pdfHeight;
-  //     }
-  //   }
-
-  //   const fileName = `Invoice_${invoiceEmployee?.employee_id || "EMP"}_${Date.now()}.pdf`;
-  //   pdf.save(fileName);
-  // };
-
   const downloadInvoicePDF = async () => {
     try {
       if (!invoiceRef.current || !invoiceEmployee) return;
 
-      // fonts ready থাকলে wait
       if (document.fonts?.ready) await document.fonts.ready;
 
       const canvas = await html2canvas(invoiceRef.current, {
@@ -1561,52 +1529,40 @@ const EmployeeTable = () => {
         allowTaint: true,
         backgroundColor: "#ffffff",
         logging: false,
-
-        // scroll issue avoid
         scrollX: 0,
         scrollY: -window.scrollY,
 
         // ✅ FIX: remove oklch from cloned DOM
         onclone: (clonedDoc) => {
-          // whole page force white (important)
           clonedDoc.documentElement.style.background = "#ffffff";
           clonedDoc.body.style.background = "#ffffff";
 
           const style = clonedDoc.createElement("style");
           style.setAttribute("data-html2canvas-fix", "true");
-
           style.innerHTML = `
-          /* Force everything inside invoice to safe colors (no oklch) */
-          #invoiceCapture, #invoiceCapture * {
-            color: #000 !important;
-            background: transparent !important;
-            background-color: transparent !important;
-            border-color: #d1d5db !important;
-            box-shadow: none !important;
-            text-shadow: none !important;
-            filter: none !important;
-            outline: none !important;
-          }
-
-          #invoiceCapture {
-            background: #fff !important;
-            background-color: #fff !important;
-          }
-
-          /* pseudo elements sometimes hold oklch too */
-          #invoiceCapture *::before,
-          #invoiceCapture *::after {
-            color: #000 !important;
-            background: transparent !important;
-            background-color: transparent !important;
-            border-color: #d1d5db !important;
-            box-shadow: none !important;
-            text-shadow: none !important;
-            filter: none !important;
-            outline: none !important;
-          }
-        `;
-
+            #invoiceCapture, #invoiceCapture * {
+              color: #000 !important;
+              background: transparent !important;
+              background-color: transparent !important;
+              border-color: #d1d5db !important;
+              box-shadow: none !important;
+              text-shadow: none !important;
+              filter: none !important;
+              outline: none !important;
+            }
+            #invoiceCapture { background: #fff !important; background-color: #fff !important; }
+            #invoiceCapture *::before,
+            #invoiceCapture *::after {
+              color: #000 !important;
+              background: transparent !important;
+              background-color: transparent !important;
+              border-color: #d1d5db !important;
+              box-shadow: none !important;
+              text-shadow: none !important;
+              filter: none !important;
+              outline: none !important;
+            }
+          `;
           clonedDoc.head.appendChild(style);
         },
       });
@@ -1641,6 +1597,135 @@ const EmployeeTable = () => {
     }
   };
 
+  // ----------------------------
+  // Bulk selection (table checkbox)
+  // ----------------------------
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const isAllSelectedOnPage = useMemo(() => {
+    const idsOnPage = (employees || []).map((e) => e.Id);
+    return (
+      idsOnPage.length > 0 && idsOnPage.every((id) => selectedIds.includes(id))
+    );
+  }, [employees, selectedIds]);
+
+  const toggleSelectAllOnPage = () => {
+    const idsOnPage = (employees || []).map((e) => e.Id);
+    setSelectedIds((prev) => {
+      const allSelected = idsOnPage.every((id) => prev.includes(id));
+      if (allSelected) return prev.filter((id) => !idsOnPage.includes(id));
+      return Array.from(new Set([...prev, ...idsOnPage]));
+    });
+  };
+
+  const selectedEmployees = useMemo(() => {
+    // employeesAll না থাকলে employees থেকে fallback
+    const all =
+      Array.isArray(employeesAll) && employeesAll.length
+        ? employeesAll
+        : employees;
+    const map = new Map((all || []).map((e) => [e.Id, e]));
+    return selectedIds.map((id) => map.get(id)).filter(Boolean);
+  }, [selectedIds, employeesAll, employees]);
+
+  // ----------------------------
+  // Bulk invoice PDF (multi invoice in one PDF)
+  // ----------------------------
+  const downloadBulkInvoicePDF = async () => {
+    try {
+      if (!bulkInvoiceRef.current || selectedEmployees.length === 0) return;
+
+      if (document.fonts?.ready) await document.fonts.ready;
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+
+      const invoiceNodes =
+        bulkInvoiceRef.current.querySelectorAll(".invoice-page");
+
+      for (let i = 0; i < invoiceNodes.length; i++) {
+        const node = invoiceNodes[i];
+
+        const canvas = await html2canvas(node, {
+          scale: 3,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#ffffff",
+          logging: false,
+          scrollX: 0,
+          scrollY: -window.scrollY,
+        });
+
+        const imgData = canvas.toDataURL("image/jpeg", 0.98);
+        const imgH = (canvas.height * pageW) / canvas.width;
+
+        let heightLeft = imgH;
+        let position = 0;
+
+        if (i > 0) pdf.addPage();
+
+        pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
+        heightLeft -= pageH;
+
+        while (heightLeft > 0) {
+          position -= pageH;
+          pdf.addPage();
+          pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
+          heightLeft -= pageH;
+        }
+      }
+
+      pdf.save(`Invoices_${Date.now()}.pdf`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Bulk PDF download failed!");
+    }
+  };
+
+  // ✅ Bulk print (direct print)
+  const printBulkInvoices = () => {
+    if (!bulkInvoiceRef.current || selectedEmployees.length === 0) return;
+
+    const html = bulkInvoiceRef.current.innerHTML;
+
+    const printWindow = window.open("", "_blank", "width=900,height=650");
+    if (!printWindow) {
+      toast.error("Popup blocked! Allow popups then try again.");
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Invoices</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 12px; }
+            .invoice-page { page-break-after: always; border: 1px solid #e5e7eb; padding: 16px; margin-bottom: 16px; }
+            table { width: 100%; border-collapse: collapse; }
+            td { border: 1px solid #d1d5db; padding: 8px; }
+            hr { margin: 14px 0; }
+          </style>
+        </head>
+        <body>
+          ${html}
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() { window.close(); }
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   return (
     <motion.div
       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
@@ -1648,26 +1733,33 @@ const EmployeeTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <div className="my-6 flex justify-start">
+      <div className="my-6 flex flex-wrap gap-3 items-center justify-start">
         <button
           className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-28 justify-center"
           onClick={openAddModal}
         >
           Add <Plus size={18} className="ms-2" />
         </button>
+
+        {/* ✅ Bulk actions */}
+        <button
+          className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded disabled:opacity-60"
+          onClick={() => setIsBulkInvoiceOpen(true)}
+          disabled={selectedIds.length === 0}
+        >
+          Print Selected ({selectedIds.length})
+        </button>
+
+        <button
+          className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded disabled:opacity-60"
+          onClick={() => setSelectedIds([])}
+          disabled={selectedIds.length === 0}
+        >
+          Clear Selection
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
-        {/* <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">Start Date:</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="border border-gray-300 rounded p-1 text-black bg-white"
-          />
-        </div> */}
-
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center mb-6 w-full justify-center mx-auto">
         <div className="flex flex-col">
           <label className="text-sm text-gray-400 mb-1">From</label>
           <input
@@ -1677,6 +1769,7 @@ const EmployeeTable = () => {
             className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
           />
         </div>
+
         <div className="flex flex-col">
           <label className="text-sm text-gray-400 mb-1">To</label>
           <input
@@ -1698,6 +1791,26 @@ const EmployeeTable = () => {
           />
         </div>
 
+        {/* ✅ Per page dropdown */}
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-400 mb-1">Per Page</label>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+              setStartPage(1);
+            }}
+            className="px-3 py-[10px] rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+          >
+            <option value={1}>1</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+
         <button
           className="flex items-center mt-6 bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
           onClick={clearFilters}
@@ -1710,6 +1823,15 @@ const EmployeeTable = () => {
         <table className="min-w-full divide-y divide-gray-700">
           <thead>
             <tr>
+              {/* ✅ select all on this page */}
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                <input
+                  type="checkbox"
+                  checked={isAllSelectedOnPage}
+                  onChange={toggleSelectAllOnPage}
+                />
+              </th>
+
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Employee
               </th>
@@ -1752,6 +1874,7 @@ const EmployeeTable = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Note
               </th>
+
               {(role === "superAdmin" || role === "admin") && (
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Actions
@@ -1761,13 +1884,22 @@ const EmployeeTable = () => {
           </thead>
 
           <tbody className="divide-y divide-gray-700">
-            {employees.map((emp) => (
+            {(employees || []).map((emp) => (
               <motion.tr
                 key={emp.Id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
+                {/* ✅ row checkbox */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(emp.Id)}
+                    onChange={() => toggleSelect(emp.Id)}
+                  />
+                </td>
+
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
                   {emp.name}
                 </td>
@@ -1811,46 +1943,45 @@ const EmployeeTable = () => {
                   {emp.note}
                 </td>
 
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => openInvoice(emp)}
-                    className="text-green-500 hover:text-green-300"
-                    title="Invoice"
-                  >
-                    <FileText size={18} />
-                  </button>
-
-                  <button
-                    onClick={() => handleEditClick(emp)}
-                    className="text-indigo-600 hover:text-indigo-900 ms-4"
-                  >
-                    <Edit size={18} />
-                  </button>
-                  {/* <button
-                      onClick={() => handleDeleteEmployee(emp.Id)}
-                      className="text-red-600 hover:text-red-900 ms-4"
-                    >
-                      <Trash2 size={18} />
-                    </button> */}
-
-                  {role === "superAdmin" ||
-                  role === "admin" ||
-                  emp.status === "Approved" ? (
+                {(role === "superAdmin" || role === "admin") && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
-                      onClick={() => handleDeleteEmployee(emp.Id)}
-                      className="text-red-600 hover:text-red-900 ms-4"
+                      onClick={() => openInvoice(emp)}
+                      className="text-green-500 hover:text-green-300"
+                      title="Invoice"
                     >
-                      <Trash2 size={18} />
+                      <FileText size={18} />
                     </button>
-                  ) : (
+
                     <button
-                      onClick={() => handleEditClick1(emp)}
-                      className="text-red-600 hover:text-red-900 ms-4"
+                      onClick={() => handleEditClick(emp)}
+                      className="text-indigo-600 hover:text-indigo-900 ms-4"
+                      title="Edit"
                     >
-                      <Trash2 size={18} />
+                      <Edit size={18} />
                     </button>
-                  )}
-                </td>
+
+                    {role === "superAdmin" ||
+                    role === "admin" ||
+                    emp.status === "Approved" ? (
+                      <button
+                        onClick={() => handleDeleteEmployee(emp.Id)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                        title="Delete"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleEditClick1(emp)}
+                        className="text-red-600 hover:text-red-900 ms-4"
+                        title="Delete Request / Note"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </td>
+                )}
               </motion.tr>
             ))}
           </tbody>
@@ -1962,12 +2093,6 @@ const EmployeeTable = () => {
                   type="number"
                   step="0.01"
                   value={currentEmployee.incentive}
-                  // onChange={(e) =>
-                  //   setCurrentEmployee({
-                  //     ...currentEmployee,
-                  //     incentive: e.target.value,
-                  //   })
-                  // }
                   onChange={(e) =>
                     updateCurrentField("incentive", e.target.value)
                   }
@@ -2128,7 +2253,6 @@ const EmployeeTable = () => {
                 <div className="mt-4 md:col-span-3">
                   <label className="block text-sm text-white">Note:</label>
                   <textarea
-                    type="text"
                     value={currentEmployee?.note || ""}
                     onChange={(e) =>
                       setCurrentEmployee({
@@ -2160,8 +2284,8 @@ const EmployeeTable = () => {
           </motion.div>
         </div>
       )}
-      {/* -------------------- Delete Modal -------------------- */}
 
+      {/* -------------------- "Delete" Modal (note/status update) -------------------- */}
       {isEditModalOpen1 && currentEmployee && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <motion.div
@@ -2198,7 +2322,6 @@ const EmployeeTable = () => {
                 <div className="mt-4 md:col-span-3">
                   <label className="block text-sm text-white">Note:</label>
                   <textarea
-                    type="text"
                     value={currentEmployee?.note || ""}
                     onChange={(e) =>
                       setCurrentEmployee({
@@ -2303,12 +2426,6 @@ const EmployeeTable = () => {
                   type="number"
                   step="0.01"
                   value={createEmployee.incentive}
-                  // onChange={(e) =>
-                  //   setCreateEmployee({
-                  //     ...createEmployee,
-                  //     incentive: e.target.value,
-                  //   })
-                  // }
                   onChange={(e) =>
                     updateCreateField("incentive", e.target.value)
                   }
@@ -2464,6 +2581,7 @@ const EmployeeTable = () => {
         </div>
       )}
 
+      {/* -------------------- Single Invoice Modal -------------------- */}
       {isInvoiceOpen && invoiceEmployee && (
         <div className="fixed top-52 inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
           <motion.div
@@ -2494,7 +2612,6 @@ const EmployeeTable = () => {
               </div>
             </div>
 
-            {/* Invoice Content */}
             <div
               id="invoiceCapture"
               ref={invoiceRef}
@@ -2532,7 +2649,6 @@ const EmployeeTable = () => {
 
               <hr className="my-4" />
 
-              {/* Salary Breakdown */}
               <table className="w-full text-sm border border-gray-300">
                 <tbody>
                   <tr className="border-b">
@@ -2541,21 +2657,18 @@ const EmployeeTable = () => {
                       {Number(invoiceEmployee.basic_salary || 0).toFixed(2)}
                     </td>
                   </tr>
-
                   <tr className="border-b">
                     <td className="p-2 font-semibold">Incentive</td>
                     <td className="p-2 text-right">
                       {Number(invoiceEmployee.incentive || 0).toFixed(2)}
                     </td>
                   </tr>
-
                   <tr className="border-b">
                     <td className="p-2 font-semibold">Holiday Days</td>
                     <td className="p-2 text-right">
                       {Number(invoiceEmployee.holiday_payment || 0)}
                     </td>
                   </tr>
-
                   <tr className="border-b">
                     <td className="p-2 font-semibold">Advance</td>
                     <td className="p-2 text-right">
@@ -2569,28 +2682,24 @@ const EmployeeTable = () => {
                       {Number(invoiceEmployee.late || 0)}
                     </td>
                   </tr>
-
                   <tr className="border-b">
                     <td className="p-2 font-semibold">Early Leave (days)</td>
                     <td className="p-2 text-right">
                       {Number(invoiceEmployee.early_leave || 0)}
                     </td>
                   </tr>
-
                   <tr className="border-b">
                     <td className="p-2 font-semibold">Absent (days)</td>
                     <td className="p-2 text-right">
                       {Number(invoiceEmployee.absent || 0)}
                     </td>
                   </tr>
-
                   <tr className="border-b">
                     <td className="p-2 font-semibold">Friday Absent (days)</td>
                     <td className="p-2 text-right">
                       {Number(invoiceEmployee.friday_absent || 0)}
                     </td>
                   </tr>
-
                   <tr className="border-b">
                     <td className="p-2 font-semibold">
                       Unapproval Absent (days)
@@ -2606,7 +2715,6 @@ const EmployeeTable = () => {
                       {Number(invoiceEmployee.total_salary || 0).toFixed(2)}
                     </td>
                   </tr>
-
                   <tr>
                     <td className="p-2 font-bold text-lg">Net Salary</td>
                     <td className="p-2 text-right font-bold text-lg">
@@ -2616,13 +2724,11 @@ const EmployeeTable = () => {
                 </tbody>
               </table>
 
-              {/* Note */}
               <p className="text-xs mt-4 text-gray-600">
                 <span className="font-bold">Note: </span>
                 {invoiceEmployee.note}
               </p>
 
-              {/* ✅ Signature Area */}
               <div className="mt-10 grid grid-cols-2 gap-10 text-sm">
                 <div className="border-t border-gray-400 pt-2 text-center">
                   Employee Signature
@@ -2630,6 +2736,185 @@ const EmployeeTable = () => {
                 <div className="border-t border-gray-400 pt-2 text-center">
                   Authorized Signature
                 </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* -------------------- Bulk Invoice Modal -------------------- */}
+      {isBulkInvoiceOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
+          <motion.div
+            className="bg-gray-900 rounded-lg p-4 shadow-lg w-full max-w-5xl border border-gray-700"
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <div className="flex items-center justify-between mb-3 md:mt-20 lg:mt-28">
+              <h2 className="text-white font-semibold text-lg">
+                Selected Invoices ({selectedEmployees.length})
+              </h2>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={printBulkInvoices}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded disabled:opacity-60"
+                  disabled={selectedEmployees.length === 0}
+                >
+                  Print
+                </button>
+
+                <button
+                  onClick={downloadBulkInvoicePDF}
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded disabled:opacity-60"
+                  disabled={selectedEmployees.length === 0}
+                >
+                  Download PDF
+                </button>
+
+                <button
+                  onClick={() => setIsBulkInvoiceOpen(false)}
+                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded max-h-[75vh] overflow-auto">
+              <div ref={bulkInvoiceRef}>
+                {selectedEmployees.map((emp) => (
+                  <div
+                    key={emp.Id}
+                    className="invoice-page bg-white text-black rounded p-6 mb-6 border border-gray-200"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-xl font-bold">Holy Gift</h3>
+                        <p className="text-sm">Address line</p>
+                        <p className="text-sm">Phone: +880 9647-555333</p>
+                      </div>
+
+                      <div className="text-right">
+                        <h3 className="text-xl font-bold">INVOICE</h3>
+                        <p className="text-sm">
+                          Date: {new Date().toLocaleDateString()}
+                        </p>
+                        <p className="text-sm">
+                          Invoice No: {emp.employee_id}-
+                          {String(Date.now()).slice(-6)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <hr className="my-4" />
+
+                    <div className="flex justify-between gap-3 text-sm">
+                      <p>
+                        <b>Employee:</b> {emp.name}
+                      </p>
+                      <p>
+                        <b>Employee ID:</b> {emp.employee_id}
+                      </p>
+                    </div>
+
+                    <hr className="my-4" />
+
+                    <table className="w-full text-sm border border-gray-300">
+                      <tbody>
+                        <tr className="border-b">
+                          <td className="p-2 font-semibold">Basic Salary</td>
+                          <td className="p-2 text-right">
+                            {Number(emp.basic_salary || 0).toFixed(2)}
+                          </td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-2 font-semibold">Incentive</td>
+                          <td className="p-2 text-right">
+                            {Number(emp.incentive || 0).toFixed(2)}
+                          </td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-2 font-semibold">Holiday Days</td>
+                          <td className="p-2 text-right">
+                            {Number(emp.holiday_payment || 0)}
+                          </td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-2 font-semibold">Advance</td>
+                          <td className="p-2 text-right">
+                            -{Number(emp.advance || 0).toFixed(2)}
+                          </td>
+                        </tr>
+
+                        <tr className="border-b">
+                          <td className="p-2 font-semibold">Late (days)</td>
+                          <td className="p-2 text-right">
+                            {Number(emp.late || 0)}
+                          </td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-2 font-semibold">
+                            Early Leave (days)
+                          </td>
+                          <td className="p-2 text-right">
+                            {Number(emp.early_leave || 0)}
+                          </td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-2 font-semibold">Absent (days)</td>
+                          <td className="p-2 text-right">
+                            {Number(emp.absent || 0)}
+                          </td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-2 font-semibold">
+                            Friday Absent (days)
+                          </td>
+                          <td className="p-2 text-right">
+                            {Number(emp.friday_absent || 0)}
+                          </td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="p-2 font-semibold">
+                            Unapproval Absent (days)
+                          </td>
+                          <td className="p-2 text-right">
+                            {Number(emp.unapproval_absent || 0)}
+                          </td>
+                        </tr>
+
+                        <tr className="border-b">
+                          <td className="p-2 font-semibold">Total Salary</td>
+                          <td className="p-2 text-right">
+                            {Number(emp.total_salary || 0).toFixed(2)}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="p-2 font-bold text-lg">Net Salary</td>
+                          <td className="p-2 text-right font-bold text-lg">
+                            {Number(emp.net_salary || 0).toFixed(2)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    <p className="text-xs mt-4 text-gray-600">
+                      <span className="font-bold">Note: </span>
+                      {emp.note || ""}
+                    </p>
+
+                    <div className="mt-10 grid grid-cols-2 gap-10 text-sm">
+                      <div className="border-t border-gray-400 pt-2 text-center">
+                        Employee Signature
+                      </div>
+                      <div className="border-t border-gray-400 pt-2 text-center">
+                        Authorized Signature
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </motion.div>

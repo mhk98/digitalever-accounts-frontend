@@ -27,6 +27,7 @@ import { notificationApi } from "../features/notification/notification";
 import { wirehouseApi } from "../features/wirehouse/wirehouse";
 import { salaryApi } from "../features/salary/salary";
 import { logoApi } from "../features/logo/logo";
+import { damageRepairApi } from "../features/damageRepair/damageRepair";
 
 const store = configureStore({
   reducer: {
@@ -55,6 +56,7 @@ const store = configureStore({
     [notificationApi.reducerPath]: notificationApi.reducer,
     [salaryApi.reducerPath]: salaryApi.reducer,
     [logoApi.reducerPath]: logoApi.reducer,
+    [damageRepairApi.reducerPath]: damageRepairApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
   },
 
@@ -86,6 +88,7 @@ const store = configureStore({
       employeeApi.middleware,
       salaryApi.middleware,
       logoApi.middleware,
+      damageRepairApi.middleware,
       notificationApi.middleware,
       authApi.middleware,
     ),

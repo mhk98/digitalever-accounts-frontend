@@ -1,41 +1,127 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+// import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// Helper function to get the auth token
-const getAuthToken = () => {
-  return localStorage.getItem("token"); // Modify this based on your token storage logic
-};
+import { baseApi } from "../baseApi/api";
 
-export const purchaseReturnProductApi = createApi({
-  reducerPath: "purchaseReturnProductApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1/",
-    prepareHeaders: (headers) => {
-      const token = getAuthToken(); // Fetch the token
-      if (token) {
-        // If the token exists, add it to the headers
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
+// // Helper function to get the auth token
+// const getAuthToken = () => {
+//   return localStorage.getItem("token"); // Modify this based on your token storage logic
+// };
 
-  tagTypes: ["purchase-return-product"], // Define the tag type for invalidation and refetching
+// export const purchaseReturnProductApi = createApi({
+//   reducerPath: "purchaseReturnProductApi",
+//   baseQuery: fetchBaseQuery({
+//     baseUrl: "https://api.digitalever.com.bd/api/v1/",
+//     prepareHeaders: (headers) => {
+//       const token = getAuthToken(); // Fetch the token
+//       if (token) {
+//         // If the token exists, add it to the headers
+//         headers.set("Authorization", `Bearer ${token}`);
+//       }
+//       return headers;
+//     },
+//   }),
+
+//   tagTypes: ["purchase-return-product"], // Define the tag type for invalidation and refetching
+//   endpoints: (build) => ({
+//     insertPurchaseReturnProduct: build.mutation({
+//       query: (data) => ({
+//         url: "/purchase-return-product/create",
+//         method: "POST",
+//         body: data,
+//       }),
+//       invalidatesTags: ["purchase-return-product"], // Invalidate the purchase-return-product tag after this mutation
+//     }),
+
+//     deletePurchaseReturnProduct: build.mutation({
+//       query: (id) => ({
+//         url: `/purchase-return-product/${id}`,
+//         method: "DELETE",
+//       }),
+//       invalidatesTags: ["purchase-return-product"], // Invalidate the purchase-return-product tag after deletion
+//     }),
+
+//     updatePurchaseReturnProduct: build.mutation({
+//       query: ({ id, data }) => ({
+//         url: `/purchase-return-product/${id}`,
+//         method: "PATCH",
+//         body: data,
+//       }),
+//       invalidatesTags: ["purchase-return-product"], // Invalidate the purchase-return-product tag after this mutation
+//     }),
+
+//     getAllPurchaseReturnProduct: build.query({
+//       query: ({ page, limit, startDate, endDate, name }) => ({
+//         url: "/purchase-return-product",
+//         params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
+//       }),
+//       providesTags: ["purchase-return-product"],
+//       refetchOnMountOrArgChange: true,
+//       pollingInterval: 1000,
+//     }),
+
+//     getAllPurchaseReturnProductWithoutQuery: build.query({
+//       query: () => ({
+//         url: "/purchase-return-product/all",
+//       }),
+//       providesTags: ["purchase-return-product"],
+//       refetchOnMountOrArgChange: true,
+//       pollingInterval: 1000,
+//     }),
+//   }),
+// });
+
+// export const {
+//   useInsertPurchaseReturnProductMutation,
+//   useGetAllPurchaseReturnProductQuery,
+//   useDeletePurchaseReturnProductMutation,
+//   useUpdatePurchaseReturnProductMutation,
+//   useGetAllPurchaseReturnProductWithoutQueryQuery,
+// } = purchaseReturnProductApi;
+
+export const purchaseReturnProductApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    getAllPurchaseReturnProduct: build.query({
+      query: (arg = {}) => {
+        const { page, limit, startDate, endDate, searchTerm, name } = arg;
+
+        const params = { page, limit, startDate, endDate, searchTerm, name };
+        Object.keys(params).forEach((k) => {
+          if (params[k] === undefined || params[k] === null || params[k] === "")
+            delete params[k];
+        });
+
+        return { url: "/purchase-return-product", params };
+      },
+
+      providesTags: (result) =>
+        result?.data
+          ? [
+              { type: "PurchaseReturn", id: "LIST" },
+              ...result.data.map((r) => ({ type: "PurchaseReturn", id: r.Id })),
+            ]
+          : [{ type: "PurchaseReturn", id: "LIST" }],
+
+      refetchOnMountOrArgChange: true,
+    }),
+
+    getAllPurchaseReturnProductWithoutQuery: build.query({
+      query: () => ({ url: "/purchase-return-product/all" }),
+      providesTags: [{ type: "PurchaseReturn", id: "LIST" }],
+      refetchOnMountOrArgChange: true,
+    }),
+
     insertPurchaseReturnProduct: build.mutation({
       query: (data) => ({
         url: "/purchase-return-product/create",
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["purchase-return-product"], // Invalidate the purchase-return-product tag after this mutation
-    }),
 
-    deletePurchaseReturnProduct: build.mutation({
-      query: (id) => ({
-        url: `/purchase-return-product/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["purchase-return-product"], // Invalidate the purchase-return-product tag after deletion
+      // ✅ return insert affects ReceivedProduct stock too
+      invalidatesTags: [
+        { type: "PurchaseReturn", id: "LIST" },
+        { type: "ReceivedProduct", id: "LIST" },
+      ],
     }),
 
     updatePurchaseReturnProduct: build.mutation({
@@ -44,34 +130,37 @@ export const purchaseReturnProductApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["purchase-return-product"], // Invalidate the purchase-return-product tag after this mutation
+
+      // ✅ update also affects received stock (if approved)
+      invalidatesTags: (res, err, arg) => [
+        { type: "PurchaseReturn", id: arg.id },
+        { type: "PurchaseReturn", id: "LIST" },
+        { type: "ReceivedProduct", id: "LIST" },
+      ],
     }),
 
-    getAllPurchaseReturnProduct: build.query({
-      query: ({ page, limit, startDate, endDate, name }) => ({
-        url: "/purchase-return-product",
-        params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
+    deletePurchaseReturnProduct: build.mutation({
+      query: (id) => ({
+        url: `/purchase-return-product/${id}`,
+        method: "DELETE",
       }),
-      providesTags: ["purchase-return-product"],
-      refetchOnMountOrArgChange: true,
-      pollingInterval: 1000,
-    }),
 
-    getAllPurchaseReturnProductWithoutQuery: build.query({
-      query: () => ({
-        url: "/purchase-return-product/all",
-      }),
-      providesTags: ["purchase-return-product"],
-      refetchOnMountOrArgChange: true,
-      pollingInterval: 1000,
+      // ✅ delete also restores received stock
+      invalidatesTags: (res, err, id) => [
+        { type: "PurchaseReturn", id },
+        { type: "PurchaseReturn", id: "LIST" },
+        { type: "ReceivedProduct", id: "LIST" },
+      ],
     }),
   }),
+
+  overrideExisting: false,
 });
 
 export const {
-  useInsertPurchaseReturnProductMutation,
   useGetAllPurchaseReturnProductQuery,
-  useDeletePurchaseReturnProductMutation,
-  useUpdatePurchaseReturnProductMutation,
   useGetAllPurchaseReturnProductWithoutQueryQuery,
+  useInsertPurchaseReturnProductMutation,
+  useUpdatePurchaseReturnProductMutation,
+  useDeletePurchaseReturnProductMutation,
 } = purchaseReturnProductApi;

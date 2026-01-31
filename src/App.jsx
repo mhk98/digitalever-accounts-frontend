@@ -37,6 +37,7 @@ import WarehousePage from "./pages/WarehousePage";
 import NotificationPage from "./pages/NotificationPage";
 import SalaryPage from "./pages/SalaryPage";
 import LogoPage from "./pages/LogoPage";
+import DamageRepairPage from "./pages/DamageRepairPage";
 
 function App() {
   return (
@@ -139,6 +140,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <DamageProductPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/damage-repair"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <DamageRepairPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

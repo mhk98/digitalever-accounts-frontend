@@ -12,7 +12,7 @@
 //   useUpdateDamageProductMutation,
 // } from "../../features/damageProduct/damageProduct";
 
-// const DamageRepairTable = () => {
+// const PurchaseReturnProductTable = () => {
 //   const [isEditOpen, setIsEditOpen] = useState(false);
 //   const [isAddOpen, setIsAddOpen] = useState(false);
 
@@ -574,21 +574,20 @@
 //   );
 // };
 
-// export default DamageRepairTable;
+// export default PurchaseReturnProductTable;
 
 import { motion } from "framer-motion";
 import { Edit, Notebook, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
-
-import { useGetAllReceivedProductWithoutQueryQuery } from "../../features/receivedProduct/receivedProduct";
+import { useGetAllDamageProductWithoutQueryQuery } from "../../features/damageProduct/damageProduct";
 import {
-  useDeleteDamageProductMutation,
-  useGetAllDamageProductQuery,
-  useInsertDamageProductMutation,
-  useUpdateDamageProductMutation,
-} from "../../features/damageProduct/damageProduct";
+  useDeleteDamageRepairMutation,
+  useGetAllDamageRepairQuery,
+  useInsertDamageRepairMutation,
+  useUpdateDamageRepairMutation,
+} from "../../features/damageRepair/damageRepair";
 
 const DamageRepairTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -623,7 +622,7 @@ const DamageRepairTable = () => {
     isLoading: receivedLoading,
     isError: receivedError,
     error: receivedErrObj,
-  } = useGetAllReceivedProductWithoutQueryQuery();
+  } = useGetAllDamageProductWithoutQueryQuery();
 
   const receivedData = receivedRes?.data || [];
 
@@ -672,7 +671,7 @@ const DamageRepairTable = () => {
   };
 
   const { data, isLoading, isError, error, refetch } =
-    useGetAllDamageProductQuery(queryArgs);
+    useGetAllDamageRepairQuery(queryArgs);
 
   useEffect(() => {
     if (isError) console.error("PurchaseReturn fetch error:", error);
@@ -733,9 +732,9 @@ const DamageRepairTable = () => {
   };
 
   // mutations
-  const [insertDamageProduct] = useInsertDamageProductMutation();
-  const [updateDamageProduct] = useUpdateDamageProductMutation();
-  const [deleteDamageProduct] = useDeleteDamageProductMutation();
+  const [insertDamageRepair] = useInsertDamageRepairMutation();
+  const [updateDamageRepair] = useUpdateDamageRepairMutation();
+  const [deleteDamageRepair] = useDeleteDamageRepairMutation();
 
   // ✅ create (send receivedId)
   const handleCreate = async (e) => {
@@ -751,7 +750,7 @@ const DamageRepairTable = () => {
         quantity: Number(createForm.quantity),
       };
 
-      const res = await insertDamageProduct(payload).unwrap();
+      const res = await insertDamageRepair(payload).unwrap();
       if (res?.success) {
         toast.success("Created!");
         setCreateForm({ receivedId: "", quantity: "" });
@@ -778,7 +777,7 @@ const DamageRepairTable = () => {
         receivedId: Number(currentItem.receivedId),
       };
 
-      const res = await updateDamageProduct({
+      const res = await updateDamageRepair({
         id: currentItem.Id,
         data: payload,
       }).unwrap();
@@ -807,7 +806,7 @@ const DamageRepairTable = () => {
         receivedId: Number(currentItem.receivedId),
       };
 
-      const res = await updateDamageProduct({
+      const res = await updateDamageRepair({
         id: currentItem.Id,
         data: payload,
       }).unwrap();
@@ -827,7 +826,7 @@ const DamageRepairTable = () => {
     if (!window.confirm("Do you want to delete this item?")) return;
 
     try {
-      const res = await deleteDamageProduct(id).unwrap();
+      const res = await deleteDamageRepair(id).unwrap();
       if (res?.success) {
         toast.success("Deleted!");
         refetch?.();

@@ -389,6 +389,8 @@ import {
   Warehouse,
   ShoppingBag,
   Bell,
+  Currency,
+  Wrench,
 } from "lucide-react";
 
 import { useEffect, useMemo, useState } from "react";
@@ -556,6 +558,12 @@ const SIDEBAR_ITEMS = [
         href: "/damage-product",
         roles: ["superAdmin", "admin", "inventor"],
       },
+      {
+        name: "Damage Repair",
+        icon: Wrench,
+        href: "/damage-repair",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
     ],
   },
   {
@@ -618,11 +626,11 @@ const SIDEBAR_ITEMS = [
     name: "Settings",
     icon: CreditCard,
     color: "#3B82F6",
-    roles: ["superAdmin", "accountant"],
+    roles: ["superAdmin", "admin", "accountant"],
     children: [
       {
         name: "Salary",
-        icon: TrendingUp,
+        icon: Currency,
         href: "/salary",
         roles: ["superAdmin", "admin", "accountant"],
       },
@@ -759,7 +767,7 @@ const Sidebar = () => {
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl overflow-hidden border border-gray-800/60 shadow">
                 <img
-                  src={`http://localhost:5000/${logo}`}
+                  src={`https://api.digitalever.com.bd/${logo}`}
                   alt="Logo"
                   className="h-full w-full object-cover"
                 />

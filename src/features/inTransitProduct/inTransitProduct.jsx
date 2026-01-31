@@ -1,25 +1,6 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { baseApi } from "../baseApi/api";
 
-// Helper function to get the auth token
-const getAuthToken = () => {
-  return localStorage.getItem("token"); // Modify this based on your token storage logic
-};
-
-export const inTransitProductApi = createApi({
-  reducerPath: "inTransitProductApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1/",
-    prepareHeaders: (headers) => {
-      const token = getAuthToken(); // Fetch the token
-      if (token) {
-        // If the token exists, add it to the headers
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-
-  tagTypes: ["intransit-product"], // Define the tag type for invalidation and refetching
+export const inTransitProductApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     insertInTransitProduct: build.mutation({
       query: (data) => ({
@@ -27,7 +8,10 @@ export const inTransitProductApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["intransit-product"], // Invalidate the intransit-product tag after this mutation
+      invalidatesTags: [
+        { type: "InTransitProduct", id: "LIST" },
+        { type: "ReceivedProduct", id: "LIST" }, // ✅ receive stock affected
+      ],
     }),
 
     deleteInTransitProduct: build.mutation({
@@ -35,7 +19,12 @@ export const inTransitProductApi = createApi({
         url: `/intransit-product/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["intransit-product"], // Invalidate the intransit-product tag after deletion
+      invalidatesTags: (res, err, id) => [
+        { type: "InTransitProduct", id },
+        { type: "InTransitProduct", id: "LIST" },
+
+        { type: "ReceivedProduct", id: "LIST" }, // ✅ stock return/update
+      ],
     }),
 
     updateInTransitProduct: build.mutation({
@@ -44,26 +33,43 @@ export const inTransitProductApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["intransit-product"], // Invalidate the intransit-product tag after this mutation
+      invalidatesTags: (res, err, arg) => [
+        { type: "InTransitProduct", id: arg.id },
+        { type: "InTransitProduct", id: "LIST" },
+
+        { type: "ReceivedProduct", id: "LIST" }, // ✅ if update changes qty/status
+      ],
     }),
 
     getAllInTransitProduct: build.query({
-      query: ({ page, limit, startDate, endDate, name }) => ({
-        url: "/intransit-product",
-        params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
-      }),
-      providesTags: ["intransit-product"],
+      query: (arg = {}) => {
+        const { page, limit, startDate, endDate, name, searchTerm } = arg;
+        const params = { page, limit, startDate, endDate, name, searchTerm };
+
+        Object.keys(params).forEach((k) => {
+          if (params[k] === undefined || params[k] === null || params[k] === "")
+            delete params[k];
+        });
+
+        return { url: "/intransit-product", params };
+      },
+      providesTags: (result) =>
+        result?.data
+          ? [
+              { type: "InTransitProduct", id: "LIST" },
+              ...result.data.map((r) => ({
+                type: "InTransitProduct",
+                id: r.Id,
+              })),
+            ]
+          : [{ type: "InTransitProduct", id: "LIST" }],
       refetchOnMountOrArgChange: true,
-      pollingInterval: 1000,
     }),
 
     getAllInTransitProductWithoutQuery: build.query({
-      query: () => ({
-        url: "/intransit-product/all",
-      }),
-      providesTags: ["intransit-product"],
+      query: () => ({ url: "/intransit-product/all" }),
+      providesTags: [{ type: "InTransitProduct", id: "LIST" }],
       refetchOnMountOrArgChange: true,
-      pollingInterval: 1000,
     }),
   }),
 });
