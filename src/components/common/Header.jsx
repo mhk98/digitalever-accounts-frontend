@@ -118,7 +118,7 @@ const Header = () => {
   };
 
   return (
-    <header className="w-full bg-gray-800 bg-opacity-50 border-b border-white/10">
+    <header className="w-full bg-slate-50 border-b border-slate-200 shadow-sm px-6 py-3 ">
       <div className="h-14 px-4 flex items-center justify-between gap-3">
         {/* Left (optional brand / spacer) */}
         <div className="min-w-[120px]" />
@@ -128,10 +128,10 @@ const Header = () => {
           <button
             type="button"
             onClick={() => setIsNotifOpen(!isNotifOpen)}
-            className="relative h-10 w-10 rounded-md bg-[#2f3133] border border-white/10 hover:bg-white/5 flex items-center justify-center"
+            className="relative h-10 w-10 rounded-md bg-white  border border-slate-200  flex items-center justify-center"
             title="Notifications"
           >
-            <Bell className="text-white/80" size={18} />
+            <Bell className="text-slate-700" size={18} />
             {Number(notifications) > 0 && (
               <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
                 {notifications}

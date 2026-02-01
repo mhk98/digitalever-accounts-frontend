@@ -1,23 +1,29 @@
 // import { motion } from "framer-motion";
-// import { Edit, Plus, Trash2 } from "lucide-react";
-// import { useEffect, useState } from "react";
+// import { Edit, BarChart3, Plus, Trash2, Notebook } from "lucide-react";
+// import { useEffect, useMemo, useState } from "react";
 // import toast from "react-hot-toast";
-// import { useDeleteMetaMutation, useGetAllMetaQuery, useInsertMetaMutation, useUpdateMetaMutation } from "../../features/marketing/marketing";
+// import {
+//   useDeleteMetaMutation,
+//   useGetAllMetaQuery,
+//   useGetAllMetaWithoutQueryQuery,
+//   useInsertMetaMutation,
+//   useUpdateMetaMutation,
+// } from "../../features/marketing/marketing";
 
 // const MetaTable = () => {
 //   const [isModalOpen, setIsModalOpen] = useState(false);
 //   const [isModalOpen1, setIsModalOpen1] = useState(false);
+//   const userId = localStorage.getItem("userId");
 
 //   const [currentProduct, setCurrentProduct] = useState(null);
 
-//   // ✅ Add form state (insert productId, show name)
+//   // ✅ Add form state
 //   const [createProduct, setCreateProduct] = useState({
 //     amount: "",
 //   });
 
 //   const [products, setProducts] = useState([]);
 
-//   console.log("products", products)
 //   // ✅ Filters
 //   const [startDate, setStartDate] = useState("");
 //   const [endDate, setEndDate] = useState("");
@@ -26,7 +32,7 @@
 //   const [startPage, setStartPage] = useState(1);
 //   const [totalPages, setTotalPages] = useState(1);
 //   const [pagesPerSet, setPagesPerSet] = useState(10);
-//   const [itemsPerPage] = useState(10);
+//   const itemsPerPage = 10;
 
 //   // Responsive pagesPerSet
 //   useEffect(() => {
@@ -41,23 +47,24 @@
 //     return () => window.removeEventListener("resize", updatePagesPerSet);
 //   }, []);
 
-//   // ✅ Filters change হলে page reset
+//   // Filters change হলে page reset
 //   useEffect(() => {
 //     setCurrentPage(1);
 //     setStartPage(1);
 //   }, [startDate, endDate]);
 
-//   // ✅ (optional) startDate > endDate হলে endDate ঠিক করে দেবে
+//   // startDate > endDate হলে endDate ঠিক করে দেবে
 //   useEffect(() => {
 //     if (startDate && endDate && startDate > endDate) {
 //       setEndDate(startDate);
 //     }
 //   }, [startDate, endDate]);
 
-//   // ✅ Query args
+//   // Query args
 //   const queryArgs = {
 //     page: currentPage,
 //     limit: itemsPerPage,
+//     platform: "Meta",
 //     startDate: startDate || undefined,
 //     endDate: endDate || undefined,
 //   };
@@ -67,23 +74,104 @@
 
 //   useEffect(() => {
 //     if (isError) {
-//       console.error("Error fetching received product data", error);
+//       console.error("Error fetching meta data", error);
 //     } else if (!isLoading && data) {
-//       setProducts(data.data || []);
+//       const onlyMeta = (data.data || []).filter(
+//         (item) => item.platform === "Meta",
+//       );
+//       setProducts(onlyMeta);
 //       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
 //     }
-//   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
+//   }, [data, isLoading, isError, error, currentPage]);
 
-//   // ✅ Modals
+//   // Modals
 //   const handleAddProduct = () => setIsModalOpen1(true);
 //   const handleModalClose1 = () => setIsModalOpen1(false);
+
+//   const role = localStorage.getItem("role");
+//   const [updateMeta] = useUpdateMetaMutation();
+//   const [isModalOpen2, setIsModalOpen2] = useState(false);
+
+//   const handleModalClose2 = () => setIsModalOpen2(false);
+
+//   const handleEditClick1 = (rp) => {
+//     setCurrentProduct({
+//       ...rp,
+//       amount: rp.amount ?? "",
+//       status: rp.status ?? "",
+//       note: rp.note ?? "",
+//       userId: userId,
+//     });
+//     setIsModalOpen2(true);
+//   };
+
+//   const handleUpdateProduct1 = async () => {
+//     if (!currentProduct?.Id) return toast.error("Invalid item!");
+//     if (currentProduct?.note === "" || currentProduct?.note === null)
+//       return toast.error("Note is required!");
+
+//     try {
+//       const payload = {
+//         amount: Number(currentProduct.amount),
+//         note: currentProduct.note,
+//         status: currentProduct.status,
+//         userId: userId,
+//       };
+
+//       const res = await updateMeta({
+//         id: currentProduct.Id,
+//         data: payload,
+//       }).unwrap();
+
+//       if (res?.success) {
+//         toast.success("Successfully updated product!");
+//         setIsModalOpen2(false);
+//         refetch?.();
+//       } else {
+//         toast.error(res?.message || "Update failed!");
+//       }
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Update failed!");
+//     }
+//   };
 
 //   const handleEditClick = (rp) => {
 //     setCurrentProduct({
 //       ...rp,
 //       amount: rp.amount ?? "",
+//       status: rp.status ?? "",
+//       note: rp.note ?? "",
+//       userId: userId,
 //     });
 //     setIsModalOpen(true);
+//   };
+
+//   const handleUpdateProduct = async () => {
+//     if (!currentProduct?.Id) return toast.error("Invalid item!");
+//     if (currentProduct?.note === "") return toast.error("Note is required!");
+//     try {
+//       const payload = {
+//         amount: Number(currentProduct.amount),
+//         note: currentProduct.note,
+//         status: currentProduct.status,
+//         userId: userId,
+//       };
+
+//       const res = await updateMeta({
+//         id: currentProduct.Id,
+//         data: payload,
+//       }).unwrap();
+
+//       if (res?.success) {
+//         toast.success("Successfully updated!");
+//         setIsModalOpen(false);
+//         refetch?.();
+//       } else {
+//         toast.error(res?.message || "Update failed!");
+//       }
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Update failed!");
+//     }
 //   };
 
 //   const handleModalClose = () => setIsModalOpen(false);
@@ -93,73 +181,48 @@
 //   const handleCreateProduct = async (e) => {
 //     e.preventDefault();
 
-//     if (!createProduct.productId) return toast.error("Please select a product");
+//     if (!createProduct.amount) return toast.error("Amount is required!");
 
 //     try {
 //       const payload = {
+//         platform: "Meta",
 //         amount: Number(createProduct.amount),
 //       };
 
 //       const res = await insertMeta(payload).unwrap();
-//       if (res.success) {
+//       if (res?.success) {
 //         toast.success("Successfully created meta");
 //         setIsModalOpen1(false);
 //         setCreateProduct({ amount: "" });
 //         refetch?.();
+//       } else {
+//         toast.error(res?.message || "Create failed!");
 //       }
 //     } catch (err) {
 //       toast.error(err?.data?.message || "Create failed!");
 //     }
 //   };
 
-//   // ✅ Update
-//   const [updateMeta] = useUpdateMetaMutation();
-//   const handleUpdateProduct = async () => {
-//     if (!currentProduct?.productId) return toast.error("Please select a product");
-
-//     try {
-//       const updatedProduct = {
-//         Id: currentProduct.productId,
-//         amount: Number(currentProduct.amount),
-//       };
-
-//       const res = await updateMeta({
-//         id: currentProduct.Id,
-//         data: updatedProduct,
-//       }).unwrap();
-
-//       if (res.success) {
-//         toast.success("Successfully updated!");
-//         setIsModalOpen(false);
-//         refetch?.();
-//       } else {
-//         toast.error("Update failed!");
-//       }
-//     } catch (err) {
-//       toast.error(err?.data?.message || "Update failed!");
-//     }
-//   };
-
 //   // ✅ Delete
 //   const [deleteMeta] = useDeleteMetaMutation();
 //   const handleDeleteProduct = async (id) => {
-//     const confirmDelete = window.confirm("Do you want to delete this product?");
+//     const confirmDelete = window.confirm("Do you want to delete this item?");
 //     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
 //     try {
 //       const res = await deleteMeta(id).unwrap();
-//       if (res.success) {
-//         toast.success("Product deleted successfully!");
+//       if (res?.success) {
+//         toast.success("Deleted successfully!");
 //         refetch?.();
 //       } else {
-//         toast.error("Delete failed!");
+//         toast.error(res?.message || "Delete failed!");
 //       }
 //     } catch (err) {
 //       toast.error(err?.data?.message || "Delete failed!");
 //     }
 //   };
 
-//   // ✅ Filters clear
+//   // Filters clear
 //   const clearFilters = () => {
 //     setStartDate("");
 //     setEndDate("");
@@ -176,11 +239,28 @@
 
 //   const handlePreviousSet = () =>
 //     setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
-
 //   const handleNextSet = () =>
 //     setStartPage((prev) =>
-//       Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+//       Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
 //     );
+
+//   const {
+//     data: metaRes,
+//     isLoading: metaLoading,
+//     isError: metaError,
+//     error: metaErrObj,
+//   } = useGetAllMetaWithoutQueryQuery();
+
+//   const meta = metaRes?.data || [];
+
+//   // ✅ totals
+//   const totalMetaAmount = useMemo(() => {
+//     return meta
+//       ?.filter((item) => item.platform === "Meta")
+//       .reduce((sum, item) => sum + Number(item?.amount || 0), 0);
+//   }, [meta]);
+
+//   if (metaError) console.error("Purchase error:", metaErrObj);
 
 //   return (
 //     <motion.div
@@ -189,39 +269,52 @@
 //       animate={{ opacity: 1, y: 0 }}
 //       transition={{ delay: 0.2 }}
 //     >
-//       <div className="my-6 flex justify-start">
+//       {/* Add Button */}
+//       <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 //         <button
-//           className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
+//           type="button"
 //           onClick={handleAddProduct}
+//           className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
 //         >
-//           Add <Plus size={18} className="ms-2" />
+//           Add <Plus size={18} className="ml-2" />
 //         </button>
+
+//         <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
+//           <div className="flex items-center gap-2 text-gray-300">
+//             <BarChart3 size={18} className="text-amber-400" />
+//             <span className="text-sm">Total Meta Expense</span>
+//           </div>
+
+//           <span className="text-white font-semibold tabular-nums">
+//             {metaLoading ? "Loading..." : totalMetaAmount.toFixed(2)}
+//           </span>
+//         </div>
 //       </div>
 
 //       {/* Filters */}
-//       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
-//         <div className="flex items-center justify-center">
-//           <label className="mr-2 text-sm text-white">Start Date:</label>
+//       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center mb-6 w-full justify-center mx-auto">
+//         <div className="flex flex-col">
+//           <label className="text-sm text-gray-400 mb-1">From</label>
 //           <input
 //             type="date"
 //             value={startDate}
 //             onChange={(e) => setStartDate(e.target.value)}
-//             className="border border-gray-300 rounded p-1 text-black bg-white"
+//             className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
 //           />
 //         </div>
 
-//         <div className="flex items-center justify-center">
-//           <label className="mr-2 text-sm text-white">End Date:</label>
+//         <div className="flex flex-col">
+//           <label className="text-sm text-gray-400 mb-1">To</label>
 //           <input
 //             type="date"
 //             value={endDate}
 //             onChange={(e) => setEndDate(e.target.value)}
-//             className="border border-gray-300 rounded p-1 text-black bg-white"
+//             className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
 //           />
 //         </div>
 
 //         <button
-//           className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
+//           className="flex items-center mt-6 bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
 //           onClick={clearFilters}
 //         >
 //           Clear Filters
@@ -239,6 +332,10 @@
 //               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
 //                 Amount
 //               </th>
+
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Status
+//               </th>
 //               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
 //                 Actions
 //               </th>
@@ -254,25 +351,50 @@
 //                 transition={{ duration: 0.3 }}
 //               >
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {Number(rp.createdAt || 0).toFixed(2)}
+//                   {rp.createdAt
+//                     ? new Date(rp.createdAt).toLocaleDateString()
+//                     : "-"}
 //                 </td>
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
 //                   {Number(rp.amount || 0).toFixed(2)}
 //                 </td>
 
+//                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                   {rp.status}
+//                 </td>
+
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+//                   {rp.note && (
+//                     <button
+//                       className="text-white-600 hover:text-white-900"
+//                       title={rp.note}
+//                     >
+//                       <Notebook size={18} />
+//                     </button>
+//                   )}
 //                   <button
 //                     onClick={() => handleEditClick(rp)}
 //                     className="text-indigo-600 hover:text-indigo-900"
 //                   >
 //                     <Edit size={18} />
 //                   </button>
-//                   <button
-//                     onClick={() => handleDeleteProduct(rp.Id)}
-//                     className="text-red-600 hover:text-red-900 ms-4"
-//                   >
-//                     <Trash2 size={18} />
-//                   </button>
+//                   {role === "superAdmin" ||
+//                   role === "admin" ||
+//                   rp.status === "Approved" ? (
+//                     <button
+//                       onClick={() => handleDeleteProduct(rp.Id)}
+//                       className="text-red-600 hover:text-red-900 ms-4"
+//                     >
+//                       <Trash2 size={18} />
+//                     </button>
+//                   ) : (
+//                     <button
+//                       onClick={() => handleEditClick1(rp)}
+//                       className="text-red-600 hover:text-red-900 ms-4"
+//                     >
+//                       <Trash2 size={18} />
+//                     </button>
+//                   )}
 //                 </td>
 //               </motion.tr>
 //             ))}
@@ -327,7 +449,7 @@
 //         </button>
 //       </div>
 
-//       {/* ✅ Edit Modal */}
+//       {/* Edit Modal */}
 //       {isModalOpen && (
 //         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
 //           <motion.div
@@ -336,23 +458,61 @@
 //             animate={{ opacity: 1, y: 0 }}
 //             transition={{ duration: 0.3 }}
 //           >
-//             <h2 className="text-lg font-semibold text-white">Edit Meta Expense</h2>
+//             <h2 className="text-lg font-semibold text-white">
+//               Edit Meta Expense
+//             </h2>
 
 //             <div className="mt-4">
 //               <label className="block text-sm text-white">Amount:</label>
 //               <input
-//                 type="text"
+//                 type="number"
 //                 step="0.01"
 //                 value={currentProduct?.amount || ""}
 //                 onChange={(e) =>
 //                   setCurrentProduct({
 //                     ...currentProduct,
-//                     quantity: e.target.value,
+//                     amount: e.target.value, // ✅ fixed
 //                   })
 //                 }
-//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
 //               />
 //             </div>
+
+//             {role === "superAdmin" ? (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Status</label>
+//                 <select
+//                   value={currentProduct.status || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       status: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                   required
+//                 >
+//                   <option value="">Select Status</option>
+//                   <option value="Approved">Approved</option>
+//                   <option value="Pending">Pending</option>
+//                 </select>
+//               </div>
+//             ) : (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Note:</label>
+//                 <textarea
+//                   type="text"
+//                   value={currentProduct?.note || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       note: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                 />
+//               </div>
+//             )}
 
 //             <div className="mt-6 flex justify-end">
 //               <button
@@ -372,7 +532,7 @@
 //         </div>
 //       )}
 
-//       {/* ✅ Add Modal */}
+//       {/* Add Modal */}
 //       {isModalOpen1 && (
 //         <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
 //           <motion.div
@@ -381,10 +541,11 @@
 //             animate={{ opacity: 1, y: 0 }}
 //             transition={{ duration: 0.3 }}
 //           >
-//             <h2 className="text-lg font-semibold text-white">Add Meta Expense</h2>
+//             <h2 className="text-lg font-semibold text-white">
+//               Add Meta Expense
+//             </h2>
 
 //             <form onSubmit={handleCreateProduct}>
-
 //               <div className="mt-4">
 //                 <label className="block text-sm text-white">Amount</label>
 //                 <input
@@ -397,7 +558,7 @@
 //                       amount: e.target.value,
 //                     })
 //                   }
-//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
 //                   required
 //                 />
 //               </div>
@@ -418,6 +579,73 @@
 //                 </button>
 //               </div>
 //             </form>
+//           </motion.div>
+//         </div>
+//       )}
+
+//       {/* Delete Modal */}
+//       {isModalOpen2 && (
+//         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+//           <motion.div
+//             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+//             initial={{ opacity: 0, y: -50 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             transition={{ duration: 0.3 }}
+//           >
+//             <h2 className="text-lg font-semibold text-white">
+//               Delete Meta Expense
+//             </h2>
+
+//             {role === "superAdmin" ? (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Status</label>
+//                 <select
+//                   value={currentProduct.status || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       status: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                   required
+//                 >
+//                   <option value="">Select Status</option>
+//                   <option value="Approved">Approved</option>
+//                   <option value="Pending">Pending</option>
+//                 </select>
+//               </div>
+//             ) : (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Note:</label>
+//                 <textarea
+//                   type="text"
+//                   value={currentProduct?.note || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       note: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                 />
+//               </div>
+//             )}
+
+//             <div className="mt-6 flex justify-end">
+//               <button
+//                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+//                 onClick={handleUpdateProduct1}
+//               >
+//                 Save
+//               </button>
+//               <button
+//                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+//                 onClick={handleModalClose2}
+//               >
+//                 Cancel
+//               </button>
+//             </div>
 //           </motion.div>
 //         </div>
 //       )}
@@ -442,7 +670,10 @@ import {
 const MetaTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
+  const [isModalOpen2, setIsModalOpen2] = useState(false);
+
   const userId = localStorage.getItem("userId");
+  const role = localStorage.getItem("role");
 
   const [currentProduct, setCurrentProduct] = useState(null);
 
@@ -457,13 +688,17 @@ const MetaTable = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  // ✅ Per Page dropdown state (LIKE YOUR SCREENSHOT)
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const perPageOptions = [10, 20, 50, 100];
+
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
-  const itemsPerPage = 10;
 
-  // Responsive pagesPerSet
+  // ✅ Responsive pagesPerSet
   useEffect(() => {
     const updatePagesPerSet = () => {
       if (window.innerWidth < 640) setPagesPerSet(5);
@@ -476,27 +711,28 @@ const MetaTable = () => {
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
 
-  // Filters change হলে page reset
+  // ✅ Filters change হলে page reset
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate]);
+  }, [startDate, endDate, itemsPerPage]);
 
-  // startDate > endDate হলে endDate ঠিক করে দেবে
+  // ✅ startDate > endDate হলে endDate ঠিক করে দেবে
   useEffect(() => {
-    if (startDate && endDate && startDate > endDate) {
-      setEndDate(startDate);
-    }
+    if (startDate && endDate && startDate > endDate) setEndDate(startDate);
   }, [startDate, endDate]);
 
-  // Query args
-  const queryArgs = {
-    page: currentPage,
-    limit: itemsPerPage,
-    platform: "Meta",
-    startDate: startDate || undefined,
-    endDate: endDate || undefined,
-  };
+  // ✅ Query args
+  const queryArgs = useMemo(
+    () => ({
+      page: currentPage,
+      limit: itemsPerPage, // ✅ dynamic
+      platform: "Meta",
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+    }),
+    [currentPage, itemsPerPage, startDate, endDate],
+  );
 
   const { data, isLoading, isError, error, refetch } =
     useGetAllMetaQuery(queryArgs);
@@ -504,32 +740,107 @@ const MetaTable = () => {
   useEffect(() => {
     if (isError) {
       console.error("Error fetching meta data", error);
-    } else if (!isLoading && data) {
+      return;
+    }
+    if (!isLoading && data) {
       const onlyMeta = (data.data || []).filter(
         (item) => item.platform === "Meta",
       );
       setProducts(onlyMeta);
       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
     }
-  }, [data, isLoading, isError, error, currentPage]);
+  }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
 
-  // Modals
-  const handleAddProduct = () => setIsModalOpen1(true);
-  const handleModalClose1 = () => setIsModalOpen1(false);
+  // ✅ totals (all rows without query)
+  const {
+    data: metaRes,
+    isLoading: metaLoading,
+    isError: metaError,
+    error: metaErrObj,
+  } = useGetAllMetaWithoutQueryQuery();
 
-  const role = localStorage.getItem("role");
+  const meta = metaRes?.data || [];
+
+  const totalMetaAmount = useMemo(() => {
+    return meta
+      ?.filter((item) => item.platform === "Meta")
+      .reduce((sum, item) => sum + Number(item?.amount || 0), 0);
+  }, [meta]);
+
+  if (metaError) console.error("Meta error:", metaErrObj);
+
+  // ✅ Insert
+  const [insertMeta] = useInsertMetaMutation();
+  const handleCreateProduct = async (e) => {
+    e.preventDefault();
+    if (!createProduct.amount) return toast.error("Amount is required!");
+
+    try {
+      const payload = {
+        platform: "Meta",
+        amount: Number(createProduct.amount),
+      };
+      const res = await insertMeta(payload).unwrap();
+      if (res?.success) {
+        toast.success("Successfully created meta");
+        setIsModalOpen1(false);
+        setCreateProduct({ amount: "" });
+        refetch?.();
+      } else toast.error(res?.message || "Create failed!");
+    } catch (err) {
+      toast.error(err?.data?.message || "Create failed!");
+    }
+  };
+
+  // ✅ Update
   const [updateMeta] = useUpdateMetaMutation();
-  const [isModalOpen2, setIsModalOpen2] = useState(false);
 
-  const handleModalClose2 = () => setIsModalOpen2(false);
+  const handleEditClick = (rp) => {
+    setCurrentProduct({
+      ...rp,
+      amount: rp.amount ?? "",
+      status: rp.status ?? "",
+      note: rp.note ?? "",
+      userId,
+    });
+    setIsModalOpen(true);
+  };
 
+  const handleUpdateProduct = async () => {
+    if (!currentProduct?.Id) return toast.error("Invalid item!");
+    if (currentProduct?.note === "" || currentProduct?.note === null)
+      return toast.error("Note is required!");
+
+    try {
+      const payload = {
+        amount: Number(currentProduct.amount),
+        note: currentProduct.note,
+        status: currentProduct.status,
+        userId,
+      };
+
+      const res = await updateMeta({
+        id: currentProduct.Id,
+        data: payload,
+      }).unwrap();
+      if (res?.success) {
+        toast.success("Successfully updated!");
+        setIsModalOpen(false);
+        refetch?.();
+      } else toast.error(res?.message || "Update failed!");
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
+    }
+  };
+
+  // ✅ Delete / note modal
   const handleEditClick1 = (rp) => {
     setCurrentProduct({
       ...rp,
       amount: rp.amount ?? "",
       status: rp.status ?? "",
       note: rp.note ?? "",
-      userId: userId,
+      userId,
     });
     setIsModalOpen2(true);
   };
@@ -544,91 +855,20 @@ const MetaTable = () => {
         amount: Number(currentProduct.amount),
         note: currentProduct.note,
         status: currentProduct.status,
-        userId: userId,
+        userId,
       };
 
       const res = await updateMeta({
         id: currentProduct.Id,
         data: payload,
       }).unwrap();
-
-      if (res?.success) {
-        toast.success("Successfully updated product!");
-        setIsModalOpen2(false);
-        refetch?.();
-      } else {
-        toast.error(res?.message || "Update failed!");
-      }
-    } catch (err) {
-      toast.error(err?.data?.message || "Update failed!");
-    }
-  };
-
-  const handleEditClick = (rp) => {
-    setCurrentProduct({
-      ...rp,
-      amount: rp.amount ?? "",
-      status: rp.status ?? "",
-      note: rp.note ?? "",
-      userId: userId,
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleUpdateProduct = async () => {
-    if (!currentProduct?.Id) return toast.error("Invalid item!");
-    if (currentProduct?.note === "") return toast.error("Note is required!");
-    try {
-      const payload = {
-        amount: Number(currentProduct.amount),
-        note: currentProduct.note,
-        status: currentProduct.status,
-        userId: userId,
-      };
-
-      const res = await updateMeta({
-        id: currentProduct.Id,
-        data: payload,
-      }).unwrap();
-
       if (res?.success) {
         toast.success("Successfully updated!");
-        setIsModalOpen(false);
+        setIsModalOpen2(false);
         refetch?.();
-      } else {
-        toast.error(res?.message || "Update failed!");
-      }
+      } else toast.error(res?.message || "Update failed!");
     } catch (err) {
       toast.error(err?.data?.message || "Update failed!");
-    }
-  };
-
-  const handleModalClose = () => setIsModalOpen(false);
-
-  // ✅ Insert
-  const [insertMeta] = useInsertMetaMutation();
-  const handleCreateProduct = async (e) => {
-    e.preventDefault();
-
-    if (!createProduct.amount) return toast.error("Amount is required!");
-
-    try {
-      const payload = {
-        platform: "Meta",
-        amount: Number(createProduct.amount),
-      };
-
-      const res = await insertMeta(payload).unwrap();
-      if (res?.success) {
-        toast.success("Successfully created meta");
-        setIsModalOpen1(false);
-        setCreateProduct({ amount: "" });
-        refetch?.();
-      } else {
-        toast.error(res?.message || "Create failed!");
-      }
-    } catch (err) {
-      toast.error(err?.data?.message || "Create failed!");
     }
   };
 
@@ -643,107 +883,124 @@ const MetaTable = () => {
       if (res?.success) {
         toast.success("Deleted successfully!");
         refetch?.();
-      } else {
-        toast.error(res?.message || "Delete failed!");
-      }
+      } else toast.error(res?.message || "Delete failed!");
     } catch (err) {
       toast.error(err?.data?.message || "Delete failed!");
     }
   };
 
-  // Filters clear
+  // ✅ Modals close
+  const handleAddProduct = () => setIsModalOpen1(true);
+  const handleModalClose = () => setIsModalOpen(false);
+  const handleModalClose1 = () => setIsModalOpen1(false);
+  const handleModalClose2 = () => setIsModalOpen2(false);
+
+  // ✅ Clear Filters
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
   };
 
-  // Pagination
+  // ✅ Pagination calculations
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
 
   const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    if (pageNumber < startPage) setStartPage(pageNumber);
-    else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
+    const p = Number(pageNumber);
+    setCurrentPage(p);
+
+    if (p < startPage) setStartPage(p);
+    else if (p > endPage) setStartPage(p - pagesPerSet + 1);
   };
 
   const handlePreviousSet = () =>
     setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
+
   const handleNextSet = () =>
     setStartPage((prev) =>
       Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
-  const {
-    data: metaRes,
-    isLoading: metaLoading,
-    isError: metaError,
-    error: metaErrObj,
-  } = useGetAllMetaWithoutQueryQuery();
-
-  const meta = metaRes?.data || [];
-
-  // ✅ totals
-  const totalMetaAmount = useMemo(() => {
-    return meta
-      ?.filter((item) => item.platform === "Meta")
-      .reduce((sum, item) => sum + Number(item?.amount || 0), 0);
-  }, [meta]);
-
-  if (metaError) console.error("Purchase error:", metaErrObj);
+  // ✅ Page jump dropdown options
+  const pageOptions = useMemo(
+    () => Array.from({ length: totalPages }, (_, i) => i + 1),
+    [totalPages],
+  );
 
   return (
     <motion.div
-      className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
-      initial={{ opacity: 0, y: 20 }}
+      className="bg-white shadow-sm rounded-2xl p-6 border border-slate-200 mb-8"
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
+      transition={{ duration: 0.25 }}
     >
-      {/* Add Button */}
-      <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Header */}
+      <div className="my-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={handleAddProduct}
-          className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
+          className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
         >
           Add <Plus size={18} className="ml-2" />
         </button>
 
-        <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
-          <div className="flex items-center gap-2 text-gray-300">
-            <BarChart3 size={18} className="text-amber-400" />
-            <span className="text-sm">Total Meta Expense</span>
+        <div className="flex items-center justify-between sm:justify-end gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2">
+          <div className="flex items-center gap-2 text-slate-700">
+            <BarChart3 size={18} className="text-indigo-600" />
+            <span className="text-sm font-medium">Total Meta Expense</span>
           </div>
 
-          <span className="text-white font-semibold tabular-nums">
+          <span className="text-slate-900 font-semibold tabular-nums">
             {metaLoading ? "Loading..." : totalMetaAmount.toFixed(2)}
           </span>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center mb-6 w-full justify-center mx-auto">
+      {/* ✅ Filters Row (WITH Per Page dropdown LIKE SCREENSHOT) */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6">
         <div className="flex flex-col">
-          <label className="text-sm text-gray-400 mb-1">From</label>
+          <label className="text-sm text-slate-600 mb-1">From</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+            className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-gray-400 mb-1">To</label>
+          <label className="text-sm text-slate-600 mb-1">To</label>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+            className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           />
         </div>
 
+        {/* ✅ Per Page Dropdown (same position like your screenshot) */}
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Per Page</label>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => setItemsPerPage(Number(e.target.value))}
+            className="h-11 px-3 rounded-xl bg-white border border-slate-200 text-slate-900 outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+          >
+            {perPageOptions.map((v) => (
+              <option key={v} value={v}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* spacer (optional). If you want a dropdown/field here later, keep it */}
+        <div className="hidden md:block" />
+
         <button
-          className="flex items-center mt-6 bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
+          className="h-11 bg-slate-900 hover:bg-slate-800 text-white transition px-4 rounded-xl w-full"
           onClick={clearFilters}
         >
           Clear Filters
@@ -751,75 +1008,81 @@ const MetaTable = () => {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead>
+      <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Date
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Amount
               </th>
-
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-700">
+          <tbody className="divide-y divide-slate-200 bg-white">
             {products.map((rp) => (
               <motion.tr
                 key={rp.Id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2 }}
+                className="hover:bg-slate-50"
               >
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp.createdAt
                     ? new Date(rp.createdAt).toLocaleDateString()
                     : "-"}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
                   {Number(rp.amount || 0).toFixed(2)}
                 </td>
 
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp.status}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   {rp.note && (
                     <button
-                      className="text-white-600 hover:text-white-900"
+                      className="text-slate-600 hover:text-slate-900"
                       title={rp.note}
                     >
                       <Notebook size={18} />
                     </button>
                   )}
+
                   <button
                     onClick={() => handleEditClick(rp)}
-                    className="text-indigo-600 hover:text-indigo-900"
+                    className="text-indigo-600 hover:text-indigo-800 ml-3"
+                    title="Edit"
                   >
                     <Edit size={18} />
                   </button>
+
                   {role === "superAdmin" ||
                   role === "admin" ||
                   rp.status === "Approved" ? (
                     <button
                       onClick={() => handleDeleteProduct(rp.Id)}
-                      className="text-red-600 hover:text-red-900 ms-4"
+                      className="text-red-600 hover:text-red-800 ml-3"
+                      title="Delete"
                     >
                       <Trash2 size={18} />
                     </button>
                   ) : (
                     <button
                       onClick={() => handleEditClick1(rp)}
-                      className="text-red-600 hover:text-red-900 ms-4"
+                      className="text-red-600 hover:text-red-800 ml-3"
+                      title="Request delete / Add note"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -831,8 +1094,8 @@ const MetaTable = () => {
             {!isLoading && products.length === 0 && (
               <tr>
                 <td
-                  colSpan={3}
-                  className="px-6 py-6 text-center text-sm text-gray-300"
+                  colSpan={4}
+                  className="px-6 py-8 text-center text-sm text-slate-500"
                 >
                   No data found
                 </td>
@@ -842,26 +1105,46 @@ const MetaTable = () => {
         </table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-center space-x-2 mt-6">
+      {/* Pagination + Page Jump Dropdown */}
+      <div className="flex items-center justify-center flex-wrap gap-2 mt-6">
         <button
           onClick={handlePreviousSet}
           disabled={startPage === 1}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+          className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
           Prev
         </button>
 
+        {/* ✅ Page Jump Dropdown */}
+        <div className="flex items-center gap-2 mx-2">
+          <span className="text-sm text-slate-600">Page</span>
+          <select
+            value={currentPage}
+            onChange={(e) => handlePageChange(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+          >
+            {pageOptions.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+          <span className="text-sm text-slate-600">of {totalPages}</span>
+        </div>
+
         {[...Array(endPage - startPage + 1)].map((_, index) => {
           const pageNum = startPage + index;
+          const active = pageNum === currentPage;
+
           return (
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-3 py-2 text-black rounded-md ${
-                pageNum === currentPage
-                  ? "bg-white"
-                  : "bg-indigo-500 hover:bg-indigo-400"
+              className={`px-4 py-2 rounded-xl border transition ${
+                active
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               }`}
             >
               {pageNum}
@@ -872,53 +1155,49 @@ const MetaTable = () => {
         <button
           onClick={handleNextSet}
           disabled={endPage === totalPages}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+          className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
           Next
         </button>
       </div>
 
       {/* Edit Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+      {isModalOpen && currentProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
-            initial={{ opacity: 0, y: -50 }}
+            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2 }}
           >
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-slate-900">
               Edit Meta Expense
             </h2>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Amount:</label>
+              <label className="block text-sm text-slate-700">Amount</label>
               <input
                 type="number"
                 step="0.01"
                 value={currentProduct?.amount || ""}
                 onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    amount: e.target.value, // ✅ fixed
-                  })
+                  setCurrentProduct((p) => ({ ...p, amount: e.target.value }))
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
 
             {role === "superAdmin" ? (
               <div className="mt-4">
-                <label className="block text-sm text-white">Status</label>
+                <label className="block text-sm text-slate-700">Status</label>
                 <select
                   value={currentProduct.status || ""}
                   onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      status: e.target.value,
-                    })
+                    setCurrentProduct((p) => ({ ...p, status: e.target.value }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 >
                   <option value="">Select Status</option>
@@ -928,30 +1207,27 @@ const MetaTable = () => {
               </div>
             ) : (
               <div className="mt-4">
-                <label className="block text-sm text-white">Note:</label>
+                <label className="block text-sm text-slate-700">Note</label>
                 <textarea
-                  type="text"
                   value={currentProduct?.note || ""}
                   onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      note: e.target.value,
-                    })
+                    setCurrentProduct((p) => ({ ...p, note: e.target.value }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
               </div>
             )}
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end gap-2">
               <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
                 onClick={handleUpdateProduct}
               >
                 Save
               </button>
               <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
                 onClick={handleModalClose}
               >
                 Cancel
@@ -963,45 +1239,43 @@ const MetaTable = () => {
 
       {/* Add Modal */}
       {isModalOpen1 && (
-        <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
-            initial={{ opacity: 0, y: -50 }}
+            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2 }}
           >
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-slate-900">
               Add Meta Expense
             </h2>
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
-                <label className="block text-sm text-white">Amount</label>
+                <label className="block text-sm text-slate-700">Amount</label>
                 <input
                   type="number"
                   step="0.01"
                   value={createProduct.amount}
                   onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      amount: e.target.value,
-                    })
+                    setCreateProduct((p) => ({ ...p, amount: e.target.value }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 />
               </div>
 
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end gap-2">
                 <button
                   type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
                 >
                   Save
                 </button>
                 <button
                   type="button"
-                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                  className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
                   onClick={handleModalClose1}
                 >
                   Cancel
@@ -1012,31 +1286,29 @@ const MetaTable = () => {
         </div>
       )}
 
-      {/* Delete Modal */}
-      {isModalOpen2 && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+      {/* Delete Modal (note/status update modal) */}
+      {isModalOpen2 && currentProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
-            initial={{ opacity: 0, y: -50 }}
+            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2 }}
           >
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-slate-900">
               Delete Meta Expense
             </h2>
 
             {role === "superAdmin" ? (
               <div className="mt-4">
-                <label className="block text-sm text-white">Status</label>
+                <label className="block text-sm text-slate-700">Status</label>
                 <select
                   value={currentProduct.status || ""}
                   onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      status: e.target.value,
-                    })
+                    setCurrentProduct((p) => ({ ...p, status: e.target.value }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 >
                   <option value="">Select Status</option>
@@ -1046,30 +1318,27 @@ const MetaTable = () => {
               </div>
             ) : (
               <div className="mt-4">
-                <label className="block text-sm text-white">Note:</label>
+                <label className="block text-sm text-slate-700">Note</label>
                 <textarea
-                  type="text"
                   value={currentProduct?.note || ""}
                   onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      note: e.target.value,
-                    })
+                    setCurrentProduct((p) => ({ ...p, note: e.target.value }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
               </div>
             )}
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end gap-2">
               <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
                 onClick={handleUpdateProduct1}
               >
                 Save
               </button>
               <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
                 onClick={handleModalClose2}
               >
                 Cancel

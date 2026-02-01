@@ -335,11 +335,257 @@
 // export default OverviewPage;
 
 /* eslint-disable no-mixed-spaces-and-tabs */
+
+// import { motion } from "framer-motion";
+// import Header from "../components/common/Header";
+// import StatCard from "../components/common/StatCard";
+// import { useMemo, useState } from "react";
+// import { Truck, Receipt, Landmark } from "lucide-react";
+// import { useGetOverviewSummaryQuery } from "../features/overview/overview";
+
+// // ✅ helper: default range (এই মাসের ১ তারিখ → আজ)
+// const getDefaultRange = () => {
+//   const now = new Date();
+
+//   const yyyy = now.getFullYear();
+//   const mm = String(now.getMonth() + 1).padStart(2, "0");
+//   const dd = String(now.getDate()).padStart(2, "0");
+
+//   const from = `${yyyy}-${mm}-01`;
+//   const to = `${yyyy}-${mm}-${dd}`;
+//   return { from, to };
+// };
+
+// const OverviewPage = () => {
+//   const defaultRange = useMemo(() => getDefaultRange(), []);
+
+//   // ✅ input values
+//   const [from, setFrom] = useState(defaultRange.from);
+//   const [to, setTo] = useState(defaultRange.to);
+
+//   // ✅ applied range (Apply না চাপা পর্যন্ত API call হবে না)
+//   const [applied, setApplied] = useState(defaultRange);
+
+//   const {
+//     data: summaryRes,
+//     isLoading,
+//     isError,
+//     error,
+//   } = useGetOverviewSummaryQuery({ from: applied.from, to: applied.to });
+
+//   const summary = summaryRes?.data || {};
+
+//   const onApply = () => {
+//     if (!from || !to) return;
+//     setApplied({ from, to });
+//   };
+
+//   const onReset = () => {
+//     const d = getDefaultRange();
+//     setFrom(d.from);
+//     setTo(d.to);
+//     setApplied(d);
+//   };
+
+//   if (isError) console.error("Overview Summary error:", error);
+
+//   // ✅ values (fallback 0)
+//   const remainingAmount = Number(summary?.remainingAmount || 0);
+//   const inventoryValue = Number(
+//     summary?.remainingInventoryStock_AfterMinus_InventoryExpense || 0,
+//   );
+//   const totalMetaAmount = Number(summary?.totalMetaAmount || 0);
+//   const totalReceiveableAmount = Number(summary?.totalReceiveableAmount || 0);
+//   const totalPayableAmount = Number(summary?.totalPayableAmount || 0);
+//   const totalCashInAmount = Number(summary?.totalCashInAmount || 0);
+//   const totalCashOutAmount = Number(summary?.totalCashOutAmount || 0);
+
+//   return (
+//     <div className="flex-1 overflow-auto relative z-10">
+//       <Header title="Overview" />
+
+//       <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8 bg-[#F3F3F6]">
+//         {/* ✅ Date Range Controls */}
+//         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-6">
+//           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center  mb-6 w-full mx-auto">
+//             <div className="flex flex-col">
+//               <label className="text-sm text-gray-400 mb-1">From</label>
+//               <input
+//                 type="date"
+//                 value={from}
+//                 onChange={(e) => setFrom(e.target.value)}
+//                 className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+//               />
+//             </div>
+
+//             <div className="flex flex-col">
+//               <label className="text-sm text-gray-400 mb-1">To</label>
+//               <input
+//                 type="date"
+//                 value={to}
+//                 onChange={(e) => setTo(e.target.value)}
+//                 className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+//               />
+//             </div>
+
+//             <div className="flex gap-2 mt-6">
+//               <button
+//                 onClick={onApply}
+//                 className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700"
+//               >
+//                 Apply
+//               </button>
+//               <button
+//                 onClick={onReset}
+//                 className="px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700 hover:bg-gray-700"
+//               >
+//                 Reset
+//               </button>
+//             </div>
+//             <div className="text-sm text-gray-400 text-right">
+//               Showing: <span className="text-gray-200">{applied.from}</span> to{" "}
+//               <span className="text-gray-200">{applied.to}</span>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* <motion.div
+//           className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8"
+//           initial={{ opacity: 0, y: 20 }}
+//           animate={{ opacity: 1, y: 0 }}
+//           transition={{ duration: 1 }}
+//         >
+//           <StatCard
+//             name="Total Asset Value"
+//             icon={Truck}
+//             value={isLoading ? "Loading..." : remainingAmount.toFixed(2)}
+//             color="#F59E0B"
+//           />
+
+//           <StatCard
+//             name="Total Inventory Quantity"
+//             icon={Receipt}
+//             value={isLoading ? "Loading..." : inventoryValue}
+//             color="#EF4444"
+//           />
+
+//           <StatCard
+//             name="Total Marketing Expense"
+//             icon={Receipt}
+//             value={isLoading ? "Loading..." : totalMetaAmount.toFixed(2)}
+//             color="#EF4444"
+//           />
+
+//           <StatCard
+//             name="Total Receiveable Amount"
+//             icon={Receipt}
+//             value={isLoading ? "Loading..." : totalReceiveableAmount.toFixed(2)}
+//             color="#EF4444"
+//           />
+
+//           <StatCard
+//             name="Total Payable Amount"
+//             icon={Receipt}
+//             value={isLoading ? "Loading..." : totalPayableAmount.toFixed(2)}
+//             color="#EF4444"
+//           />
+
+//           <StatCard
+//             name="Total Cash In Amount"
+//             icon={Landmark}
+//             value={isLoading ? "Loading..." : totalCashInAmount.toFixed(2)}
+//             color="#8B5CF6"
+//           />
+
+//           <StatCard
+//             name="Total Cash Out Amount"
+//             icon={Landmark}
+//             value={isLoading ? "Loading..." : totalCashOutAmount.toFixed(2)}
+//             color="#8B5CF6"
+//           />
+//         </motion.div> */}
+
+//         <motion.div
+//           className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-8"
+//           initial={{ opacity: 0, y: 16 }}
+//           animate={{ opacity: 1, y: 0 }}
+//           transition={{ duration: 0.6 }}
+//         >
+//           <StatCard
+//             name="Total Asset Value"
+//             icon={Truck}
+//             value={isLoading ? "Loading..." : remainingAmount.toFixed(2)}
+//             iconBg="#EEF2FF" // light indigo
+//             iconColor="#6366F1" // indigo
+//           />
+
+//           <StatCard
+//             name="Total Inventory Quantity"
+//             icon={Receipt}
+//             value={isLoading ? "Loading..." : inventoryValue}
+//             iconBg="#ECFDF5" // light green
+//             iconColor="#10B981" // green
+//           />
+
+//           <StatCard
+//             name="Total Marketing Expense"
+//             icon={Receipt}
+//             value={isLoading ? "Loading..." : totalMetaAmount.toFixed(2)}
+//             iconBg="#E0F2FE" // light sky
+//             iconColor="#0EA5E9" // sky
+//           />
+
+//           <StatCard
+//             name="Total Receiveable Amount"
+//             icon={Receipt}
+//             value={isLoading ? "Loading..." : totalReceiveableAmount.toFixed(2)}
+//             iconBg="#FFF7ED" // light amber
+//             iconColor="#F59E0B" // amber
+//           />
+
+//           <StatCard
+//             name="Total Payable Amount"
+//             icon={Receipt}
+//             value={isLoading ? "Loading..." : totalPayableAmount.toFixed(2)}
+//             iconBg="#FEE2E2" // light red
+//             iconColor="#EF4444" // red
+//           />
+
+//           <StatCard
+//             name="Total Cash In Amount"
+//             icon={Landmark}
+//             value={isLoading ? "Loading..." : totalCashInAmount.toFixed(2)}
+//             iconBg="#F3E8FF" // light purple
+//             iconColor="#8B5CF6" // purple
+//           />
+
+//           <StatCard
+//             name="Total Cash Out Amount"
+//             icon={Landmark}
+//             value={isLoading ? "Loading..." : totalCashOutAmount.toFixed(2)}
+//             iconBg="#F3E8FF"
+//             iconColor="#8B5CF6"
+//           />
+//         </motion.div>
+//       </main>
+//     </div>
+//   );
+// };
+
+// export default OverviewPage;
+
+/* eslint-disable no-mixed-spaces-and-tabs */
 import { motion } from "framer-motion";
 import Header from "../components/common/Header";
 import StatCard from "../components/common/StatCard";
 import { useMemo, useState } from "react";
-import { Truck, Receipt, Landmark } from "lucide-react";
+import {
+  Truck,
+  Receipt,
+  Landmark,
+  CalendarDays,
+  RefreshCcw,
+} from "lucide-react";
 import { useGetOverviewSummaryQuery } from "../features/overview/overview";
 
 // ✅ helper: default range (এই মাসের ১ তারিখ → আজ)
@@ -400,109 +646,140 @@ const OverviewPage = () => {
   const totalCashOutAmount = Number(summary?.totalCashOutAmount || 0);
 
   return (
-    <div className="flex-1 overflow-auto relative z-10">
+    <div className="flex-1 overflow-auto">
       <Header title="Overview" />
 
-      <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
-        {/* ✅ Date Range Controls */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center  mb-6 w-full mx-auto">
-            <div className="flex flex-col">
-              <label className="text-sm text-gray-400 mb-1">From</label>
-              <input
-                type="date"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
-              />
+      {/* ✅ Page background */}
+      <main className="min-h-[calc(100vh-64px)] bg-slate-50">
+        <div className="max-w-8xl mx-auto px-4 lg:px-8 py-6">
+          {/* ✅ Top Bar (Date range modern) */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 mb-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-2 text-slate-800">
+                <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center">
+                  <CalendarDays size={18} className="text-slate-600" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold">Date Range</div>
+                  <div className="text-xs text-slate-500">
+                    Applied: <span className="font-medium">{applied.from}</span>{" "}
+                    → <span className="font-medium">{applied.to}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[160px_160px_auto] gap-3 items-end">
+                <div className="flex flex-col">
+                  <label className="text-xs text-slate-500 mb-1">From</label>
+                  <input
+                    type="date"
+                    value={from}
+                    onChange={(e) => setFrom(e.target.value)}
+                    className="h-10 px-3 rounded-xl date-black-icon border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-xs text-slate-500 mb-1">To</label>
+                  <input
+                    type="date"
+                    value={to}
+                    onChange={(e) => setTo(e.target.value)}
+                    className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={onApply}
+                    className="h-10 px-4 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 active:scale-[0.99] transition"
+                  >
+                    Apply
+                  </button>
+
+                  <button
+                    onClick={onReset}
+                    className="h-10 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-semibold hover:bg-slate-50 active:scale-[0.99] transition flex items-center gap-2"
+                  >
+                    <RefreshCcw size={16} />
+                    Reset
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="flex flex-col">
-              <label className="text-sm text-gray-400 mb-1">To</label>
-              <input
-                type="date"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
-              />
-            </div>
-
-            <div className="flex gap-2 mt-6">
-              <button
-                onClick={onApply}
-                className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700"
-              >
-                Apply
-              </button>
-              <button
-                onClick={onReset}
-                className="px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700 hover:bg-gray-700"
-              >
-                Reset
-              </button>
-            </div>
-            <div className="text-sm text-gray-400 text-right">
-              Showing: <span className="text-gray-200">{applied.from}</span> to{" "}
-              <span className="text-gray-200">{applied.to}</span>
+            {/* ✅ Loading hint */}
+            <div className="mt-3 text-xs text-slate-500">
+              {isLoading ? "Updating overview..." : "Overview ready"}
             </div>
           </div>
+
+          {/* ✅ Stat Cards */}
+          <motion.div
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+          >
+            <StatCard
+              name="Total Asset Value"
+              icon={Truck}
+              value={isLoading ? "Loading..." : remainingAmount.toFixed(2)}
+              iconBg="#EEF2FF"
+              iconColor="#4F46E5"
+            />
+
+            <StatCard
+              name="Total Inventory Quantity"
+              icon={Receipt}
+              value={isLoading ? "Loading..." : inventoryValue}
+              iconBg="#ECFDF5"
+              iconColor="#059669"
+            />
+
+            <StatCard
+              name="Total Marketing Expense"
+              icon={Receipt}
+              value={isLoading ? "Loading..." : totalMetaAmount.toFixed(2)}
+              iconBg="#E0F2FE"
+              iconColor="#0284C7"
+            />
+
+            <StatCard
+              name="Total Receiveable Amount"
+              icon={Receipt}
+              value={
+                isLoading ? "Loading..." : totalReceiveableAmount.toFixed(2)
+              }
+              iconBg="#FFF7ED"
+              iconColor="#D97706"
+            />
+
+            <StatCard
+              name="Total Payable Amount"
+              icon={Receipt}
+              value={isLoading ? "Loading..." : totalPayableAmount.toFixed(2)}
+              iconBg="#FEE2E2"
+              iconColor="#DC2626"
+            />
+
+            <StatCard
+              name="Total Cash In Amount"
+              icon={Landmark}
+              value={isLoading ? "Loading..." : totalCashInAmount.toFixed(2)}
+              iconBg="#F3E8FF"
+              iconColor="#7C3AED"
+            />
+
+            <StatCard
+              name="Total Cash Out Amount"
+              icon={Landmark}
+              value={isLoading ? "Loading..." : totalCashOutAmount.toFixed(2)}
+              iconBg="#F3E8FF"
+              iconColor="#7C3AED"
+            />
+          </motion.div>
         </div>
-
-        <motion.div
-          className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-        >
-          <StatCard
-            name="Total Asset Value"
-            icon={Truck}
-            value={isLoading ? "Loading..." : remainingAmount.toFixed(2)}
-            color="#F59E0B"
-          />
-
-          <StatCard
-            name="Total Inventory Quantity"
-            icon={Receipt}
-            value={isLoading ? "Loading..." : inventoryValue}
-            color="#EF4444"
-          />
-
-          <StatCard
-            name="Total Marketing Expense"
-            icon={Receipt}
-            value={isLoading ? "Loading..." : totalMetaAmount.toFixed(2)}
-            color="#EF4444"
-          />
-
-          <StatCard
-            name="Total Receiveable Amount"
-            icon={Receipt}
-            value={isLoading ? "Loading..." : totalReceiveableAmount.toFixed(2)}
-            color="#EF4444"
-          />
-
-          <StatCard
-            name="Total Payable Amount"
-            icon={Receipt}
-            value={isLoading ? "Loading..." : totalPayableAmount.toFixed(2)}
-            color="#EF4444"
-          />
-
-          <StatCard
-            name="Total Cash In Amount"
-            icon={Landmark}
-            value={isLoading ? "Loading..." : totalCashInAmount.toFixed(2)}
-            color="#8B5CF6"
-          />
-
-          <StatCard
-            name="Total Cash Out Amount"
-            icon={Landmark}
-            value={isLoading ? "Loading..." : totalCashOutAmount.toFixed(2)}
-            color="#8B5CF6"
-          />
-        </motion.div>
       </main>
     </div>
   );

@@ -1,5 +1,823 @@
+// import { motion } from "framer-motion";
+// import { Edit, Notebook, Plus, ShoppingBasket, Trash2 } from "lucide-react";
+// import { useEffect, useMemo, useState } from "react";
+// import toast from "react-hot-toast";
+// import Select from "react-select";
+
+// import { useGetAllAssetsPurchaseWithoutQueryQuery } from "../../features/assetsPurchase/assetsPurchase";
+// import {
+//   useDeleteAssetsDamageMutation,
+//   useGetAllAssetsDamageQuery,
+//   useInsertAssetsDamageMutation,
+//   useUpdateAssetsDamageMutation,
+// } from "../../features/assetsDamage/assetsDamage";
+
+// const AssetsDamageTable = () => {
+//   const [isModalOpen, setIsModalOpen] = useState(false);
+//   const [isModalOpen1, setIsModalOpen1] = useState(false);
+//   const [isModalOpen2, setIsModalOpen2] = useState(false);
+//   const role = localStorage.getItem("role");
+//   const userId = localStorage.getItem("userId");
+
+//   const [currentProduct, setCurrentProduct] = useState(null);
+
+//   // ✅ INSERT form
+//   const [createProduct, setCreateProduct] = useState({
+//     productId: "",
+//     name: "",
+//     quantity: "",
+//     price: "",
+//   });
+
+//   const [products, setProducts] = useState([]);
+
+//   console.log("products", products);
+
+//   // ✅ Filters: start/end + productId (strong & clean)
+//   const [startDate, setStartDate] = useState("");
+//   const [endDate, setEndDate] = useState("");
+//   const [filterProductName, setFilterProductName] = useState("");
+
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const [startPage, setStartPage] = useState(1);
+//   const [totalPages, setTotalPages] = useState(1);
+//   const [pagesPerSet, setPagesPerSet] = useState(10);
+//   const itemsPerPage = 10;
+
+//   // ✅ All products (Purchase list)
+//   const {
+//     data: allProductsRes,
+//     isLoading: isLoadingAllProducts,
+//     isError: isErrorAllProducts,
+//     error: errorAllProducts,
+//   } = useGetAllAssetsPurchaseWithoutQueryQuery();
+
+//   const productsData = allProductsRes?.data || [];
+
+//   useEffect(() => {
+//     if (isErrorAllProducts)
+//       console.error("Error fetching products", errorAllProducts);
+//   }, [isErrorAllProducts, errorAllProducts]);
+
+//   // ✅ Dropdown options
+//   const productDropdownOptions = useMemo(() => {
+//     return (productsData || []).map((p) => ({
+//       value: p.Id,
+//       label: p.name || "Unnamed",
+//     }));
+//   }, [productsData]);
+
+//   // ✅ productId -> name map
+//   const productNameMap = useMemo(() => {
+//     const m = new Map();
+//     (productsData || []).forEach((p) => {
+//       const key = p.Id;
+//       m.set(key, p.name);
+//     });
+//     return m;
+//   }, [productsData]);
+
+//   const resolveProductName = (row) => {
+//     // ✅ backend sale row already has name
+//     if (row?.name) return row.name;
+
+//     // fallback (future if you add productId relation)
+//     const pid = row?.productId ?? row?.product?.Id ?? row?.product?.id;
+//     if (!pid) return "N/A";
+//     return productNameMap.get(String(pid)) || "N/A";
+//   };
+
+//   // ✅ Responsive pagination
+//   useEffect(() => {
+//     const updatePagesPerSet = () => {
+//       if (window.innerWidth < 640) setPagesPerSet(5);
+//       else if (window.innerWidth < 1024) setPagesPerSet(7);
+//       else setPagesPerSet(10);
+//     };
+//     updatePagesPerSet();
+//     window.addEventListener("resize", updatePagesPerSet);
+//     return () => window.removeEventListener("resize", updatePagesPerSet);
+//   }, []);
+
+//   // ✅ reset page on filters change
+//   useEffect(() => {
+//     setCurrentPage(1);
+//     setStartPage(1);
+//   }, [startDate, endDate, filterProductName]);
+
+//   useEffect(() => {
+//     if (startDate && endDate && startDate > endDate) setEndDate(startDate);
+//   }, [startDate, endDate]);
+
+//   // ✅ Query args clean
+//   const queryArgs = useMemo(() => {
+//     const args = {
+//       page: currentPage,
+//       limit: itemsPerPage,
+//       startDate: startDate || undefined,
+//       endDate: endDate || undefined,
+//       name: filterProductName || undefined, // ✅ name যাবে
+//     };
+
+//     Object.keys(args).forEach((k) => {
+//       if (args[k] === undefined || args[k] === null || args[k] === "")
+//         delete args[k];
+//     });
+
+//     return args;
+//   }, [currentPage, itemsPerPage, startDate, endDate, filterProductName]);
+
+//   const { data, isLoading, isError, error, refetch } =
+//     useGetAllAssetsDamageQuery(queryArgs);
+
+//   useEffect(() => {
+//     if (isError) {
+//       console.error("Error fetching assets sale", error);
+//       return;
+//     }
+//     if (!isLoading && data) {
+//       setProducts(data?.data || []);
+//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//     }
+//   }, [data, isLoading, isError, error, itemsPerPage]);
+
+//   // ✅ Modals
+//   const handleAddProduct = () => setIsModalOpen1(true);
+//   const handleModalClose1 = () => setIsModalOpen1(false);
+//   const handleDeleteClose = () => setIsModalOpen2(false);
+
+//   const handleDeleteClick = (row) => {
+//     setCurrentProduct({
+//       ...row,
+//       productId: String(row.productId ?? ""),
+//       quantity: row.quantity ?? "",
+//       price: row.price ?? "",
+//       userId: userId,
+//     });
+//     setIsModalOpen2(true);
+//   };
+//   const handleEditClick = (row) => {
+//     setCurrentProduct({
+//       ...row,
+//       productId: String(row.productId ?? ""),
+//       quantity: row.quantity ?? "",
+//       price: row.price ?? "",
+//       userId: userId,
+//     });
+//     setIsModalOpen(true);
+//   };
+
+//   const handleModalClose = () => setIsModalOpen(false);
+
+//   // ✅ Insert
+//   const [insertAssetsDamage] = useInsertAssetsDamageMutation();
+
+//   const handleCreateProduct = async (e) => {
+//     e.preventDefault();
+
+//     if (!createProduct.productId) return toast.error("Please select a product");
+//     if (!createProduct.quantity || Number(createProduct.quantity) <= 0)
+//       return toast.error("Please enter a valid quantity");
+//     if (createProduct.price === "" || Number(createProduct.price) < 0)
+//       return toast.error("Please enter a valid price");
+
+//     try {
+//       const payload = {
+//         productId: Number(createProduct.productId),
+//         quantity: Number(createProduct.quantity),
+//         price: Number(createProduct.price),
+//       };
+
+//       const res = await insertAssetsDamage(payload).unwrap();
+
+//       if (res?.success) {
+//         toast.success("Successfully created sale!");
+//         setIsModalOpen1(false);
+//         setCreateProduct({ productId: "", quantity: "", price: "" });
+//         refetch?.();
+//       } else {
+//         toast.error(res?.message || "Create failed!");
+//       }
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Create failed!");
+//     }
+//   };
+
+//   // ✅ Update
+//   const [updateAssetsDamage] = useUpdateAssetsDamageMutation();
+
+//   const handleUpdateDelete = async () => {
+//     if (!currentProduct?.Id) return toast.error("Invalid item!");
+//     if (currentProduct?.note === "" || currentProduct?.note === null)
+//       return toast.error("Note is required!");
+
+//     try {
+//       const payload = {
+//         productId: Number(currentProduct.productId),
+//         quantity: Number(currentProduct.quantity),
+//         price: Number(currentProduct.price),
+//         note: currentProduct.note,
+//         status: currentProduct.status,
+//         userId: userId,
+//       };
+
+//       const res = await updateAssetsDamage({
+//         id: currentProduct.Id,
+//         data: payload,
+//       }).unwrap();
+
+//       if (res?.success) {
+//         toast.success("Successfully updated product!");
+//         setIsModalOpen2(false);
+//         refetch?.();
+//       } else {
+//         toast.error(res?.message || "Update failed!");
+//       }
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Update failed!");
+//     }
+//   };
+
+//   const handleUpdateProduct = async () => {
+//     const rowId = currentProduct?.Id ?? currentProduct?.id;
+//     if (!rowId) return toast.error("Invalid row!");
+//     if (!currentProduct?.productId)
+//       return toast.error("Please select a product");
+//     if (!currentProduct?.quantity || Number(currentProduct.quantity) <= 0)
+//       return toast.error("Please enter a valid quantity");
+//     if (currentProduct.price === "" || Number(currentProduct.price) < 0)
+//       return toast.error("Please enter a valid price");
+
+//     try {
+//       const payload = {
+//         productId: Number(currentProduct.productId),
+//         quantity: Number(currentProduct.quantity),
+//         price: Number(currentProduct.price),
+//         note: currentProduct.note,
+//         status: currentProduct.status,
+//         userId: userId,
+//       };
+
+//       const res = await updateAssetsDamage({
+//         id: rowId,
+//         data: payload,
+//       }).unwrap();
+
+//       if (res?.success) {
+//         toast.success("Successfully updated!");
+//         setIsModalOpen(false);
+//         refetch?.();
+//       } else {
+//         toast.error(res?.message || "Update failed!");
+//       }
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Update failed!");
+//     }
+//   };
+
+//   // ✅ Delete
+//   const [deleteAssetsDamage] = useDeleteAssetsDamageMutation();
+
+//   const handleDeleteProduct = async (rowId) => {
+//     if (!window.confirm("Do you want to delete this sale row?")) return;
+
+//     try {
+//       const res = await deleteAssetsDamage(rowId).unwrap();
+//       if (res?.success) {
+//         toast.success("Deleted successfully!");
+//         refetch?.();
+//       } else {
+//         toast.error(res?.message || "Delete failed!");
+//       }
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Delete failed!");
+//     }
+//   };
+
+//   // ✅ Clear Filters
+//   const clearFilters = () => {
+//     setStartDate("");
+//     setEndDate("");
+//     setFilterProductName("");
+//   };
+
+//   // ✅ Pagination
+//   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
+
+//   const handlePageChange = (pageNumber) => {
+//     setCurrentPage(pageNumber);
+//     if (pageNumber < startPage) setStartPage(pageNumber);
+//     else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
+//   };
+
+//   const handlePreviousSet = () =>
+//     setStartPage((p) => Math.max(p - pagesPerSet, 1));
+//   const handleNextSet = () =>
+//     setStartPage((p) =>
+//       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
+//     );
+
+//   return (
+//     <motion.div
+//       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
+//       initial={{ opacity: 0, y: 20 }}
+//       animate={{ opacity: 1, y: 0 }}
+//       transition={{ delay: 0.2 }}
+//     >
+//       {/* Add Button + Total */}
+//       <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+//         <button
+//           type="button"
+//           onClick={handleAddProduct}
+//           className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
+//         >
+//           Add <Plus size={18} className="ml-2" />
+//         </button>
+
+//         <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
+//           <div className="flex items-center gap-2 text-gray-300">
+//             <ShoppingBasket size={18} className="text-amber-400" />
+//             <span className="text-sm">Total Damage</span>
+//           </div>
+
+//           <span className="text-white font-semibold tabular-nums">
+//             {isLoading ? "Loading..." : data?.meta?.totalQuantity}
+//           </span>
+//         </div>
+//       </div>
+
+//       {/* Filters */}
+//       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
+//         <div className="flex flex-col">
+//           <label className="text-sm text-gray-400 mb-1">From</label>
+//           <input
+//             type="date"
+//             value={startDate}
+//             onChange={(e) => setStartDate(e.target.value)}
+//             className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+//           />
+//         </div>
+
+//         <div className="flex flex-col">
+//           <label className="text-sm text-gray-400 mb-1">To</label>
+//           <input
+//             type="date"
+//             value={endDate}
+//             onChange={(e) => setEndDate(e.target.value)}
+//             className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+//           />
+//         </div>
+
+//         <div className="flex items-center justify-center mt-6">
+//           <Select
+//             className="text-black"
+//             options={productDropdownOptions}
+//             value={
+//               filterProductName
+//                 ? productDropdownOptions.find(
+//                     (o) => o.label === filterProductName,
+//                   )
+//                 : null
+//             }
+//             onChange={(selected) => setFilterProductName(selected?.label || "")}
+//             placeholder="Select Assets"
+//             isClearable
+//           />
+//         </div>
+
+//         <button
+//           className="flex items-center mt-6 bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
+//           onClick={clearFilters}
+//         >
+//           Clear Filters
+//         </button>
+//       </div>
+
+//       {/* Table */}
+//       <div className="overflow-x-auto">
+//         <table className="min-w-full divide-y divide-gray-700">
+//           <thead>
+//             <tr>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Product
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Quantity
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Price
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Total Price
+//               </th>
+
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Status
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Actions
+//               </th>
+//             </tr>
+//           </thead>
+
+//           <tbody className="divide-y divide-gray-700">
+//             {products.map((row) => {
+//               const rowId = row.Id ?? row.id;
+//               const total = Number(
+//                 row.total ?? Number(row.quantity || 0) * Number(row.price || 0),
+//               );
+
+//               return (
+//                 <motion.tr
+//                   key={rowId}
+//                   initial={{ opacity: 0 }}
+//                   animate={{ opacity: 1 }}
+//                   transition={{ duration: 0.3 }}
+//                 >
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
+//                     {resolveProductName(row)}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {Number(row.quantity || 0).toFixed(2)}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {Number(row.price || 0).toFixed(2)}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {total.toFixed(2)}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {row.status}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+//                     {row.note && (
+//                       <button
+//                         className="text-white-600 hover:text-white-900"
+//                         title={row.note}
+//                       >
+//                         <Notebook size={18} />
+//                       </button>
+//                     )}
+//                     <button
+//                       onClick={() => handleEditClick(row)}
+//                       className="text-indigo-600 hover:text-indigo-900"
+//                     >
+//                       <Edit size={18} />
+//                     </button>
+
+//                     {role === "superAdmin" || row.status === "Approved" ? (
+//                       <button
+//                         onClick={() => handleDeleteProduct(rowId)}
+//                         className="text-red-600 hover:text-red-900 ms-4"
+//                       >
+//                         <Trash2 size={18} />
+//                       </button>
+//                     ) : (
+//                       <button
+//                         onClick={() => handleDeleteClick(row)}
+//                         className="text-red-600 hover:text-red-900 ms-4"
+//                       >
+//                         <Trash2 size={18} />
+//                       </button>
+//                     )}
+//                   </td>
+//                 </motion.tr>
+//               );
+//             })}
+
+//             {!isLoading && products.length === 0 && (
+//               <tr>
+//                 <td
+//                   colSpan={5}
+//                   className="px-6 py-6 text-center text-sm text-gray-300"
+//                 >
+//                   No data found
+//                 </td>
+//               </tr>
+//             )}
+//           </tbody>
+//         </table>
+//       </div>
+
+//       {/* Pagination */}
+//       <div className="flex items-center justify-center space-x-2 mt-6">
+//         <button
+//           onClick={handlePreviousSet}
+//           disabled={startPage === 1}
+//           className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+//         >
+//           Prev
+//         </button>
+
+//         {[...Array(endPage - startPage + 1)].map((_, index) => {
+//           const pageNum = startPage + index;
+//           return (
+//             <button
+//               key={pageNum}
+//               onClick={() => handlePageChange(pageNum)}
+//               className={`px-3 py-2 text-black rounded-md ${
+//                 pageNum === currentPage
+//                   ? "bg-white"
+//                   : "bg-indigo-500 hover:bg-indigo-400"
+//               }`}
+//             >
+//               {pageNum}
+//             </button>
+//           );
+//         })}
+
+//         <button
+//           onClick={handleNextSet}
+//           disabled={endPage === totalPages}
+//           className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+//         >
+//           Next
+//         </button>
+//       </div>
+
+//       {/* Edit Modal */}
+//       {isModalOpen && currentProduct && (
+//         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+//           <motion.div
+//             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+//             initial={{ opacity: 0, y: -50 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             transition={{ duration: 0.3 }}
+//           >
+//             <h2 className="text-lg font-semibold text-white">Edit Sale</h2>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Product:</label>
+//               <Select
+//                 options={productDropdownOptions}
+//                 value={
+//                   currentProduct.productId
+//                     ? productDropdownOptions.find(
+//                         (o) => o.value === String(currentProduct.productId),
+//                       )
+//                     : null
+//                 }
+//                 onChange={(selected) =>
+//                   setCurrentProduct((p) => ({
+//                     ...p,
+//                     productId: selected?.value || "",
+//                   }))
+//                 }
+//                 placeholder="Select Product"
+//                 isClearable
+//                 className="text-black w-full"
+//                 isDisabled={isLoadingAllProducts}
+//               />
+//             </div>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Quantity:</label>
+//               <input
+//                 type="number"
+//                 step="0.01"
+//                 value={currentProduct.quantity}
+//                 onChange={(e) =>
+//                   setCurrentProduct((p) => ({ ...p, quantity: e.target.value }))
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                 required
+//               />
+//             </div>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Price:</label>
+//               <input
+//                 type="number"
+//                 step="0.01"
+//                 value={currentProduct.price}
+//                 onChange={(e) =>
+//                   setCurrentProduct((p) => ({ ...p, price: e.target.value }))
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                 required
+//               />
+//             </div>
+
+//             {role === "superAdmin" ? (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Status</label>
+//                 <select
+//                   value={currentProduct.status || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       status: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                   required
+//                 >
+//                   <option value="">Select Status</option>
+//                   <option value="Approved">Approved</option>
+//                   <option value="Pending">Pending</option>
+//                 </select>
+//               </div>
+//             ) : (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Note:</label>
+//                 <textarea
+//                   type="text"
+//                   value={currentProduct?.note || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       note: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                 />
+//               </div>
+//             )}
+
+//             <div className="mt-6 flex justify-end">
+//               <button
+//                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+//                 onClick={handleUpdateProduct}
+//               >
+//                 Save
+//               </button>
+//               <button
+//                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+//                 onClick={handleModalClose}
+//               >
+//                 Cancel
+//               </button>
+//             </div>
+//           </motion.div>
+//         </div>
+//       )}
+
+//       {/* Add Modal */}
+//       {isModalOpen1 && (
+//         <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
+//           <motion.div
+//             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+//             initial={{ opacity: 0, y: -50 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             transition={{ duration: 0.3 }}
+//           >
+//             <h2 className="text-lg font-semibold text-white">Add Sale</h2>
+
+//             <form onSubmit={handleCreateProduct}>
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Product:</label>
+//                 <Select
+//                   options={productDropdownOptions}
+//                   value={
+//                     createProduct.productId
+//                       ? productDropdownOptions.find(
+//                           (o) => o.value === String(createProduct.productId),
+//                         )
+//                       : null
+//                   }
+//                   onChange={(selected) =>
+//                     setCreateProduct((p) => ({
+//                       ...p,
+//                       productId: selected?.value || "",
+//                     }))
+//                   }
+//                   placeholder="Select Product"
+//                   isClearable
+//                   className="text-black w-full"
+//                   isDisabled={isLoadingAllProducts}
+//                 />
+//               </div>
+
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Quantity:</label>
+//                 <input
+//                   type="number"
+//                   step="0.01"
+//                   value={createProduct.quantity}
+//                   onChange={(e) =>
+//                     setCreateProduct((p) => ({
+//                       ...p,
+//                       quantity: e.target.value,
+//                     }))
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                   required
+//                 />
+//               </div>
+
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Price:</label>
+//                 <input
+//                   type="number"
+//                   step="0.01"
+//                   value={createProduct.price}
+//                   onChange={(e) =>
+//                     setCreateProduct((p) => ({ ...p, price: e.target.value }))
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                   required
+//                 />
+//               </div>
+
+//               <div className="mt-6 flex justify-end">
+//                 <button
+//                   type="submit"
+//                   className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+//                 >
+//                   Save
+//                 </button>
+//                 <button
+//                   type="button"
+//                   className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+//                   onClick={handleModalClose1}
+//                 >
+//                   Cancel
+//                 </button>
+//               </div>
+//             </form>
+//           </motion.div>
+//         </div>
+//       )}
+
+//       {/* Edit Delete */}
+//       {isModalOpen2 && (
+//         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+//           <motion.div
+//             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+//             initial={{ opacity: 0, y: -50 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             transition={{ duration: 0.3 }}
+//           >
+//             <h2 className="text-lg font-semibold text-white">
+//               Edit Purchase Asset
+//             </h2>
+
+//             {role === "superAdmin" ? (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Status</label>
+//                 <select
+//                   value={currentProduct.status || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       status: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                   required
+//                 >
+//                   <option value="">Select Status</option>
+//                   <option value="Approved">Approved</option>
+//                   <option value="Pending">Pending</option>
+//                 </select>
+//               </div>
+//             ) : (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Note:</label>
+//                 <textarea
+//                   type="text"
+//                   value={currentProduct?.note || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       note: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                 />
+//               </div>
+//             )}
+
+//             <div className="mt-6 flex justify-end">
+//               <button
+//                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+//                 onClick={handleUpdateDelete}
+//               >
+//                 Save
+//               </button>
+//               <button
+//                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+//                 onClick={handleDeleteClose}
+//               >
+//                 Cancel
+//               </button>
+//             </div>
+//           </motion.div>
+//         </div>
+//       )}
+//     </motion.div>
+//   );
+// };
+
+// export default AssetsDamageTable;
+
 import { motion } from "framer-motion";
-import { Edit, Notebook, Plus, ShoppingBasket, Trash2 } from "lucide-react";
+import { Edit, Notebook, Plus, ShoppingBasket, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -16,35 +834,36 @@ const AssetsDamageTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
   const [isModalOpen2, setIsModalOpen2] = useState(false);
+
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
 
   const [currentProduct, setCurrentProduct] = useState(null);
 
-  // ✅ INSERT form
+  // INSERT form
   const [createProduct, setCreateProduct] = useState({
     productId: "",
-    name: "",
     quantity: "",
     price: "",
   });
 
   const [products, setProducts] = useState([]);
 
-  console.log("products", products);
-
-  // ✅ Filters: start/end + productId (strong & clean)
+  // Filters
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [filterProductName, setFilterProductName] = useState("");
 
+  // Per page (optional but consistent)
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
-  const itemsPerPage = 10;
 
-  // ✅ All products (Purchase list)
+  // All products (Purchase list)
   const {
     data: allProductsRes,
     isLoading: isLoadingAllProducts,
@@ -59,35 +878,32 @@ const AssetsDamageTable = () => {
       console.error("Error fetching products", errorAllProducts);
   }, [isErrorAllProducts, errorAllProducts]);
 
-  // ✅ Dropdown options
+  // Dropdown options (Id as value, name as label)
   const productDropdownOptions = useMemo(() => {
     return (productsData || []).map((p) => ({
-      value: p.Id,
+      value: String(p.Id), // ✅ keep as string for Select consistency
       label: p.name || "Unnamed",
     }));
   }, [productsData]);
 
-  // ✅ productId -> name map
+  // productId -> name map
   const productNameMap = useMemo(() => {
     const m = new Map();
     (productsData || []).forEach((p) => {
-      const key = p.Id;
-      m.set(key, p.name);
+      m.set(String(p.Id), p.name);
     });
     return m;
   }, [productsData]);
 
   const resolveProductName = (row) => {
-    // ✅ backend sale row already has name
     if (row?.name) return row.name;
-
-    // fallback (future if you add productId relation)
-    const pid = row?.productId ?? row?.product?.Id ?? row?.product?.id;
+    const pid =
+      row?.productId ?? row?.product?.Id ?? row?.product?.id ?? row?.product_id;
     if (!pid) return "N/A";
     return productNameMap.get(String(pid)) || "N/A";
   };
 
-  // ✅ Responsive pagination
+  // Responsive pagesPerSet
   useEffect(() => {
     const updatePagesPerSet = () => {
       if (window.innerWidth < 640) setPagesPerSet(5);
@@ -99,24 +915,24 @@ const AssetsDamageTable = () => {
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
 
-  // ✅ reset page on filters change
+  // reset page on filters change
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate, filterProductName]);
+  }, [startDate, endDate, filterProductName, itemsPerPage]);
 
   useEffect(() => {
     if (startDate && endDate && startDate > endDate) setEndDate(startDate);
   }, [startDate, endDate]);
 
-  // ✅ Query args clean
+  // Query args
   const queryArgs = useMemo(() => {
     const args = {
       page: currentPage,
       limit: itemsPerPage,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      name: filterProductName || undefined, // ✅ name যাবে
+      name: filterProductName || undefined,
     };
 
     Object.keys(args).forEach((k) => {
@@ -132,7 +948,7 @@ const AssetsDamageTable = () => {
 
   useEffect(() => {
     if (isError) {
-      console.error("Error fetching assets sale", error);
+      console.error("Error fetching assets damage", error);
       return;
     }
     if (!isLoading && data) {
@@ -141,10 +957,12 @@ const AssetsDamageTable = () => {
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
 
-  // ✅ Modals
+  // Modals
   const handleAddProduct = () => setIsModalOpen1(true);
   const handleModalClose1 = () => setIsModalOpen1(false);
+
   const handleDeleteClose = () => setIsModalOpen2(false);
+  const handleModalClose = () => setIsModalOpen(false);
 
   const handleDeleteClick = (row) => {
     setCurrentProduct({
@@ -152,24 +970,27 @@ const AssetsDamageTable = () => {
       productId: String(row.productId ?? ""),
       quantity: row.quantity ?? "",
       price: row.price ?? "",
+      note: row.note ?? "",
+      status: row.status ?? "",
       userId: userId,
     });
     setIsModalOpen2(true);
   };
+
   const handleEditClick = (row) => {
     setCurrentProduct({
       ...row,
       productId: String(row.productId ?? ""),
       quantity: row.quantity ?? "",
       price: row.price ?? "",
+      note: row.note ?? "",
+      status: row.status ?? "",
       userId: userId,
     });
     setIsModalOpen(true);
   };
 
-  const handleModalClose = () => setIsModalOpen(false);
-
-  // ✅ Insert
+  // Insert
   const [insertAssetsDamage] = useInsertAssetsDamageMutation();
 
   const handleCreateProduct = async (e) => {
@@ -191,7 +1012,7 @@ const AssetsDamageTable = () => {
       const res = await insertAssetsDamage(payload).unwrap();
 
       if (res?.success) {
-        toast.success("Successfully created sale!");
+        toast.success("Successfully created damage!");
         setIsModalOpen1(false);
         setCreateProduct({ productId: "", quantity: "", price: "" });
         refetch?.();
@@ -203,7 +1024,7 @@ const AssetsDamageTable = () => {
     }
   };
 
-  // ✅ Update
+  // Update
   const [updateAssetsDamage] = useUpdateAssetsDamageMutation();
 
   const handleUpdateDelete = async () => {
@@ -227,7 +1048,7 @@ const AssetsDamageTable = () => {
       }).unwrap();
 
       if (res?.success) {
-        toast.success("Successfully updated product!");
+        toast.success("Successfully updated!");
         setIsModalOpen2(false);
         refetch?.();
       } else {
@@ -275,11 +1096,11 @@ const AssetsDamageTable = () => {
     }
   };
 
-  // ✅ Delete
+  // Delete
   const [deleteAssetsDamage] = useDeleteAssetsDamageMutation();
 
   const handleDeleteProduct = async (rowId) => {
-    if (!window.confirm("Do you want to delete this sale row?")) return;
+    if (!window.confirm("Do you want to delete this row?")) return;
 
     try {
       const res = await deleteAssetsDamage(rowId).unwrap();
@@ -294,14 +1115,14 @@ const AssetsDamageTable = () => {
     }
   };
 
-  // ✅ Clear Filters
+  // Clear Filters
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
     setFilterProductName("");
   };
 
-  // ✅ Pagination
+  // Pagination
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
 
   const handlePageChange = (pageNumber) => {
@@ -317,60 +1138,95 @@ const AssetsDamageTable = () => {
       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
+  // React-select light styles (same as Purchase light)
+  const selectStyles = useMemo(
+    () => ({
+      control: (base, state) => ({
+        ...base,
+        minHeight: 44,
+        borderRadius: 12,
+        borderColor: state.isFocused ? "#c7d2fe" : "#e2e8f0",
+        boxShadow: state.isFocused
+          ? "0 0 0 4px rgba(99, 102, 241, 0.15)"
+          : "none",
+        "&:hover": { borderColor: state.isFocused ? "#c7d2fe" : "#cbd5e1" },
+      }),
+      valueContainer: (base) => ({ ...base, padding: "0 12px" }),
+      placeholder: (base) => ({ ...base, color: "#64748b" }),
+      singleValue: (base) => ({ ...base, color: "#0f172a" }),
+      menu: (base) => ({
+        ...base,
+        borderRadius: 12,
+        overflow: "hidden",
+        zIndex: 60,
+      }),
+      option: (base, state) => ({
+        ...base,
+        backgroundColor: state.isSelected
+          ? "rgba(99, 102, 241, 0.12)"
+          : state.isFocused
+            ? "#f8fafc"
+            : "#fff",
+        color: "#0f172a",
+      }),
+    }),
+    [],
+  );
+
   return (
     <motion.div
-      className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
       {/* Add Button + Total */}
-      <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="my-6 flex flex-wrap gap-3 items-center justify-start">
         <button
           type="button"
           onClick={handleAddProduct}
-          className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
+          className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition px-4 py-2 rounded-xl shadow-sm"
         >
-          Add <Plus size={18} className="ml-2" />
+          Add <Plus size={18} />
         </button>
 
-        <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
-          <div className="flex items-center gap-2 text-gray-300">
-            <ShoppingBasket size={18} className="text-amber-400" />
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2">
+          <div className="flex items-center gap-2 text-slate-700">
+            <ShoppingBasket size={18} className="text-amber-500" />
             <span className="text-sm">Total Damage</span>
           </div>
 
-          <span className="text-white font-semibold tabular-nums">
+          <span className="text-slate-900 font-semibold tabular-nums">
             {isLoading ? "Loading..." : data?.meta?.totalQuantity}
           </span>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6 w-full justify-center mx-auto">
         <div className="flex flex-col">
-          <label className="text-sm text-gray-400 mb-1">From</label>
+          <label className="text-sm text-slate-600 mb-1">From</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+            className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-gray-400 mb-1">To</label>
+          <label className="text-sm text-slate-600 mb-1">To</label>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+            className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           />
         </div>
 
-        <div className="flex items-center justify-center mt-6">
+        <div className="flex items-center justify-center">
           <Select
-            className="text-black"
+            styles={selectStyles}
             options={productDropdownOptions}
             value={
               filterProductName
@@ -382,11 +1238,32 @@ const AssetsDamageTable = () => {
             onChange={(selected) => setFilterProductName(selected?.label || "")}
             placeholder="Select Assets"
             isClearable
+            isDisabled={isLoadingAllProducts}
+            className="w-full"
           />
         </div>
 
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Per Page</label>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+              setStartPage(1);
+            }}
+            className="px-3 py-[10px] rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+          >
+            <option value={1}>1</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+
         <button
-          className="flex items-center mt-6 bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
+          className="inline-flex items-center justify-center bg-white hover:bg-slate-50 text-slate-700 transition px-4 py-[10px] rounded-xl border border-slate-200"
           onClick={clearFilters}
         >
           Clear Filters
@@ -394,34 +1271,30 @@ const AssetsDamageTable = () => {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead>
+      <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Product
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Quantity
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Price
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Total Price
-              </th>
-
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Actions
-              </th>
+              {[
+                "Product",
+                "Quantity",
+                "Price",
+                "Total Price",
+                "Status",
+                "Actions",
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                >
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-700">
-            {products.map((row) => {
+          <tbody className="divide-y divide-slate-200 bg-white">
+            {(products || []).map((row) => {
               const rowId = row.Id ?? row.id;
               const total = Number(
                 row.total ?? Number(row.quantity || 0) * Number(row.price || 0),
@@ -432,59 +1305,66 @@ const AssetsDamageTable = () => {
                   key={rowId}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.25 }}
+                  className="hover:bg-slate-50"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                     {resolveProductName(row)}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {Number(row.quantity || 0).toFixed(2)}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {Number(row.price || 0).toFixed(2)}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {total.toFixed(2)}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {row.status}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {row.note && (
-                      <button
-                        className="text-white-600 hover:text-white-900"
-                        title={row.note}
-                      >
-                        <Notebook size={18} />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleEditClick(row)}
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                      <Edit size={18} />
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {row.note && (
+                        <button
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-slate-100 transition"
+                          title={row.note}
+                        >
+                          <Notebook size={18} className="text-slate-700" />
+                        </button>
+                      )}
 
-                    {role === "superAdmin" || row.status === "Approved" ? (
                       <button
-                        onClick={() => handleDeleteProduct(rowId)}
-                        className="text-red-600 hover:text-red-900 ms-4"
+                        onClick={() => handleEditClick(row)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-indigo-50 transition"
+                        title="Edit"
                       >
-                        <Trash2 size={18} />
+                        <Edit size={18} className="text-indigo-600" />
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => handleDeleteClick(row)}
-                        className="text-red-600 hover:text-red-900 ms-4"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    )}
+
+                      {role === "superAdmin" || row.status === "Approved" ? (
+                        <button
+                          onClick={() => handleDeleteProduct(rowId)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
+                          title="Delete"
+                        >
+                          <Trash2 size={18} className="text-rose-600" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleDeleteClick(row)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
+                          title="Delete Request / Note"
+                        >
+                          <Trash2 size={18} className="text-rose-600" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </motion.tr>
               );
@@ -493,8 +1373,8 @@ const AssetsDamageTable = () => {
             {!isLoading && products.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
-                  className="px-6 py-6 text-center text-sm text-gray-300"
+                  colSpan={6}
+                  className="px-6 py-6 text-center text-sm text-slate-600"
                 >
                   No data found
                 </td>
@@ -505,25 +1385,26 @@ const AssetsDamageTable = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-center space-x-2 mt-6">
+      <div className="flex items-center justify-center flex-wrap gap-2 mt-6">
         <button
           onClick={handlePreviousSet}
           disabled={startPage === 1}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
           Prev
         </button>
 
         {[...Array(endPage - startPage + 1)].map((_, index) => {
           const pageNum = startPage + index;
+          const active = pageNum === currentPage;
           return (
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-3 py-2 text-black rounded-md ${
-                pageNum === currentPage
-                  ? "bg-white"
-                  : "bg-indigo-500 hover:bg-indigo-400"
+              className={`px-4 py-2 rounded-xl border transition ${
+                active
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               }`}
             >
               {pageNum}
@@ -534,26 +1415,40 @@ const AssetsDamageTable = () => {
         <button
           onClick={handleNextSet}
           disabled={endPage === totalPages}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
           Next
         </button>
       </div>
 
-      {/* Edit Modal */}
+      {/* -------------------- Edit Modal -------------------- */}
       {isModalOpen && currentProduct && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-2/3 lg:w-1/2 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.25 }}
           >
-            <h2 className="text-lg font-semibold text-white">Edit Sale</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Edit Damage
+              </h2>
+
+              <button
+                type="button"
+                onClick={handleModalClose}
+                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
+                title="Close"
+              >
+                <X size={18} className="text-slate-600" />
+              </button>
+            </div>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Product:</label>
+              <label className="block text-sm text-slate-700">Product:</label>
               <Select
+                styles={selectStyles}
                 options={productDropdownOptions}
                 value={
                   currentProduct.productId
@@ -570,51 +1465,39 @@ const AssetsDamageTable = () => {
                 }
                 placeholder="Select Product"
                 isClearable
-                className="text-black w-full"
+                className="w-full"
                 isDisabled={isLoadingAllProducts}
               />
             </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-white">Quantity:</label>
-              <input
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+              <Field
+                label="Quantity:"
                 type="number"
                 step="0.01"
                 value={currentProduct.quantity}
-                onChange={(e) =>
-                  setCurrentProduct((p) => ({ ...p, quantity: e.target.value }))
+                onChange={(v) =>
+                  setCurrentProduct((p) => ({ ...p, quantity: v }))
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
-                required
               />
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-white">Price:</label>
-              <input
+              <Field
+                label="Price:"
                 type="number"
                 step="0.01"
                 value={currentProduct.price}
-                onChange={(e) =>
-                  setCurrentProduct((p) => ({ ...p, price: e.target.value }))
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
-                required
+                onChange={(v) => setCurrentProduct((p) => ({ ...p, price: v }))}
               />
             </div>
 
             {role === "superAdmin" ? (
               <div className="mt-4">
-                <label className="block text-sm text-white">Status</label>
+                <label className="block text-sm text-slate-700">Status</label>
                 <select
                   value={currentProduct.status || ""}
                   onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      status: e.target.value,
-                    })
+                    setCurrentProduct((p) => ({ ...p, status: e.target.value }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 >
                   <option value="">Select Status</option>
@@ -624,30 +1507,28 @@ const AssetsDamageTable = () => {
               </div>
             ) : (
               <div className="mt-4">
-                <label className="block text-sm text-white">Note:</label>
+                <label className="block text-sm text-slate-700">Note:</label>
                 <textarea
-                  type="text"
                   value={currentProduct?.note || ""}
                   onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      note: e.target.value,
-                    })
+                    setCurrentProduct((p) => ({ ...p, note: e.target.value }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  rows={3}
                 />
               </div>
             )}
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end gap-2">
               <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
                 onClick={handleUpdateProduct}
               >
                 Save
               </button>
               <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                type="button"
+                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                 onClick={handleModalClose}
               >
                 Cancel
@@ -657,83 +1538,87 @@ const AssetsDamageTable = () => {
         </div>
       )}
 
-      {/* Add Modal */}
+      {/* -------------------- Add Modal -------------------- */}
       {isModalOpen1 && (
-        <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-2/3 lg:w-1/2 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.25 }}
           >
-            <h2 className="text-lg font-semibold text-white">Add Sale</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Add Damage
+              </h2>
 
-            <form onSubmit={handleCreateProduct}>
-              <div className="mt-4">
-                <label className="block text-sm text-white">Product:</label>
-                <Select
-                  options={productDropdownOptions}
-                  value={
-                    createProduct.productId
-                      ? productDropdownOptions.find(
-                          (o) => o.value === String(createProduct.productId),
-                        )
-                      : null
-                  }
-                  onChange={(selected) =>
-                    setCreateProduct((p) => ({
-                      ...p,
-                      productId: selected?.value || "",
-                    }))
-                  }
-                  placeholder="Select Product"
-                  isClearable
-                  className="text-black w-full"
-                  isDisabled={isLoadingAllProducts}
-                />
-              </div>
+              <button
+                type="button"
+                onClick={handleModalClose1}
+                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
+                title="Close"
+              >
+                <X size={18} className="text-slate-600" />
+              </button>
+            </div>
 
-              <div className="mt-4">
-                <label className="block text-sm text-white">Quantity:</label>
-                <input
+            <form onSubmit={handleCreateProduct} className="mt-4">
+              <label className="block text-sm text-slate-700">Product:</label>
+              <Select
+                styles={selectStyles}
+                options={productDropdownOptions}
+                value={
+                  createProduct.productId
+                    ? productDropdownOptions.find(
+                        (o) => o.value === String(createProduct.productId),
+                      )
+                    : null
+                }
+                onChange={(selected) =>
+                  setCreateProduct((p) => ({
+                    ...p,
+                    productId: selected?.value || "",
+                  }))
+                }
+                placeholder="Select Product"
+                isClearable
+                className="w-full"
+                isDisabled={isLoadingAllProducts}
+              />
+
+              <div className="grid grid-cols-1 gap-3 mt-4">
+                <Field
+                  label="Quantity:"
                   type="number"
                   step="0.01"
                   value={createProduct.quantity}
-                  onChange={(e) =>
-                    setCreateProduct((p) => ({
-                      ...p,
-                      quantity: e.target.value,
-                    }))
+                  onChange={(v) =>
+                    setCreateProduct((p) => ({ ...p, quantity: v }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-white">Price:</label>
-                <input
+                <Field
+                  label="Price:"
                   type="number"
                   step="0.01"
                   value={createProduct.price}
-                  onChange={(e) =>
-                    setCreateProduct((p) => ({ ...p, price: e.target.value }))
+                  onChange={(v) =>
+                    setCreateProduct((p) => ({ ...p, price: v }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
                   required
                 />
               </div>
 
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end gap-2">
                 <button
                   type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
                 >
                   Save
                 </button>
                 <button
                   type="button"
-                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                   onClick={handleModalClose1}
                 >
                   Cancel
@@ -744,31 +1629,39 @@ const AssetsDamageTable = () => {
         </div>
       )}
 
-      {/* Edit Delete */}
-      {isModalOpen2 && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+      {/* -------------------- Edit Delete (note/status update) -------------------- */}
+      {isModalOpen2 && currentProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-2/3 lg:w-1/2 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.25 }}
           >
-            <h2 className="text-lg font-semibold text-white">
-              Edit Purchase Asset
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Delete Request / Note
+              </h2>
+
+              <button
+                type="button"
+                onClick={handleDeleteClose}
+                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
+                title="Close"
+              >
+                <X size={18} className="text-slate-600" />
+              </button>
+            </div>
 
             {role === "superAdmin" ? (
               <div className="mt-4">
-                <label className="block text-sm text-white">Status</label>
+                <label className="block text-sm text-slate-700">Status</label>
                 <select
                   value={currentProduct.status || ""}
                   onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      status: e.target.value,
-                    })
+                    setCurrentProduct((p) => ({ ...p, status: e.target.value }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 >
                   <option value="">Select Status</option>
@@ -778,30 +1671,28 @@ const AssetsDamageTable = () => {
               </div>
             ) : (
               <div className="mt-4">
-                <label className="block text-sm text-white">Note:</label>
+                <label className="block text-sm text-slate-700">Note:</label>
                 <textarea
-                  type="text"
                   value={currentProduct?.note || ""}
                   onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      note: e.target.value,
-                    })
+                    setCurrentProduct((p) => ({ ...p, note: e.target.value }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  rows={3}
                 />
               </div>
             )}
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end gap-2">
               <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
                 onClick={handleUpdateDelete}
               >
                 Save
               </button>
               <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                type="button"
+                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                 onClick={handleDeleteClose}
               >
                 Cancel
@@ -813,5 +1704,30 @@ const AssetsDamageTable = () => {
     </motion.div>
   );
 };
+
+const Field = ({
+  label,
+  value,
+  onChange,
+  type = "text",
+  step,
+  readOnly,
+  required,
+}) => (
+  <div>
+    <label className="block text-sm text-slate-700">{label}</label>
+    <input
+      type={type}
+      step={step}
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value)}
+      readOnly={readOnly}
+      required={required}
+      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${
+        readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
+      }`}
+    />
+  </div>
+);
 
 export default AssetsDamageTable;
