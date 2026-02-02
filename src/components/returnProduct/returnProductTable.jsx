@@ -12,7 +12,7 @@
 //   useUpdateReturnProductMutation,
 // } from "../../features/returnProduct/returnProduct";
 
-// const PurchaseReturnProductTable = () => {
+// const ReturnProductTable = () => {
 //   const [isEditOpen, setIsEditOpen] = useState(false);
 //   const [isAddOpen, setIsAddOpen] = useState(false);
 
@@ -573,7 +573,7 @@
 //   );
 // };
 
-// export default PurchaseReturnProductTable;
+// export default ReturnProductTable;
 
 import { motion } from "framer-motion";
 import { Edit, Notebook, Plus, RotateCcw, Trash2 } from "lucide-react";
@@ -589,13 +589,15 @@ import {
   useUpdateReturnProductMutation,
 } from "../../features/returnProduct/returnProduct";
 
-const PurchaseReturnProductTable = () => {
+const ReturnProductTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isEditOpen1, setIsEditOpen1] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
+
   const role = localStorage.getItem("role");
-  const [currentItem, setCurrentItem] = useState(null);
   const userId = localStorage.getItem("userId");
+
+  const [currentItem, setCurrentItem] = useState(null);
 
   // ✅ UI uses receivedId (ReceivedProduct.Id)
   const [createForm, setCreateForm] = useState({
@@ -610,12 +612,47 @@ const PurchaseReturnProductTable = () => {
   const [endDate, setEndDate] = useState("");
   const [productName, setProductName] = useState("");
 
-  // pagination
+  //Pagination calculation start
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
-  const itemsPerPage = 10;
+
+  useEffect(() => {
+    const updatePagesPerSet = () => {
+      if (window.innerWidth < 640) setPagesPerSet(5);
+      else if (window.innerWidth < 1024) setPagesPerSet(7);
+      else setPagesPerSet(10);
+    };
+    updatePagesPerSet();
+    window.addEventListener("resize", updatePagesPerSet);
+    return () => window.removeEventListener("resize", updatePagesPerSet);
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setStartPage(1);
+  }, [startDate, endDate, itemsPerPage]);
+
+  const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    if (pageNumber < startPage) setStartPage(pageNumber);
+    else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
+  };
+
+  const handlePreviousSet = () =>
+    setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
+
+  const handleNextSet = () =>
+    setStartPage((prev) =>
+      Math.min(prev + pagesPerSet, totalPages - pagesPerSet + 1),
+    );
+
+  //Pagination calculation end
 
   // ✅ all received products (for dropdown)
   const {
@@ -639,23 +676,22 @@ const PurchaseReturnProductTable = () => {
     }));
   }, [receivedData]);
 
-  // ✅ responsive pagesPerSet
-  useEffect(() => {
-    const update = () => {
-      if (window.innerWidth < 640) setPagesPerSet(5);
-      else if (window.innerWidth < 1024) setPagesPerSet(7);
-      else setPagesPerSet(10);
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  // reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-    setStartPage(1);
-  }, [startDate, endDate, productName]);
+  // ✅ react-select light styles
+  const selectStyles = {
+    control: (base, state) => ({
+      ...base,
+      minHeight: 44,
+      borderRadius: 14,
+      borderColor: state.isFocused ? "#c7d2fe" : "#e2e8f0",
+      boxShadow: state.isFocused ? "0 0 0 4px rgba(99,102,241,0.15)" : "none",
+      "&:hover": { borderColor: "#cbd5e1" },
+      backgroundColor: "#fff",
+    }),
+    valueContainer: (base) => ({ ...base, padding: "0 12px" }),
+    placeholder: (base) => ({ ...base, color: "#64748b" }),
+    singleValue: (base) => ({ ...base, color: "#0f172a" }),
+    menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
+  };
 
   // fix endDate if startDate > endDate
   useEffect(() => {
@@ -675,23 +711,22 @@ const PurchaseReturnProductTable = () => {
     useGetAllReturnProductQuery(queryArgs);
 
   useEffect(() => {
-    if (isError) console.error("PurchaseReturn fetch error:", error);
+    if (isError) console.error("ReturnProduct fetch error:", error);
     if (!isLoading && data) {
       setRows(data?.data ?? []);
-      setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+      setTotalPages(
+        Math.max(1, Math.ceil((data?.meta?.total || 0) / itemsPerPage)),
+      );
     }
   }, [data, isLoading, isError, error]);
 
   // ✅ Table product name (simple)
   const resolveProductName = (rp) => {
-    // If backend already sends name
     if (rp?.name) return rp.name;
 
-    // rp.productId = Products.Id (FK)
     const productId = rp?.productId;
     if (!productId) return "N/A";
 
-    // receivedData has productId = Products.Id
     const match = receivedData.find(
       (r) => Number(r.productId) === Number(productId),
     );
@@ -709,7 +744,7 @@ const PurchaseReturnProductTable = () => {
       quantity: rp.quantity ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
-      userId: userId,
+      userId,
     });
     setIsEditOpen(true);
   };
@@ -725,7 +760,7 @@ const PurchaseReturnProductTable = () => {
       quantity: rp.quantity ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
-      userId: userId,
+      userId,
     });
     setIsEditOpen1(true);
   };
@@ -739,7 +774,7 @@ const PurchaseReturnProductTable = () => {
   const [updateReturnProduct] = useUpdateReturnProductMutation();
   const [deleteReturnProduct] = useDeleteReturnProductMutation();
 
-  // ✅ create (send receivedId)
+  // ✅ create
   const handleCreate = async (e) => {
     e.preventDefault();
 
@@ -765,7 +800,7 @@ const PurchaseReturnProductTable = () => {
     }
   };
 
-  // ✅ update (still send receivedId if backend supports, else remove receivedId)
+  // ✅ update
   const handleUpdate = async () => {
     if (!currentItem?.Id) return toast.error("Invalid item");
     if (!currentItem?.receivedId) return toast.error("Please select a product");
@@ -778,7 +813,7 @@ const PurchaseReturnProductTable = () => {
         status: currentItem.status,
         quantity: Number(currentItem.quantity),
         receivedId: Number(currentItem.receivedId),
-        userId: userId,
+        userId,
       };
 
       const res = await updateReturnProduct({
@@ -798,17 +833,14 @@ const PurchaseReturnProductTable = () => {
 
   const handleUpdate1 = async () => {
     if (!currentItem?.Id) return toast.error("Invalid item");
-    if (!currentItem?.receivedId) return toast.error("Please select a product");
-    if (!currentItem.quantity || Number(currentItem.quantity) <= 0)
-      return toast.error("Please enter valid quantity");
 
     try {
       const payload = {
         note: currentItem.note,
         status: currentItem.status,
-        quantity: Number(currentItem.quantity),
+        quantity: Number(currentItem.quantity || 0),
         receivedId: Number(currentItem.receivedId),
-        userId: userId,
+        userId,
       };
 
       const res = await updateReturnProduct({
@@ -818,7 +850,7 @@ const PurchaseReturnProductTable = () => {
 
       if (res?.success) {
         toast.success("Updated!");
-        closeEdit();
+        closeEdit1();
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
     } catch (err) {
@@ -848,74 +880,78 @@ const PurchaseReturnProductTable = () => {
     setProductName("");
   };
 
-  // pagination helpers
-  const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    if (pageNumber < startPage) setStartPage(pageNumber);
-    else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
-  };
-
-  const handlePreviousSet = () =>
-    setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
-
-  const handleNextSet = () =>
-    setStartPage((prev) =>
-      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
-    );
-
   return (
     <motion.div
-      className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
-      initial={{ opacity: 0, y: 20 }}
+      className="bg-white shadow-sm rounded-2xl p-6 border border-slate-200 mb-8"
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
+      transition={{ duration: 0.25 }}
     >
       {/* Header */}
-      <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="my-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={openAdd}
-          className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
+          className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
         >
           Add <Plus size={18} className="ml-2" />
         </button>
 
-        <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
-          <div className="flex items-center gap-2 text-gray-300">
-            <RotateCcw size={18} className="text-amber-400" />
+        <div className="flex items-center justify-between sm:justify-end gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-700">
+            <RotateCcw size={18} className="text-amber-500" />
             <span className="text-sm">Total Return Product</span>
           </div>
-          <span className="text-white font-semibold tabular-nums">
+          <span className="text-slate-900 font-semibold tabular-nums">
             {isLoading ? "Loading..." : (data?.meta?.totalQuantity ?? 0)}
           </span>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full">
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-4 gap-4 items-end w-full">
         <div className="flex flex-col">
-          <label className="text-sm text-gray-400 mb-1">From</label>
+          <label className="text-sm text-slate-600 mb-1">From</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+            className="h-11 px-3 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-gray-400 mb-1">To</label>
+          <label className="text-sm text-slate-600 mb-1">To</label>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+            className="h-11 px-3 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           />
         </div>
-
-        <div className="flex items-center justify-center w-full mt-6">
+        {/* ✅ Per Page Dropdown (same position like your screenshot) */}
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Per Page</label>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+              setStartPage(1);
+            }}
+            className="px-3 py-[10px] rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+          >
+            <option value={1}>1</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Product</label>
           <Select
             options={receivedDropdownOptions}
             value={
@@ -925,13 +961,14 @@ const PurchaseReturnProductTable = () => {
             onChange={(selected) => setProductName(selected?.label || "")}
             placeholder={receivedLoading ? "Loading..." : "Select Product"}
             isClearable
-            className="text-black w-full"
             isDisabled={receivedLoading}
+            styles={selectStyles}
           />
         </div>
 
         <button
-          className="flex items-center mt-6 bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
+          type="button"
+          className="h-11 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 transition rounded-xl px-4 text-sm font-semibold"
           onClick={clearFilters}
         >
           Clear Filters
@@ -939,109 +976,127 @@ const PurchaseReturnProductTable = () => {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead>
+      <div className="overflow-x-auto mt-6 rounded-2xl border border-slate-200">
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Date
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Product
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Supplier
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Quantity
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Purchase Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Sale Price
               </th>
-
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-700">
+          <tbody className="divide-y divide-slate-200 bg-white">
             {rows.map((rp) => (
               <motion.tr
                 key={rp.Id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.2 }}
+                className="hover:bg-slate-50"
               >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                   {rp.createdAt
                     ? new Date(rp.createdAt).toLocaleDateString()
                     : "-"}
                 </td>
 
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                   {resolveProductName(rp)}
                 </td>
 
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp.supplier || "-"}
                 </td>
 
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.quantity || 0).toFixed(2)}
                 </td>
 
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.purchase_price || 0).toFixed(2)}
                 </td>
 
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td>
 
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {rp.status}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  <span
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                      rp.status === "Approved"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    {rp.status || "Pending"}
+                  </span>
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  {rp.note && (
-                    <button
-                      className="text-white-600 hover:text-white-900"
-                      title={rp.note}
-                    >
-                      <Notebook size={18} />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => openEdit(rp)}
-                    className="text-indigo-400 hover:text-indigo-300"
-                  >
-                    <Edit size={18} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {rp.note && (
+                      <button
+                        type="button"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                        title={rp.note}
+                      >
+                        <Notebook size={18} className="text-slate-700" />
+                      </button>
+                    )}
 
-                  {role === "superAdmin" ||
-                  role === "admin" ||
-                  rp.status === "Approved" ? (
                     <button
-                      onClick={() => handleDelete(rp.Id)}
-                      className="text-red-400 hover:text-red-300 ms-4"
+                      type="button"
+                      onClick={() => openEdit(rp)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                      title="Edit"
                     >
-                      <Trash2 size={18} />
+                      <Edit size={18} className="text-indigo-600" />
                     </button>
-                  ) : (
-                    <button
-                      onClick={() => openEdit1(rp)}
-                      className="text-red-600 hover:text-red-900 ms-4"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
+
+                    {role === "superAdmin" ||
+                    role === "admin" ||
+                    rp.status === "Approved" ? (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(rp.Id)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                        title="Delete"
+                      >
+                        <Trash2 size={18} className="text-red-600" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => openEdit1(rp)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                        title="Request Delete"
+                      >
+                        <Trash2 size={18} className="text-amber-600" />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </motion.tr>
             ))}
@@ -1049,8 +1104,8 @@ const PurchaseReturnProductTable = () => {
             {!isLoading && rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
-                  className="px-6 py-6 text-center text-sm text-gray-300"
+                  colSpan={8}
+                  className="px-6 py-10 text-center text-sm text-slate-500"
                 >
                   No data found
                 </td>
@@ -1061,26 +1116,29 @@ const PurchaseReturnProductTable = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-center space-x-2 mt-6">
+      <div className="flex items-center justify-center flex-wrap gap-2 mt-6">
         <button
           onClick={handlePreviousSet}
           disabled={startPage === 1}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+          className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
+          type="button"
         >
           Prev
         </button>
 
         {[...Array(endPage - startPage + 1)].map((_, index) => {
           const pageNum = startPage + index;
+          const active = pageNum === currentPage;
           return (
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-3 py-2 text-black rounded-md ${
-                pageNum === currentPage
-                  ? "bg-white"
-                  : "bg-indigo-500 hover:bg-indigo-400"
+              className={`px-4 py-2 rounded-xl border transition ${
+                active
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               }`}
+              type="button"
             >
               {pageNum}
             </button>
@@ -1090,7 +1148,8 @@ const PurchaseReturnProductTable = () => {
         <button
           onClick={handleNextSet}
           disabled={endPage === totalPages}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+          className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
+          type="button"
         >
           Next
         </button>
@@ -1098,17 +1157,19 @@ const PurchaseReturnProductTable = () => {
 
       {/* Edit Modal */}
       {isEditOpen && currentItem && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3"
-            initial={{ opacity: 0, y: -40 }}
+            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
+            initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <h2 className="text-lg font-semibold text-white">Edit Product</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Edit Product
+            </h2>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Name</label>
+              <label className="block text-sm text-slate-700">Product</label>
               <Select
                 options={receivedDropdownOptions}
                 value={
@@ -1124,13 +1185,13 @@ const PurchaseReturnProductTable = () => {
                 }
                 placeholder={receivedLoading ? "Loading..." : "Select Product"}
                 isClearable
-                className="text-black w-full"
                 isDisabled={receivedLoading}
+                styles={selectStyles}
               />
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Quantity</label>
+              <label className="block text-sm text-slate-700">Quantity</label>
               <input
                 type="number"
                 step="0.01"
@@ -1138,22 +1199,21 @@ const PurchaseReturnProductTable = () => {
                 onChange={(e) =>
                   setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
 
             {role === "superAdmin" || role === "admin" ? (
               <div className="mt-4">
-                <label className="block text-sm text-white">Status</label>
+                <label className="block text-sm text-slate-700">Status</label>
                 <select
                   value={currentItem.status || ""}
                   onChange={(e) =>
-                    setCurrentItem({
-                      ...currentItem,
-                      status: e.target.value,
-                    })
+                    setCurrentItem((p) => ({ ...p, status: e.target.value }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 >
                   <option value="">Select Status</option>
@@ -1163,31 +1223,30 @@ const PurchaseReturnProductTable = () => {
               </div>
             ) : (
               <div className="mt-4">
-                <label className="block text-sm text-white">Note:</label>
+                <label className="block text-sm text-slate-700">Note</label>
                 <textarea
-                  type="text"
                   value={currentItem?.note || ""}
                   onChange={(e) =>
-                    setCurrentItem({
-                      ...currentItem,
-                      note: e.target.value,
-                    })
+                    setCurrentItem((p) => ({ ...p, note: e.target.value }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
               </div>
             )}
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end gap-2">
               <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
                 onClick={handleUpdate}
+                type="button"
               >
                 Save
               </button>
               <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
                 onClick={closeEdit}
+                type="button"
               >
                 Cancel
               </button>
@@ -1196,42 +1255,41 @@ const PurchaseReturnProductTable = () => {
         </div>
       )}
 
-      {/* Delete Modal */}
+      {/* Delete/Note Modal */}
       {isEditOpen1 && currentItem && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3"
-            initial={{ opacity: 0, y: -40 }}
+            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
+            initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <h2 className="text-lg font-semibold text-white">Edit Product</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Note</h2>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Note:</label>
+              <label className="block text-sm text-slate-700">Note</label>
               <textarea
-                type="text"
                 value={currentItem?.note || ""}
                 onChange={(e) =>
-                  setCurrentItem({
-                    ...currentItem,
-                    note: e.target.value,
-                  })
+                  setCurrentItem((p) => ({ ...p, note: e.target.value }))
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                className="min-h-[110px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end gap-2">
               <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
                 onClick={handleUpdate1}
+                type="button"
               >
                 Save
               </button>
               <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
                 onClick={closeEdit1}
+                type="button"
               >
                 Cancel
               </button>
@@ -1242,18 +1300,20 @@ const PurchaseReturnProductTable = () => {
 
       {/* Add Modal */}
       {isAddOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3"
-            initial={{ opacity: 0, y: -40 }}
+            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
+            initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <h2 className="text-lg font-semibold text-white">Add Product</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Add Product
+            </h2>
 
             <form onSubmit={handleCreate}>
               <div className="mt-4">
-                <label className="block text-sm text-white">Name</label>
+                <label className="block text-sm text-slate-700">Product</label>
                 <Select
                   options={receivedDropdownOptions}
                   value={
@@ -1271,13 +1331,13 @@ const PurchaseReturnProductTable = () => {
                     receivedLoading ? "Loading..." : "Select Product"
                   }
                   isClearable
-                  className="text-black w-full"
                   isDisabled={receivedLoading}
+                  styles={selectStyles}
                 />
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm text-white">Quantity</label>
+                <label className="block text-sm text-slate-700">Quantity</label>
                 <input
                   type="number"
                   step="0.01"
@@ -1285,21 +1345,22 @@ const PurchaseReturnProductTable = () => {
                   onChange={(e) =>
                     setCreateForm((p) => ({ ...p, quantity: e.target.value }))
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white bg-transparent"
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 />
               </div>
 
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end gap-2">
                 <button
                   type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
                 >
                   Save
                 </button>
                 <button
                   type="button"
-                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                  className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
                   onClick={closeAdd}
                 >
                   Cancel
@@ -1313,4 +1374,4 @@ const PurchaseReturnProductTable = () => {
   );
 };
 
-export default PurchaseReturnProductTable;
+export default ReturnProductTable;

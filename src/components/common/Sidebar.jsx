@@ -415,7 +415,7 @@
 //             <div className="flex items-center gap-3">
 //               <div className="h-10 w-10 rounded-xl overflow-hidden border border-gray-800/60 shadow">
 //                 <img
-//                   src={`https://api.digitalever.com.bd/${logo}`}
+//                   src={` http://localhost:5000/${logo}`}
 //                   alt="Logo"
 //                   className="h-full w-full object-cover"
 //                 />
@@ -1098,13 +1098,13 @@ const Sidebar = () => {
     >
       {/* ✅ Light dashboard sidebar shell */}
       <div className="h-full p-4 border-r border-slate-200 bg-slate-50">
-        <div className="h-full rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] flex flex-col overflow-hidden">
+        <div className="h-full rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] flex flex-col overflow-hidden">
           {/* Header */}
           <div className="p-4 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
                 <img
-                  src={logo ? `https://api.digitalever.com.bd/${logo}` : ""}
+                  src={logo ? ` http://localhost:5000/${logo}` : ""}
                   alt="Logo"
                   className="h-full w-full object-cover"
                 />

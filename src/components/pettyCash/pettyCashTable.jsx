@@ -1,3 +1,1165 @@
+// import { motion } from "framer-motion";
+// import { Edit, Notebook, Plus, Trash2 } from "lucide-react";
+// import { useEffect, useMemo, useState } from "react";
+// import toast from "react-hot-toast";
+// import {
+//   useDeletePettyCashMutation,
+//   useGetAllPettyCashQuery,
+//   useInsertPettyCashMutation,
+//   useUpdatePettyCashMutation,
+// } from "../../features/pettyCash/pettyCash";
+// import ReportPreviewModal from "./ReportPreviewModal";
+// import ReportMenu from "./ReportMenu";
+// import { generatePettyCashXlsx } from "../../utils/pettyCashReport/generatePettyCashXlsx";
+// import { generatePettyCashPdf } from "../../utils/pettyCashReport/generatePettyCashPdf";
+
+// const BANKS = [
+//   "Al Arafah",
+//   "BRAC Bank",
+//   "Bank Asia",
+//   "City Bank",
+//   "Dutch-Bangla Bank",
+//   "Dhaka Bank",
+//   "Eastern Bank",
+//   "Islami Bank",
+//   "Janata Bank",
+//   "Mutual Trust Bank",
+//   "One Bank",
+//   "Prime Bank",
+//   "Pubali Bank",
+//   "Premier Bank",
+//   "United Commercial Bank",
+//   "Sonali Bank",
+//   "Standard Chartered",
+//   "Trust Bank",
+// ];
+
+// const PettyCashTable = () => {
+//   const [isModalOpen, setIsModalOpen] = useState(false); // edit
+//   const [isModalOpen1, setIsModalOpen1] = useState(false); // add
+//   const [currentProduct, setCurrentProduct] = useState(null);
+
+//   const [createProduct, setCreateProduct] = useState({
+//     paymentMode: "",
+//     paymentStatus: "",
+//     bankName: "",
+//     remarks: "",
+//     amount: "",
+//     file: null,
+//   });
+
+//   const [products, setProducts] = useState([]);
+
+//   // filters
+//   const [startDate, setStartDate] = useState("");
+//   const [endDate, setEndDate] = useState("");
+//   const [filterPaymentMode, setFilterPaymentMode] = useState("");
+//   const [filterPaymentStatus, setFilterPaymentStatus] = useState("");
+//   const userId = localStorage.getItem("userId");
+
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const [startPage, setStartPage] = useState(1);
+//   const [totalPages, setTotalPages] = useState(1);
+//   const [pagesPerSet, setPagesPerSet] = useState(10);
+//   const itemsPerPage = 10;
+
+//   // responsive pagination count
+//   useEffect(() => {
+//     const updatePagesPerSet = () => {
+//       if (window.innerWidth < 640) setPagesPerSet(5);
+//       else if (window.innerWidth < 1024) setPagesPerSet(7);
+//       else setPagesPerSet(10);
+//     };
+//     updatePagesPerSet();
+//     window.addEventListener("resize", updatePagesPerSet);
+//     return () => window.removeEventListener("resize", updatePagesPerSet);
+//   }, []);
+
+//   // reset page when filters change
+//   useEffect(() => {
+//     setCurrentPage(1);
+//     setStartPage(1);
+//   }, [startDate, endDate, filterPaymentMode, filterPaymentStatus]);
+
+//   // endDate safety
+//   useEffect(() => {
+//     if (startDate && endDate && startDate > endDate) setEndDate(startDate);
+//   }, [startDate, endDate]);
+
+//   // ✅ Bank না হলে bankName reset (Add)
+//   useEffect(() => {
+//     if (createProduct.paymentMode !== "Bank" && createProduct.bankName) {
+//       setCreateProduct((p) => ({ ...p, bankName: "" }));
+//     }
+//   }, [createProduct.paymentMode]);
+
+//   // ✅ Bank না হলে bankName reset (Edit)
+//   useEffect(() => {
+//     if (!currentProduct) return;
+//     if (currentProduct.paymentMode !== "Bank" && currentProduct.bankName) {
+//       setCurrentProduct((p) => ({ ...p, bankName: "" }));
+//     }
+//   }, [currentProduct?.paymentMode]);
+
+//   // query args memo
+//   const queryArgs = useMemo(() => {
+//     const args = {
+//       page: currentPage,
+//       limit: itemsPerPage,
+//       startDate: startDate || undefined,
+//       endDate: endDate || undefined,
+//       paymentMode: filterPaymentMode || undefined,
+//       paymentStatus: filterPaymentStatus || undefined,
+//     };
+
+//     Object.keys(args).forEach((k) => {
+//       if (args[k] === undefined || args[k] === null || args[k] === "")
+//         delete args[k];
+//     });
+
+//     return args;
+//   }, [
+//     currentPage,
+//     itemsPerPage,
+//     startDate,
+//     endDate,
+//     filterPaymentMode,
+//     filterPaymentStatus,
+//   ]);
+
+//   const { data, isLoading, isError, error, refetch } =
+//     useGetAllPettyCashQuery(queryArgs);
+
+//   useEffect(() => {
+//     if (isError) console.error("Error:", error);
+//     if (!isLoading && data) {
+//       setProducts(data?.data ?? []);
+//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//     }
+//   }, [data, isLoading, isError, error]);
+
+//   // modals
+//   const handleAddProduct = () => setIsModalOpen1(true);
+//   const handleModalClose1 = () => setIsModalOpen1(false);
+
+//   const role = localStorage.getItem("role");
+//   const [updatePettyCash] = useUpdatePettyCashMutation();
+//   const [isModalOpen2, setIsModalOpen2] = useState(false);
+
+//   const handleModalClose2 = () => setIsModalOpen2(false);
+
+//   const handleEditClick1 = (rp) => {
+//     setCurrentProduct({
+//       ...rp,
+//       paymentMode: rp.paymentMode ?? "",
+//       paymentStatus: rp.paymentStatus ?? "",
+//       note: rp.note ?? "",
+//       status: rp.status ?? "",
+//       bankName: rp.bankName ?? "",
+//       remarks: rp.remarks ?? "",
+//       amount: rp.amount ?? "",
+//       userId: userId,
+//       file: null,
+//     });
+//     setIsModalOpen2(true);
+//   };
+
+//   const handleUpdateProduct1 = async () => {
+//     const rowId = currentProduct?.Id ?? currentProduct?.id;
+//     if (!rowId) return toast.error("Invalid item!");
+
+//     try {
+//       // ✅ safest: FormData (update এ ফাইল দিলেও যাবে)
+//       const formData = new FormData();
+//       formData.append("paymentMode", currentProduct.paymentMode);
+//       formData.append("paymentStatus", currentProduct.paymentStatus);
+//       formData.append("note", currentProduct.note);
+//       formData.append("status", currentProduct.status);
+//       formData.append("userId", userId);
+//       formData.append(
+//         "bankName",
+//         currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
+//       );
+//       formData.append("remarks", currentProduct.remarks?.trim() || "");
+//       formData.append("amount", String(Number(currentProduct.amount)));
+//       if (currentProduct.file) formData.append("file", currentProduct.file);
+
+//       const res = await updatePettyCash({ id: rowId, data: formData }).unwrap();
+
+//       if (res?.success) {
+//         toast.success("Updated!");
+//         setIsModalOpen(false);
+//         setCurrentProduct(null);
+//         refetch?.();
+//       } else toast.error(res?.message || "Update failed!");
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Update failed!");
+//     }
+//   };
+
+//   const handleEditClick = (rp) => {
+//     setCurrentProduct({
+//       ...rp,
+//       paymentMode: rp.paymentMode ?? "",
+//       paymentStatus: rp.paymentStatus ?? "",
+//       note: rp.note ?? "",
+//       status: rp.status ?? "",
+//       bankName: rp.bankName ?? "",
+//       remarks: rp.remarks ?? "",
+//       amount: rp.amount ?? "",
+//       userId: userId,
+//       file: null,
+//     });
+//     setIsModalOpen(true);
+//   };
+
+//   const handleUpdateProduct = async () => {
+//     const rowId = currentProduct?.Id ?? currentProduct?.id;
+//     if (!rowId) return toast.error("Invalid item!");
+
+//     try {
+//       // ✅ safest: FormData (update এ ফাইল দিলেও যাবে)
+//       const formData = new FormData();
+//       formData.append("paymentMode", currentProduct.paymentMode);
+//       formData.append("paymentStatus", currentProduct.paymentStatus);
+//       formData.append("note", currentProduct.note);
+//       formData.append("status", currentProduct.status);
+//       formData.append("userId", userId);
+//       formData.append(
+//         "bankName",
+//         currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
+//       );
+//       formData.append("remarks", currentProduct.remarks?.trim() || "");
+//       formData.append("amount", String(Number(currentProduct.amount)));
+//       if (currentProduct.file) formData.append("file", currentProduct.file);
+
+//       const res = await updatePettyCash({ id: rowId, data: formData }).unwrap();
+
+//       if (res?.success) {
+//         toast.success("Updated!");
+//         setIsModalOpen(false);
+//         setCurrentProduct(null);
+//         refetch?.();
+//       } else toast.error(res?.message || "Update failed!");
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Update failed!");
+//     }
+//   };
+
+//   // insert
+//   const [insertPettyCash] = useInsertPettyCashMutation();
+//   const handleCreateProduct = async (e) => {
+//     e.preventDefault();
+
+//     if (!createProduct.amount) return toast.error("Amount is required!");
+//     if (!createProduct.paymentMode)
+//       return toast.error("Payment Mode is required!");
+//     if (!createProduct.paymentStatus)
+//       return toast.error("Payment Status is required!");
+//     if (createProduct.paymentMode === "Bank" && !createProduct.bankName)
+//       return toast.error("Bank Name is required!");
+
+//     try {
+//       const formData = new FormData();
+//       formData.append("paymentMode", createProduct.paymentMode);
+//       formData.append("paymentStatus", createProduct.paymentStatus);
+//       formData.append(
+//         "bankName",
+//         createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
+//       );
+//       formData.append("remarks", createProduct.remarks?.trim() || "");
+//       formData.append("amount", String(Number(createProduct.amount)));
+//       if (createProduct.file) formData.append("file", createProduct.file);
+
+//       const res = await insertPettyCash(formData).unwrap();
+
+//       if (res?.success) {
+//         toast.success("Successfully created!");
+//         setIsModalOpen1(false);
+//         setCreateProduct({
+//           paymentMode: "",
+//           paymentStatus: "",
+//           bankName: "",
+//           bankAccount: "",
+//           remarks: "",
+//           amount: "",
+//           file: null,
+//         });
+//         refetch?.();
+//       } else toast.error(res?.message || "Create failed!");
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Create failed!");
+//     }
+//   };
+
+//   // delete
+//   const [deletePettyCash] = useDeletePettyCashMutation();
+//   const handleDeleteProduct = async (rowId) => {
+//     if (!rowId) return toast.error("Invalid item!");
+//     if (!window.confirm("Do you want to delete this item?")) return;
+
+//     try {
+//       const res = await deletePettyCash(rowId).unwrap();
+//       if (res?.success) {
+//         toast.success("Deleted!");
+//         refetch?.();
+//       } else toast.error(res?.message || "Delete failed!");
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Delete failed!");
+//     }
+//   };
+
+//   const clearFilters = () => {
+//     setStartDate("");
+//     setEndDate("");
+//     setFilterPaymentMode("");
+//     setFilterPaymentStatus("");
+//   };
+
+//   // pagination
+//   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
+
+//   const handlePageChange = (pageNumber) => {
+//     setCurrentPage(pageNumber);
+//     if (pageNumber < startPage) setStartPage(pageNumber);
+//     else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
+//   };
+
+//   const handlePreviousSet = () =>
+//     setStartPage((p) => Math.max(p - pagesPerSet, 1));
+//   const handleNextSet = () =>
+//     setStartPage((p) =>
+//       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
+//     );
+
+//   // report states
+//   const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
+//   const [isReportPreviewOpen, setIsReportPreviewOpen] = useState(false);
+//   const [reportType, setReportType] = useState(""); // "pdf" | "sheet"
+//   const [reportBlob, setReportBlob] = useState(null);
+//   const [reportBlobUrl, setReportBlobUrl] = useState("");
+//   const [reportLoading, setReportLoading] = useState(false);
+//   const [sheetPreview, setSheetPreview] = useState({ header: [], rows: [] });
+
+//   const closeReportPreview = () => {
+//     setIsReportPreviewOpen(false);
+//     setReportType("");
+//     setReportBlob(null);
+//     setSheetPreview({ header: [], rows: [] });
+//     setReportLoading(false);
+
+//     if (reportBlobUrl) {
+//       URL.revokeObjectURL(reportBlobUrl);
+//       setReportBlobUrl("");
+//     }
+//   };
+
+//   const handleReportPdf = async () => {
+//     try {
+//       if (!products.length) return toast.error("No data found!");
+
+//       setReportType("pdf");
+//       setReportLoading(true);
+//       setIsReportPreviewOpen(true);
+//       setIsReportMenuOpen(false);
+
+//       const blob = await generatePettyCashPdf({
+//         products,
+//       });
+
+//       const url = URL.createObjectURL(blob);
+//       setReportBlob(blob);
+//       setReportBlobUrl(url);
+//     } catch (e) {
+//       toast.error("PDF report generate failed!");
+//       closeReportPreview();
+//     } finally {
+//       setReportLoading(false);
+//     }
+//   };
+
+//   const handleReportSheet = async () => {
+//     try {
+//       if (!products.length) return toast.error("No data found!");
+
+//       setReportType("sheet");
+//       setReportLoading(true);
+//       setIsReportPreviewOpen(true);
+//       setIsReportMenuOpen(false);
+
+//       const { blob, preview } = generatePettyCashXlsx({
+//         products,
+//       });
+
+//       const url = URL.createObjectURL(blob);
+
+//       setReportBlob(blob);
+//       setReportBlobUrl(url);
+//       setSheetPreview(preview);
+//     } catch (e) {
+//       toast.error("Sheet report generate failed!");
+//       closeReportPreview();
+//     } finally {
+//       setReportLoading(false);
+//     }
+//   };
+
+//   return (
+//     <motion.div
+//       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
+//       initial={{ opacity: 0, y: 20 }}
+//       animate={{ opacity: 1, y: 0 }}
+//       transition={{ delay: 0.2 }}
+//     >
+//       {/* <div className="my-6 flex items-center justify-between">
+//         <button
+//           className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
+//           onClick={handleAddProduct}
+//         >
+//           Add <Plus size={18} className="ms-2" />
+//         </button>
+//         <ReportMenu
+//           isOpen={isReportMenuOpen}
+//           setIsOpen={setIsReportMenuOpen}
+//           onGoogleSheet={handleReportSheet}
+//           onPdf={handleReportPdf}
+//           disabled={isLoading}
+//         />
+//       </div> */}
+
+//       <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+//         {/* Left: Add button */}
+//         <button
+//           className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition w-full sm:w-auto"
+//           onClick={handleAddProduct}
+//           type="button"
+//         >
+//           Add <Plus size={18} className="ml-2" />
+//         </button>
+
+//         {/* Middle: Totals */}
+//         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full sm:w-auto">
+//           <div className="rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3">
+//             <p className="text-xs text-gray-400">Total CashIn</p>
+//             <p className="mt-1 text-lg font-semibold text-white tabular-nums">
+//               {isLoading ? "Loading..." : data?.meta?.totalCashIn}
+//             </p>
+//           </div>
+
+//           <div className="rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3">
+//             <p className="text-xs text-gray-400">Total CashOut</p>
+//             <p className="mt-1 text-lg font-semibold text-white tabular-nums">
+//               {isLoading ? "Loading..." : data?.meta?.totalCashOut}
+//             </p>
+//           </div>
+
+//           <div className="rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3">
+//             <p className="text-xs text-gray-400">Net</p>
+//             <p className="mt-1 text-lg font-semibold text-white tabular-nums">
+//               {isLoading ? "Loading..." : data?.meta?.netBalance}
+//             </p>
+//           </div>
+//         </div>
+
+//         {/* Right: Report menu */}
+//         <div className="flex justify-end">
+//           <ReportMenu
+//             isOpen={isReportMenuOpen}
+//             setIsOpen={setIsReportMenuOpen}
+//             onGoogleSheet={handleReportSheet}
+//             onPdf={handleReportPdf}
+//             disabled={isLoading}
+//           />
+//         </div>
+//       </div>
+
+//       {/* Filters */}
+//       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
+//         <div className="flex flex-col">
+//           <label className="text-sm text-gray-400 mb-1">From</label>
+//           <input
+//             type="date"
+//             value={startDate}
+//             onChange={(e) => setStartDate(e.target.value)}
+//             className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+//           />
+//         </div>
+
+//         <div className="flex flex-col">
+//           <label className="text-sm text-gray-400 mb-1">To</label>
+//           <input
+//             type="date"
+//             value={endDate}
+//             onChange={(e) => setEndDate(e.target.value)}
+//             className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+//           />
+//         </div>
+
+//         <div className="flex flex-col">
+//           <label className="text-sm text-gray-400 mb-1">Payment Mode:</label>
+//           <select
+//             value={filterPaymentMode}
+//             onChange={(e) => setFilterPaymentMode(e.target.value)}
+//             className="border py-2 border-gray-300 rounded p-1 text-black bg-white w-full"
+//           >
+//             <option value="">All</option>
+//             <option value="Cash">Cash</option>
+//             <option value="Bkash">Bkash</option>
+//             <option value="Nagad">Nagad</option>
+//             <option value="Rocket">Rocket</option>
+//             <option value="Bank">Bank</option>
+//             <option value="Card">Card</option>
+//           </select>
+//         </div>
+
+//         <div className="flex flex-col">
+//           <label className="text-sm text-gray-400 mb-1">Payment Status:</label>
+//           <select
+//             value={filterPaymentStatus}
+//             onChange={(e) => setFilterPaymentStatus(e.target.value)}
+//             className="border py-2 border-gray-300 rounded p-1 text-black bg-white w-full"
+//           >
+//             <option value="">All</option>
+//             <option value="CashIn">CashIn</option>
+//             <option value="CashOut">CashOut</option>
+//           </select>
+//         </div>
+
+//         <button
+//           className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto md:col-span-5"
+//           onClick={clearFilters}
+//         >
+//           Clear Filters
+//         </button>
+//       </div>
+
+//       {/* Table */}
+//       <div className="overflow-x-auto">
+//         <table className="min-w-full divide-y divide-gray-700">
+//           <thead>
+//             <tr>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Document
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Payment Mode
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Bank
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Payment Status
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Remarks
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Amount
+//               </th>
+
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Status
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Actions
+//               </th>
+//             </tr>
+//           </thead>
+
+//           <tbody className="divide-y divide-gray-700">
+//             {products.map((rp) => {
+//               const rowId = rp.Id ?? rp.id;
+
+//               const safePath = String(rp.file || "").replace(/\\/g, "/");
+//               const fileUrl = safePath
+//                 ? ` http://localhost:5000/${safePath}`
+//                 : "";
+//               const ext = safePath.split(".").pop()?.toLowerCase();
+//               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
+//                 ext,
+//               );
+//               const isPdf = ext === "pdf";
+
+//               return (
+//                 <motion.tr
+//                   key={rowId}
+//                   initial={{ opacity: 0 }}
+//                   animate={{ opacity: 1 }}
+//                   transition={{ duration: 0.3 }}
+//                 >
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {!safePath ? (
+//                       "-"
+//                     ) : isImage ? (
+//                       <a href={fileUrl} target="_blank" rel="noreferrer">
+//                         <img
+//                           src={fileUrl}
+//                           alt="document"
+//                           className="h-12 w-12 object-cover rounded border border-gray-600 hover:opacity-80"
+//                           onError={(e) => {
+//                             e.currentTarget.style.display = "none";
+//                           }}
+//                         />
+//                       </a>
+//                     ) : isPdf ? (
+//                       <a
+//                         href={fileUrl}
+//                         target="_blank"
+//                         rel="noreferrer"
+//                         className="px-3 py-1 rounded bg-indigo-600 text-white text-xs hover:bg-indigo-700"
+//                       >
+//                         View PDF
+//                       </a>
+//                     ) : (
+//                       <a
+//                         href={fileUrl}
+//                         target="_blank"
+//                         rel="noreferrer"
+//                         className="text-indigo-400 underline"
+//                       >
+//                         Open File
+//                       </a>
+//                     )}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.paymentMode || "-"}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.paymentMode === "Bank" ? rp.bankName || "-" : "-"}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.paymentStatus || "-"}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.remarks || "-"}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {Number(rp.amount || 0).toFixed(2)}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.status}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+//                     {rp.note && (
+//                       <button
+//                         className="text-white-600 hover:text-white-900"
+//                         title={rp.note}
+//                       >
+//                         <Notebook size={18} />
+//                       </button>
+//                     )}
+//                     <button
+//                       onClick={() => handleEditClick(rp)}
+//                       className="text-indigo-600 hover:text-indigo-900"
+//                     >
+//                       <Edit size={18} />
+//                     </button>
+
+//                     {role === "superAdmin" ||
+//                     role === "admin" ||
+//                     rp.status === "Approved" ? (
+//                       <button
+//                         onClick={() => handleDeleteProduct(rowId)}
+//                         className="text-red-600 hover:text-red-900 ms-4"
+//                       >
+//                         <Trash2 size={18} />
+//                       </button>
+//                     ) : (
+//                       <button
+//                         onClick={() => handleEditClick1(rp)}
+//                         className="text-red-600 hover:text-red-900 ms-4"
+//                       >
+//                         <Trash2 size={18} />
+//                       </button>
+//                     )}
+//                   </td>
+//                 </motion.tr>
+//               );
+//             })}
+
+//             {!isLoading && products.length === 0 && (
+//               <tr>
+//                 <td
+//                   colSpan={7}
+//                   className="px-6 py-6 text-center text-sm text-gray-300"
+//                 >
+//                   No data found
+//                 </td>
+//               </tr>
+//             )}
+//           </tbody>
+//         </table>
+//       </div>
+
+//       {/* Pagination */}
+//       <div className="flex items-center justify-center space-x-2 mt-6">
+//         <button
+//           onClick={handlePreviousSet}
+//           disabled={startPage === 1}
+//           className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+//         >
+//           Prev
+//         </button>
+
+//         {[...Array(endPage - startPage + 1)].map((_, index) => {
+//           const pageNum = startPage + index;
+//           return (
+//             <button
+//               key={pageNum}
+//               onClick={() => handlePageChange(pageNum)}
+//               className={`px-3 py-2 text-black rounded-md ${
+//                 pageNum === currentPage
+//                   ? "bg-white"
+//                   : "bg-indigo-500 hover:bg-indigo-400"
+//               }`}
+//             >
+//               {pageNum}
+//             </button>
+//           );
+//         })}
+
+//         <button
+//           onClick={handleNextSet}
+//           disabled={endPage === totalPages}
+//           className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+//         >
+//           Next
+//         </button>
+//       </div>
+
+//       {/* Edit Modal */}
+//       {isModalOpen && currentProduct && (
+//         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+//           <motion.div
+//             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+//             initial={{ opacity: 0, y: -50 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             transition={{ duration: 0.3 }}
+//           >
+//             <h2 className="text-lg font-semibold text-white">Edit</h2>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Payment Mode</label>
+//               <select
+//                 value={currentProduct.paymentMode || ""}
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     paymentMode: e.target.value,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                 required
+//               >
+//                 <option value="">Select Payment Mode</option>
+//                 <option value="Cash">Cash</option>
+//                 <option value="Bkash">Bkash</option>
+//                 <option value="Nagad">Nagad</option>
+//                 <option value="Rocket">Rocket</option>
+//                 <option value="Bank">Bank</option>
+//                 <option value="Card">Card</option>
+//               </select>
+//             </div>
+
+//             {currentProduct.paymentMode === "Bank" && (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Bank Name</label>
+//                 <select
+//                   value={currentProduct.bankName || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       bankName: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                   required
+//                 >
+//                   <option value="">Select Bank</option>
+//                   {BANKS.map((b) => (
+//                     <option key={b} value={b}>
+//                       {b}
+//                     </option>
+//                   ))}
+//                 </select>
+//               </div>
+//             )}
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Payment Status</label>
+//               <select
+//                 value={currentProduct.paymentStatus || ""}
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     paymentStatus: e.target.value,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                 required
+//               >
+//                 <option value="">Select Payment Status</option>
+//                 <option value="CashIn">CashIn</option>
+//                 <option value="CashOut">CashOut</option>
+//               </select>
+//             </div>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Remarks</label>
+//               <input
+//                 type="text"
+//                 value={currentProduct.remarks || ""}
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     remarks: e.target.value,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                 required
+//               />
+//             </div>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Amount:</label>
+//               <input
+//                 type="number"
+//                 step="0.01"
+//                 value={currentProduct.amount ?? ""}
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     amount: e.target.value,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//               />
+//             </div>
+
+//             {role === "superAdmin" ? (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Status</label>
+//                 <select
+//                   value={currentProduct.status || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       status: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                   required
+//                 >
+//                   <option value="">Select Status</option>
+//                   <option value="Approved">Approved</option>
+//                   <option value="Pending">Pending</option>
+//                 </select>
+//               </div>
+//             ) : (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Note:</label>
+//                 <textarea
+//                   type="text"
+//                   value={currentProduct?.note || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       note: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                 />
+//               </div>
+//             )}
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">
+//                 Upload Document
+//               </label>
+//               <input
+//                 type="file"
+//                 accept=".jpg,.jpeg,.png,.pdf"
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     file: e.target.files?.[0] || null,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//               />
+//               {currentProduct.file && (
+//                 <p className="mt-2 text-xs text-gray-300">
+//                   Selected: {currentProduct.file.name}
+//                 </p>
+//               )}
+//             </div>
+
+//             <div className="mt-6 flex justify-end">
+//               <button
+//                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+//                 onClick={handleUpdateProduct}
+//               >
+//                 Save
+//               </button>
+//               <button
+//                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+//                 onClick={() => {
+//                   setIsModalOpen(false);
+//                   setCurrentProduct(null);
+//                 }}
+//               >
+//                 Cancel
+//               </button>
+//             </div>
+//           </motion.div>
+//         </div>
+//       )}
+
+//       {/* Add Modal */}
+//       {isModalOpen1 && (
+//         <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
+//           <motion.div
+//             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+//             initial={{ opacity: 0, y: -50 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             transition={{ duration: 0.3 }}
+//           >
+//             <h2 className="text-lg font-semibold text-white">
+//               Add Petty Cash In/Out
+//             </h2>
+
+//             <form onSubmit={handleCreateProduct}>
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Payment Mode</label>
+//                 <select
+//                   value={createProduct.paymentMode}
+//                   onChange={(e) =>
+//                     setCreateProduct({
+//                       ...createProduct,
+//                       paymentMode: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                   required
+//                 >
+//                   <option value="">Select Payment Mode</option>
+//                   <option value="Cash">Cash</option>
+//                   <option value="Bkash">Bkash</option>
+//                   <option value="Nagad">Nagad</option>
+//                   <option value="Rocket">Rocket</option>
+//                   <option value="Bank">Bank</option>
+//                   <option value="Card">Card</option>
+//                 </select>
+//               </div>
+
+//               {createProduct.paymentMode === "Bank" && (
+//                 <div className="mt-4">
+//                   <label className="block text-sm text-white">Bank Name</label>
+//                   <select
+//                     value={createProduct.bankName}
+//                     onChange={(e) =>
+//                       setCreateProduct({
+//                         ...createProduct,
+//                         bankName: e.target.value,
+//                       })
+//                     }
+//                     className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                     required
+//                   >
+//                     <option value="">Select Bank</option>
+//                     {BANKS.map((b) => (
+//                       <option key={b} value={b}>
+//                         {b}
+//                       </option>
+//                     ))}
+//                   </select>
+//                 </div>
+//               )}
+
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">
+//                   Payment Status
+//                 </label>
+//                 <select
+//                   value={createProduct.paymentStatus}
+//                   onChange={(e) =>
+//                     setCreateProduct({
+//                       ...createProduct,
+//                       paymentStatus: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                   required
+//                 >
+//                   <option value="">Select Payment Status</option>
+//                   <option value="CashIn">CashIn</option>
+//                   <option value="CashOut">CashOut</option>
+//                 </select>
+//               </div>
+
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Remarks</label>
+//                 <input
+//                   type="text"
+//                   value={createProduct.remarks}
+//                   onChange={(e) =>
+//                     setCreateProduct({
+//                       ...createProduct,
+//                       remarks: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                   required
+//                 />
+//               </div>
+
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Amount</label>
+//                 <input
+//                   type="number"
+//                   step="0.01"
+//                   value={createProduct.amount}
+//                   onChange={(e) =>
+//                     setCreateProduct({
+//                       ...createProduct,
+//                       amount: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                   required
+//                 />
+//               </div>
+
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">
+//                   Upload Document
+//                 </label>
+//                 <input
+//                   type="file"
+//                   accept=".jpg,.jpeg,.png,.pdf"
+//                   onChange={(e) =>
+//                     setCreateProduct({
+//                       ...createProduct,
+//                       file: e.target.files?.[0] || null,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                 />
+//                 {createProduct.file && (
+//                   <p className="mt-2 text-xs text-gray-300">
+//                     Selected: {createProduct.file.name}
+//                   </p>
+//                 )}
+//               </div>
+
+//               <div className="mt-6 flex justify-end">
+//                 <button
+//                   type="submit"
+//                   className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+//                 >
+//                   Save
+//                 </button>
+//                 <button
+//                   type="button"
+//                   className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+//                   onClick={handleModalClose1}
+//                 >
+//                   Cancel
+//                 </button>
+//               </div>
+//             </form>
+//           </motion.div>
+//         </div>
+//       )}
+
+//       {/* Delete Modal */}
+//       {isModalOpen2 && (
+//         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+//           <motion.div
+//             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+//             initial={{ opacity: 0, y: -50 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             transition={{ duration: 0.3 }}
+//           >
+//             <h2 className="text-lg font-semibold text-white">
+//               Delete Petty Cash In/Out
+//             </h2>
+
+//             {role === "superAdmin" ? (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Status</label>
+//                 <select
+//                   value={currentProduct.status || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       status: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                   required
+//                 >
+//                   <option value="">Select Status</option>
+//                   <option value="Approved">Approved</option>
+//                   <option value="Pending">Pending</option>
+//                 </select>
+//               </div>
+//             ) : (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Note:</label>
+//                 <textarea
+//                   type="text"
+//                   value={currentProduct?.note || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       note: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                 />
+//               </div>
+//             )}
+
+//             <div className="mt-6 flex justify-end">
+//               <button
+//                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+//                 onClick={handleUpdateProduct1}
+//               >
+//                 Save
+//               </button>
+//               <button
+//                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+//                 onClick={handleModalClose2}
+//               >
+//                 Cancel
+//               </button>
+//             </div>
+//           </motion.div>
+//         </div>
+//       )}
+//       <ReportPreviewModal
+//         open={isReportPreviewOpen}
+//         onClose={closeReportPreview}
+//         type={reportType}
+//         blob={reportBlob}
+//         blobUrl={reportBlobUrl}
+//         sheetPreview={sheetPreview}
+//         loading={reportLoading}
+//       />
+//     </motion.div>
+//   );
+// };
+
+// export default PettyCashTable;
+
 import { motion } from "framer-motion";
 import { Edit, Notebook, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -57,13 +1219,14 @@ const PettyCashTable = () => {
   const [filterPaymentStatus, setFilterPaymentStatus] = useState("");
   const userId = localStorage.getItem("userId");
 
+  //Pagination calculation start
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
-  const itemsPerPage = 10;
 
-  // responsive pagination count
   useEffect(() => {
     const updatePagesPerSet = () => {
       if (window.innerWidth < 640) setPagesPerSet(5);
@@ -74,6 +1237,29 @@ const PettyCashTable = () => {
     window.addEventListener("resize", updatePagesPerSet);
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setStartPage(1);
+  }, [startDate, endDate, itemsPerPage]);
+
+  const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    if (pageNumber < startPage) setStartPage(pageNumber);
+    else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
+  };
+
+  const handlePreviousSet = () =>
+    setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
+
+  const handleNextSet = () =>
+    setStartPage((prev) =>
+      Math.min(prev + pagesPerSet, totalPages - pagesPerSet + 1),
+    );
+
+  //Pagination calculation end
 
   // reset page when filters change
   useEffect(() => {
@@ -169,7 +1355,6 @@ const PettyCashTable = () => {
     if (!rowId) return toast.error("Invalid item!");
 
     try {
-      // ✅ safest: FormData (update এ ফাইল দিলেও যাবে)
       const formData = new FormData();
       formData.append("paymentMode", currentProduct.paymentMode);
       formData.append("paymentStatus", currentProduct.paymentStatus);
@@ -218,7 +1403,6 @@ const PettyCashTable = () => {
     if (!rowId) return toast.error("Invalid item!");
 
     try {
-      // ✅ safest: FormData (update এ ফাইল দিলেও যাবে)
       const formData = new FormData();
       formData.append("paymentMode", currentProduct.paymentMode);
       formData.append("paymentStatus", currentProduct.paymentStatus);
@@ -316,22 +1500,6 @@ const PettyCashTable = () => {
     setFilterPaymentStatus("");
   };
 
-  // pagination
-  const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    if (pageNumber < startPage) setStartPage(pageNumber);
-    else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
-  };
-
-  const handlePreviousSet = () =>
-    setStartPage((p) => Math.max(p - pagesPerSet, 1));
-  const handleNextSet = () =>
-    setStartPage((p) =>
-      Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
-    );
-
   // report states
   const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
   const [isReportPreviewOpen, setIsReportPreviewOpen] = useState(false);
@@ -363,9 +1531,7 @@ const PettyCashTable = () => {
       setIsReportPreviewOpen(true);
       setIsReportMenuOpen(false);
 
-      const blob = await generatePettyCashPdf({
-        products,
-      });
+      const blob = await generatePettyCashPdf({ products });
 
       const url = URL.createObjectURL(blob);
       setReportBlob(blob);
@@ -387,9 +1553,7 @@ const PettyCashTable = () => {
       setIsReportPreviewOpen(true);
       setIsReportMenuOpen(false);
 
-      const { blob, preview } = generatePettyCashXlsx({
-        products,
-      });
+      const { blob, preview } = generatePettyCashXlsx({ products });
 
       const url = URL.createObjectURL(blob);
 
@@ -406,27 +1570,12 @@ const PettyCashTable = () => {
 
   return (
     <motion.div
-      className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-sm rounded-xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      {/* <div className="my-6 flex items-center justify-between">
-        <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
-          onClick={handleAddProduct}
-        >
-          Add <Plus size={18} className="ms-2" />
-        </button>
-        <ReportMenu
-          isOpen={isReportMenuOpen}
-          setIsOpen={setIsReportMenuOpen}
-          onGoogleSheet={handleReportSheet}
-          onPdf={handleReportPdf}
-          disabled={isLoading}
-        />
-      </div> */}
-
+      {/* Header row */}
       <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Left: Add button */}
         <button
@@ -439,23 +1588,23 @@ const PettyCashTable = () => {
 
         {/* Middle: Totals */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full sm:w-auto">
-          <div className="rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3">
-            <p className="text-xs text-gray-400">Total CashIn</p>
-            <p className="mt-1 text-lg font-semibold text-white tabular-nums">
+          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+            <p className="text-xs text-slate-500">Total CashIn</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">
               {isLoading ? "Loading..." : data?.meta?.totalCashIn}
             </p>
           </div>
 
-          <div className="rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3">
-            <p className="text-xs text-gray-400">Total CashOut</p>
-            <p className="mt-1 text-lg font-semibold text-white tabular-nums">
+          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+            <p className="text-xs text-slate-500">Total CashOut</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">
               {isLoading ? "Loading..." : data?.meta?.totalCashOut}
             </p>
           </div>
 
-          <div className="rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3">
-            <p className="text-xs text-gray-400">Net</p>
-            <p className="mt-1 text-lg font-semibold text-white tabular-nums">
+          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+            <p className="text-xs text-slate-500">Net</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">
               {isLoading ? "Loading..." : data?.meta?.netBalance}
             </p>
           </div>
@@ -474,33 +1623,36 @@ const PettyCashTable = () => {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center mb-6 w-full justify-center mx-auto">
         <div className="flex flex-col">
-          <label className="text-sm text-gray-400 mb-1">From</label>
+          <label className="text-sm text-slate-600 mb-1">From</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+            className="px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-gray-400 mb-1">To</label>
+          <label className="text-sm text-slate-600 mb-1">To</label>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+            className="px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-gray-400 mb-1">Payment Mode:</label>
+          <label className="text-sm text-slate-600 mb-1">Payment Mode:</label>
           <select
             value={filterPaymentMode}
             onChange={(e) => setFilterPaymentMode(e.target.value)}
-            className="border py-2 border-gray-300 rounded p-1 text-black bg-white w-full"
+            className="border py-2 border-slate-300 rounded-lg px-3 text-slate-900 bg-white w-full outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
           >
             <option value="">All</option>
             <option value="Cash">Cash</option>
@@ -513,66 +1665,85 @@ const PettyCashTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-gray-400 mb-1">Payment Status:</label>
+          <label className="text-sm text-slate-600 mb-1">Payment Status:</label>
           <select
             value={filterPaymentStatus}
             onChange={(e) => setFilterPaymentStatus(e.target.value)}
-            className="border py-2 border-gray-300 rounded p-1 text-black bg-white w-full"
+            className="border py-2 border-slate-300 rounded-lg px-3 text-slate-900 bg-white w-full outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
           >
             <option value="">All</option>
             <option value="CashIn">CashIn</option>
             <option value="CashOut">CashOut</option>
           </select>
         </div>
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Per Page</label>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+              setStartPage(1);
+            }}
+            className="px-3 py-[10px] rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+          >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
 
-        <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto md:col-span-5"
-          onClick={clearFilters}
-        >
-          Clear Filters
-        </button>
+        <div>
+          <button
+            className="flex items-center mt-0 md:mt-6 bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded-lg w-36 justify-center mx-auto md:col-span-5"
+            onClick={clearFilters}
+          >
+            Clear Filters
+          </button>
+        </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead>
+      <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <table className="min-w-full divide-y divide-slate-200 bg-white">
+          <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Document
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Payment Mode
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Bank
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Payment Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Remarks
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Amount
               </th>
-
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-700">
+          <tbody className="divide-y divide-slate-200">
             {products.map((rp) => {
               const rowId = rp.Id ?? rp.id;
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `https://api.digitalever.com.bd/${safePath}`
+                ? ` http://localhost:5000/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -586,8 +1757,9 @@ const PettyCashTable = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3 }}
+                  className="hover:bg-slate-50"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {!safePath ? (
                       "-"
                     ) : isImage ? (
@@ -595,7 +1767,7 @@ const PettyCashTable = () => {
                         <img
                           src={fileUrl}
                           alt="document"
-                          className="h-12 w-12 object-cover rounded border border-gray-600 hover:opacity-80"
+                          className="h-12 w-12 object-cover rounded border border-slate-200 hover:opacity-80"
                           onError={(e) => {
                             e.currentTarget.style.display = "none";
                           }}
@@ -615,49 +1787,52 @@ const PettyCashTable = () => {
                         href={fileUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-indigo-400 underline"
+                        className="text-indigo-600 underline"
                       >
                         Open File
                       </a>
                     )}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.paymentMode || "-"}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.paymentMode === "Bank" ? rp.bankName || "-" : "-"}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.paymentStatus || "-"}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.remarks || "-"}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
                     {Number(rp.amount || 0).toFixed(2)}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.status}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     {rp.note && (
                       <button
-                        className="text-white-600 hover:text-white-900"
+                        className="text-slate-500 hover:text-slate-800 mr-2"
                         title={rp.note}
+                        type="button"
                       >
                         <Notebook size={18} />
                       </button>
                     )}
+
                     <button
                       onClick={() => handleEditClick(rp)}
-                      className="text-indigo-600 hover:text-indigo-900"
+                      className="text-indigo-600 hover:text-indigo-800"
+                      type="button"
                     >
                       <Edit size={18} />
                     </button>
@@ -667,14 +1842,16 @@ const PettyCashTable = () => {
                     rp.status === "Approved" ? (
                       <button
                         onClick={() => handleDeleteProduct(rowId)}
-                        className="text-red-600 hover:text-red-900 ms-4"
+                        className="text-red-600 hover:text-red-800 ms-4"
+                        type="button"
                       >
                         <Trash2 size={18} />
                       </button>
                     ) : (
                       <button
                         onClick={() => handleEditClick1(rp)}
-                        className="text-red-600 hover:text-red-900 ms-4"
+                        className="text-red-600 hover:text-red-800 ms-4"
+                        type="button"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -688,7 +1865,7 @@ const PettyCashTable = () => {
               <tr>
                 <td
                   colSpan={7}
-                  className="px-6 py-6 text-center text-sm text-gray-300"
+                  className="px-6 py-6 text-center text-sm text-slate-600"
                 >
                   No data found
                 </td>
@@ -699,25 +1876,26 @@ const PettyCashTable = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-center space-x-2 mt-6">
+      <div className="flex items-center justify-center flex-wrap gap-2 mt-6">
         <button
           onClick={handlePreviousSet}
           disabled={startPage === 1}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
           Prev
         </button>
 
         {[...Array(endPage - startPage + 1)].map((_, index) => {
           const pageNum = startPage + index;
+          const active = pageNum === currentPage;
           return (
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-3 py-2 text-black rounded-md ${
-                pageNum === currentPage
-                  ? "bg-white"
-                  : "bg-indigo-500 hover:bg-indigo-400"
+              className={`px-4 py-2 rounded-xl border transition ${
+                active
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               }`}
             >
               {pageNum}
@@ -728,7 +1906,7 @@ const PettyCashTable = () => {
         <button
           onClick={handleNextSet}
           disabled={endPage === totalPages}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
           Next
         </button>
@@ -736,17 +1914,19 @@ const PettyCashTable = () => {
 
       {/* Edit Modal */}
       {isModalOpen && currentProduct && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            className="bg-white rounded-xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">Edit</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Edit</h2>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Payment Mode</label>
+              <label className="block text-sm text-slate-700">
+                Payment Mode
+              </label>
               <select
                 value={currentProduct.paymentMode || ""}
                 onChange={(e) =>
@@ -755,7 +1935,8 @@ const PettyCashTable = () => {
                     paymentMode: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                 required
               >
                 <option value="">Select Payment Mode</option>
@@ -770,7 +1951,9 @@ const PettyCashTable = () => {
 
             {currentProduct.paymentMode === "Bank" && (
               <div className="mt-4">
-                <label className="block text-sm text-white">Bank Name</label>
+                <label className="block text-sm text-slate-700">
+                  Bank Name
+                </label>
                 <select
                   value={currentProduct.bankName || ""}
                   onChange={(e) =>
@@ -779,7 +1962,8 @@ const PettyCashTable = () => {
                       bankName: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                   required
                 >
                   <option value="">Select Bank</option>
@@ -793,7 +1977,9 @@ const PettyCashTable = () => {
             )}
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Payment Status</label>
+              <label className="block text-sm text-slate-700">
+                Payment Status
+              </label>
               <select
                 value={currentProduct.paymentStatus || ""}
                 onChange={(e) =>
@@ -802,7 +1988,8 @@ const PettyCashTable = () => {
                     paymentStatus: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                 required
               >
                 <option value="">Select Payment Status</option>
@@ -812,7 +1999,7 @@ const PettyCashTable = () => {
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Remarks</label>
+              <label className="block text-sm text-slate-700">Remarks</label>
               <input
                 type="text"
                 value={currentProduct.remarks || ""}
@@ -822,13 +2009,14 @@ const PettyCashTable = () => {
                     remarks: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                 required
               />
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Amount:</label>
+              <label className="block text-sm text-slate-700">Amount:</label>
               <input
                 type="number"
                 step="0.01"
@@ -839,13 +2027,14 @@ const PettyCashTable = () => {
                     amount: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
               />
             </div>
 
             {role === "superAdmin" ? (
               <div className="mt-4">
-                <label className="block text-sm text-white">Status</label>
+                <label className="block text-sm text-slate-700">Status</label>
                 <select
                   value={currentProduct.status || ""}
                   onChange={(e) =>
@@ -854,7 +2043,8 @@ const PettyCashTable = () => {
                       status: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                   required
                 >
                   <option value="">Select Status</option>
@@ -864,7 +2054,7 @@ const PettyCashTable = () => {
               </div>
             ) : (
               <div className="mt-4">
-                <label className="block text-sm text-white">Note:</label>
+                <label className="block text-sm text-slate-700">Note:</label>
                 <textarea
                   type="text"
                   value={currentProduct?.note || ""}
@@ -874,13 +2064,14 @@ const PettyCashTable = () => {
                       note: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                 />
               </div>
             )}
 
             <div className="mt-4">
-              <label className="block text-sm text-white">
+              <label className="block text-sm text-slate-700">
                 Upload Document
               </label>
               <input
@@ -892,10 +2083,10 @@ const PettyCashTable = () => {
                     file: e.target.files?.[0] || null,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white"
               />
               {currentProduct.file && (
-                <p className="mt-2 text-xs text-gray-300">
+                <p className="mt-2 text-xs text-slate-500">
                   Selected: {currentProduct.file.name}
                 </p>
               )}
@@ -903,17 +2094,19 @@ const PettyCashTable = () => {
 
             <div className="mt-6 flex justify-end">
               <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg mr-2"
                 onClick={handleUpdateProduct}
+                type="button"
               >
                 Save
               </button>
               <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                className="bg-slate-200 hover:bg-slate-300 text-slate-900 px-4 py-2 rounded-lg"
                 onClick={() => {
                   setIsModalOpen(false);
                   setCurrentProduct(null);
                 }}
+                type="button"
               >
                 Cancel
               </button>
@@ -924,20 +2117,22 @@ const PettyCashTable = () => {
 
       {/* Add Modal */}
       {isModalOpen1 && (
-        <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black/40">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            className="bg-white rounded-xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-slate-900">
               Add Petty Cash In/Out
             </h2>
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
-                <label className="block text-sm text-white">Payment Mode</label>
+                <label className="block text-sm text-slate-700">
+                  Payment Mode
+                </label>
                 <select
                   value={createProduct.paymentMode}
                   onChange={(e) =>
@@ -946,7 +2141,8 @@ const PettyCashTable = () => {
                       paymentMode: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                   required
                 >
                   <option value="">Select Payment Mode</option>
@@ -961,7 +2157,9 @@ const PettyCashTable = () => {
 
               {createProduct.paymentMode === "Bank" && (
                 <div className="mt-4">
-                  <label className="block text-sm text-white">Bank Name</label>
+                  <label className="block text-sm text-slate-700">
+                    Bank Name
+                  </label>
                   <select
                     value={createProduct.bankName}
                     onChange={(e) =>
@@ -970,7 +2168,8 @@ const PettyCashTable = () => {
                         bankName: e.target.value,
                       })
                     }
-                    className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                    className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                     required
                   >
                     <option value="">Select Bank</option>
@@ -984,7 +2183,7 @@ const PettyCashTable = () => {
               )}
 
               <div className="mt-4">
-                <label className="block text-sm text-white">
+                <label className="block text-sm text-slate-700">
                   Payment Status
                 </label>
                 <select
@@ -995,7 +2194,8 @@ const PettyCashTable = () => {
                       paymentStatus: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                   required
                 >
                   <option value="">Select Payment Status</option>
@@ -1005,7 +2205,7 @@ const PettyCashTable = () => {
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm text-white">Remarks</label>
+                <label className="block text-sm text-slate-700">Remarks</label>
                 <input
                   type="text"
                   value={createProduct.remarks}
@@ -1015,13 +2215,14 @@ const PettyCashTable = () => {
                       remarks: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                   required
                 />
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm text-white">Amount</label>
+                <label className="block text-sm text-slate-700">Amount</label>
                 <input
                   type="number"
                   step="0.01"
@@ -1032,13 +2233,14 @@ const PettyCashTable = () => {
                       amount: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                   required
                 />
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm text-white">
+                <label className="block text-sm text-slate-700">
                   Upload Document
                 </label>
                 <input
@@ -1050,10 +2252,10 @@ const PettyCashTable = () => {
                       file: e.target.files?.[0] || null,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white"
                 />
                 {createProduct.file && (
-                  <p className="mt-2 text-xs text-gray-300">
+                  <p className="mt-2 text-xs text-slate-500">
                     Selected: {createProduct.file.name}
                   </p>
                 )}
@@ -1062,13 +2264,13 @@ const PettyCashTable = () => {
               <div className="mt-6 flex justify-end">
                 <button
                   type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg mr-2"
                 >
                   Save
                 </button>
                 <button
                   type="button"
-                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-900 px-4 py-2 rounded-lg"
                   onClick={handleModalClose1}
                 >
                   Cancel
@@ -1079,31 +2281,32 @@ const PettyCashTable = () => {
         </div>
       )}
 
-      {/* Delete Modal */}
+      {/* Delete/Note Modal */}
       {isModalOpen2 && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            className="bg-white rounded-xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-slate-900">
               Delete Petty Cash In/Out
             </h2>
 
             {role === "superAdmin" ? (
               <div className="mt-4">
-                <label className="block text-sm text-white">Status</label>
+                <label className="block text-sm text-slate-700">Status</label>
                 <select
-                  value={currentProduct.status || ""}
+                  value={currentProduct?.status || ""}
                   onChange={(e) =>
                     setCurrentProduct({
                       ...currentProduct,
                       status: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                   required
                 >
                   <option value="">Select Status</option>
@@ -1113,7 +2316,7 @@ const PettyCashTable = () => {
               </div>
             ) : (
               <div className="mt-4">
-                <label className="block text-sm text-white">Note:</label>
+                <label className="block text-sm text-slate-700">Note:</label>
                 <textarea
                   type="text"
                   value={currentProduct?.note || ""}
@@ -1123,21 +2326,24 @@ const PettyCashTable = () => {
                       note: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                 />
               </div>
             )}
 
             <div className="mt-6 flex justify-end">
               <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg mr-2"
                 onClick={handleUpdateProduct1}
+                type="button"
               >
                 Save
               </button>
               <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                className="bg-slate-200 hover:bg-slate-300 text-slate-900 px-4 py-2 rounded-lg"
                 onClick={handleModalClose2}
+                type="button"
               >
                 Cancel
               </button>
@@ -1145,6 +2351,7 @@ const PettyCashTable = () => {
           </motion.div>
         </div>
       )}
+
       <ReportPreviewModal
         open={isReportPreviewOpen}
         onClose={closeReportPreview}

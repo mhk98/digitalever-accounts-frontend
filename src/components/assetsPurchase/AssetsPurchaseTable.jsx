@@ -1268,7 +1268,6 @@ const AssetsPurchaseTable = () => {
             }}
             className="px-3 py-[10px] rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           >
-            <option value={1}>1</option>
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>

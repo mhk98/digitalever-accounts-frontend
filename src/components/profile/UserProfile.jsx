@@ -70,7 +70,7 @@
 //     useEffect(() => {
 //         const fetchUser = async () => {
 //             try {
-//                 const response = await fetch(`https://api.digitalever.com.bd/api/v1/user/${id}`);
+//                 const response = await fetch(` http://localhost:5000/api/v1/user/${id}`);
 //                 if (!response.ok) {
 //                     throw new Error('Network response was not ok');
 //                 }
@@ -102,7 +102,7 @@
 // 	  <div className="grid grid-cols-1 md:grid-cols-2 bg-white rounded-lg shadow p-4 md:p-6 mb-4 md:mb-6">
 //   <div className="flex flex-col md:flex-row items-center md:space-x-4 space-y-4 md:space-y-0">
 //     <img
-//       src={`https://api.digitalever.com.bd/${user?.image}`}
+//       src={` http://localhost:5000/${user?.image}`}
 //       alt="Profile"
 //       className="w-20 h-20 rounded-full"
 //     />
@@ -295,7 +295,7 @@
 //               onChange={handleChange}
 //               className="w-full mt-1 cursor-pointer"
 //             />
-//             {file ? (<img src={file} alt="Profile Preview" className="mt-2 w-20 h-20 object-cover" />) : (<img src={`https://api.digitalever.com.bd/${user?.image}`} alt="Profile Preview" className="mt-2 w-20 h-20 object-cover" />)}
+//             {file ? (<img src={file} alt="Profile Preview" className="mt-2 w-20 h-20 object-cover" />) : (<img src={` http://localhost:5000/${user?.image}`} alt="Profile Preview" className="mt-2 w-20 h-20 object-cover" />)}
 //           </div>
 //             <div className="flex justify-end space-x-2 mt-4">
 //               <button type="button" className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300" onClick={() => document.getElementById("my_modal_4").close()}>
@@ -317,11 +317,384 @@
 
 /* eslint-disable no-mixed-spaces-and-tabs */
 
+// import toast from "react-hot-toast";
+// import { useUserUpdateMutation } from "../../features/auth/auth";
+// import { useEffect, useMemo, useState } from "react";
+
+// const API_BASE = " http://localhost:5000";
+
+// const UserProfile = () => {
+//   const [userUpdate] = useUserUpdateMutation();
+
+//   const [user, setUser] = useState(null);
+//   const [currentProfile, setCurrentProfile] = useState(null);
+
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [isError, setIsError] = useState(false);
+
+//   const [isModalOpen, setIsModalOpen] = useState(false);
+
+//   const [previewUrl, setPreviewUrl] = useState("");
+//   const [imageFile, setImageFile] = useState(null);
+
+//   const id = useMemo(() => localStorage.getItem("userId"), []);
+
+//   const avatarSrc = useMemo(() => {
+//     if (user?.image) return `${API_BASE}/${user.image}`;
+//     return "https://i.ibb.co/2kR0w9c/user.png"; // fallback avatar
+//   }, [user?.image]);
+
+//   // Fetch user
+//   useEffect(() => {
+//     if (!id) {
+//       setIsError(true);
+//       setIsLoading(false);
+//       return;
+//     }
+
+//     const fetchUser = async () => {
+//       try {
+//         const response = await fetch(`${API_BASE}/api/v1/user/${id}`);
+//         if (!response.ok) throw new Error("Failed to fetch user");
+
+//         const json = await response.json();
+//         setUser(json?.data || null);
+//       } catch (error) {
+//         setIsError(true);
+//         console.error("Error fetching user:", error);
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+
+//     fetchUser();
+//   }, [id]);
+
+//   // File change
+//   const handleChange = (e) => {
+//     const selected = e.target.files?.[0];
+//     if (!selected) return;
+
+//     setImageFile(selected);
+//     const url = URL.createObjectURL(selected);
+//     setPreviewUrl(url);
+//   };
+
+//   // Open modal with data
+//   const handleEditUser = () => {
+//     setCurrentProfile(user ? { ...user } : null);
+//     setImageFile(null);
+//     setPreviewUrl("");
+//     setIsModalOpen(true);
+//   };
+
+//   // Close modal
+//   const closeModal = () => {
+//     setIsModalOpen(false);
+//   };
+
+//   // Save
+//   const handleSave = async (e) => {
+//     e.preventDefault();
+
+//     if (!currentProfile) return;
+
+//     try {
+//       const data = new FormData();
+//       data.append("FirstName", currentProfile.FirstName || "");
+//       data.append("LastName", currentProfile.LastName || "");
+//       data.append("Email", currentProfile.Email || "");
+//       data.append("Phone", currentProfile.Phone || "");
+//       data.append("Address", currentProfile.Address || "");
+//       data.append("Country", currentProfile.Country || "");
+//       data.append("City", currentProfile.City || "");
+//       data.append("PostalCode", currentProfile.PostalCode || "");
+
+//       if (imageFile) data.append("image", imageFile);
+
+//       const res = await userUpdate({ id, data }).unwrap();
+
+//       if (res?.success) {
+//         toast.success("Profile updated successfully");
+//         setUser((prev) => ({ ...(prev || {}), ...currentProfile })); // UI update
+//         closeModal();
+//       } else {
+//         toast.error("Update failed. Please try again.");
+//       }
+//     } catch (err) {
+//       console.error("Profile update failed", err);
+//       toast.error("Profile update failed. Please try again.");
+//     }
+//   };
+
+//   if (isLoading) {
+//     return (
+//       <div className="min-h-screen flex items-center justify-center text-gray-600">
+//         Loading profile...
+//       </div>
+//     );
+//   }
+
+//   if (isError || !user) {
+//     return (
+//       <div className="min-h-screen flex items-center justify-center text-red-600">
+//         Error fetching user data
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="g-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8">
+//       <div className="max-w-5xl mx-auto px-4 py-6 md:py-10">
+//         {/* Header Card */}
+//         <div className="rounded-xl shadow-sm border border-gray-100 p-5 md:p-7">
+//           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+//             <div className="flex items-center gap-4">
+//               <img
+//                 src={avatarSrc}
+//                 alt="Profile"
+//                 className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover ring-2 ring-orange-100"
+//               />
+//               <div>
+//                 <h2 className="text-lg md:text-2xl font-semibold text-white">
+//                   {user?.FirstName} {user?.LastName}
+//                 </h2>
+//                 <div className="mt-1 flex flex-wrap gap-2 items-center">
+//                   <span className="text-xs md:text-sm px-2 py-1 rounded-full bg-indigo-600 text-white border border-orange-100">
+//                     {user?.role || "Staff"}
+//                   </span>
+//                   <span className="text-sm text-gray-300">
+//                     {user?.City}, {user?.Country}
+//                   </span>
+//                 </div>
+//               </div>
+//             </div>
+
+//             <button
+//               onClick={handleEditUser}
+//               className="inline-flex justify-center items-center px-4 py-2 rounded-lg bg-indigo-600 transition"
+//             >
+//               Edit Profile
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Details Grid */}
+//         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
+//           {/* Personal Info */}
+//           <div className="rounded-xl shadow-sm border border-gray-100 p-5 md:p-7">
+//             <h3 className="text-white md:text-lg font-semibold text-gray-900">
+//               Personal Information
+//             </h3>
+
+//             <div className="mt-4 space-y-3 ">
+//               <InfoRow label="First Name" value={user?.FirstName} />
+//               <InfoRow label="Last Name" value={user?.LastName} />
+//               <InfoRow label="Email" value={user?.Email} />
+//               <InfoRow label="Phone" value={user?.Phone} />
+//               <InfoRow label="Role" value={user?.role} />
+//             </div>
+//           </div>
+
+//           {/* Address */}
+//           <div className=" rounded-xl shadow-sm border border-gray-100 p-5 md:p-7">
+//             <h3 className="text-white md:text-lg font-semibold text-gray-900">
+//               Address
+//             </h3>
+
+//             <div className="mt-4 space-y-3">
+//               <InfoRow label="Address" value={user?.Address} />
+//               <InfoRow label="Country" value={user?.Country} />
+//               <InfoRow label="City" value={user?.City} />
+//               <InfoRow label="Postal Code" value={user?.PostalCode} />
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Modal */}
+//         {isModalOpen && (
+//           <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+//             <div className="w-full max-w-xl bg-gray-800 rounded-2xl shadow-lg border border-gray-100">
+//               <div className="p-5 md:p-6 border-b border-gray-100 flex items-center justify-between">
+//                 <div>
+//                   <h3 className="text-lg font-semibold text-white">
+//                     Edit Profile
+//                   </h3>
+//                   <p className="text-sm text-white mt-1">
+//                     Update your personal information and profile photo.
+//                   </p>
+//                 </div>
+//                 <button
+//                   onClick={closeModal}
+//                   className="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100"
+//                 >
+//                   ✕
+//                 </button>
+//               </div>
+
+//               <form onSubmit={handleSave} className="p-5 md:p-6 space-y-4">
+//                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//                   <Input
+//                     label="First Name"
+//                     value={currentProfile?.FirstName || ""}
+//                     onChange={(e) =>
+//                       setCurrentProfile((p) => ({
+//                         ...p,
+//                         FirstName: e.target.value,
+//                       }))
+//                     }
+//                   />
+//                   <Input
+//                     label="Last Name"
+//                     value={currentProfile?.LastName || ""}
+//                     onChange={(e) =>
+//                       setCurrentProfile((p) => ({
+//                         ...p,
+//                         LastName: e.target.value,
+//                       }))
+//                     }
+//                   />
+//                   <Input
+//                     label="Email"
+//                     type="email"
+//                     value={currentProfile?.Email || ""}
+//                     onChange={(e) =>
+//                       setCurrentProfile((p) => ({
+//                         ...p,
+//                         Email: e.target.value,
+//                       }))
+//                     }
+//                   />
+//                   <Input
+//                     label="Phone"
+//                     value={currentProfile?.Phone || ""}
+//                     onChange={(e) =>
+//                       setCurrentProfile((p) => ({
+//                         ...p,
+//                         Phone: e.target.value,
+//                       }))
+//                     }
+//                   />
+//                   <Input
+//                     label="Country"
+//                     value={currentProfile?.Country || ""}
+//                     onChange={(e) =>
+//                       setCurrentProfile((p) => ({
+//                         ...p,
+//                         Country: e.target.value,
+//                       }))
+//                     }
+//                   />
+//                   <Input
+//                     label="City"
+//                     value={currentProfile?.City || ""}
+//                     onChange={(e) =>
+//                       setCurrentProfile((p) => ({ ...p, City: e.target.value }))
+//                     }
+//                   />
+//                   <Input
+//                     label="Postal Code"
+//                     value={currentProfile?.PostalCode || ""}
+//                     onChange={(e) =>
+//                       setCurrentProfile((p) => ({
+//                         ...p,
+//                         PostalCode: e.target.value,
+//                       }))
+//                     }
+//                   />
+//                   <Input
+//                     label="Address"
+//                     value={currentProfile?.Address || ""}
+//                     onChange={(e) =>
+//                       setCurrentProfile((p) => ({
+//                         ...p,
+//                         Address: e.target.value,
+//                       }))
+//                     }
+//                   />
+//                 </div>
+
+//                 {/* Image */}
+//                 <div className="pt-2">
+//                   <label className="block text-sm font-medium text-gray-700 mb-2">
+//                     Profile Image
+//                   </label>
+
+//                   <div className="flex items-center gap-4">
+//                     <img
+//                       src={previewUrl || avatarSrc}
+//                       alt="Preview"
+//                       className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-100"
+//                     />
+
+//                     <div className="flex-1">
+//                       <input
+//                         type="file"
+//                         accept="image/*"
+//                         onChange={handleChange}
+//                         className="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
+//                       />
+//                       <p className="text-xs text-gray-500 mt-1">
+//                         PNG, JPG allowed. Recommended square image.
+//                       </p>
+//                     </div>
+//                   </div>
+//                 </div>
+
+//                 {/* Actions */}
+//                 <div className="pt-4 flex items-center justify-end gap-2">
+//                   <button
+//                     type="button"
+//                     onClick={closeModal}
+//                     className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
+//                   >
+//                     Cancel
+//                   </button>
+//                   <button
+//                     type="submit"
+//                     className="px-4 py-2 rounded-lg bg-indigo-500 text-white"
+//                   >
+//                     Save Changes
+//                   </button>
+//                 </div>
+//               </form>
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// // Small UI helpers
+// const InfoRow = ({ label, value }) => (
+//   <div className="flex items-start justify-between gap-4">
+//     <p className="text-sm text-gray-400">{label}</p>
+//     <p className="text-sm font-medium text-white text-right break-words">
+//       {value || "-"}
+//     </p>
+//   </div>
+// );
+
+// const Input = ({ label, type = "text", value, onChange }) => (
+//   <div>
+//     <label className="block text-sm text-white mb-1">{label}</label>
+//     <input
+//       type={type}
+//       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-200"
+//       value={value}
+//       onChange={onChange}
+//     />
+//   </div>
+// );
+
+// export default UserProfile;
+
 import toast from "react-hot-toast";
 import { useUserUpdateMutation } from "../../features/auth/auth";
 import { useEffect, useMemo, useState } from "react";
 
-const API_BASE = "https://api.digitalever.com.bd";
+const API_BASE = "http://localhost:5000";
 
 const UserProfile = () => {
   const [userUpdate] = useUserUpdateMutation();
@@ -341,7 +714,7 @@ const UserProfile = () => {
 
   const avatarSrc = useMemo(() => {
     if (user?.image) return `${API_BASE}/${user.image}`;
-    return "https://i.ibb.co/2kR0w9c/user.png"; // fallback avatar
+    return "https://i.ibb.co/2kR0w9c/user.png";
   }, [user?.image]);
 
   // Fetch user
@@ -389,14 +762,11 @@ const UserProfile = () => {
   };
 
   // Close modal
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
+  const closeModal = () => setIsModalOpen(false);
 
   // Save
   const handleSave = async (e) => {
     e.preventDefault();
-
     if (!currentProfile) return;
 
     try {
@@ -416,7 +786,7 @@ const UserProfile = () => {
 
       if (res?.success) {
         toast.success("Profile updated successfully");
-        setUser((prev) => ({ ...(prev || {}), ...currentProfile })); // UI update
+        setUser((prev) => ({ ...(prev || {}), ...currentProfile }));
         closeModal();
       } else {
         toast.error("Update failed. Please try again.");
@@ -444,26 +814,26 @@ const UserProfile = () => {
   }
 
   return (
-    <div className="g-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8">
+    <div className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8">
       <div className="max-w-5xl mx-auto px-4 py-6 md:py-10">
         {/* Header Card */}
-        <div className="rounded-xl shadow-sm border border-gray-100 p-5 md:p-7">
+        <div className="rounded-2xl shadow-sm border border-gray-200 bg-white p-5 md:p-7">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div className="flex items-center gap-4">
               <img
                 src={avatarSrc}
                 alt="Profile"
-                className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover ring-2 ring-orange-100"
+                className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover ring-2 ring-indigo-100"
               />
               <div>
-                <h2 className="text-lg md:text-2xl font-semibold text-white">
+                <h2 className="text-lg md:text-2xl font-semibold text-gray-900">
                   {user?.FirstName} {user?.LastName}
                 </h2>
                 <div className="mt-1 flex flex-wrap gap-2 items-center">
-                  <span className="text-xs md:text-sm px-2 py-1 rounded-full bg-indigo-600 text-white border border-orange-100">
+                  <span className="text-xs md:text-sm px-2 py-1 rounded-full bg-indigo-600 text-white">
                     {user?.role || "Staff"}
                   </span>
-                  <span className="text-sm text-gray-300">
+                  <span className="text-sm text-gray-600">
                     {user?.City}, {user?.Country}
                   </span>
                 </div>
@@ -472,7 +842,7 @@ const UserProfile = () => {
 
             <button
               onClick={handleEditUser}
-              className="inline-flex justify-center items-center px-4 py-2 rounded-lg bg-indigo-600 transition"
+              className="inline-flex justify-center items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition"
             >
               Edit Profile
             </button>
@@ -482,12 +852,12 @@ const UserProfile = () => {
         {/* Details Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
           {/* Personal Info */}
-          <div className="rounded-xl shadow-sm border border-gray-100 p-5 md:p-7">
-            <h3 className="text-white md:text-lg font-semibold text-gray-900">
+          <div className="rounded-2xl shadow-sm border border-gray-200 bg-white p-5 md:p-7">
+            <h3 className="md:text-lg font-semibold text-gray-900">
               Personal Information
             </h3>
 
-            <div className="mt-4 space-y-3 ">
+            <div className="mt-4 space-y-3">
               <InfoRow label="First Name" value={user?.FirstName} />
               <InfoRow label="Last Name" value={user?.LastName} />
               <InfoRow label="Email" value={user?.Email} />
@@ -497,10 +867,8 @@ const UserProfile = () => {
           </div>
 
           {/* Address */}
-          <div className=" rounded-xl shadow-sm border border-gray-100 p-5 md:p-7">
-            <h3 className="text-white md:text-lg font-semibold text-gray-900">
-              Address
-            </h3>
+          <div className="rounded-2xl shadow-sm border border-gray-200 bg-white p-5 md:p-7">
+            <h3 className="md:text-lg font-semibold text-gray-900">Address</h3>
 
             <div className="mt-4 space-y-3">
               <InfoRow label="Address" value={user?.Address} />
@@ -514,19 +882,20 @@ const UserProfile = () => {
         {/* Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-            <div className="w-full max-w-xl bg-gray-800 rounded-2xl shadow-lg border border-gray-100">
-              <div className="p-5 md:p-6 border-b border-gray-100 flex items-center justify-between">
+            <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg border border-gray-200">
+              <div className="p-5 md:p-6 border-b border-gray-200 flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-white">
+                  <h3 className="text-lg font-semibold text-gray-900">
                     Edit Profile
                   </h3>
-                  <p className="text-sm text-white mt-1">
+                  <p className="text-sm text-gray-600 mt-1">
                     Update your personal information and profile photo.
                   </p>
                 </div>
                 <button
                   onClick={closeModal}
                   className="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100"
+                  type="button"
                 >
                   ✕
                 </button>
@@ -589,7 +958,10 @@ const UserProfile = () => {
                     label="City"
                     value={currentProfile?.City || ""}
                     onChange={(e) =>
-                      setCurrentProfile((p) => ({ ...p, City: e.target.value }))
+                      setCurrentProfile((p) => ({
+                        ...p,
+                        City: e.target.value,
+                      }))
                     }
                   />
                   <Input
@@ -632,7 +1004,7 @@ const UserProfile = () => {
                         type="file"
                         accept="image/*"
                         onChange={handleChange}
-                        className="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
+                        className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
                       />
                       <p className="text-xs text-gray-500 mt-1">
                         PNG, JPG allowed. Recommended square image.
@@ -652,7 +1024,7 @@ const UserProfile = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded-lg bg-indigo-500 text-white"
+                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
                   >
                     Save Changes
                   </button>
@@ -669,8 +1041,8 @@ const UserProfile = () => {
 // Small UI helpers
 const InfoRow = ({ label, value }) => (
   <div className="flex items-start justify-between gap-4">
-    <p className="text-sm text-gray-400">{label}</p>
-    <p className="text-sm font-medium text-white text-right break-words">
+    <p className="text-sm text-gray-500">{label}</p>
+    <p className="text-sm font-medium text-gray-900 text-right break-words">
       {value || "-"}
     </p>
   </div>
@@ -678,10 +1050,10 @@ const InfoRow = ({ label, value }) => (
 
 const Input = ({ label, type = "text", value, onChange }) => (
   <div>
-    <label className="block text-sm text-white mb-1">{label}</label>
+    <label className="block text-sm text-gray-700 mb-1">{label}</label>
     <input
       type={type}
-      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-200"
+      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
       value={value}
       onChange={onChange}
     />

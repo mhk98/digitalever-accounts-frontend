@@ -688,34 +688,47 @@ const MetaTable = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // ✅ Per Page dropdown state (LIKE YOUR SCREENSHOT)
+  //Pagination calculation start
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const perPageOptions = [10, 20, 50, 100];
 
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
 
-  // ✅ Responsive pagesPerSet
   useEffect(() => {
     const updatePagesPerSet = () => {
       if (window.innerWidth < 640) setPagesPerSet(5);
       else if (window.innerWidth < 1024) setPagesPerSet(7);
       else setPagesPerSet(10);
     };
-
     updatePagesPerSet();
     window.addEventListener("resize", updatePagesPerSet);
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
 
-  // ✅ Filters change হলে page reset
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
   }, [startDate, endDate, itemsPerPage]);
+
+  const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    if (pageNumber < startPage) setStartPage(pageNumber);
+    else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
+  };
+
+  const handlePreviousSet = () =>
+    setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
+
+  const handleNextSet = () =>
+    setStartPage((prev) =>
+      Math.min(prev + pagesPerSet, totalPages - pagesPerSet + 1),
+    );
+
+  //Pagination calculation end
 
   // ✅ startDate > endDate হলে endDate ঠিক করে দেবে
   useEffect(() => {
@@ -901,31 +914,6 @@ const MetaTable = () => {
     setEndDate("");
   };
 
-  // ✅ Pagination calculations
-  const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
-
-  const handlePageChange = (pageNumber) => {
-    const p = Number(pageNumber);
-    setCurrentPage(p);
-
-    if (p < startPage) setStartPage(p);
-    else if (p > endPage) setStartPage(p - pagesPerSet + 1);
-  };
-
-  const handlePreviousSet = () =>
-    setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
-
-  const handleNextSet = () =>
-    setStartPage((prev) =>
-      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
-    );
-
-  // ✅ Page jump dropdown options
-  const pageOptions = useMemo(
-    () => Array.from({ length: totalPages }, (_, i) => i + 1),
-    [totalPages],
-  );
-
   return (
     <motion.div
       className="bg-white shadow-sm rounded-2xl p-6 border border-slate-200 mb-8"
@@ -984,15 +972,17 @@ const MetaTable = () => {
           <label className="text-sm text-slate-600 mb-1">Per Page</label>
           <select
             value={itemsPerPage}
-            onChange={(e) => setItemsPerPage(Number(e.target.value))}
-            className="h-11 px-3 rounded-xl bg-white border border-slate-200 text-slate-900 outline-none
-                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+              setStartPage(1);
+            }}
+            className="px-3 py-[10px] rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           >
-            {perPageOptions.map((v) => (
-              <option key={v} value={v}>
-                {v}
-              </option>
-            ))}
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
           </select>
         </div>
 
@@ -1110,33 +1100,14 @@ const MetaTable = () => {
         <button
           onClick={handlePreviousSet}
           disabled={startPage === 1}
-          className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
           Prev
         </button>
 
-        {/* ✅ Page Jump Dropdown */}
-        <div className="flex items-center gap-2 mx-2">
-          <span className="text-sm text-slate-600">Page</span>
-          <select
-            value={currentPage}
-            onChange={(e) => handlePageChange(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none
-                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-          >
-            {pageOptions.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-          <span className="text-sm text-slate-600">of {totalPages}</span>
-        </div>
-
         {[...Array(endPage - startPage + 1)].map((_, index) => {
           const pageNum = startPage + index;
           const active = pageNum === currentPage;
-
           return (
             <button
               key={pageNum}
@@ -1155,7 +1126,7 @@ const MetaTable = () => {
         <button
           onClick={handleNextSet}
           disabled={endPage === totalPages}
-          className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
           Next
         </button>

@@ -111,7 +111,7 @@ const LogoTable = () => {
 
   return (
     <motion.div
-      className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
+      className=" bg-white/90 backdrop-blur-md shadow-sm rounded-xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
@@ -148,11 +148,11 @@ const LogoTable = () => {
         <table className="min-w-full divide-y divide-gray-700">
           <thead>
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                 Logo
               </th>
 
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -167,7 +167,7 @@ const LogoTable = () => {
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   <img
-                    src={`https://api.digitalever.com.bd/${products.file}`}
+                    src={` http://localhost:5000/${products.file}`}
                     alt="document"
                     className="h-12 w-12 object-cover rounded border border-gray-600 hover:opacity-80"
                   />
@@ -263,9 +263,9 @@ const LogoTable = () => {
 
       {/* Add Modal */}
       {isModalOpen1 && (
-        <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}

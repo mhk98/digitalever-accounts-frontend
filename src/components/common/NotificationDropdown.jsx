@@ -146,7 +146,7 @@ const NotificationDropdown = () => {
         <div className=" border-t border-gray-100 text-center my-4">
           <Link
             className="w-full text-sm font-semibold py-1 rounded bg-gray-300 py-3 px-8 "
-            to="/notification"
+            to="/notifications"
           >
             <button>See previous notifications</button>
           </Link>

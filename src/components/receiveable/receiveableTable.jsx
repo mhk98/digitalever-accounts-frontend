@@ -1,3 +1,856 @@
+// import { motion } from "framer-motion";
+// import { Edit, Notebook, Plus, Trash2, TrendingUp } from "lucide-react";
+// import { useEffect, useMemo, useState } from "react";
+// import toast from "react-hot-toast";
+// import {
+//   useDeleteReceiveableMutation,
+//   useGetAllReceiveableQuery,
+//   useInsertReceiveableMutation,
+//   useUpdateReceiveableMutation,
+// } from "../../features/receiveable/receiveable";
+
+// const ReceiveableTable = () => {
+//   const [isModalOpen, setIsModalOpen] = useState(false);
+//   const [isModalOpen1, setIsModalOpen1] = useState(false);
+//   const [isModalOpen2, setIsModalOpen2] = useState(false);
+//   const role = localStorage.getItem("role");
+//   const [currentProduct, setCurrentProduct] = useState(null);
+//   const userId = localStorage.getItem("userId");
+
+//   const [createProduct, setCreateProduct] = useState({
+//     name: "",
+//     remarks: "",
+//     amount: "",
+//     file: null,
+//   });
+
+//   const [products, setProducts] = useState([]);
+
+//   // filters
+//   const [startDate, setStartDate] = useState("");
+//   const [endDate, setEndDate] = useState("");
+//   const [filterName, setFilterName] = useState("");
+
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const [startPage, setStartPage] = useState(1);
+//   const [totalPages, setTotalPages] = useState(1);
+//   const [pagesPerSet, setPagesPerSet] = useState(10);
+//   const itemsPerPage = 10;
+
+//   // responsive pagesPerSet
+//   useEffect(() => {
+//     const updatePagesPerSet = () => {
+//       if (window.innerWidth < 640) setPagesPerSet(5);
+//       else if (window.innerWidth < 1024) setPagesPerSet(7);
+//       else setPagesPerSet(10);
+//     };
+//     updatePagesPerSet();
+//     window.addEventListener("resize", updatePagesPerSet);
+//     return () => window.removeEventListener("resize", updatePagesPerSet);
+//   }, []);
+
+//   // reset page when filters change
+//   useEffect(() => {
+//     setCurrentPage(1);
+//     setStartPage(1);
+//   }, [startDate, endDate, filterName]);
+
+//   // fix endDate
+//   useEffect(() => {
+//     if (startDate && endDate && startDate > endDate) setEndDate(startDate);
+//   }, [startDate, endDate]);
+
+//   // ✅ query args (start/end + name)
+//   const queryArgs = useMemo(() => {
+//     const args = {
+//       page: currentPage,
+//       limit: itemsPerPage,
+//       startDate: startDate || undefined,
+//       endDate: endDate || undefined,
+//       searchTerm: filterName?.trim() || undefined, // ✅ name filter
+//       // যদি backend "name" নেয়, তাহলে: name: filterName?.trim() || undefined
+//     };
+
+//     Object.keys(args).forEach((k) => {
+//       if (args[k] === undefined || args[k] === null || args[k] === "") {
+//         delete args[k];
+//       }
+//     });
+
+//     return args;
+//   }, [currentPage, startDate, endDate, filterName]);
+
+//   const { data, isLoading, isError, error, refetch } =
+//     useGetAllReceiveableQuery(queryArgs);
+
+//   useEffect(() => {
+//     if (isError) console.error("Error:", error);
+//     if (!isLoading && data) {
+//       setProducts(data?.data ?? []);
+//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//     }
+//   }, [data, isLoading, isError, error]);
+
+//   // modals
+//   const handleAddProduct = () => setIsModalOpen1(true);
+//   const handleModalClose1 = () => setIsModalOpen1(false);
+//   const handleModalClose = () => setIsModalOpen(false);
+//   const handleModalClose2 = () => setIsModalOpen2(false);
+
+//   const handleEditClick = (rp) => {
+//     setCurrentProduct({
+//       ...rp,
+//       name: rp.name ?? "",
+//       amount: rp.amount ?? "",
+//       remarks: rp.remarks ?? "",
+//       note: rp.note ?? "",
+//       status: rp.status ?? "",
+//       userId: userId,
+//       file: null, // ✅ new upload
+//     });
+//     setIsModalOpen(true);
+//   };
+//   const handleEditClick1 = (rp) => {
+//     setCurrentProduct({
+//       ...rp,
+//       name: rp.name ?? "",
+//       amount: rp.amount ?? "",
+//       remarks: rp.remarks ?? "",
+//       note: rp.note ?? "",
+//       status: rp.status ?? "",
+//       userId: userId,
+//       file: null, // ✅ new upload
+//     });
+//     setIsModalOpen2(true);
+//   };
+
+//   // insert
+//   const [insertReceiveable] = useInsertReceiveableMutation();
+//   const handleCreateProduct = async (e) => {
+//     e.preventDefault();
+
+//     if (!createProduct.name.trim()) return toast.error("Name is required!");
+//     if (!createProduct.amount) return toast.error("Amount is required!");
+
+//     try {
+//       const formData = new FormData();
+//       formData.append("name", createProduct.name.trim());
+//       formData.append("remarks", createProduct.remarks?.trim() || "");
+//       formData.append("amount", String(Number(createProduct.amount)));
+
+//       if (createProduct.file) formData.append("file", createProduct.file);
+
+//       const res = await insertReceiveable(formData).unwrap();
+//       if (res?.success) {
+//         toast.success("Successfully Created!");
+//         setIsModalOpen1(false);
+//         setCreateProduct({
+//           name: "",
+//           remarks: "",
+//           amount: "",
+//           file: null,
+//         });
+//         refetch?.();
+//       } else toast.error(res?.message || "Create failed!");
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Create failed!");
+//     }
+//   };
+
+//   // update (amount + remarks + optional file)
+//   const [updateReceiveable] = useUpdateReceiveableMutation();
+
+//   const handleUpdateProduct = async () => {
+//     const rowId = currentProduct?.Id ?? currentProduct?.id;
+//     if (!rowId) return toast.error("Invalid item!");
+
+//     try {
+//       // ✅ if file exists -> FormData
+//       if (currentProduct?.file instanceof File) {
+//         const fd = new FormData();
+//         fd.append("name", currentProduct?.name?.trim() || "");
+//         fd.append("remarks", currentProduct?.remarks?.trim() || "");
+//         fd.append("note", currentProduct?.note?.trim() || "");
+//         fd.append("status", currentProduct?.status?.trim() || "");
+//         fd.append("userId", userId);
+//         fd.append("amount", String(Number(currentProduct?.amount || 0)));
+//         fd.append("file", currentProduct.file);
+
+//         const res = await updateReceiveable({ id: rowId, data: fd }).unwrap();
+//         if (res?.success) {
+//           toast.success("Updated!");
+//           setIsModalOpen(false);
+//           refetch?.();
+//         } else toast.error(res?.message || "Update failed!");
+//         return;
+//       }
+
+//       // ✅ no file -> JSON
+//       const payload = {
+//         name: currentProduct?.name?.trim() || "",
+//         remarks: currentProduct?.remarks?.trim() || "",
+//         amount: Number(currentProduct?.amount || 0),
+//         note: currentProduct?.note?.trim() || "",
+//         status: currentProduct?.status?.trim() || "",
+//       };
+
+//       const res = await updateReceiveable({
+//         id: rowId,
+//         data: payload,
+//       }).unwrap();
+//       if (res?.success) {
+//         toast.success("Updated!");
+//         setIsModalOpen(false);
+//         refetch?.();
+//       } else toast.error(res?.message || "Update failed!");
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Update failed!");
+//     }
+//   };
+//   const handleUpdateProduct1 = async () => {
+//     const rowId = currentProduct?.Id ?? currentProduct?.id;
+//     if (!rowId) return toast.error("Invalid item!");
+
+//     try {
+//       // ✅ if file exists -> FormData
+//       if (currentProduct?.file instanceof File) {
+//         const fd = new FormData();
+//         fd.append("name", currentProduct?.name?.trim() || "");
+//         fd.append("remarks", currentProduct?.remarks?.trim() || "");
+//         fd.append("note", currentProduct?.note?.trim() || "");
+//         fd.append("status", currentProduct?.status?.trim() || "");
+//         fd.append("userId", userId);
+//         fd.append("amount", String(Number(currentProduct?.amount || 0)));
+//         fd.append("file", currentProduct.file);
+
+//         const res = await updateReceiveable({ id: rowId, data: fd }).unwrap();
+//         if (res?.success) {
+//           toast.success("Updated!");
+//           setIsModalOpen2(false);
+//           refetch?.();
+//         } else toast.error(res?.message || "Update failed!");
+//         return;
+//       }
+
+//       // ✅ no file -> JSON
+//       const payload = {
+//         name: currentProduct?.name?.trim() || "",
+//         remarks: currentProduct?.remarks?.trim() || "",
+//         amount: Number(currentProduct?.amount || 0),
+//         note: currentProduct?.note?.trim() || "",
+//         status: currentProduct?.status?.trim() || "",
+//       };
+
+//       const res = await updateReceiveable({
+//         id: rowId,
+//         data: payload,
+//       }).unwrap();
+//       if (res?.success) {
+//         toast.success("Updated!");
+//         setIsModalOpen(false);
+//         refetch?.();
+//       } else toast.error(res?.message || "Update failed!");
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Update failed!");
+//     }
+//   };
+
+//   // delete
+//   const [deleteReceiveable] = useDeleteReceiveableMutation();
+//   const handleDeleteProduct = async (rowId) => {
+//     if (!window.confirm("Do you want to delete this item?")) return;
+//     try {
+//       const res = await deleteReceiveable(rowId).unwrap();
+//       if (res?.success) {
+//         toast.success("Deleted!");
+//         refetch?.();
+//       } else toast.error(res?.message || "Delete failed!");
+//     } catch (err) {
+//       toast.error(err?.data?.message || "Delete failed!");
+//     }
+//   };
+
+//   const clearFilters = () => {
+//     setStartDate("");
+//     setEndDate("");
+//     setFilterName("");
+//   };
+
+//   // pagination
+//   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
+
+//   const handlePageChange = (pageNumber) => {
+//     setCurrentPage(pageNumber);
+//     if (pageNumber < startPage) setStartPage(pageNumber);
+//     else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
+//   };
+
+//   const handlePreviousSet = () =>
+//     setStartPage((p) => Math.max(p - pagesPerSet, 1));
+//   const handleNextSet = () =>
+//     setStartPage((p) =>
+//       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
+//     );
+
+//   return (
+//     <motion.div
+//       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
+//       initial={{ opacity: 0, y: 20 }}
+//       animate={{ opacity: 1, y: 0 }}
+//       transition={{ delay: 0.2 }}
+//     >
+//       {/* Add Button */}
+//       <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+//         <button
+//           type="button"
+//           onClick={handleAddProduct}
+//           className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
+//         >
+//           Add <Plus size={18} className="ml-2" />
+//         </button>
+
+//         <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
+//           <div className="flex items-center gap-2 text-gray-300">
+//             <TrendingUp size={18} className="text-amber-400" />
+//             <span className="text-sm">Total Receiveable Amount</span>
+//           </div>
+
+//           <span className="text-white font-semibold tabular-nums">
+//             {isLoading ? "Loading..." : data?.meta?.totalAmount}
+//           </span>
+//         </div>
+//       </div>
+
+//       {/* ✅ Filters: start + end + name */}
+//       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
+//         <div className="flex flex-col">
+//           <label className="text-sm text-gray-400 mb-1">From</label>
+//           <input
+//             type="date"
+//             value={startDate}
+//             onChange={(e) => setStartDate(e.target.value)}
+//             className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+//           />
+//         </div>
+
+//         <div className="flex flex-col">
+//           <label className="text-sm text-gray-400 mb-1">To</label>
+//           <input
+//             type="date"
+//             value={endDate}
+//             onChange={(e) => setEndDate(e.target.value)}
+//             className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+//           />
+//         </div>
+
+//         <div className="flex items-center justify-center mt-6">
+//           <input
+//             type="text"
+//             value={filterName}
+//             onChange={(e) => setFilterName(e.target.value)}
+//             placeholder="Search by name..."
+//             className="border border-gray-300 rounded p-2 text-black bg-white w-full"
+//           />
+//         </div>
+
+//         <button
+//           className="flex items-center mt-6 bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
+//           onClick={clearFilters}
+//         >
+//           Clear Filters
+//         </button>
+//       </div>
+
+//       {/* Table */}
+//       <div className="overflow-x-auto">
+//         <table className="min-w-full divide-y divide-gray-700">
+//           <thead>
+//             <tr>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Name
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Document
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Remarks
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Amount
+//               </th>
+
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Status
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+//                 Actions
+//               </th>
+//             </tr>
+//           </thead>
+
+//           <tbody className="divide-y divide-gray-700">
+//             {products.map((rp) => {
+//               const rowId = rp.Id ?? rp.id;
+
+//               const safePath = String(rp.file || "").replace(/\\/g, "/");
+//               const fileUrl = safePath
+//                 ? ` http://localhost:5000/${safePath}`
+//                 : "";
+//               const ext = safePath.split(".").pop()?.toLowerCase();
+//               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
+//                 ext,
+//               );
+//               const isPdf = ext === "pdf";
+
+//               return (
+//                 <motion.tr
+//                   key={rowId}
+//                   initial={{ opacity: 0 }}
+//                   animate={{ opacity: 1 }}
+//                   transition={{ duration: 0.3 }}
+//                 >
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.name}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {!safePath ? (
+//                       "-"
+//                     ) : isImage ? (
+//                       <a href={fileUrl} target="_blank" rel="noreferrer">
+//                         <img
+//                           src={fileUrl}
+//                           alt="document"
+//                           className="h-12 w-12 object-cover rounded border border-gray-600 hover:opacity-80"
+//                           onError={(e) => {
+//                             e.currentTarget.style.display = "none";
+//                           }}
+//                         />
+//                       </a>
+//                     ) : isPdf ? (
+//                       <a
+//                         href={fileUrl}
+//                         target="_blank"
+//                         rel="noreferrer"
+//                         className="px-3 py-1 rounded bg-indigo-600 text-white text-xs hover:bg-indigo-700"
+//                       >
+//                         View PDF
+//                       </a>
+//                     ) : (
+//                       <a
+//                         href={fileUrl}
+//                         target="_blank"
+//                         rel="noreferrer"
+//                         className="text-indigo-400 underline"
+//                       >
+//                         Open File
+//                       </a>
+//                     )}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.remarks || "-"}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {Number(rp.amount || 0).toFixed(2)}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {rp.status}
+//                   </td>
+
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+//                     {rp.note && (
+//                       <button
+//                         className="text-white-600 hover:text-white-900"
+//                         title={rp.note}
+//                       >
+//                         <Notebook size={18} />
+//                       </button>
+//                     )}
+//                     <button
+//                       onClick={() => handleEditClick(rp)}
+//                       className="text-indigo-600 hover:text-indigo-900"
+//                     >
+//                       <Edit size={18} />
+//                     </button>
+//                     {role === "superAdmin" ||
+//                     role === "admin" ||
+//                     rp.status === "Approved" ? (
+//                       <button
+//                         onClick={() => handleDeleteProduct(rowId)}
+//                         className="text-red-600 hover:text-red-900 ms-4"
+//                       >
+//                         <Trash2 size={18} />
+//                       </button>
+//                     ) : (
+//                       <button
+//                         onClick={() => handleEditClick1(rp)}
+//                         className="text-red-600 hover:text-red-900 ms-4"
+//                       >
+//                         <Trash2 size={18} />
+//                       </button>
+//                     )}
+//                   </td>
+//                 </motion.tr>
+//               );
+//             })}
+
+//             {!isLoading && products.length === 0 && (
+//               <tr>
+//                 <td
+//                   colSpan={5}
+//                   className="px-6 py-6 text-center text-sm text-gray-300"
+//                 >
+//                   No data found
+//                 </td>
+//               </tr>
+//             )}
+//           </tbody>
+//         </table>
+//       </div>
+
+//       {/* Pagination */}
+//       <div className="flex items-center justify-center space-x-2 mt-6">
+//         <button
+//           onClick={handlePreviousSet}
+//           disabled={startPage === 1}
+//           className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+//         >
+//           Prev
+//         </button>
+
+//         {[...Array(endPage - startPage + 1)].map((_, index) => {
+//           const pageNum = startPage + index;
+//           return (
+//             <button
+//               key={pageNum}
+//               onClick={() => handlePageChange(pageNum)}
+//               className={`px-3 py-2 text-black rounded-md ${
+//                 pageNum === currentPage
+//                   ? "bg-white"
+//                   : "bg-indigo-500 hover:bg-indigo-400"
+//               }`}
+//             >
+//               {pageNum}
+//             </button>
+//           );
+//         })}
+
+//         <button
+//           onClick={handleNextSet}
+//           disabled={endPage === totalPages}
+//           className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+//         >
+//           Next
+//         </button>
+//       </div>
+
+//       {/* ✅ Edit Modal */}
+//       {isModalOpen && (
+//         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+//           <motion.div
+//             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+//             initial={{ opacity: 0, y: -50 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             transition={{ duration: 0.3 }}
+//           >
+//             <h2 className="text-lg font-semibold text-white">Edit</h2>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Company Name</label>
+//               <input
+//                 type="text"
+//                 value={currentProduct?.name || ""}
+//                 onChange={(e) =>
+//                   setCurrentProduct({ ...currentProduct, name: e.target.value })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//               />
+//             </div>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Amount:</label>
+//               <input
+//                 type="number"
+//                 step="0.01"
+//                 value={currentProduct?.amount || ""}
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     amount: e.target.value,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//               />
+//             </div>
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">Remarks</label>
+//               <input
+//                 type="text"
+//                 value={currentProduct?.remarks || ""}
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     remarks: e.target.value,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//               />
+//             </div>
+
+//             {role === "superAdmin" ? (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Status</label>
+//                 <select
+//                   value={currentProduct.status || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       status: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                   required
+//                 >
+//                   <option value="">Select Status</option>
+//                   <option value="Approved">Approved</option>
+//                   <option value="Pending">Pending</option>
+//                 </select>
+//               </div>
+//             ) : (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Note:</label>
+//                 <textarea
+//                   type="text"
+//                   value={currentProduct?.note || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       note: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                 />
+//               </div>
+//             )}
+
+//             <div className="mt-4">
+//               <label className="block text-sm text-white">
+//                 Upload Document
+//               </label>
+//               <input
+//                 type="file"
+//                 accept=".jpg,.jpeg,.png,.pdf"
+//                 onChange={(e) =>
+//                   setCurrentProduct({
+//                     ...currentProduct,
+//                     file: e.target.files?.[0] || null,
+//                   })
+//                 }
+//                 className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//               />
+//               {currentProduct?.file && (
+//                 <p className="mt-2 text-xs text-gray-300">
+//                   Selected: {currentProduct.file.name}
+//                 </p>
+//               )}
+//             </div>
+
+//             <div className="mt-6 flex justify-end">
+//               <button
+//                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+//                 onClick={handleUpdateProduct}
+//               >
+//                 Save
+//               </button>
+//               <button
+//                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+//                 onClick={handleModalClose}
+//               >
+//                 Cancel
+//               </button>
+//             </div>
+//           </motion.div>
+//         </div>
+//       )}
+
+//       {/* ✅ Add Modal */}
+//       {isModalOpen1 && (
+//         <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
+//           <motion.div
+//             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+//             initial={{ opacity: 0, y: -50 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             transition={{ duration: 0.3 }}
+//           >
+//             <h2 className="text-lg font-semibold text-white">
+//               Add Receiveable Information
+//             </h2>
+
+//             <form onSubmit={handleCreateProduct}>
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Company Name</label>
+//                 <input
+//                   type="text"
+//                   value={createProduct.name}
+//                   onChange={(e) =>
+//                     setCreateProduct({ ...createProduct, name: e.target.value })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                   required
+//                 />
+//               </div>
+
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Remarks</label>
+//                 <input
+//                   type="text"
+//                   value={createProduct.remarks}
+//                   onChange={(e) =>
+//                     setCreateProduct({
+//                       ...createProduct,
+//                       remarks: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                   required
+//                 />
+//               </div>
+
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Amount</label>
+//                 <input
+//                   type="number"
+//                   step="0.01"
+//                   value={createProduct.amount}
+//                   onChange={(e) =>
+//                     setCreateProduct({
+//                       ...createProduct,
+//                       amount: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                   required
+//                 />
+//               </div>
+
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">
+//                   Upload Document
+//                 </label>
+//                 <input
+//                   type="file"
+//                   accept=".jpg,.jpeg,.png,.pdf"
+//                   onChange={(e) =>
+//                     setCreateProduct({
+//                       ...createProduct,
+//                       file: e.target.files?.[0] || null,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                 />
+//                 {createProduct.file && (
+//                   <p className="mt-2 text-xs text-gray-300">
+//                     Selected: {createProduct.file.name}
+//                   </p>
+//                 )}
+//               </div>
+
+//               <div className="mt-6 flex justify-end">
+//                 <button
+//                   type="submit"
+//                   className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+//                 >
+//                   Save
+//                 </button>
+//                 <button
+//                   type="button"
+//                   className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+//                   onClick={handleModalClose1}
+//                 >
+//                   Cancel
+//                 </button>
+//               </div>
+//             </form>
+//           </motion.div>
+//         </div>
+//       )}
+
+//       {/* Delete Modal */}
+//       {isModalOpen2 && (
+//         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+//           <motion.div
+//             className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+//             initial={{ opacity: 0, y: -50 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             transition={{ duration: 0.3 }}
+//           >
+//             <h2 className="text-lg font-semibold text-white">
+//               Delete Meta Expense
+//             </h2>
+
+//             {role === "superAdmin" ? (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Status</label>
+//                 <select
+//                   value={currentProduct.status || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       status: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+//                   required
+//                 >
+//                   <option value="">Select Status</option>
+//                   <option value="Approved">Approved</option>
+//                   <option value="Pending">Pending</option>
+//                 </select>
+//               </div>
+//             ) : (
+//               <div className="mt-4">
+//                 <label className="block text-sm text-white">Note:</label>
+//                 <textarea
+//                   type="text"
+//                   value={currentProduct?.note || ""}
+//                   onChange={(e) =>
+//                     setCurrentProduct({
+//                       ...currentProduct,
+//                       note: e.target.value,
+//                     })
+//                   }
+//                   className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+//                 />
+//               </div>
+//             )}
+
+//             <div className="mt-6 flex justify-end">
+//               <button
+//                 className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+//                 onClick={handleUpdateProduct1}
+//               >
+//                 Save
+//               </button>
+//               <button
+//                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+//                 onClick={handleModalClose2}
+//               >
+//                 Cancel
+//               </button>
+//             </div>
+//           </motion.div>
+//         </div>
+//       )}
+//     </motion.div>
+//   );
+// };
+
+// export default ReceiveableTable;
+
 import { motion } from "framer-motion";
 import { Edit, Notebook, Plus, Trash2, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -67,8 +920,7 @@ const ReceiveableTable = () => {
       limit: itemsPerPage,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      searchTerm: filterName?.trim() || undefined, // ✅ name filter
-      // যদি backend "name" নেয়, তাহলে: name: filterName?.trim() || undefined
+      searchTerm: filterName?.trim() || undefined,
     };
 
     Object.keys(args).forEach((k) => {
@@ -106,10 +958,11 @@ const ReceiveableTable = () => {
       note: rp.note ?? "",
       status: rp.status ?? "",
       userId: userId,
-      file: null, // ✅ new upload
+      file: null,
     });
     setIsModalOpen(true);
   };
+
   const handleEditClick1 = (rp) => {
     setCurrentProduct({
       ...rp,
@@ -119,7 +972,7 @@ const ReceiveableTable = () => {
       note: rp.note ?? "",
       status: rp.status ?? "",
       userId: userId,
-      file: null, // ✅ new upload
+      file: null,
     });
     setIsModalOpen2(true);
   };
@@ -137,7 +990,6 @@ const ReceiveableTable = () => {
       formData.append("name", createProduct.name.trim());
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
-
       if (createProduct.file) formData.append("file", createProduct.file);
 
       const res = await insertReceiveable(formData).unwrap();
@@ -165,7 +1017,6 @@ const ReceiveableTable = () => {
     if (!rowId) return toast.error("Invalid item!");
 
     try {
-      // ✅ if file exists -> FormData
       if (currentProduct?.file instanceof File) {
         const fd = new FormData();
         fd.append("name", currentProduct?.name?.trim() || "");
@@ -185,7 +1036,6 @@ const ReceiveableTable = () => {
         return;
       }
 
-      // ✅ no file -> JSON
       const payload = {
         name: currentProduct?.name?.trim() || "",
         remarks: currentProduct?.remarks?.trim() || "",
@@ -198,6 +1048,7 @@ const ReceiveableTable = () => {
         id: rowId,
         data: payload,
       }).unwrap();
+
       if (res?.success) {
         toast.success("Updated!");
         setIsModalOpen(false);
@@ -207,12 +1058,12 @@ const ReceiveableTable = () => {
       toast.error(err?.data?.message || "Update failed!");
     }
   };
+
   const handleUpdateProduct1 = async () => {
     const rowId = currentProduct?.Id ?? currentProduct?.id;
     if (!rowId) return toast.error("Invalid item!");
 
     try {
-      // ✅ if file exists -> FormData
       if (currentProduct?.file instanceof File) {
         const fd = new FormData();
         fd.append("name", currentProduct?.name?.trim() || "");
@@ -232,7 +1083,6 @@ const ReceiveableTable = () => {
         return;
       }
 
-      // ✅ no file -> JSON
       const payload = {
         name: currentProduct?.name?.trim() || "",
         remarks: currentProduct?.remarks?.trim() || "",
@@ -245,9 +1095,10 @@ const ReceiveableTable = () => {
         id: rowId,
         data: payload,
       }).unwrap();
+
       if (res?.success) {
         toast.success("Updated!");
-        setIsModalOpen(false);
+        setIsModalOpen2(false);
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
     } catch (err) {
@@ -294,107 +1145,112 @@ const ReceiveableTable = () => {
 
   return (
     <motion.div
-      className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-sm rounded-xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      {/* Add Button */}
+      {/* Header */}
       <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={handleAddProduct}
-          className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
+          className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition w-full sm:w-auto"
         >
           Add <Plus size={18} className="ml-2" />
         </button>
 
-        <div className="flex items-center justify-between sm:justify-end gap-3 rounded-md border border-gray-700 bg-gray-800/60 px-4 py-2">
-          <div className="flex items-center gap-2 text-gray-300">
-            <TrendingUp size={18} className="text-amber-400" />
-            <span className="text-sm">Total Receiveable Amount</span>
+        <div className="flex items-center justify-between sm:justify-end gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 text-slate-700">
+            <TrendingUp size={18} className="text-amber-500" />
+            <span className="text-sm font-medium">
+              Total Receiveable Amount
+            </span>
           </div>
 
-          <span className="text-white font-semibold tabular-nums">
+          <span className="text-slate-900 font-semibold tabular-nums">
             {isLoading ? "Loading..." : data?.meta?.totalAmount}
           </span>
         </div>
       </div>
 
-      {/* ✅ Filters: start + end + name */}
+      {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
         <div className="flex flex-col">
-          <label className="text-sm text-gray-400 mb-1">From</label>
+          <label className="text-sm text-slate-600 mb-1">From</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+            className="px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-gray-400 mb-1">To</label>
+          <label className="text-sm text-slate-600 mb-1">To</label>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
+            className="px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
           />
         </div>
 
-        <div className="flex items-center justify-center mt-6">
+        <div className="flex items-center md:mt-6">
           <input
             type="text"
             value={filterName}
             onChange={(e) => setFilterName(e.target.value)}
             placeholder="Search by name..."
-            className="border border-gray-300 rounded p-2 text-black bg-white w-full"
+            className="border border-slate-300 rounded-lg px-3 py-2 text-slate-900 bg-white w-full outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
           />
         </div>
 
         <button
-          className="flex items-center mt-6 bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
+          className="flex items-center md:mt-6 bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 px-4 py-2 rounded-lg w-36 justify-center mx-auto"
           onClick={clearFilters}
+          type="button"
         >
           Clear Filters
         </button>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead>
+      <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <table className="min-w-full divide-y divide-slate-200 bg-white">
+          <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Document
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Remarks
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Amount
               </th>
-
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-700">
+          <tbody className="divide-y divide-slate-200">
             {products.map((rp) => {
               const rowId = rp.Id ?? rp.id;
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `https://api.digitalever.com.bd/${safePath}`
+                ? ` http://localhost:5000/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -408,12 +1264,13 @@ const ReceiveableTable = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3 }}
+                  className="hover:bg-slate-50"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.name}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {!safePath ? (
                       "-"
                     ) : isImage ? (
@@ -421,7 +1278,7 @@ const ReceiveableTable = () => {
                         <img
                           src={fileUrl}
                           alt="document"
-                          className="h-12 w-12 object-cover rounded border border-gray-600 hover:opacity-80"
+                          className="h-12 w-12 object-cover rounded border border-slate-200 hover:opacity-80"
                           onError={(e) => {
                             e.currentTarget.style.display = "none";
                           }}
@@ -441,53 +1298,59 @@ const ReceiveableTable = () => {
                         href={fileUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-indigo-400 underline"
+                        className="text-indigo-600 underline"
                       >
                         Open File
                       </a>
                     )}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.remarks || "-"}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
                     {Number(rp.amount || 0).toFixed(2)}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.status}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     {rp.note && (
                       <button
-                        className="text-white-600 hover:text-white-900"
+                        className="text-slate-500 hover:text-slate-800 mr-2"
                         title={rp.note}
+                        type="button"
                       >
                         <Notebook size={18} />
                       </button>
                     )}
+
                     <button
                       onClick={() => handleEditClick(rp)}
-                      className="text-indigo-600 hover:text-indigo-900"
+                      className="text-indigo-600 hover:text-indigo-800"
+                      type="button"
                     >
                       <Edit size={18} />
                     </button>
+
                     {role === "superAdmin" ||
                     role === "admin" ||
                     rp.status === "Approved" ? (
                       <button
                         onClick={() => handleDeleteProduct(rowId)}
-                        className="text-red-600 hover:text-red-900 ms-4"
+                        className="text-red-600 hover:text-red-800 ms-4"
+                        type="button"
                       >
                         <Trash2 size={18} />
                       </button>
                     ) : (
                       <button
                         onClick={() => handleEditClick1(rp)}
-                        className="text-red-600 hover:text-red-900 ms-4"
+                        className="text-red-600 hover:text-red-800 ms-4"
+                        type="button"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -501,7 +1364,7 @@ const ReceiveableTable = () => {
               <tr>
                 <td
                   colSpan={5}
-                  className="px-6 py-6 text-center text-sm text-gray-300"
+                  className="px-6 py-6 text-center text-sm text-slate-600"
                 >
                   No data found
                 </td>
@@ -516,7 +1379,8 @@ const ReceiveableTable = () => {
         <button
           onClick={handlePreviousSet}
           disabled={startPage === 1}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
+          type="button"
         >
           Prev
         </button>
@@ -527,11 +1391,12 @@ const ReceiveableTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-3 py-2 text-black rounded-md ${
+              className={`px-3 py-2 rounded-md ${
                 pageNum === currentPage
-                  ? "bg-white"
-                  : "bg-indigo-500 hover:bg-indigo-400"
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               }`}
+              type="button"
             >
               {pageNum}
             </button>
@@ -541,7 +1406,8 @@ const ReceiveableTable = () => {
         <button
           onClick={handleNextSet}
           disabled={endPage === totalPages}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
+          type="button"
         >
           Next
         </button>
@@ -549,29 +1415,32 @@ const ReceiveableTable = () => {
 
       {/* ✅ Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            className="bg-white rounded-xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">Edit</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Edit</h2>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Company Name</label>
+              <label className="block text-sm text-slate-700">
+                Company Name
+              </label>
               <input
                 type="text"
                 value={currentProduct?.name || ""}
                 onChange={(e) =>
                   setCurrentProduct({ ...currentProduct, name: e.target.value })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
               />
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Amount:</label>
+              <label className="block text-sm text-slate-700">Amount:</label>
               <input
                 type="number"
                 step="0.01"
@@ -582,12 +1451,13 @@ const ReceiveableTable = () => {
                     amount: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
               />
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm text-white">Remarks</label>
+              <label className="block text-sm text-slate-700">Remarks</label>
               <input
                 type="text"
                 value={currentProduct?.remarks || ""}
@@ -597,22 +1467,24 @@ const ReceiveableTable = () => {
                     remarks: e.target.value,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
               />
             </div>
 
             {role === "superAdmin" ? (
               <div className="mt-4">
-                <label className="block text-sm text-white">Status</label>
+                <label className="block text-sm text-slate-700">Status</label>
                 <select
-                  value={currentProduct.status || ""}
+                  value={currentProduct?.status || ""}
                   onChange={(e) =>
                     setCurrentProduct({
                       ...currentProduct,
                       status: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                   required
                 >
                   <option value="">Select Status</option>
@@ -622,9 +1494,8 @@ const ReceiveableTable = () => {
               </div>
             ) : (
               <div className="mt-4">
-                <label className="block text-sm text-white">Note:</label>
+                <label className="block text-sm text-slate-700">Note:</label>
                 <textarea
-                  type="text"
                   value={currentProduct?.note || ""}
                   onChange={(e) =>
                     setCurrentProduct({
@@ -632,13 +1503,14 @@ const ReceiveableTable = () => {
                       note: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                 />
               </div>
             )}
 
             <div className="mt-4">
-              <label className="block text-sm text-white">
+              <label className="block text-sm text-slate-700">
                 Upload Document
               </label>
               <input
@@ -650,10 +1522,10 @@ const ReceiveableTable = () => {
                     file: e.target.files?.[0] || null,
                   })
                 }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white"
               />
               {currentProduct?.file && (
-                <p className="mt-2 text-xs text-gray-300">
+                <p className="mt-2 text-xs text-slate-500">
                   Selected: {currentProduct.file.name}
                 </p>
               )}
@@ -661,14 +1533,16 @@ const ReceiveableTable = () => {
 
             <div className="mt-6 flex justify-end">
               <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg mr-2"
                 onClick={handleUpdateProduct}
+                type="button"
               >
                 Save
               </button>
               <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                className="bg-slate-200 hover:bg-slate-300 text-slate-900 px-4 py-2 rounded-lg"
                 onClick={handleModalClose}
+                type="button"
               >
                 Cancel
               </button>
@@ -679,33 +1553,36 @@ const ReceiveableTable = () => {
 
       {/* ✅ Add Modal */}
       {isModalOpen1 && (
-        <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black/40">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            className="bg-white rounded-xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-slate-900">
               Add Receiveable Information
             </h2>
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
-                <label className="block text-sm text-white">Company Name</label>
+                <label className="block text-sm text-slate-700">
+                  Company Name
+                </label>
                 <input
                   type="text"
                   value={createProduct.name}
                   onChange={(e) =>
                     setCreateProduct({ ...createProduct, name: e.target.value })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                   required
                 />
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm text-white">Remarks</label>
+                <label className="block text-sm text-slate-700">Remarks</label>
                 <input
                   type="text"
                   value={createProduct.remarks}
@@ -715,13 +1592,14 @@ const ReceiveableTable = () => {
                       remarks: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                   required
                 />
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm text-white">Amount</label>
+                <label className="block text-sm text-slate-700">Amount</label>
                 <input
                   type="number"
                   step="0.01"
@@ -732,13 +1610,14 @@ const ReceiveableTable = () => {
                       amount: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                   required
                 />
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm text-white">
+                <label className="block text-sm text-slate-700">
                   Upload Document
                 </label>
                 <input
@@ -750,10 +1629,10 @@ const ReceiveableTable = () => {
                       file: e.target.files?.[0] || null,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white"
                 />
                 {createProduct.file && (
-                  <p className="mt-2 text-xs text-gray-300">
+                  <p className="mt-2 text-xs text-slate-500">
                     Selected: {createProduct.file.name}
                   </p>
                 )}
@@ -762,13 +1641,13 @@ const ReceiveableTable = () => {
               <div className="mt-6 flex justify-end">
                 <button
                   type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg mr-2"
                 >
                   Save
                 </button>
                 <button
                   type="button"
-                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-900 px-4 py-2 rounded-lg"
                   onClick={handleModalClose1}
                 >
                   Cancel
@@ -781,29 +1660,30 @@ const ReceiveableTable = () => {
 
       {/* Delete Modal */}
       {isModalOpen2 && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40">
           <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
+            className="bg-white rounded-xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-slate-900">
               Delete Meta Expense
             </h2>
 
             {role === "superAdmin" ? (
               <div className="mt-4">
-                <label className="block text-sm text-white">Status</label>
+                <label className="block text-sm text-slate-700">Status</label>
                 <select
-                  value={currentProduct.status || ""}
+                  value={currentProduct?.status || ""}
                   onChange={(e) =>
                     setCurrentProduct({
                       ...currentProduct,
                       status: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black bg-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                   required
                 >
                   <option value="">Select Status</option>
@@ -813,9 +1693,8 @@ const ReceiveableTable = () => {
               </div>
             ) : (
               <div className="mt-4">
-                <label className="block text-sm text-white">Note:</label>
+                <label className="block text-sm text-slate-700">Note:</label>
                 <textarea
-                  type="text"
                   value={currentProduct?.note || ""}
                   onChange={(e) =>
                     setCurrentProduct({
@@ -823,21 +1702,24 @@ const ReceiveableTable = () => {
                       note: e.target.value,
                     })
                   }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-white"
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
                 />
               </div>
             )}
 
             <div className="mt-6 flex justify-end">
               <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg mr-2"
                 onClick={handleUpdateProduct1}
+                type="button"
               >
                 Save
               </button>
               <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                className="bg-slate-200 hover:bg-slate-300 text-slate-900 px-4 py-2 rounded-lg"
                 onClick={handleModalClose2}
+                type="button"
               >
                 Cancel
               </button>

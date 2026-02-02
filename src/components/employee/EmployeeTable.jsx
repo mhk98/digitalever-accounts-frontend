@@ -779,7 +779,7 @@
 //             }}
 //             className="px-3 py-[10px] rounded-lg bg-gray-900 border border-gray-700 text-gray-100"
 //           >
-//             <option value={1}>1</option>
+//
 //             <option value={10}>10</option>
 //             <option value={20}>20</option>
 //             <option value={50}>50</option>
@@ -2709,7 +2709,6 @@ const EmployeeTable = () => {
             }}
             className="px-3 py-[10px] rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           >
-            <option value={1}>1</option>
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
@@ -2744,11 +2743,11 @@ const EmployeeTable = () => {
                 "Incentive",
                 "Holiday Days",
                 "Advance",
-                "Late (Days)",
-                "Early (Days)",
-                "Absent (Days)",
-                "Friday Absent (Days)",
-                "Unapproval Absent (Days)",
+                // "Late (Days)",
+                // "Early (Days)",
+                // "Absent (Days)",
+                // "Friday Absent (Days)",
+                // "Unapproval Absent (Days)",
                 "Total Salary",
                 "Net Salary",
                 "Note",
@@ -2804,7 +2803,7 @@ const EmployeeTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(emp.advance || 0)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(emp.late || 0)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
@@ -2818,7 +2817,7 @@ const EmployeeTable = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(emp.unapproval_absent || 0)}
-                </td>
+                </td> */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(emp.total_salary || 0).toFixed(2)}
                 </td>
