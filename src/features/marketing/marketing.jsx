@@ -48,9 +48,9 @@ export const metaApi = createApi({
     }),
 
     getAllMeta: build.query({
-      query: ({ page, limit, startDate, endDate, productId }) => ({
+      query: ({ page, limit, startDate, endDate, platform, productId }) => ({
         url: "/meta",
-        params: { page, limit, startDate, endDate, productId }, // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, platform, productId }, // Pass the page and limit as query params
       }),
       providesTags: ["meta"],
       refetchOnMountOrArgChange: true,

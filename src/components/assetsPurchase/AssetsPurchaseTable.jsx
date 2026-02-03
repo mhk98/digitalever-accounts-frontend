@@ -1200,7 +1200,7 @@ const AssetsPurchaseTable = () => {
       transition={{ delay: 0.2 }}
     >
       {/* Top actions */}
-      <div className="my-6 flex flex-wrap gap-3 items-center justify-start">
+      <div className="my-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={handleAddProduct}
@@ -1450,7 +1450,7 @@ const AssetsPurchaseTable = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+            <div className="mt-4 flex flex-col gap-3">
               <Field
                 label="Name:"
                 value={currentProduct?.name || ""}
@@ -1638,40 +1638,39 @@ const AssetsPurchaseTable = () => {
               </button>
             </div>
 
-            <form
-              onSubmit={handleCreateProduct}
-              className="grid grid-cols-1 gap-3 mt-4"
-            >
-              <Field
-                label="Name:"
-                value={createProduct.name}
-                onChange={(v) =>
-                  setCreateProduct({ ...createProduct, name: v })
-                }
-                required
-              />
+            <form onSubmit={handleCreateProduct}>
+              <div className="grid grid-cols-1 gap-3 mt-4">
+                <Field
+                  label="Name:"
+                  value={createProduct.name}
+                  onChange={(v) =>
+                    setCreateProduct({ ...createProduct, name: v })
+                  }
+                  required
+                />
 
-              <Field
-                label="Quantity:"
-                type="number"
-                step="0.01"
-                value={createProduct.quantity}
-                onChange={(v) =>
-                  setCreateProduct({ ...createProduct, quantity: v })
-                }
-                required
-              />
+                <Field
+                  label="Quantity:"
+                  type="number"
+                  step="0.01"
+                  value={createProduct.quantity}
+                  onChange={(v) =>
+                    setCreateProduct({ ...createProduct, quantity: v })
+                  }
+                  required
+                />
 
-              <Field
-                label="Price:"
-                type="number"
-                step="0.01"
-                value={createProduct.price}
-                onChange={(v) =>
-                  setCreateProduct({ ...createProduct, price: v })
-                }
-                required
-              />
+                <Field
+                  label="Price:"
+                  type="number"
+                  step="0.01"
+                  value={createProduct.price}
+                  onChange={(v) =>
+                    setCreateProduct({ ...createProduct, price: v })
+                  }
+                  required
+                />
+              </div>
 
               <div className="md:col-span-3 mt-2 flex justify-end gap-2">
                 <button

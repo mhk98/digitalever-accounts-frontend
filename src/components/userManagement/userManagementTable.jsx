@@ -954,7 +954,7 @@ const UserManagementTable = () => {
         <button
           onClick={handleAdd}
           type="button"
-          className="inline-flex h-11 px-5 items-center justify-center gap-2 rounded-xl bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700 shadow-sm"
+          className="inline-flex h-11 px-5 mt-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700 shadow-sm"
         >
           <Plus size={18} />
           Add New User
@@ -1073,7 +1073,7 @@ const UserManagementTable = () => {
 
       {/* Edit Modal */}
       {isEditOpen && currentUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 mt-16 flex items-center justify-center bg-slate-900/40 p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full max-w-2xl border border-slate-200"
             initial={{ opacity: 0, y: -30 }}

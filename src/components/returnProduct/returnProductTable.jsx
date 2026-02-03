@@ -882,7 +882,7 @@ const ReturnProductTable = () => {
 
   return (
     <motion.div
-      className="bg-white shadow-sm rounded-2xl p-6 border border-slate-200 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -962,6 +962,7 @@ const ReturnProductTable = () => {
             placeholder={receivedLoading ? "Loading..." : "Select Product"}
             isClearable
             isDisabled={receivedLoading}
+            className="text-black"
             styles={selectStyles}
           />
         </div>
@@ -1157,7 +1158,7 @@ const ReturnProductTable = () => {
 
       {/* Edit Modal */}
       {isEditOpen && currentItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -16 }}
@@ -1186,6 +1187,7 @@ const ReturnProductTable = () => {
                 placeholder={receivedLoading ? "Loading..." : "Select Product"}
                 isClearable
                 isDisabled={receivedLoading}
+                className="text-black"
                 styles={selectStyles}
               />
             </div>
@@ -1244,7 +1246,7 @@ const ReturnProductTable = () => {
                 Save
               </button>
               <button
-                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
+                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                 onClick={closeEdit}
                 type="button"
               >
@@ -1257,7 +1259,7 @@ const ReturnProductTable = () => {
 
       {/* Delete/Note Modal */}
       {isEditOpen1 && currentItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -16 }}
@@ -1287,7 +1289,7 @@ const ReturnProductTable = () => {
                 Save
               </button>
               <button
-                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
+                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                 onClick={closeEdit1}
                 type="button"
               >
@@ -1300,7 +1302,7 @@ const ReturnProductTable = () => {
 
       {/* Add Modal */}
       {isAddOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -16 }}
@@ -1332,6 +1334,7 @@ const ReturnProductTable = () => {
                   }
                   isClearable
                   isDisabled={receivedLoading}
+                  className="text-black"
                   styles={selectStyles}
                 />
               </div>
@@ -1360,7 +1363,7 @@ const ReturnProductTable = () => {
                 </button>
                 <button
                   type="button"
-                  className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
+                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                   onClick={closeAdd}
                 >
                   Cancel

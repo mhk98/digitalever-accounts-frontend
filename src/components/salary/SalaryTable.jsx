@@ -661,19 +661,19 @@ const SalaryTable = () => {
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Late Inn (Amount)
+                Late Inn (Days)
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Early Leave (Amount)
+                Early Leave (Days)
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Absent (Amount)
+                Absent (Days)
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Friday Absent (Amount)
+                Friday Absent (Days)
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Unapproval Absent (Amount)
+                Unapproval Absent (Days)
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Actions
@@ -757,7 +757,7 @@ const SalaryTable = () => {
 
       {/* Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 top-44 flex items-center justify-center  ">
           <motion.div
             className="bg-white rounded-xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
@@ -765,12 +765,12 @@ const SalaryTable = () => {
             transition={{ duration: 0.3 }}
           >
             <h2 className="text-lg font-semibold text-slate-900">
-              Edit Fine Amount
+              Edit Payroll Fine
             </h2>
 
             <div className="mt-4">
               <label className="block text-sm text-slate-700">
-                Late Inn (Amount):
+                Late Inn (Days):
               </label>
               <input
                 type="number"
@@ -789,7 +789,7 @@ const SalaryTable = () => {
 
             <div className="mt-4">
               <label className="block text-sm text-slate-700">
-                Early Leave (Amount):
+                Early Leave (Days):
               </label>
               <input
                 type="number"
@@ -808,7 +808,7 @@ const SalaryTable = () => {
 
             <div className="mt-4">
               <label className="block text-sm text-slate-700">
-                Absent (Amount):
+                Absent (Days):
               </label>
               <input
                 type="number"
@@ -827,7 +827,7 @@ const SalaryTable = () => {
 
             <div className="mt-4">
               <label className="block text-sm text-slate-700">
-                Friday Absent (Amount):
+                Friday Absent (Days):
               </label>
               <input
                 type="number"
@@ -846,7 +846,7 @@ const SalaryTable = () => {
 
             <div className="mt-4">
               <label className="block text-sm text-slate-700">
-                Unapproval Absent (Amount):
+                Unapproval Absent (Days):
               </label>
               <input
                 type="number"
@@ -885,7 +885,7 @@ const SalaryTable = () => {
 
       {/* Add Modal */}
       {isModalOpen1 && (
-        <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 top-44 z-10 flex items-center justify-center  ">
           <motion.div
             className="bg-white rounded-xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
@@ -893,13 +893,13 @@ const SalaryTable = () => {
             transition={{ duration: 0.3 }}
           >
             <h2 className="text-lg font-semibold text-slate-900">
-              Add Fine Amount
+              Add Payroll Fine
             </h2>
 
             <form onSubmit={handleCreateProduct}>
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">
-                  Late Inn (Amount):
+                  Late Inn (Days):
                 </label>
                 <input
                   type="number"
@@ -918,7 +918,7 @@ const SalaryTable = () => {
 
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">
-                  Early Leave (Amount):
+                  Early Leave (Days):
                 </label>
                 <input
                   type="number"
@@ -937,7 +937,7 @@ const SalaryTable = () => {
 
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">
-                  Absent (Amount):
+                  Absent (Days):
                 </label>
                 <input
                   type="number"
@@ -956,7 +956,7 @@ const SalaryTable = () => {
 
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">
-                  Friday Absent (Amount):
+                  Friday Absent (Days):
                 </label>
                 <input
                   type="number"
@@ -975,7 +975,7 @@ const SalaryTable = () => {
 
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">
-                  Unapproval Absent (Amount):
+                  Unapproval Absent (Days):
                 </label>
                 <input
                   type="number"

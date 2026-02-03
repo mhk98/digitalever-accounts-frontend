@@ -754,10 +754,11 @@ const TiktokTable = () => {
       return;
     }
     if (!isLoading && data) {
-      const onlyMeta = (data.data || []).filter(
-        (item) => item.platform === "Meta",
-      );
-      setProducts(onlyMeta);
+      // const onlyMeta = (data.data || []).filter(
+      //   (item) => item.platform === "Meta",
+      // );
+      // setProducts(onlyMeta);
+      setProducts(data?.data);
       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
@@ -774,7 +775,7 @@ const TiktokTable = () => {
 
   const totalMetaAmount = useMemo(() => {
     return meta
-      ?.filter((item) => item.platform === "Meta")
+      ?.filter((item) => item.platform === "Tiktok")
       .reduce((sum, item) => sum + Number(item?.amount || 0), 0);
   }, [meta]);
 
@@ -914,7 +915,7 @@ const TiktokTable = () => {
 
   return (
     <motion.div
-      className="bg-white shadow-sm rounded-2xl p-6 border border-slate-200 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -1131,7 +1132,7 @@ const TiktokTable = () => {
       </div>
       {/* Edit Modal */}
       {isModalOpen && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -20 }}
@@ -1195,7 +1196,7 @@ const TiktokTable = () => {
                 Save
               </button>
               <button
-                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
+                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                 onClick={handleModalClose}
               >
                 Cancel
@@ -1207,7 +1208,7 @@ const TiktokTable = () => {
 
       {/* Add Modal */}
       {isModalOpen1 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -20 }}
@@ -1243,7 +1244,7 @@ const TiktokTable = () => {
                 </button>
                 <button
                   type="button"
-                  className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
+                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                   onClick={handleModalClose1}
                 >
                   Cancel
@@ -1256,7 +1257,7 @@ const TiktokTable = () => {
 
       {/* Delete Modal (note/status update modal) */}
       {isModalOpen2 && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -20 }}
@@ -1306,7 +1307,7 @@ const TiktokTable = () => {
                 Save
               </button>
               <button
-                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
+                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                 onClick={handleModalClose2}
               >
                 Cancel

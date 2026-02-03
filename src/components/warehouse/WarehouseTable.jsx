@@ -544,7 +544,7 @@ const WarehouseTable = () => {
 
   return (
     <motion.div
-      className="bg-white shadow-sm rounded-2xl p-6 border border-slate-200 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -669,7 +669,7 @@ const WarehouseTable = () => {
 
       {/* Edit Modal */}
       {isModalOpen && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -20 }}
@@ -706,7 +706,7 @@ const WarehouseTable = () => {
                 Save
               </button>
               <button
-                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
+                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                 onClick={handleModalClose}
               >
                 Cancel
@@ -718,7 +718,7 @@ const WarehouseTable = () => {
 
       {/* Add Modal */}
       {isModalOpen1 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -20 }}
@@ -753,7 +753,7 @@ const WarehouseTable = () => {
                 </button>
                 <button
                   type="button"
-                  className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
+                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                   onClick={handleModalClose1}
                 >
                   Cancel

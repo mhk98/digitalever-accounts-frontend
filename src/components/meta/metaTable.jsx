@@ -656,7 +656,7 @@
 // export default MetaTable;
 
 import { motion } from "framer-motion";
-import { Edit, BarChart3, Plus, Trash2, Notebook } from "lucide-react";
+import { Edit, Plus, Trash2, Notebook, Facebook } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -756,10 +756,10 @@ const MetaTable = () => {
       return;
     }
     if (!isLoading && data) {
-      const onlyMeta = (data.data || []).filter(
-        (item) => item.platform === "Meta",
-      );
-      setProducts(onlyMeta);
+      // const onlyMeta = (data.data || []).filter(
+      //   (item) => item.platform === "Meta",
+      // );
+      setProducts(data?.data);
       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
@@ -916,7 +916,7 @@ const MetaTable = () => {
 
   return (
     <motion.div
-      className="bg-white shadow-sm rounded-2xl p-6 border border-slate-200 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -933,7 +933,7 @@ const MetaTable = () => {
 
         <div className="flex items-center justify-between sm:justify-end gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2">
           <div className="flex items-center gap-2 text-slate-700">
-            <BarChart3 size={18} className="text-indigo-600" />
+            <Facebook size={18} className="text-indigo-600" />
             <span className="text-sm font-medium">Total Meta Expense</span>
           </div>
 
@@ -1134,7 +1134,7 @@ const MetaTable = () => {
 
       {/* Edit Modal */}
       {isModalOpen && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -20 }}
@@ -1198,7 +1198,7 @@ const MetaTable = () => {
                 Save
               </button>
               <button
-                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
+                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                 onClick={handleModalClose}
               >
                 Cancel
@@ -1210,7 +1210,7 @@ const MetaTable = () => {
 
       {/* Add Modal */}
       {isModalOpen1 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -20 }}
@@ -1246,7 +1246,7 @@ const MetaTable = () => {
                 </button>
                 <button
                   type="button"
-                  className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
+                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                   onClick={handleModalClose1}
                 >
                   Cancel
@@ -1259,7 +1259,7 @@ const MetaTable = () => {
 
       {/* Delete Modal (note/status update modal) */}
       {isModalOpen2 && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -20 }}
@@ -1309,7 +1309,7 @@ const MetaTable = () => {
                 Save
               </button>
               <button
-                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl"
+                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
                 onClick={handleModalClose2}
               >
                 Cancel

@@ -513,7 +513,7 @@
 
 //         {/* Modal */}
 //         {isModalOpen && (
-//           <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+//           <div className="fixed inset-0 z-50   flex items-center justify-center p-4">
 //             <div className="w-full max-w-xl bg-gray-800 rounded-2xl shadow-lg border border-gray-100">
 //               <div className="p-5 md:p-6 border-b border-gray-100 flex items-center justify-between">
 //                 <div>
@@ -881,7 +881,7 @@ const UserProfile = () => {
 
         {/* Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50   flex items-center justify-center p-4">
             <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg border border-gray-200">
               <div className="p-5 md:p-6 border-b border-gray-200 flex items-center justify-between">
                 <div>

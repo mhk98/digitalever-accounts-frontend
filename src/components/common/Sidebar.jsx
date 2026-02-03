@@ -762,7 +762,7 @@ const SIDEBAR_ITEMS = [
   },
 
   {
-    name: "Employee",
+    name: "Payroll",
     icon: UserCog,
     color: "#22c55e",
     href: "/employee",
@@ -847,28 +847,34 @@ const SIDEBAR_ITEMS = [
         name: "Warehouse",
         icon: Warehouse,
         href: "/warehouse",
-        roles: ["superAdmin", "admin", "inventor"],
+        roles: ["superAdmin", "admin"],
       },
       {
         name: "Supplier",
         icon: Package,
         href: "/supplier",
-        roles: ["superAdmin", "admin", "inventor"],
+        roles: ["superAdmin", "admin"],
       },
       {
         name: "Product",
         icon: ShoppingBag,
         href: "/products",
-        roles: ["superAdmin", "admin", "inventor"],
+        roles: ["superAdmin", "admin"],
       },
       {
-        name: "Purchase Product",
+        name: "Purchase Requisition",
         icon: ShoppingBasket,
         href: "/purchase-product",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
-        name: "Purchase Return",
+        name: "Received Product",
+        icon: ShoppingBasket,
+        href: "/purchase-product",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Received Return Product",
         icon: RotateCcw,
         href: "/purchase-return",
         roles: ["superAdmin", "admin", "inventor"],
@@ -898,7 +904,13 @@ const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
-        name: "Damage Repair",
+        name: "Damage Repairing",
+        icon: Wrench,
+        href: "/damage-repair",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Damage Repaired",
         icon: Wrench,
         href: "/damage-repair",
         roles: ["superAdmin", "admin", "inventor"],
@@ -972,7 +984,7 @@ const SIDEBAR_ITEMS = [
     roles: ["superAdmin", "admin", "accountant"],
     children: [
       {
-        name: "Salary",
+        name: "Payroll Fine",
         icon: DollarSign,
         href: "/salary",
         roles: ["superAdmin", "admin", "accountant"],
@@ -1091,13 +1103,13 @@ const Sidebar = () => {
 
   return (
     <motion.aside
-      className="relative z-10 h-screen"
+      className="relative z-10 min-h-dvh bg-slate-50"
       animate={{ width: isSidebarOpen ? 280 : 88 }}
       transition={{ type: "spring", stiffness: 260, damping: 24 }}
       style={{ width: isSidebarOpen ? 280 : 88 }}
     >
       {/* ✅ Light dashboard sidebar shell */}
-      <div className="h-full p-4 border-r border-slate-200 bg-slate-50">
+      <div className="min-h-dvh p-4 border-r border-slate-200 bg-slate-50">
         <div className="h-full rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] flex flex-col overflow-hidden">
           {/* Header */}
           <div className="p-4 border-b border-slate-200">

@@ -1617,7 +1617,7 @@ const ConfirmOrderTable = () => {
 
   return (
     <motion.div
-      className="bg-white shadow-sm rounded-2xl p-6 border border-slate-200 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -1700,6 +1700,7 @@ const ConfirmOrderTable = () => {
             placeholder={receivedLoading ? "Loading..." : "Select Product"}
             isClearable
             isDisabled={receivedLoading}
+            className="text-black"
             styles={selectStyles}
           />
         </div>
@@ -1878,7 +1879,7 @@ const ConfirmOrderTable = () => {
 
       {/* Edit Modal */}
       {isEditOpen && currentItem && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -1907,6 +1908,7 @@ const ConfirmOrderTable = () => {
                 placeholder={receivedLoading ? "Loading..." : "Select Product"}
                 isClearable
                 isDisabled={receivedLoading}
+                className="text-black"
                 styles={selectStyles}
               />
             </div>
@@ -1922,7 +1924,7 @@ const ConfirmOrderTable = () => {
                 onChange={(e) =>
                   setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
                 }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
+                className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
                            focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
@@ -1940,7 +1942,7 @@ const ConfirmOrderTable = () => {
                       status: e.target.value,
                     }))
                   }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                  className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 >
@@ -1988,7 +1990,7 @@ const ConfirmOrderTable = () => {
 
       {/* Delete Modal (Note Only) */}
       {isEditOpen1 && currentItem && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -2032,7 +2034,7 @@ const ConfirmOrderTable = () => {
 
       {/* Add Modal */}
       {isAddOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -2066,6 +2068,7 @@ const ConfirmOrderTable = () => {
                   }
                   isClearable
                   isDisabled={receivedLoading}
+                  className="text-black"
                   styles={selectStyles}
                 />
               </div>
@@ -2084,7 +2087,7 @@ const ConfirmOrderTable = () => {
                       quantity: e.target.value,
                     }))
                   }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
+                  className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 />

@@ -2131,7 +2131,7 @@ const CashInOutTable = () => {
 
   return (
     <motion.div
-      className="bg-white shadow-sm rounded-2xl p-6 border border-slate-200 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -2478,7 +2478,7 @@ const CashInOutTable = () => {
 
       {/* ✅ Edit Modal (Light) */}
       {isModalOpen && currentProduct && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -2784,7 +2784,7 @@ const CashInOutTable = () => {
 
       {/* ✅ Note/Status Modal (Light) */}
       {isModalOpen2 && currentProduct && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -2861,7 +2861,7 @@ const CashInOutTable = () => {
 
       {/* ✅ Add Modal (Light) */}
       {isModalOpen1 && (
-        <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-10 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}

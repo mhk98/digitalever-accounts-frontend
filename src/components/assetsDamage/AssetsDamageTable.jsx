@@ -817,7 +817,7 @@
 // export default AssetsDamageTable;
 
 import { motion } from "framer-motion";
-import { Edit, Notebook, Plus, ShoppingBasket, Trash2, X } from "lucide-react";
+import { Edit, Notebook, Plus, Trash2, Wrench, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -1181,7 +1181,7 @@ const AssetsDamageTable = () => {
       transition={{ delay: 0.2 }}
     >
       {/* Add Button + Total */}
-      <div className="my-6 flex flex-wrap gap-3 items-center justify-start">
+      <div className="my-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={handleAddProduct}
@@ -1192,7 +1192,7 @@ const AssetsDamageTable = () => {
 
         <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2">
           <div className="flex items-center gap-2 text-slate-700">
-            <ShoppingBasket size={18} className="text-amber-500" />
+            <Wrench size={18} className="text-amber-500" />
             <span className="text-sm">Total Damage</span>
           </div>
 

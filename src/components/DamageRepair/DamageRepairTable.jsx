@@ -1612,7 +1612,7 @@ const DamageRepairTable = () => {
 
   return (
     <motion.div
-      className="bg-white shadow-sm rounded-2xl p-6 border border-slate-200 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -1696,6 +1696,7 @@ const DamageRepairTable = () => {
             isClearable
             isDisabled={receivedLoading}
             styles={selectStyles}
+            className="text-black"
           />
         </div>
 
@@ -1714,7 +1715,10 @@ const DamageRepairTable = () => {
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Date
+                Created
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Updated
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Product
@@ -1730,6 +1734,9 @@ const DamageRepairTable = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Sale Price
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Condition
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Status
@@ -1754,6 +1761,9 @@ const DamageRepairTable = () => {
                     ? new Date(rp.createdAt).toLocaleDateString()
                     : "-"}
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                  {rp.createdAt ? new Date(rp.edAt).toLocaleDateString() : "-"}
+                </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                   {resolveProductName(rp)}
@@ -1775,6 +1785,9 @@ const DamageRepairTable = () => {
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td>
 
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  Reparing
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp.status || "-"}
                 </td>
@@ -1871,7 +1884,7 @@ const DamageRepairTable = () => {
 
       {/* Edit Modal */}
       {isEditOpen && currentItem && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -1901,6 +1914,7 @@ const DamageRepairTable = () => {
                 isClearable
                 isDisabled={receivedLoading}
                 styles={selectStyles}
+                className="text-black"
               />
             </div>
 
@@ -1915,7 +1929,7 @@ const DamageRepairTable = () => {
                 onChange={(e) =>
                   setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
                 }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
+                className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
                            focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
@@ -1933,7 +1947,7 @@ const DamageRepairTable = () => {
                       status: e.target.value,
                     }))
                   }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                  className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 >
@@ -1978,7 +1992,7 @@ const DamageRepairTable = () => {
 
       {/* Note Modal */}
       {isEditOpen1 && currentItem && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -2019,7 +2033,7 @@ const DamageRepairTable = () => {
 
       {/* Add Modal */}
       {isAddOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -2054,6 +2068,7 @@ const DamageRepairTable = () => {
                   isClearable
                   isDisabled={receivedLoading}
                   styles={selectStyles}
+                  className="text-black"
                 />
               </div>
 
@@ -2068,7 +2083,7 @@ const DamageRepairTable = () => {
                   onChange={(e) =>
                     setCreateForm((p) => ({ ...p, quantity: e.target.value }))
                   }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
+                  className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 />

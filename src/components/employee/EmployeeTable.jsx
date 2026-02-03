@@ -2042,12 +2042,17 @@ const EmployeeTable = () => {
     const holiday_salary = perDay * holiday_days;
     const total_salary = basic_salary + holiday_salary + incentive;
 
-    const lateCut = late * (Number(fine.late) || 0);
-    const earlyLeaveCut = early_leave * (Number(fine.early_leave) || 0);
-    const absentCut = absent * (Number(fine.absent) || 0);
-    const fridayAbsentCut = friday_absent * (Number(fine.friday_absent) || 0);
+    const lateAbsentCount = Math.floor(late / 3);
+    const earlyAbsentCount = Math.floor(early_leave / 3);
+
+    const lateCut = lateAbsentCount * (Number(fine.late) * perDay);
+    const earlyLeaveCut =
+      earlyAbsentCount * (Number(fine.early_leave) * perDay);
+    const absentCut = absent * (Number(fine.absent) * perDay);
+    const fridayAbsentCut =
+      friday_absent * (Number(fine.friday_absent) * perDay);
     const unapprovalAbsentCut =
-      unapproval_absent * (Number(fine.unapproval_absent) || 0);
+      unapproval_absent * (Number(fine.unapproval_absent) * perDay);
 
     const totalCutAmount =
       lateCut +
@@ -2914,7 +2919,7 @@ const EmployeeTable = () => {
 
       {/* -------------------- Edit Modal -------------------- */}
       {isEditModalOpen && currentEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 top-52 flex items-center justify-center bg-slate-900/40 p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-3/4 lg:w-2/3 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
@@ -3186,7 +3191,7 @@ const EmployeeTable = () => {
 
       {/* -------------------- Add Modal -------------------- */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 top-48 flex items-center justify-center bg-slate-900/40 p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-3/4 lg:w-3/4 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
