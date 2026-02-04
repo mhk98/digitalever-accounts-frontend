@@ -864,7 +864,7 @@ const SIDEBAR_ITEMS = [
       {
         name: "Purchase Requisition",
         icon: ShoppingBasket,
-        href: "/purchase-product",
+        href: "//purchase-requisition",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
@@ -912,7 +912,7 @@ const SIDEBAR_ITEMS = [
       {
         name: "Damage Repaired",
         icon: Wrench,
-        href: "/damage-repair",
+        href: "/damage-repaired",
         roles: ["superAdmin", "admin", "inventor"],
       },
     ],

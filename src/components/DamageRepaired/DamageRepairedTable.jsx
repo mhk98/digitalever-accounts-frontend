@@ -589,7 +589,7 @@
 //   useUpdateDamageRepairMutation,
 // } from "../../features/damageRepair/damageRepair";
 
-// const DamageRepairTable = () => {
+// const DamageRepairedTable = () => {
 //   const [isEditOpen, setIsEditOpen] = useState(false);
 //   const [isEditOpen1, setIsEditOpen1] = useState(false);
 //   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -1308,23 +1308,22 @@
 //   );
 // };
 
-// export default DamageRepairTable;
+// export default DamageRepairedTable;
 
 import { motion } from "framer-motion";
 import { Edit, Notebook, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
-
-import { useGetAllDamageProductWithoutQueryQuery } from "../../features/damageProduct/damageProduct";
+import { useGetAllDamageRepairWithoutQueryQuery } from "../../features/damageRepair/damageRepair";
 import {
-  useDeleteDamageRepairMutation,
-  useGetAllDamageRepairQuery,
-  useInsertDamageRepairMutation,
-  useUpdateDamageRepairMutation,
-} from "../../features/damageRepair/damageRepair";
+  useDeleteDamageRepairedMutation,
+  useGetAllDamageRepairedQuery,
+  useInsertDamageRepairedMutation,
+  useUpdateDamageRepairedMutation,
+} from "../../features/damageRepaired/damageRepaired";
 
-const DamageRepairTable = () => {
+const DamageRepairedTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isEditOpen1, setIsEditOpen1] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -1358,7 +1357,7 @@ const DamageRepairTable = () => {
     isLoading: receivedLoading,
     isError: receivedError,
     error: receivedErrObj,
-  } = useGetAllDamageProductWithoutQueryQuery();
+  } = useGetAllDamageRepairWithoutQueryQuery();
 
   const receivedData = receivedRes?.data || [];
 
@@ -1425,7 +1424,7 @@ const DamageRepairTable = () => {
   };
 
   const { data, isLoading, isError, error, refetch } =
-    useGetAllDamageRepairQuery(queryArgs);
+    useGetAllDamageRepairedQuery(queryArgs);
 
   useEffect(() => {
     if (isError) console.error("DamageRepair fetch error:", error);
@@ -1487,9 +1486,9 @@ const DamageRepairTable = () => {
   };
 
   // mutations
-  const [insertDamageRepair] = useInsertDamageRepairMutation();
-  const [updateDamageRepair] = useUpdateDamageRepairMutation();
-  const [deleteDamageRepair] = useDeleteDamageRepairMutation();
+  const [insertDamageRepaired] = useInsertDamageRepairedMutation();
+  const [updateDamageRepaired] = useUpdateDamageRepairedMutation();
+  const [deleteDamageRepaired] = useDeleteDamageRepairedMutation();
 
   // create
   const handleCreate = async (e) => {
@@ -1506,9 +1505,9 @@ const DamageRepairTable = () => {
         remarks: createForm.remarks,
       };
 
-      const res = await insertDamageRepair(payload).unwrap();
+      const res = await insertDamageRepaired(payload).unwrap();
       if (res?.success) {
-        toast.success("Successfully created!");
+        toast.success("Created!");
         setCreateForm({ receivedId: "", quantity: "" });
         closeAdd();
         refetch?.();
@@ -1528,13 +1527,13 @@ const DamageRepairTable = () => {
     try {
       const payload = {
         note: currentItem.note,
-        status: currentItem.status,
         remarks: currentItem.remarks,
+        status: currentItem.status,
         quantity: Number(currentItem.quantity),
         receivedId: Number(currentItem.receivedId),
       };
 
-      const res = await updateDamageRepair({
+      const res = await updateDamageRepaired({
         id: currentItem.Id,
         data: payload,
       }).unwrap();
@@ -1561,7 +1560,7 @@ const DamageRepairTable = () => {
         receivedId: Number(currentItem.receivedId),
       };
 
-      const res = await updateDamageRepair({
+      const res = await updateDamageRepaired({
         id: currentItem.Id,
         data: payload,
       }).unwrap();
@@ -1581,7 +1580,7 @@ const DamageRepairTable = () => {
     if (!window.confirm("Do you want to delete this item?")) return;
 
     try {
-      const res = await deleteDamageRepair(id).unwrap();
+      const res = await deleteDamageRepaired(id).unwrap();
       if (res?.success) {
         toast.success("Deleted!");
         refetch?.();
@@ -1954,6 +1953,7 @@ const DamageRepairTable = () => {
                 required
               />
             </div>
+
             {role === "superAdmin" || role === "admin" ? (
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
@@ -2148,4 +2148,4 @@ const DamageRepairTable = () => {
   );
 };
 
-export default DamageRepairTable;
+export default DamageRepairedTable;

@@ -1,47 +1,47 @@
 import { baseApi } from "../baseApi/api";
 
-export const damageRepairApi = baseApi.injectEndpoints({
+export const damageRepairedApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    insertDamageRepair: build.mutation({
+    insertDamageRepaired: build.mutation({
       query: (data) => ({
-        url: "/damage-repair/create",
+        url: "/damage-repaired/create",
         method: "POST",
         body: data,
       }),
       invalidatesTags: [
-        { type: "DamageRepair", id: "LIST" },
+        { type: "DamageRepaired", id: "LIST" },
         { type: "DamageProduct", id: "LIST" }, // ✅ receive stock affected
       ],
     }),
 
-    deleteDamageRepair: build.mutation({
+    deleteDamageRepaired: build.mutation({
       query: (id) => ({
-        url: `/damage-repair/${id}`,
+        url: `/damage-repaired/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: (res, err, id) => [
-        { type: "DamageRepair", id },
-        { type: "DamageRepair", id: "LIST" },
+        { type: "DamageRepaired", id },
+        { type: "DamageRepaired", id: "LIST" },
 
         { type: "DamageProduct", id: "LIST" }, // ✅ stock return/update
       ],
     }),
 
-    updateDamageRepair: build.mutation({
+    updateDamageRepaired: build.mutation({
       query: ({ id, data }) => ({
-        url: `/damage-repair/${id}`,
+        url: `/damage-repaired/${id}`,
         method: "PATCH",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [
-        { type: "DamageRepair", id: arg.id },
-        { type: "DamageRepair", id: "LIST" },
+        { type: "DamageRepaired", id: arg.id },
+        { type: "DamageRepaired", id: "LIST" },
 
         { type: "DamageProduct", id: "LIST" }, // ✅ if update changes qty/status
       ],
     }),
 
-    getAllDamageRepair: build.query({
+    getAllDamageRepaired: build.query({
       query: (arg = {}) => {
         const { page, limit, startDate, endDate, name, searchTerm } = arg;
         const params = { page, limit, startDate, endDate, name, searchTerm };
@@ -51,33 +51,33 @@ export const damageRepairApi = baseApi.injectEndpoints({
             delete params[k];
         });
 
-        return { url: "/damage-repair/", params };
+        return { url: "/damage-repaired/", params };
       },
       providesTags: (result) =>
         result?.data
           ? [
-              { type: "DamageRepair", id: "LIST" },
+              { type: "DamageRepaired", id: "LIST" },
               ...result.data.map((r) => ({
-                type: "DamageRepair",
+                type: "DamageRepaired",
                 id: r.Id,
               })),
             ]
-          : [{ type: "DamageRepair", id: "LIST" }],
+          : [{ type: "DamageRepaired", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),
 
-    getAllDamageRepairWithoutQuery: build.query({
-      query: () => ({ url: "/damage-repair/all" }),
-      providesTags: [{ type: "DamageRepair", id: "LIST" }],
+    getAllDamageRepairedWithoutQuery: build.query({
+      query: () => ({ url: "/damage-repaired/all" }),
+      providesTags: [{ type: "DamageRepaired", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),
   }),
 });
 
 export const {
-  useInsertDamageRepairMutation,
-  useGetAllDamageRepairQuery,
-  useDeleteDamageRepairMutation,
-  useUpdateDamageRepairMutation,
-  useGetAllDamageRepairWithoutQueryQuery,
-} = damageRepairApi;
+  useInsertDamageRepairedMutation,
+  useGetAllDamageRepairedQuery,
+  useDeleteDamageRepairedMutation,
+  useUpdateDamageRepairedMutation,
+  useGetAllDamageRepairedWithoutQueryQuery,
+} = damageRepairedApi;

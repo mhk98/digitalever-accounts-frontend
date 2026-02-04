@@ -99,7 +99,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 
 import { authApi } from "../features/auth/auth";
-import { receivedProductApi } from "../features/receivedProduct/receivedProduct";
 import { inTransitProductApi } from "../features/inTransitProduct/inTransitProduct";
 import { returnProductApi } from "../features/returnProduct/returnProduct";
 import { metaApi } from "../features/marketing/marketing";
@@ -125,10 +124,14 @@ import { wirehouseApi } from "../features/wirehouse/wirehouse";
 import { salaryApi } from "../features/salary/salary";
 import { logoApi } from "../features/logo/logo";
 import { damageRepairApi } from "../features/damageRepair/damageRepair";
+import { damageRepairedApi } from "../features/damageRepaired/damageRepaired";
+import { purchaseRequisitionApi } from "../features/purchaseRequisition/purchaseRequisition";
+import { receivedProductApi } from "../features/receivedProduct/receivedProduct";
 
 // ✅ 1) Collect all apis once
 const apis = [
   productApi,
+  purchaseRequisitionApi,
   receivedProductApi,
   inTransitProductApi,
   returnProductApi,
@@ -154,6 +157,7 @@ const apis = [
   salaryApi,
   logoApi,
   damageRepairApi,
+  damageRepairedApi,
   authApi,
 ];
 

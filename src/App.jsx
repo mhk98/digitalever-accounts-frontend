@@ -38,6 +38,8 @@ import NotificationPage from "./pages/NotificationPage";
 import SalaryPage from "./pages/SalaryPage";
 import LogoPage from "./pages/LogoPage";
 import DamageRepairPage from "./pages/DamageRepairPage";
+import DamageRepairedPage from "./pages/DamageRepairedPage";
+import PurchaseRequisitionPage from "./pages/purchaseRequisitionPage";
 
 function App() {
   return (
@@ -90,6 +92,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <ProductsPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/purchase-requisition"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <PurchaseRequisitionPage />
                   </SidebarLayout>
                 </RequireAuth>
               }
@@ -150,6 +162,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <DamageRepairPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/damage-repaired"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <DamageRepairedPage />
                   </SidebarLayout>
                 </RequireAuth>
               }
