@@ -1343,6 +1343,7 @@ const IntransiteProductTable = () => {
   const [createForm, setCreateForm] = useState({
     receivedId: "",
     quantity: "",
+    date: new Date().toISOString().slice(0, 10),
   });
 
   const [rows, setRows] = useState([]);
@@ -1474,6 +1475,7 @@ const IntransiteProductTable = () => {
       quantity: rp.quantity ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
+      date: rp.date ?? "",
       userId,
     });
     setIsEditOpen(true);
@@ -1518,6 +1520,7 @@ const IntransiteProductTable = () => {
       const payload = {
         receivedId: Number(createForm.receivedId),
         quantity: Number(createForm.quantity),
+        date: createForm.date,
       };
 
       const res = await insertInTransitProduct(payload).unwrap();
@@ -1543,6 +1546,7 @@ const IntransiteProductTable = () => {
       const payload = {
         note: currentItem.note,
         status: currentItem.status,
+        date: currentItem.date,
         quantity: Number(currentItem.quantity),
         receivedId: Number(currentItem.receivedId),
         userId,
@@ -1953,7 +1957,18 @@ const IntransiteProductTable = () => {
                 styles={selectStyles}
               />
             </div>
-
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Date</label>
+              <input
+                type="date"
+                value={currentItem?.date || ""}
+                onChange={(e) =>
+                  setCurrentItem((p) => ({ ...p, date: e.target.value }))
+                }
+                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Quantity</label>
               <input
@@ -2098,6 +2113,18 @@ const IntransiteProductTable = () => {
                   className="text-black"
                   isDisabled={receivedLoading}
                   styles={selectStyles}
+                />
+              </div>
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Date</label>
+                <input
+                  type="date"
+                  value={createForm?.date || ""}
+                  onChange={(e) =>
+                    setCreateForm((p) => ({ ...p, date: e.target.value }))
+                  }
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
               </div>
 

@@ -845,6 +845,7 @@ const ReceivedProductTable = () => {
   const [createProduct, setCreateProduct] = useState({
     productId: "",
     quantity: "",
+    date: new Date().toISOString().slice(0, 10),
   });
 
   const [rows, setRows] = useState([]);
@@ -1005,6 +1006,7 @@ const ReceivedProductTable = () => {
       productId: rp.productId ? String(rp.productId) : "",
       quantity: rp.quantity ?? "",
       supplier: rp.supplier ?? "",
+      date: rp.date ?? "",
       userId,
     });
     setIsModalOpen(true);
@@ -1028,6 +1030,7 @@ const ReceivedProductTable = () => {
         quantity: Number(currentProduct.quantity),
         note: currentProduct.note,
         status: currentProduct.status,
+        date: currentProduct.date,
         userId,
       };
 
@@ -1089,6 +1092,8 @@ const ReceivedProductTable = () => {
       const payload = {
         productId: Number(createProduct.productId),
         quantity: Number(createProduct.quantity),
+        date: createProduct.date,
+        note: createProduct.note,
       };
 
       const res = await insertReceivedProduct(payload).unwrap();
@@ -1452,7 +1457,18 @@ const ReceivedProductTable = () => {
                 isDisabled={isLoadingAllProducts}
               />
             </div>
-
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Date</label>
+              <input
+                type="date"
+                value={currentProduct?.date || ""}
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({ ...p, date: e.target.value }))
+                }
+                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Quantity</label>
               <input
@@ -1563,7 +1579,18 @@ const ReceivedProductTable = () => {
                   isDisabled={isLoadingAllProducts}
                 />
               </div>
-
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Date</label>
+                <input
+                  type="date"
+                  value={createProduct?.date || ""}
+                  onChange={(e) =>
+                    setCreateProduct((p) => ({ ...p, date: e.target.value }))
+                  }
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">Quantity</label>
                 <input
@@ -1581,7 +1608,20 @@ const ReceivedProductTable = () => {
                   required
                 />
               </div>
-
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Note</label>
+                <textarea
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
               <div className="mt-6 flex justify-end gap-2">
                 <button
                   type="submit"

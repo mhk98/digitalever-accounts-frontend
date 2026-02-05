@@ -1340,6 +1340,7 @@ const ConfirmOrderTable = () => {
   const [createForm, setCreateForm] = useState({
     receivedId: "",
     quantity: "",
+    date: new Date().toISOString().slice(0, 10),
   });
 
   const [rows, setRows] = useState([]);
@@ -1462,6 +1463,7 @@ const ConfirmOrderTable = () => {
       quantity: rp.quantity ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
+      date: rp.date ?? "",
       userId,
     });
     setIsEditOpen(true);
@@ -1504,6 +1506,7 @@ const ConfirmOrderTable = () => {
       const payload = {
         receivedId: Number(createForm.receivedId),
         quantity: Number(createForm.quantity),
+        date: createForm.date,
       };
 
       const res = await insertConfirmOrder(payload).unwrap();
@@ -1529,6 +1532,7 @@ const ConfirmOrderTable = () => {
       const payload = {
         note: currentItem.note,
         status: currentItem.status,
+        date: currentItem.date,
         quantity: Number(currentItem.quantity),
         receivedId: Number(currentItem.receivedId),
         userId,
@@ -1914,6 +1918,19 @@ const ConfirmOrderTable = () => {
             </div>
 
             <div className="mt-4">
+              <label className="block text-sm text-slate-700">Date</label>
+              <input
+                type="date"
+                value={currentItem?.date || ""}
+                onChange={(e) =>
+                  setCurrentItem((p) => ({ ...p, date: e.target.value }))
+                }
+                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
+
+            <div className="mt-4">
               <label className="block text-sm text-slate-600 mb-1">
                 Quantity
               </label>
@@ -2070,6 +2087,19 @@ const ConfirmOrderTable = () => {
                   isDisabled={receivedLoading}
                   className="text-black"
                   styles={selectStyles}
+                />
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Date</label>
+                <input
+                  type="date"
+                  value={createForm?.date || ""}
+                  onChange={(e) =>
+                    setCreateForm((p) => ({ ...p, date: e.target.value }))
+                  }
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
               </div>
 

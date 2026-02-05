@@ -874,6 +874,7 @@ const ReceiveableTable = () => {
     name: "",
     remarks: "",
     amount: "",
+    date: new Date().toISOString().slice(0, 10),
     file: null,
   });
 
@@ -957,6 +958,7 @@ const ReceiveableTable = () => {
       remarks: rp.remarks ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
+      date: rp.date ?? "",
       userId: userId,
       file: null,
     });
@@ -988,6 +990,7 @@ const ReceiveableTable = () => {
     try {
       const formData = new FormData();
       formData.append("name", createProduct.name.trim());
+      formData.append("date", createProduct.date);
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
       if (createProduct.file) formData.append("file", createProduct.file);

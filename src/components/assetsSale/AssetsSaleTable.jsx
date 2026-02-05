@@ -863,6 +863,7 @@ const AssetsSaleTable = () => {
     name: "",
     quantity: "",
     price: "",
+    date: new Date().toISOString().slice(0, 10),
   });
 
   const [products, setProducts] = useState([]);
@@ -1001,6 +1002,7 @@ const AssetsSaleTable = () => {
       price: row.price ?? "",
       status: row.status ?? "",
       note: row.note ?? "",
+      date: row.date ?? "",
       userId,
     });
     setIsEditModalOpen(true);
@@ -1015,6 +1017,7 @@ const AssetsSaleTable = () => {
       price: row.price ?? "",
       note: row.note ?? "",
       status: row.status ?? "",
+      date: row.date ?? "",
       userId,
     });
     setIsNoteModalOpen(true);
@@ -1038,6 +1041,7 @@ const AssetsSaleTable = () => {
         productId: Number(createProduct.productId),
         quantity: Number(createProduct.quantity),
         price: Number(createProduct.price),
+        date: createProduct.date,
       };
 
       const res = await insertAssetsSale(payload).unwrap();
@@ -1075,6 +1079,8 @@ const AssetsSaleTable = () => {
         note: currentProduct.note,
         status: currentProduct.status,
         price: Number(currentProduct.price),
+        date: currentProduct.date,
+
         userId,
       };
 
@@ -1528,7 +1534,15 @@ const AssetsSaleTable = () => {
                   isDisabled={isLoadingAllProducts}
                 />
               </div>
-
+              <LightField
+                label="Date:"
+                type="date"
+                value={currentProduct.date}
+                onChange={(v) =>
+                  setCreateProduct({ ...currentProduct, date: v })
+                }
+                required
+              />
               <LightField
                 label="Quantity"
                 type="number"
@@ -1651,6 +1665,15 @@ const AssetsSaleTable = () => {
                 />
               </div>
 
+              <LightField
+                label="Date:"
+                type="date"
+                value={createProduct.date}
+                onChange={(v) =>
+                  setCreateProduct({ ...createProduct, date: v })
+                }
+                required
+              />
               <LightField
                 label="Quantity"
                 type="number"

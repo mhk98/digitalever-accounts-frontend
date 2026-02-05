@@ -1554,6 +1554,7 @@ const PayableTable = () => {
     name: "",
     remarks: "",
     amount: "",
+    date: new Date().toISOString().slice(0, 10),
     file: null,
   });
 
@@ -1637,6 +1638,7 @@ const PayableTable = () => {
       remarks: rp.remarks ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
+      date: rp.date ?? "",
       userId: userId,
       file: null,
     });
@@ -1668,6 +1670,7 @@ const PayableTable = () => {
     try {
       const formData = new FormData();
       formData.append("name", createProduct.name.trim());
+      formData.append("date", createProduct.date);
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
       if (createProduct.file) formData.append("file", createProduct.file);
@@ -1680,6 +1683,7 @@ const PayableTable = () => {
           name: "",
           remarks: "",
           amount: "",
+          date: "",
           file: null,
         });
         refetch?.();
@@ -1700,6 +1704,7 @@ const PayableTable = () => {
       if (currentProduct?.file instanceof File) {
         const fd = new FormData();
         fd.append("name", currentProduct?.name?.trim() || "");
+        fd.append("date", currentProduct?.date);
         fd.append("remarks", currentProduct?.remarks?.trim() || "");
         fd.append("note", currentProduct?.note?.trim() || "");
         fd.append("status", currentProduct?.status?.trim() || "");
@@ -1718,6 +1723,7 @@ const PayableTable = () => {
 
       const payload = {
         name: currentProduct?.name?.trim() || "",
+        date: currentProduct?.date || "",
         remarks: currentProduct?.remarks?.trim() || "",
         amount: Number(currentProduct?.amount || 0),
         note: currentProduct?.note?.trim() || "",
@@ -2097,6 +2103,19 @@ const PayableTable = () => {
             <h2 className="text-lg font-semibold text-slate-900">Edit</h2>
 
             <div className="mt-4">
+              <label className="block text-sm text-slate-700">Date</label>
+              <input
+                type="date"
+                value={currentProduct?.date || ""}
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({ ...p, date: e.target.value }))
+                }
+                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
+
+            <div className="mt-4">
               <label className="block text-sm text-slate-700">
                 Company Name
               </label>
@@ -2237,6 +2256,18 @@ const PayableTable = () => {
             </h2>
 
             <form onSubmit={handleCreateProduct}>
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Date</label>
+                <input
+                  type="date"
+                  value={createProduct?.date || ""}
+                  onChange={(e) =>
+                    setCreateProduct((p) => ({ ...p, date: e.target.value }))
+                  }
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">
                   Company Name

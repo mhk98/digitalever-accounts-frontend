@@ -864,7 +864,7 @@ const SIDEBAR_ITEMS = [
       {
         name: "Purchase Requisition",
         icon: ShoppingBasket,
-        href: "//purchase-requisition",
+        href: "/purchase-requisition",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {

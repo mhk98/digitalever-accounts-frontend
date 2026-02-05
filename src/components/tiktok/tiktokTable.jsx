@@ -678,6 +678,7 @@ const TiktokTable = () => {
   // ✅ Add form state
   const [createProduct, setCreateProduct] = useState({
     amount: "",
+    date: new Date().toISOString().slice(0, 10),
   });
 
   const [products, setProducts] = useState([]);
@@ -791,6 +792,7 @@ const TiktokTable = () => {
       const payload = {
         platform: "Tiktok",
         amount: Number(createProduct.amount),
+        date: createProduct.date,
       };
       const res = await insertMeta(payload).unwrap();
       if (res?.success) {
@@ -813,6 +815,7 @@ const TiktokTable = () => {
       amount: rp.amount ?? "",
       status: rp.status ?? "",
       note: rp.note ?? "",
+      date: rp.date ?? "",
       userId,
     });
     setIsModalOpen(true);
@@ -828,6 +831,7 @@ const TiktokTable = () => {
         amount: Number(currentProduct.amount),
         note: currentProduct.note,
         status: currentProduct.status,
+        date: currentProduct.date,
         userId,
       };
 
@@ -1142,7 +1146,18 @@ const TiktokTable = () => {
             <h2 className="text-lg font-semibold text-slate-900">
               Edit Tiktok Expense
             </h2>
-
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Date</label>
+              <input
+                type="date"
+                value={currentProduct?.date || ""}
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({ ...p, date: e.target.value }))
+                }
+                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Amount</label>
               <input
@@ -1220,6 +1235,18 @@ const TiktokTable = () => {
             </h2>
 
             <form onSubmit={handleCreateProduct}>
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Date</label>
+                <input
+                  type="date"
+                  value={createProduct?.date || ""}
+                  onChange={(e) =>
+                    setCreateProduct((p) => ({ ...p, date: e.target.value }))
+                  }
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">Amount</label>
                 <input

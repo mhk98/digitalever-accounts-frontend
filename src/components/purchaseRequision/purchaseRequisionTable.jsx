@@ -25,6 +25,10 @@ const PurchaseRequisionTable = () => {
   const [createProduct, setCreateProduct] = useState({
     productId: "",
     quantity: "",
+    remarks: "",
+    date: new Date().toISOString().slice(0, 10),
+    note: "",
+    status: "",
   });
 
   const [rows, setRows] = useState([]);
@@ -186,6 +190,7 @@ const PurchaseRequisionTable = () => {
       quantity: rp.quantity ?? "",
       supplier: rp.supplier ?? "",
       remarks: rp.remarks ?? "",
+      date: rp.date ?? "",
       userId,
     });
     setIsModalOpen(true);
@@ -211,6 +216,7 @@ const PurchaseRequisionTable = () => {
         note: currentProduct.note,
         status: currentProduct.status,
         remarks: currentProduct.remarks,
+        date: currentProduct.date,
         userId,
       };
 
@@ -274,6 +280,8 @@ const PurchaseRequisionTable = () => {
         productId: Number(createProduct.productId),
         quantity: Number(createProduct.quantity),
         remarks: createProduct.remarks,
+        date: createProduct.date,
+        userId: userId,
       };
 
       const res = await insertPurchaseRequisition(payload).unwrap();
@@ -637,7 +645,18 @@ const PurchaseRequisionTable = () => {
                 isDisabled={isLoadingAllProducts}
               />
             </div>
-
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Date</label>
+              <input
+                type="date"
+                value={currentProduct?.date || ""}
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({ ...p, date: e.target.value }))
+                }
+                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Quantity</label>
               <input
@@ -658,11 +677,11 @@ const PurchaseRequisionTable = () => {
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Remarks</label>
               <textarea
-                value={currentProduct?.note || ""}
+                value={currentProduct?.remarks || ""}
                 onChange={(e) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    note: e.target.value,
+                    remarks: e.target.value,
                   })
                 }
                 className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
@@ -765,6 +784,19 @@ const PurchaseRequisionTable = () => {
               </div>
 
               <div className="mt-4">
+                <label className="block text-sm text-slate-700">Date</label>
+                <input
+                  type="date"
+                  value={createProduct?.date || ""}
+                  onChange={(e) =>
+                    setCreateProduct((p) => ({ ...p, date: e.target.value }))
+                  }
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
+
+              <div className="mt-4">
                 <label className="block text-sm text-slate-700">Quantity</label>
                 <input
                   type="number"
@@ -785,11 +817,11 @@ const PurchaseRequisionTable = () => {
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">Remarks</label>
                 <textarea
-                  value={createProduct?.note || ""}
+                  value={createProduct?.remarks || ""}
                   onChange={(e) =>
                     setCreateProduct({
                       ...createProduct,
-                      note: e.target.value,
+                      remarks: e.target.value,
                     })
                   }
                   className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none

@@ -1336,6 +1336,7 @@ const DamageRepairTable = () => {
   const [createForm, setCreateForm] = useState({
     receivedId: "",
     quantity: "",
+    date: new Date().toISOString().slice(0, 10),
   });
 
   const [rows, setRows] = useState([]);
@@ -1462,6 +1463,7 @@ const DamageRepairTable = () => {
       note: rp.note ?? "",
       status: rp.status ?? "",
       remarks: rp.remarks ?? "",
+      date: rp.date ?? "",
     });
     setIsEditOpen(true);
   };
@@ -1504,6 +1506,7 @@ const DamageRepairTable = () => {
         receivedId: Number(createForm.receivedId),
         quantity: Number(createForm.quantity),
         remarks: createForm.remarks,
+        date: createForm.date,
       };
 
       const res = await insertDamageRepair(payload).unwrap();
@@ -1530,6 +1533,7 @@ const DamageRepairTable = () => {
         note: currentItem.note,
         status: currentItem.status,
         remarks: currentItem.remarks,
+        date: currentItem.date,
         quantity: Number(currentItem.quantity),
         receivedId: Number(currentItem.receivedId),
       };
@@ -1922,7 +1926,18 @@ const DamageRepairTable = () => {
                 className="text-black"
               />
             </div>
-
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Date</label>
+              <input
+                type="date"
+                value={currentItem?.date || ""}
+                onChange={(e) =>
+                  setCurrentItem((p) => ({ ...p, date: e.target.value }))
+                }
+                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
             <div className="mt-4">
               <label className="block text-sm text-slate-600 mb-1">
                 Quantity
@@ -2091,7 +2106,18 @@ const DamageRepairTable = () => {
                   className="text-black"
                 />
               </div>
-
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Date</label>
+                <input
+                  type="date"
+                  value={createForm?.date || ""}
+                  onChange={(e) =>
+                    setCreateForm((p) => ({ ...p, date: e.target.value }))
+                  }
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
                   Quantity

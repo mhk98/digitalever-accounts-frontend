@@ -845,6 +845,7 @@ const AssetsDamageTable = () => {
     productId: "",
     quantity: "",
     price: "",
+    date: new Date().toISOString().slice(0, 10),
   });
 
   const [products, setProducts] = useState([]);
@@ -985,6 +986,7 @@ const AssetsDamageTable = () => {
       price: row.price ?? "",
       note: row.note ?? "",
       status: row.status ?? "",
+      date: row.date ?? "",
       userId: userId,
     });
     setIsModalOpen(true);
@@ -1007,6 +1009,7 @@ const AssetsDamageTable = () => {
         productId: Number(createProduct.productId),
         quantity: Number(createProduct.quantity),
         price: Number(createProduct.price),
+        date: createProduct.date,
       };
 
       const res = await insertAssetsDamage(payload).unwrap();
@@ -1014,7 +1017,7 @@ const AssetsDamageTable = () => {
       if (res?.success) {
         toast.success("Successfully created damage!");
         setIsModalOpen1(false);
-        setCreateProduct({ productId: "", quantity: "", price: "" });
+        setCreateProduct({ productId: "", quantity: "", price: "", date: "" });
         refetch?.();
       } else {
         toast.error(res?.message || "Create failed!");
@@ -1039,6 +1042,7 @@ const AssetsDamageTable = () => {
         price: Number(currentProduct.price),
         note: currentProduct.note,
         status: currentProduct.status,
+        date: currentProduct.date,
         userId: userId,
       };
 
@@ -1076,6 +1080,7 @@ const AssetsDamageTable = () => {
         price: Number(currentProduct.price),
         note: currentProduct.note,
         status: currentProduct.status,
+        date: currentProduct.date,
         userId: userId,
       };
 
@@ -1471,6 +1476,15 @@ const AssetsDamageTable = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
               <Field
+                label="Date:"
+                type="date"
+                value={currentProduct.date}
+                onChange={(v) =>
+                  setCurrentProduct({ ...currentProduct, date: v })
+                }
+                required
+              />
+              <Field
                 label="Quantity:"
                 type="number"
                 step="0.01"
@@ -1586,6 +1600,15 @@ const AssetsDamageTable = () => {
               />
 
               <div className="grid grid-cols-1 gap-3 mt-4">
+                <Field
+                  label="Date:"
+                  type="date"
+                  value={createProduct.date}
+                  onChange={(v) =>
+                    setCreateProduct({ ...createProduct, date: v })
+                  }
+                  required
+                />
                 <Field
                   label="Quantity:"
                   type="number"

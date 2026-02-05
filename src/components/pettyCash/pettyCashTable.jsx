@@ -1207,6 +1207,7 @@ const PettyCashTable = () => {
     bankName: "",
     remarks: "",
     amount: "",
+    date: new Date().toISOString().slice(0, 10),
     file: null,
   });
 
@@ -1392,6 +1393,7 @@ const PettyCashTable = () => {
       bankName: rp.bankName ?? "",
       remarks: rp.remarks ?? "",
       amount: rp.amount ?? "",
+      date: rp.date ?? "",
       userId: userId,
       file: null,
     });
@@ -1408,6 +1410,7 @@ const PettyCashTable = () => {
       formData.append("paymentStatus", currentProduct.paymentStatus);
       formData.append("note", currentProduct.note);
       formData.append("status", currentProduct.status);
+      formData.append("date", currentProduct.date);
       formData.append("userId", userId);
       formData.append(
         "bankName",
@@ -1467,6 +1470,7 @@ const PettyCashTable = () => {
           bankAccount: "",
           remarks: "",
           amount: "",
+          date: "",
           file: null,
         });
         refetch?.();
@@ -1924,6 +1928,19 @@ const PettyCashTable = () => {
             <h2 className="text-lg font-semibold text-slate-900">Edit</h2>
 
             <div className="mt-4">
+              <label className="block text-sm text-slate-700">Date</label>
+              <input
+                type="date"
+                value={currentProduct?.date || ""}
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({ ...p, date: e.target.value }))
+                }
+                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
+
+            <div className="mt-4">
               <label className="block text-sm text-slate-700">
                 Payment Mode
               </label>
@@ -2129,6 +2146,18 @@ const PettyCashTable = () => {
             </h2>
 
             <form onSubmit={handleCreateProduct}>
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Date</label>
+                <input
+                  type="date"
+                  value={createProduct?.date || ""}
+                  onChange={(e) =>
+                    setCreateProduct((p) => ({ ...p, date: e.target.value }))
+                  }
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">
                   Payment Mode

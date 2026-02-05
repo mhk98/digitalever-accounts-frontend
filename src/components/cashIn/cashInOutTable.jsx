@@ -1612,6 +1612,7 @@ const CashInOutTable = () => {
     remarks: "",
     amount: "",
     file: null,
+    date: new Date().toISOString().slice(0, 10),
   });
 
   const [products, setProducts] = useState([]);
@@ -1834,6 +1835,7 @@ const CashInOutTable = () => {
       bankAccount: rp.bankAccount ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
+      date: rp.date ?? "",
       userId: userId,
       categoryId: String(
         rp.categoryId ?? rp.category?.Id ?? rp.category?.id ?? "",
@@ -1894,6 +1896,7 @@ const CashInOutTable = () => {
       formData.append("paymentStatus", currentProduct.paymentStatus);
       formData.append("note", currentProduct.note);
       formData.append("status", currentProduct.status);
+      formData.append("date", currentProduct.date);
       formData.append("userId", userId);
       formData.append(
         "bankName",
@@ -1989,6 +1992,7 @@ const CashInOutTable = () => {
       const formData = new FormData();
       formData.append("paymentMode", createProduct.paymentMode);
       formData.append("paymentStatus", createProduct.paymentStatus);
+      formData.append("date", createProduct.date);
       formData.append(
         "bankName",
         createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
@@ -2020,6 +2024,7 @@ const CashInOutTable = () => {
           categoryId: "",
           remarks: "",
           amount: "",
+          date: "",
           file: null,
         });
         refetch?.();
@@ -2486,6 +2491,18 @@ const CashInOutTable = () => {
             transition={{ duration: 0.2 }}
           >
             <h2 className="text-lg font-semibold text-slate-900">Edit</h2>
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Date</label>
+              <input
+                type="date"
+                value={currentProduct?.date || ""}
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({ ...p, date: e.target.value }))
+                }
+                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
 
             <div className="mt-4">
               <label className="block text-sm text-slate-600 mb-1">
@@ -2873,6 +2890,18 @@ const CashInOutTable = () => {
             </h2>
 
             <form onSubmit={handleCreateProduct}>
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Date</label>
+                <input
+                  type="date"
+                  value={createProduct?.date || ""}
+                  onChange={(e) =>
+                    setCreateProduct((p) => ({ ...p, date: e.target.value }))
+                  }
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
                   Payment Mode

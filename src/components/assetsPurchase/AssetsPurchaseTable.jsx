@@ -880,6 +880,7 @@ const AssetsPurchaseTable = () => {
     name: "",
     price: "",
     quantity: "",
+    date: new Date().toISOString().slice(0, 10),
   });
 
   const [products, setProducts] = useState([]);
@@ -1034,6 +1035,7 @@ const AssetsPurchaseTable = () => {
       note: product.note ?? "",
       status: product.status ?? "",
       quantity: product.quantity ?? "",
+      date: product.date ?? "",
       userId: userId,
     });
     setIsModalOpen(true);
@@ -1054,6 +1056,7 @@ const AssetsPurchaseTable = () => {
         price: Number(currentProduct.price),
         note: currentProduct.note,
         status: currentProduct.status,
+        date: currentProduct.date,
         userId: userId,
       };
 
@@ -1088,6 +1091,7 @@ const AssetsPurchaseTable = () => {
         name: createProduct.name.trim(),
         quantity: Number(createProduct.quantity),
         price: Number(createProduct.price),
+        date: createProduct.date,
       };
 
       const res = await insertAssetsPurchase(payload).unwrap();
@@ -1452,6 +1456,15 @@ const AssetsPurchaseTable = () => {
 
             <div className="mt-4 flex flex-col gap-3">
               <Field
+                label="Date:"
+                type="date"
+                value={currentProduct.date}
+                onChange={(v) =>
+                  setCurrentProduct({ ...currentProduct, date: v })
+                }
+                required
+              />
+              <Field
                 label="Name:"
                 value={currentProduct?.name || ""}
                 onChange={(v) =>
@@ -1640,6 +1653,16 @@ const AssetsPurchaseTable = () => {
 
             <form onSubmit={handleCreateProduct}>
               <div className="grid grid-cols-1 gap-3 mt-4">
+                <Field
+                  label="Date:"
+                  type="date"
+                  value={createProduct.date}
+                  onChange={(v) =>
+                    setCreateProduct({ ...createProduct, date: v })
+                  }
+                  required
+                />
+
                 <Field
                   label="Name:"
                   value={createProduct.name}
