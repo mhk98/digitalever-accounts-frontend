@@ -2320,6 +2320,18 @@ const PayableTable = () => {
               </div>
 
               <div className="mt-4">
+                <label className="block text-sm text-slate-700">Note</label>
+                <textarea
+                  value={createProduct?.note || ""}
+                  onChange={(e) =>
+                    setCreateProduct((p) => ({ ...p, note: e.target.value }))
+                  }
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
+
+              <div className="mt-4">
                 <label className="block text-sm text-slate-700">
                   Upload Document
                 </label>

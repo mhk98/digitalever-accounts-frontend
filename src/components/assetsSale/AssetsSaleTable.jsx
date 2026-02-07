@@ -863,6 +863,7 @@ const AssetsSaleTable = () => {
     name: "",
     quantity: "",
     price: "",
+    note: "",
     date: new Date().toISOString().slice(0, 10),
   });
 
@@ -1693,6 +1694,21 @@ const AssetsSaleTable = () => {
                 onChange={(v) => setCreateProduct((p) => ({ ...p, price: v }))}
                 required
               />
+
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Note</label>
+                <textarea
+                  value={createProduct?.note || ""}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
 
               <div className="mt-2 flex justify-end gap-2">
                 <button

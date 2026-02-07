@@ -25,7 +25,6 @@ const PurchaseRequisionTable = () => {
   const [createProduct, setCreateProduct] = useState({
     productId: "",
     quantity: "",
-    remarks: "",
     date: new Date().toISOString().slice(0, 10),
     note: "",
     status: "",
@@ -189,7 +188,7 @@ const PurchaseRequisionTable = () => {
       productId: rp.productId ? String(rp.productId) : "",
       quantity: rp.quantity ?? "",
       supplier: rp.supplier ?? "",
-      remarks: rp.remarks ?? "",
+      note: rp.note ?? "",
       date: rp.date ?? "",
       userId,
     });
@@ -202,7 +201,7 @@ const PurchaseRequisionTable = () => {
       productId: rp.productId ? String(rp.productId) : "",
       quantity: rp.quantity ?? "",
       supplier: rp.supplier ?? "",
-      remarks: rp.remarks ?? "",
+      note: rp.note ?? "",
       userId,
     });
     setIsModalOpen2(true);
@@ -215,7 +214,6 @@ const PurchaseRequisionTable = () => {
         quantity: Number(currentProduct.quantity),
         note: currentProduct.note,
         status: currentProduct.status,
-        remarks: currentProduct.remarks,
         date: currentProduct.date,
         userId,
       };
@@ -244,9 +242,8 @@ const PurchaseRequisionTable = () => {
       const payload = {
         productId: Number(currentProduct.productId),
         quantity: Number(currentProduct.quantity),
-        note: currentProduct.note,
         status: currentProduct.status,
-        remarks: currentProduct.remarks,
+        note: currentProduct.note,
         userId,
       };
 
@@ -279,7 +276,7 @@ const PurchaseRequisionTable = () => {
       const payload = {
         productId: Number(createProduct.productId),
         quantity: Number(createProduct.quantity),
-        remarks: createProduct.remarks,
+        note: createProduct.note,
         date: createProduct.date,
         userId: userId,
       };
@@ -675,13 +672,13 @@ const PurchaseRequisionTable = () => {
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm text-slate-700">Remarks</label>
+              <label className="block text-sm text-slate-700">Note</label>
               <textarea
-                value={currentProduct?.remarks || ""}
+                value={currentProduct?.note || ""}
                 onChange={(e) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    remarks: e.target.value,
+                    note: e.target.value,
                   })
                 }
                 className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
@@ -815,13 +812,13 @@ const PurchaseRequisionTable = () => {
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm text-slate-700">Remarks</label>
+                <label className="block text-sm text-slate-700">Note</label>
                 <textarea
-                  value={createProduct?.remarks || ""}
+                  value={createProduct?.note || ""}
                   onChange={(e) =>
                     setCreateProduct({
                       ...createProduct,
-                      remarks: e.target.value,
+                      note: e.target.value,
                     })
                   }
                   className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none

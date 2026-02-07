@@ -1340,6 +1340,7 @@ const ConfirmOrderTable = () => {
   const [createForm, setCreateForm] = useState({
     receivedId: "",
     quantity: "",
+    note: "",
     date: new Date().toISOString().slice(0, 10),
   });
 
@@ -2123,6 +2124,20 @@ const ConfirmOrderTable = () => {
                 />
               </div>
 
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Note</label>
+                <textarea
+                  value={createForm?.note || ""}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      note: e.target.value,
+                    })
+                  }
+                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
               <div className="mt-6 flex justify-end gap-2">
                 <button
                   type="submit"

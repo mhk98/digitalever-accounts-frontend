@@ -1336,6 +1336,7 @@ const DamageRepairTable = () => {
   const [createForm, setCreateForm] = useState({
     receivedId: "",
     quantity: "",
+    note: "",
     date: new Date().toISOString().slice(0, 10),
   });
 
@@ -2148,6 +2149,21 @@ const DamageRepairTable = () => {
                   className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
+                />
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Note</label>
+                <textarea
+                  value={createForm?.note || ""}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      note: e.target.value,
+                    })
+                  }
+                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
               </div>
 

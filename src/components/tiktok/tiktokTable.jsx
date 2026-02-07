@@ -678,18 +678,17 @@ const TiktokTable = () => {
   // ✅ Add form state
   const [createProduct, setCreateProduct] = useState({
     amount: "",
+    note: "",
     date: new Date().toISOString().slice(0, 10),
   });
 
   const [products, setProducts] = useState([]);
-
   // ✅ Filters
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
   //Pagination calculation start
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -701,6 +700,7 @@ const TiktokTable = () => {
       else if (window.innerWidth < 1024) setPagesPerSet(7);
       else setPagesPerSet(10);
     };
+
     updatePagesPerSet();
     window.addEventListener("resize", updatePagesPerSet);
     return () => window.removeEventListener("resize", updatePagesPerSet);
@@ -1259,6 +1259,18 @@ const TiktokTable = () => {
                   className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
+                />
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Note</label>
+                <textarea
+                  value={createProduct?.note || ""}
+                  onChange={(e) =>
+                    setCreateProduct((p) => ({ ...p, note: e.target.value }))
+                  }
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
               </div>
 

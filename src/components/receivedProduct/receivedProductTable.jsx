@@ -845,6 +845,7 @@ const ReceivedProductTable = () => {
   const [createProduct, setCreateProduct] = useState({
     productId: "",
     quantity: "",
+    note: "",
     date: new Date().toISOString().slice(0, 10),
   });
 
@@ -1270,9 +1271,11 @@ const ReceivedProductTable = () => {
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Sale Price
               </th>
+
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Status
               </th>
+
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Actions
               </th>
@@ -1289,9 +1292,7 @@ const ReceivedProductTable = () => {
                 className="hover:bg-slate-50"
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.createdAt
-                    ? new Date(rp.createdAt).toLocaleDateString()
-                    : "-"}
+                  {rp.date}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp.supplier || "-"}
@@ -1317,10 +1318,12 @@ const ReceivedProductTable = () => {
                     className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
                       rp.status === "Approved"
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : "bg-amber-50 text-amber-700 border-amber-200"
+                        : rp.status === "Pending"
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : null
                     }`}
                   >
-                    {rp.status || "Pending"}
+                    {rp.status}
                   </span>
                 </td>
 
@@ -1611,10 +1614,10 @@ const ReceivedProductTable = () => {
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">Note</label>
                 <textarea
-                  value={currentProduct?.note || ""}
+                  value={createProduct?.note || ""}
                   onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
+                    setCreateProduct({
+                      ...createProduct,
                       note: e.target.value,
                     })
                   }
