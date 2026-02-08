@@ -40,6 +40,8 @@ import LogoPage from "./pages/LogoPage";
 import DamageRepairPage from "./pages/DamageRepairPage";
 import DamageRepairedPage from "./pages/DamageRepairedPage";
 import PurchaseRequisitionPage from "./pages/purchaseRequisitionPage";
+import AssetsRequisitionPage from "./pages/AssetsRequisitionPage";
+import ExpiredProductPage from "./pages/ExpiredProductPage";
 
 function App() {
   return (
@@ -297,6 +299,16 @@ function App() {
               }
             />
             <Route
+              path="/assets-requisition"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <AssetsRequisitionPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
               path="/assets-purchase"
               element={
                 <RequireAuth>
@@ -392,6 +404,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <ProfilePage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/expired-product"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <ExpiredProductPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

@@ -48,9 +48,9 @@ export const confirmOrderApi = createApi({
     }),
 
     getAllConfirmOrder: build.query({
-      query: ({ page, limit, startDate, endDate, name }) => ({
+      query: ({ page, limit, startDate, endDate, name, searchTerm }) => ({
         url: "/confirm-order",
-        params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, name, searchTerm }, // Pass the page and limit as query params
       }),
       providesTags: ["confirm-order"],
       refetchOnMountOrArgChange: true,

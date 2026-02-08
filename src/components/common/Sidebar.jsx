@@ -776,6 +776,12 @@ const SIDEBAR_ITEMS = [
     roles: ["superAdmin", "admin", "inventor"],
     children: [
       {
+        name: "Requisition",
+        icon: ShoppingBasket,
+        href: "/assets-requisition",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
         name: "Purchase",
         icon: ShoppingBasket,
         href: "/assets-purchase",
@@ -998,6 +1004,13 @@ const SIDEBAR_ITEMS = [
     ],
   },
 
+  {
+    name: "Expire Product",
+    icon: UserCog,
+    color: "#60a5fa",
+    href: "/expired-product",
+    roles: ["superAdmin", "admin", "inventor"],
+  },
   {
     name: "Profile",
     icon: UserCog,

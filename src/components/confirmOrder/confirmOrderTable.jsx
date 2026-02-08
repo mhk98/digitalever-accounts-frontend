@@ -1341,6 +1341,9 @@ const ConfirmOrderTable = () => {
     receivedId: "",
     quantity: "",
     note: "",
+    hasWarranty: false,
+    warrantyValue: "",
+    warrantyUnit: "Day", // Day | Month | Year
     date: new Date().toISOString().slice(0, 10),
   });
 
@@ -1508,6 +1511,10 @@ const ConfirmOrderTable = () => {
         receivedId: Number(createForm.receivedId),
         quantity: Number(createForm.quantity),
         date: createForm.date,
+        warrantyValue: createForm.hasWarranty
+          ? Number(createForm.warrantyValue || 0)
+          : 0,
+        warrantyUnit: createForm.hasWarranty ? createForm.warrantyUnit : null,
       };
 
       const res = await insertConfirmOrder(payload).unwrap();
@@ -1746,6 +1753,9 @@ const ConfirmOrderTable = () => {
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Warranty
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -1788,6 +1798,10 @@ const ConfirmOrderTable = () => {
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp.status || "-"}
+                </td>
+
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {rp.warrantyValue} {rp.warrantyUnit}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-3">
@@ -2052,7 +2066,7 @@ const ConfirmOrderTable = () => {
 
       {/* Add Modal */}
       {isAddOpen && (
-        <div className="fixed inset-0 flex items-center justify-center   p-4">
+        <div className="fixed inset-0 top-24 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -2138,6 +2152,81 @@ const ConfirmOrderTable = () => {
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
               </div>
+              {/* Warranty */}
+              <div className="mt-4 rounded-xl border border-slate-200 bg-white">
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-sm font-medium text-slate-700">
+                    Warranty
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCreateForm((p) => ({
+                        ...p,
+                        hasWarranty: !p.hasWarranty,
+                        ...(p.hasWarranty
+                          ? { warrantyValue: "", warrantyUnit: "Day" }
+                          : {}),
+                      }))
+                    }
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
+                      createForm.hasWarranty ? "bg-indigo-600" : "bg-slate-300"
+                    }`}
+                    aria-pressed={createForm.hasWarranty}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition ${
+                        createForm.hasWarranty
+                          ? "translate-x-5"
+                          : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {createForm.hasWarranty && (
+                  <div className="border-t border-slate-200 px-4 py-3">
+                    <label className="block text-xs text-slate-600 mb-1">
+                      Warranty Duration
+                    </label>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        value={createForm.warrantyValue}
+                        onChange={(e) =>
+                          setCreateForm((p) => ({
+                            ...p,
+                            warrantyValue: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. 30"
+                        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-slate-900 outline-none
+                     focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                      />
+
+                      <select
+                        value={createForm.warrantyUnit}
+                        onChange={(e) =>
+                          setCreateForm((p) => ({
+                            ...p,
+                            warrantyUnit: e.target.value,
+                          }))
+                        }
+                        className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-slate-900 outline-none
+                     focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                      >
+                        <option value="Day">Day</option>
+                        <option value="Month">Month</option>
+                        <option value="Year">Year</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="mt-6 flex justify-end gap-2">
                 <button
                   type="submit"

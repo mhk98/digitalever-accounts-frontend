@@ -127,6 +127,7 @@ import { damageRepairApi } from "../features/damageRepair/damageRepair";
 import { damageRepairedApi } from "../features/damageRepaired/damageRepaired";
 import { purchaseRequisitionApi } from "../features/purchaseRequisition/purchaseRequisition";
 import { receivedProductApi } from "../features/receivedProduct/receivedProduct";
+import { assetsRequisitionApi } from "../features/assetsRequisition/assetsRequisition";
 
 // ✅ 1) Collect all apis once
 const apis = [
@@ -140,6 +141,7 @@ const apis = [
   confirmOrderApi,
   metaApi,
   assetsPurchaseApi,
+  assetsRequisitionApi,
   assetsSaleApi,
   assetsDamageApi,
   cashInOutApi,
