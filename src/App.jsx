@@ -42,6 +42,7 @@ import DamageRepairedPage from "./pages/DamageRepairedPage";
 import PurchaseRequisitionPage from "./pages/purchaseRequisitionPage";
 import AssetsRequisitionPage from "./pages/AssetsRequisitionPage";
 import ExpiredProductPage from "./pages/ExpiredProductPage";
+import PosReportPage from "./pages/PosReportPage";
 
 function App() {
   return (
@@ -79,11 +80,21 @@ function App() {
               }
             />
             <Route
-              path="/pos"
+              path="/pos-sell"
               element={
                 <RequireAuth>
                   <SidebarLayout>
                     <POSPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/pos-report"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <PosReportPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

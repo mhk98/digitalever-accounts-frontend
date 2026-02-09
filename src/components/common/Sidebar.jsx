@@ -834,6 +834,26 @@ const SIDEBAR_ITEMS = [
       },
     ],
   },
+  {
+    name: "Pos",
+    icon: Megaphone,
+    color: "#f97316",
+    roles: ["superAdmin", "admin", "marketer"],
+    children: [
+      {
+        name: "Sell",
+        icon: BarChart3,
+        href: "/pos-sell",
+        roles: ["superAdmin", "admin", "marketer"],
+      },
+      {
+        name: "Pos Report",
+        icon: Search,
+        href: "/pos-report",
+        roles: ["superAdmin", "admin", "marketer"],
+      },
+    ],
+  },
 
   {
     name: "POS",

@@ -128,6 +128,7 @@ import { damageRepairedApi } from "../features/damageRepaired/damageRepaired";
 import { purchaseRequisitionApi } from "../features/purchaseRequisition/purchaseRequisition";
 import { receivedProductApi } from "../features/receivedProduct/receivedProduct";
 import { assetsRequisitionApi } from "../features/assetsRequisition/assetsRequisition";
+import { posReportApi } from "../features/posReport/posReport";
 
 // ✅ 1) Collect all apis once
 const apis = [
@@ -158,6 +159,7 @@ const apis = [
   notificationApi,
   salaryApi,
   logoApi,
+  posReportApi,
   damageRepairApi,
   damageRepairedApi,
   authApi,

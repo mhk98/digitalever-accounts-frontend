@@ -1306,11 +1306,11 @@ const ReceivedProductTable = () => {
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.purchase_price || 0).toFixed(2)}
+                  {Number(rp.purchase_price * rp.quantity || 0).toFixed(2)}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.sale_price || 0).toFixed(2)}
+                  {Number(rp.sale_price * rp.quantity || 0).toFixed(2)}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
