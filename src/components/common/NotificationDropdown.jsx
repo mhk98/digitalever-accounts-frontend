@@ -142,7 +142,7 @@ const NotificationDropdown = () => {
         )}
       </ul>
 
-      {notifications.length > 3 && !showAll && (
+      {/* {notifications.length > 3 && !showAll && (
         <div className=" border-t border-gray-100 text-center my-4">
           <Link
             className="w-full text-sm font-semibold py-1 rounded bg-gray-300 py-3 px-8 "
@@ -150,6 +150,17 @@ const NotificationDropdown = () => {
           >
             <button>See previous notifications</button>
           </Link>
+        </div>
+      )} */}
+      {notifications.length > 3 && !showAll && (
+        <div className="border-t border-gray-100 text-center my-4">
+          <button
+            type="button"
+            onClick={() => navigate("/notifications")}
+            className="text-sm font-semibold rounded bg-gray-300 py-3 px-8"
+          >
+            See previous notifications
+          </button>
         </div>
       )}
     </div>

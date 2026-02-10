@@ -1,9 +1,13 @@
 // import { useEffect, useMemo, useState } from "react";
 // import { motion, AnimatePresence } from "framer-motion";
 // import { ArrowDown } from "lucide-react";
+// import Select from "react-select";
+
 // import { useGetAllReceivedProductQuery } from "../../features/receivedProduct/receivedProduct";
 // import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
-// import Select from "react-select";
+
+// // ✅ adjust this path to your slice
+// import { useInsertPosReportMutation } from "../../features/posReport/posReport";
 
 // export default function SellPosTable() {
 //   const [cart, setCart] = useState([]);
@@ -16,7 +20,7 @@
 //   // ✅ Drawer state
 //   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
-//   // ✅ Payment form (basic)
+//   // ✅ Payment form
 //   const [sellDate, setSellDate] = useState(() => {
 //     const d = new Date();
 //     const yyyy = d.getFullYear();
@@ -29,8 +33,10 @@
 //   const [customerName, setCustomerName] = useState("");
 //   const [customerPhone, setCustomerPhone] = useState("");
 //   const [customerAddress, setCustomerAddress] = useState("");
-//   const [collectCustomerEmail, setCollectCustomerEmail] = useState(false);
-//   const [collectCustomerInfo, setCollectCustomerInfo] = useState(false);
+
+//   // ✅ Insert POS Report mutation
+//   const [insertPosReport, { isLoading: isSavingPayment }] =
+//     useInsertPosReportMutation();
 
 //   // Pagination
 //   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -119,7 +125,7 @@
 //   // ✅ Dropdown options
 //   const productDropdownOptions = useMemo(() => {
 //     return (productsData || []).map((p) => ({
-//       value: String(p.Id ?? p.id ?? p._id),
+//       value: String(p.Id),
 //       label: p.name,
 //     }));
 //   }, [productsData]);
@@ -128,53 +134,21 @@
 //   const productNameMap = useMemo(() => {
 //     const m = new Map();
 //     (productsData || []).forEach((p) => {
-//       const key = String(p.Id ?? p.id ?? p._id);
+//       const key = String(p.Id);
 //       m.set(key, p.name);
 //     });
 //     return m;
 //   }, [productsData]);
 
 //   // ---- Normalizers ----
-//   const getReceivedId = (rp) =>
-//     String(
-//       rp.id ??
-//         rp.Id ??
-//         rp._id ??
-//         rp.receivedProductId ??
-//         rp.received_product_id ??
-//         rp.productId ??
-//         rp.product_id ??
-//         rp.ProductId ??
-//         rp.product?.Id ??
-//         rp.product?.id ??
-//         rp.product?._id ??
-//         "",
-//     );
+//   const getReceivedId = (rp) => String(rp.Id);
 
-//   const getReceivedPrice = (rp) =>
-//     Number(
-//       rp.price ?? rp.sellingPrice ?? rp.sale_price ?? rp.product?.price ?? 0,
-//     );
+//   const getReceivedPrice = (rp) => Number(rp.sale_price);
 
-//   const getReceivedStock = (rp) =>
-//     Number(
-//       rp.stock ??
-//         rp.qty ??
-//         rp.quantity ??
-//         rp.availableQty ??
-//         rp.available_qty ??
-//         rp.product?.stock ??
-//         0,
-//     );
+//   const getReceivedStock = (rp) => Number(rp.quantity);
 
 //   const resolveProductName = (rp) => {
-//     const pid =
-//       rp.productId ??
-//       rp.product_id ??
-//       rp.ProductId ??
-//       rp.product?.Id ??
-//       rp.product?.id ??
-//       rp.product?._id;
+//     const pid = rp.product?.Id;
 
 //     if (rp.productName) return rp.productName;
 //     if (rp.product?.name) return rp.product?.name;
@@ -206,25 +180,24 @@
 //   // Cart
 //   const addToCart = (p) => {
 //     setCart((prev) => {
-//       const exists = prev.find((x) => x.id === p.id);
+//       const exists = prev.find((x) => x.Id === p.Id);
 //       if (exists) {
-//         return prev.map((x) => (x.id === p.id ? { ...x, qty: x.qty + 1 } : x));
+//         return prev.map((x) => (x.Id === p.Id ? { ...x, qty: x.qty + 1 } : x));
 //       }
-//       // ✅ FIX: we store "sale_price" correctly from p.sale_price
 //       return [
 //         ...prev,
-//         { id: p.id, name: p.name, sale_price: p.sale_price, qty: 1 },
+//         { Id: p.Id, name: p.name, sale_price: p.sale_price, qty: 1 },
 //       ];
 //     });
 //   };
 
-//   const removeFromCart = (id) =>
-//     setCart((prev) => prev.filter((x) => x.id !== id));
+//   const removeFromCart = (Id) =>
+//     setCart((prev) => prev.filter((x) => x.Id !== Id));
 
-//   const updateQty = (id, qty) => {
+//   const updateQty = (Id, qty) => {
 //     const n = Number(qty) || 0;
 //     setCart((prev) =>
-//       prev.map((x) => (x.id === id ? { ...x, qty: Math.max(1, n) } : x)),
+//       prev.map((x) => (x.Id === Id ? { ...x, qty: Math.max(1, n) } : x)),
 //     );
 //   };
 
@@ -241,19 +214,63 @@
 //     return Math.max(0, subTotal - d + dc);
 //   }, [subTotal, discount, deliveryCharge]);
 
-//   // ✅ When opening payment drawer: auto-fill paid amount as total (optional)
+//   // ✅ open/close drawer
 //   const openPayment = () => {
 //     setPaidAmount(total);
 //     setIsPaymentOpen(true);
 //   };
-
 //   const closePayment = () => setIsPaymentOpen(false);
 
-//   const handleConfirmPayment = () => {
-//     // এখানে তুমি API call / checkout flow বসাবে
-//     // উদাহরণ:
-//     // console.log({ sellDate, paidAmount, note, customerName, customerPhone, customerAddress, collectCustomerEmail, collectCustomerInfo, cart, total })
-//     closePayment();
+//   // ✅ payload builder (adjust keys if your backend expects different names)
+//   const buildPosPayload = () => {
+//     const items = cart.map((x) => ({
+//       Id: x.Id, // <-- change key name if needed (receivedProductId/productId)
+//       qty: Number(x.qty) || 0,
+//       price: Number(x.sale_price) || 0,
+//       total: (Number(x.sale_price) || 0) * (Number(x.qty) || 0),
+//       name: x.name, // optional
+//     }));
+
+//     return {
+//       date: sellDate,
+//       name: customerName,
+//       mobile: customerPhone,
+//       address: customerAddress,
+//       note,
+//       subTotal: Number(subTotal) || 0,
+//       discount: Number(discount) || 0,
+//       deliveryCharge: Number(deliveryCharge) || 0,
+//       total: Number(total) || 0,
+
+//       paidAmount: Number(paidAmount) || 0,
+//       dueAmount: Math.max(0, (Number(total) || 0) - (Number(paidAmount) || 0)),
+
+//       items,
+//     };
+//   };
+
+//   // ✅ Confirm Payment -> insert via API
+//   const handleConfirmPayment = async () => {
+//     try {
+//       if (cart.length === 0) return;
+
+//       const payload = buildPosPayload();
+//       await insertPosReport(payload).unwrap();
+
+//       // reset
+//       setCart([]);
+//       setDiscount(0);
+//       setDeliveryCharge(0);
+//       setPaidAmount(0);
+//       setNote("");
+//       setCustomerName("");
+//       setCustomerPhone("");
+//       setCustomerAddress("");
+
+//       closePayment();
+//     } catch (err) {
+//       console.error("POS insert failed:", err);
+//     }
 //   };
 
 //   return (
@@ -351,7 +368,7 @@
 //                       <div className="flex items-center">
 //                         <button
 //                           onClick={() =>
-//                             addToCart({ id: rid, name, sale_price })
+//                             addToCart({ Id: rid, name, sale_price })
 //                           }
 //                           className="h-9 px-3 rounded-l-md bg-black text-white text-sm hover:bg-black/90 disabled:opacity-60"
 //                           type="button"
@@ -431,7 +448,7 @@
 //                   <div className="space-y-3">
 //                     {cart.map((x) => (
 //                       <div
-//                         key={x.id}
+//                         key={x.Id}
 //                         className="border border-gray-200 rounded-lg p-3 flex items-center gap-3"
 //                       >
 //                         <div className="flex-1">
@@ -446,7 +463,7 @@
 //                         <div className="flex items-center gap-2">
 //                           <input
 //                             value={x.qty}
-//                             onChange={(e) => updateQty(x.id, e.target.value)}
+//                             onChange={(e) => updateQty(x.Id, e.target.value)}
 //                             className="w-16 h-9 rounded-md border border-gray-200 px-2 text-black text-sm outline-none"
 //                             type="number"
 //                             min={1}
@@ -458,7 +475,7 @@
 //                             ৳
 //                           </div>
 //                           <button
-//                             onClick={() => removeFromCart(x.id)}
+//                             onClick={() => removeFromCart(x.Id)}
 //                             className="h-9 px-3 rounded-md border border-gray-200 hover:bg-gray-50 text-sm text-black"
 //                             type="button"
 //                           >
@@ -555,7 +572,7 @@
 
 //                           <div className="flex flex-col items-end">
 //                             <button
-//                               className="py-2 rounded-lg px-3 bg-white border border-gray-200 text-black font-semibold hover:bg-gray-50"
+//                               className="py-2 rounded-lg px-3 bg-white border border-gray-200 text-black font-semibold hover:bg-gray-50 disabled:opacity-60"
 //                               type="button"
 //                               onClick={openPayment}
 //                               disabled={cart.length === 0}
@@ -591,11 +608,8 @@
 //         setCustomerPhone={setCustomerPhone}
 //         customerAddress={customerAddress}
 //         setCustomerAddress={setCustomerAddress}
-//         collectCustomerEmail={collectCustomerEmail}
-//         setCollectCustomerEmail={setCollectCustomerEmail}
-//         collectCustomerInfo={collectCustomerInfo}
-//         setCollectCustomerInfo={setCollectCustomerInfo}
 //         onConfirm={handleConfirmPayment}
+//         isSaving={isSavingPayment}
 //       />
 //     </>
 //   );
@@ -627,6 +641,7 @@
 //   customerAddress,
 //   setCustomerAddress,
 //   onConfirm,
+//   isSaving,
 // }) {
 //   return (
 //     <AnimatePresence>
@@ -736,19 +751,6 @@
 //                   className="w-full h-11 rounded-lg border border-slate-200 px-3 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
 //                 />
 //               </Field>
-
-//               {/* <div className="pt-2 space-y-4">
-//                 <ToggleRow
-//                   label="কাস্টমার ইমেইল নম্বর"
-//                   checked={collectCustomerEmail}
-//                   onChange={() => setCollectCustomerEmail((p) => !p)}
-//                 />
-//                 <ToggleRow
-//                   label="কাস্টমারীর তথ্য"
-//                   checked={collectCustomerInfo}
-//                   onChange={() => setCollectCustomerInfo((p) => !p)}
-//                 />
-//               </div> */}
 //             </div>
 
 //             {/* Bottom fixed bar */}
@@ -765,9 +767,10 @@
 //               <button
 //                 type="button"
 //                 onClick={onConfirm}
-//                 className="w-full h-12 rounded-xl bg-black text-white font-semibold hover:bg-black/90"
+//                 disabled={isSaving}
+//                 className="w-full h-12 rounded-xl bg-black text-white font-semibold hover:bg-black/90 disabled:opacity-60"
 //               >
-//                 You have received the payment
+//                 {isSaving ? "Saving..." : "You have received the payment"}
 //               </button>
 //             </div>
 //           </motion.aside>
@@ -788,10 +791,14 @@
 //   );
 // }
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowDown } from "lucide-react";
 import Select from "react-select";
+
+import { useReactToPrint } from "react-to-print";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 import { useGetAllReceivedProductQuery } from "../../features/receivedProduct/receivedProduct";
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
@@ -809,6 +816,11 @@ export default function SellPosTable() {
 
   // ✅ Drawer state
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+
+  // ✅ Invoice modal state
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [invoiceData, setInvoiceData] = useState(null);
+  const invoiceRef = useRef(null);
 
   // ✅ Payment form
   const [sellDate, setSellDate] = useState(() => {
@@ -932,9 +944,7 @@ export default function SellPosTable() {
 
   // ---- Normalizers ----
   const getReceivedId = (rp) => String(rp.Id);
-
   const getReceivedPrice = (rp) => Number(rp.sale_price);
-
   const getReceivedStock = (rp) => Number(rp.quantity);
 
   const resolveProductName = (rp) => {
@@ -1039,13 +1049,118 @@ export default function SellPosTable() {
     };
   };
 
+  // ✅ Print handler
+  const handlePrint = useReactToPrint({
+    // v2 compatible
+    content: () => invoiceRef.current,
+
+    // v3 compatible (optional, harmless if ignored)
+    contentRef: invoiceRef,
+
+    documentTitle: invoiceData?.invoiceNo
+      ? String(invoiceData.invoiceNo)
+      : "invoice",
+    removeAfterPrint: true,
+  });
+
+  // ✅ PDF Download handler
+  const handleDownloadPdf = async () => {
+    try {
+      if (!invoiceRef.current) {
+        console.error("invoiceRef is null");
+        return;
+      }
+
+      const el = invoiceRef.current;
+
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgWidth = pageWidth;
+      const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const filename = invoiceData?.invoiceNo
+        ? `${invoiceData.invoiceNo}.pdf`
+        : `invoice-${Date.now()}.pdf`;
+
+      // ✅ reliable download (Blob + <a>)
+      const blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("PDF download failed:", e);
+      alert("PDF generate করতে সমস্যা হচ্ছে। Console দেখুন.");
+    }
+  };
+
   // ✅ Confirm Payment -> insert via API
   const handleConfirmPayment = async () => {
     try {
       if (cart.length === 0) return;
 
       const payload = buildPosPayload();
-      await insertPosReport(payload).unwrap();
+
+      // ✅ your mutation response
+      const res = await insertPosReport(payload).unwrap();
+
+      // ✅ map invoice data from API (fallback to payload)
+      const invoice = res?.data ||
+        res?.posReport ||
+        res || {
+          invoiceNo: res?.invoiceNo || `INV-${Date.now()}`,
+          date: payload.date,
+          customer: {
+            name: payload.name,
+            mobile: payload.mobile,
+            address: payload.address,
+          },
+          subTotal: payload.subTotal,
+          discount: payload.discount,
+          deliveryCharge: payload.deliveryCharge,
+          total: payload.total,
+          paidAmount: payload.paidAmount,
+          dueAmount: payload.dueAmount,
+          items: payload.items,
+          note: payload.note,
+        };
+
+      // normalize if API returns flat fields
+      const normalizedInvoice = normalizeInvoice(invoice, payload);
+
+      setInvoiceData(normalizedInvoice);
+      setInvoiceOpen(true);
 
       // reset
       setCart([]);
@@ -1401,6 +1516,25 @@ export default function SellPosTable() {
         onConfirm={handleConfirmPayment}
         isSaving={isSavingPayment}
       />
+
+      {/* ✅ Invoice Preview Modal */}
+      {/* <InvoiceModal
+        open={invoiceOpen}
+        onClose={() => setInvoiceOpen(false)}
+        invoice={invoiceData}
+        invoiceRef={invoiceRef}
+        onPrint={handlePrint}
+        onDownload={handleDownloadPdf}
+      /> */}
+
+      <InvoiceModal
+        open={invoiceOpen}
+        onClose={() => setInvoiceOpen(false)}
+        invoice={invoiceData}
+        invoiceRef={invoiceRef}
+        onPrint={handlePrint}
+        onDownload={handleDownloadPdf} // ✅ this must be passed
+      />
     </>
   );
 }
@@ -1579,4 +1713,323 @@ function Field({ label, required, children }) {
       {children}
     </div>
   );
+}
+
+function InvoiceModal({
+  open,
+  onClose,
+  invoice,
+  invoiceRef,
+  onPrint,
+  // onDownload,
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[120]">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <div className="text-lg font-semibold text-slate-900">
+              Invoice Preview
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onPrint}
+                className="h-10 px-4 rounded-xl bg-black text-white font-semibold hover:bg-black/90"
+                type="button"
+                disabled={!invoice}
+              >
+                Print
+              </button>
+
+              {/* <button
+                type="button"
+                onClick={onDownload} // ✅ call prop function
+                disabled={!invoice}
+                className="h-10 px-4 rounded-xl border border-slate-200 text-slate-900 font-semibold hover:bg-slate-50 disabled:opacity-60"
+              >
+                Download PDF
+              </button> */}
+
+              <button
+                onClick={onClose}
+                className="h-10 w-10 rounded-xl hover:bg-slate-100 text-slate-700"
+                type="button"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="p-6 max-h-[75vh] overflow-auto bg-slate-50">
+            <div
+              ref={invoiceRef}
+              className="pdf-safe bg-white rounded-xl p-6 border border-slate-200"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-2xl font-bold text-slate-900">
+                    INVOICE
+                  </div>
+
+                  <div className="text-sm text-slate-600 mt-1">
+                    Invoice No:{" "}
+                    <span className="font-semibold text-slate-900">
+                      {invoice?.invoiceNo || "N/A"}
+                    </span>
+                  </div>
+
+                  <div className="text-sm text-slate-600">
+                    Date:{" "}
+                    <span className="font-semibold text-slate-900">
+                      {invoice?.date || "N/A"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-sm font-semibold text-slate-900">
+                    Kafela / Holy Gift
+                  </div>
+                  <div className="text-xs text-slate-600">POS Sale Invoice</div>
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-lg border border-slate-200 p-4">
+                  <div className="text-sm font-semibold text-slate-900 mb-2">
+                    Bill To
+                  </div>
+                  <div className="text-sm text-slate-700">
+                    {invoice?.customer?.name || "N/A"}
+                  </div>
+                  <div className="text-sm text-slate-700">
+                    {invoice?.customer?.mobile || "N/A"}
+                  </div>
+                  <div className="text-sm text-slate-700">
+                    {invoice?.customer?.address || "N/A"}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 p-4">
+                  <div className="text-sm font-semibold text-slate-900 mb-2">
+                    Payment
+                  </div>
+
+                  <div className="flex justify-between text-sm text-slate-700">
+                    <span>Total</span>
+                    <span className="font-semibold text-slate-900">
+                      {Number(invoice?.total || 0).toFixed(0)} ৳
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between text-sm text-slate-700 mt-1">
+                    <span>Paid</span>
+                    <span className="font-semibold text-slate-900">
+                      {Number(invoice?.paidAmount || 0).toFixed(0)} ৳
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between text-sm text-slate-700 mt-1">
+                    <span>Due</span>
+                    <span className="font-semibold text-red-600">
+                      {Number(invoice?.dueAmount || 0).toFixed(0)} ৳
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left bg-slate-100">
+                      <th className="px-3 py-2 border border-slate-200">
+                        Item
+                      </th>
+                      <th className="px-3 py-2 border border-slate-200">Qty</th>
+                      <th className="px-3 py-2 border border-slate-200">
+                        Price
+                      </th>
+                      <th className="px-3 py-2 border border-slate-200 text-right">
+                        Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(invoice?.items || []).map((it, idx) => (
+                      <tr key={idx}>
+                        <td className="px-3 py-2 border border-slate-200">
+                          {it?.name || "N/A"}
+                        </td>
+                        <td className="px-3 py-2 border border-slate-200">
+                          {Number(it?.qty || 0)}
+                        </td>
+                        <td className="px-3 py-2 border border-slate-200">
+                          {Number(it?.price || 0).toFixed(0)} ৳
+                        </td>
+                        <td className="px-3 py-2 border border-slate-200 text-right">
+                          {Number(it?.total || 0).toFixed(0)} ৳
+                        </td>
+                      </tr>
+                    ))}
+                    {(!invoice?.items || invoice.items.length === 0) && (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="px-3 py-8 border border-slate-200 text-center text-slate-500"
+                        >
+                          No items
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="text-sm text-slate-700">
+                  <div className="font-semibold text-slate-900 mb-1">Note</div>
+                  <div className="rounded-lg border border-slate-200 p-3 min-h-[56px]">
+                    {invoice?.note || "—"}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 p-4">
+                  <div className="flex justify-between text-sm text-slate-700">
+                    <span>Subtotal</span>
+                    <span className="font-semibold text-slate-900">
+                      {Number(invoice?.subTotal || 0).toFixed(0)} ৳
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-700 mt-1">
+                    <span>Discount</span>
+                    <span className="font-semibold text-slate-900">
+                      {Number(invoice?.discount || 0).toFixed(0)} ৳
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-700 mt-1">
+                    <span>Delivery</span>
+                    <span className="font-semibold text-slate-900">
+                      {Number(invoice?.deliveryCharge || 0).toFixed(0)} ৳
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-700 mt-2 pt-2 border-t border-slate-200">
+                    <span className="font-semibold text-slate-900">
+                      Grand Total
+                    </span>
+                    <span className="font-bold text-slate-900">
+                      {Number(invoice?.total || 0).toFixed(0)} ৳
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 text-center text-xs text-slate-500">
+                Thank you for your purchase.
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-2">
+            <button
+              onClick={onClose}
+              className="h-10 px-4 rounded-xl border border-slate-200 text-slate-900 font-semibold hover:bg-slate-50"
+              type="button"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ✅ Normalize invoice shape so UI doesn't break depending on API response
+ * - API যদি flat fields দেয় (name/mobile/address) -> customer object বানায়
+ * - items যদি nested হয় -> basic map করে নেয়
+ */
+function normalizeInvoice(raw, payloadFallback) {
+  if (!raw) return null;
+
+  const inv = { ...raw };
+
+  // invoiceNo fallback
+  inv.invoiceNo =
+    inv.invoiceNo ||
+    inv.invoice_no ||
+    inv.voucherNo ||
+    inv.id ||
+    `INV-${Date.now()}`;
+
+  // date fallback
+  inv.date =
+    inv.date || inv.createdAt || inv.created_at || payloadFallback?.date;
+
+  // customer normalize
+  const customer =
+    inv.customer ||
+    inv.Customer ||
+    (inv.name || inv.mobile || inv.address
+      ? {
+          name: inv.name || "",
+          mobile: inv.mobile || "",
+          address: inv.address || "",
+        }
+      : null) ||
+    (payloadFallback
+      ? {
+          name: payloadFallback.name,
+          mobile: payloadFallback.mobile,
+          address: payloadFallback.address,
+        }
+      : null);
+
+  inv.customer = {
+    name: customer?.name || "",
+    mobile: customer?.mobile || "",
+    address: customer?.address || "",
+  };
+
+  // totals normalize
+  inv.subTotal = Number(
+    inv.subTotal ?? inv.sub_total ?? payloadFallback?.subTotal ?? 0,
+  );
+  inv.discount = Number(inv.discount ?? payloadFallback?.discount ?? 0);
+  inv.deliveryCharge = Number(
+    inv.deliveryCharge ??
+      inv.delivery_charge ??
+      payloadFallback?.deliveryCharge ??
+      0,
+  );
+  inv.total = Number(inv.total ?? payloadFallback?.total ?? 0);
+  inv.paidAmount = Number(
+    inv.paidAmount ?? inv.paid_amount ?? payloadFallback?.paidAmount ?? 0,
+  );
+  inv.dueAmount = Number(
+    inv.dueAmount ?? inv.due_amount ?? payloadFallback?.dueAmount ?? 0,
+  );
+
+  inv.note = inv.note ?? inv.remarks ?? payloadFallback?.note ?? "";
+
+  // items normalize
+  const itemsRaw =
+    inv.items || inv.Items || inv.products || payloadFallback?.items || [];
+  inv.items = (itemsRaw || []).map((it) => ({
+    name: it?.name || it?.productName || it?.product?.name || "N/A",
+    qty: Number(it?.qty ?? it?.quantity ?? 0),
+    price: Number(it?.price ?? it?.sale_price ?? it?.unitPrice ?? 0),
+    total:
+      Number(it?.total ?? 0) || Number(it?.qty ?? 0) * Number(it?.price ?? 0),
+  }));
+
+  return inv;
 }

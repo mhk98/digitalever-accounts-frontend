@@ -31,8 +31,18 @@
 
 @layer base {
   html,
-  body {
+  /* body {
     font-family: theme("fontFamily.sans") !important;
+  } */
+   body {
+    font-family:
+      Inter,
+      system-ui,
+      -apple-system,
+      Segoe UI,
+      Roboto,
+      Arial,
+      sans-serif;
   }
 }
 
@@ -64,4 +74,25 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .date-black-icon::-webkit-calendar-picker-indicator {
   filter: invert(1);
+}
+
+/* ✅ html2canvas safe styles (avoid oklch, filters, fancy shadows) */
+.pdf-safe,
+.pdf-safe * {
+  color: #0f172a !important; /* slate-900 */
+  background-color: transparent;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.pdf-safe {
+  background: #ffffff !important;
+}
+
+.pdf-safe .pdf-muted {
+  color: #475569 !important; /* slate-600 */
+}
+
+.pdf-safe .pdf-border {
+  border-color: #e2e8f0 !important; /* slate-200 */
 }
