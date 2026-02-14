@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const supplierApi = createApi({
   reducerPath: "supplierApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
+    baseUrl: " http://localhost:5000/api/v1/",
 
     // Prepare headers to include Authorization token if present
     prepareHeaders: (headers) => {

@@ -1967,7 +1967,6 @@ const DamageRepairedTable = () => {
                 }
                 className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                required
               />
             </div>
 
@@ -1986,7 +1985,6 @@ const DamageRepairedTable = () => {
                   }
                   className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
                 >
                   <option value="">Select Status</option>
                   <option value="Approved">Approved</option>
@@ -2149,7 +2147,6 @@ const DamageRepairedTable = () => {
                   }
                   className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
                 />
               </div>
               <div className="mt-4">

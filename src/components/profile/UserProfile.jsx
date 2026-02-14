@@ -70,7 +70,7 @@
 //     useEffect(() => {
 //         const fetchUser = async () => {
 //             try {
-//                 const response = await fetch(` https://apikafela.digitalever.com.bd/api/v1/user/${id}`);
+//                 const response = await fetch(` http://localhost:5000/api/v1/user/${id}`);
 //                 if (!response.ok) {
 //                     throw new Error('Network response was not ok');
 //                 }
@@ -102,7 +102,7 @@
 // 	  <div className="grid grid-cols-1 md:grid-cols-2 bg-white rounded-lg shadow p-4 md:p-6 mb-4 md:mb-6">
 //   <div className="flex flex-col md:flex-row items-center md:space-x-4 space-y-4 md:space-y-0">
 //     <img
-//       src={` https://apikafela.digitalever.com.bd/${user?.image}`}
+//       src={` http://localhost:5000/${user?.image}`}
 //       alt="Profile"
 //       className="w-20 h-20 rounded-full"
 //     />
@@ -295,7 +295,7 @@
 //               onChange={handleChange}
 //               className="w-full mt-1 cursor-pointer"
 //             />
-//             {file ? (<img src={file} alt="Profile Preview" className="mt-2 w-20 h-20 object-cover" />) : (<img src={` https://apikafela.digitalever.com.bd/${user?.image}`} alt="Profile Preview" className="mt-2 w-20 h-20 object-cover" />)}
+//             {file ? (<img src={file} alt="Profile Preview" className="mt-2 w-20 h-20 object-cover" />) : (<img src={` http://localhost:5000/${user?.image}`} alt="Profile Preview" className="mt-2 w-20 h-20 object-cover" />)}
 //           </div>
 //             <div className="flex justify-end space-x-2 mt-4">
 //               <button type="button" className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300" onClick={() => document.getElementById("my_modal_4").close()}>
@@ -321,7 +321,7 @@
 // import { useUserUpdateMutation } from "../../features/auth/auth";
 // import { useEffect, useMemo, useState } from "react";
 
-// const API_BASE = " https://apikafela.digitalever.com.bd";
+// const API_BASE = " http://localhost:5000";
 
 // const UserProfile = () => {
 //   const [userUpdate] = useUserUpdateMutation();
@@ -694,7 +694,7 @@ import toast from "react-hot-toast";
 import { useUserUpdateMutation } from "../../features/auth/auth";
 import { useEffect, useMemo, useState } from "react";
 
-const API_BASE = "https://apikafela.digitalever.com.bd";
+const API_BASE = "http://localhost:5000";
 
 const UserProfile = () => {
   const [userUpdate] = useUserUpdateMutation();

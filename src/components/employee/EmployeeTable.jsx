@@ -3354,7 +3354,7 @@ const EmployeeTable = () => {
 
       {/* -------------------- Single Invoice Modal -------------------- */}
       {isInvoiceOpen && invoiceEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 top-32 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <motion.div
             className="bg-white rounded-2xl p-4 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full max-w-3xl border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -3517,7 +3517,7 @@ const EmployeeTable = () => {
 
       {/* -------------------- Bulk Invoice Modal -------------------- */}
       {isBulkInvoiceOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 top-40 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <motion.div
             className="bg-white rounded-2xl p-4 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full max-w-5xl border border-slate-200"
             initial={{ opacity: 0, y: -30 }}

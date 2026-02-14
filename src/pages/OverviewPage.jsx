@@ -637,7 +637,7 @@ const OverviewPage = () => {
   // ✅ values (fallback 0)
   const remainingAmount = Number(summary?.remainingAmount || 0);
   const inventoryValue = Number(
-    summary?.remainingInventoryStock_AfterMinus_InventoryExpense || 0,
+    summary?.inventoryStock_AfterAdd_SalesReturnProduct || 0,
   );
   const totalMetaAmount = Number(summary?.totalMetaAmount || 0);
   const totalReceiveableAmount = Number(summary?.totalReceiveableAmount || 0);
@@ -730,7 +730,7 @@ const OverviewPage = () => {
             />
 
             <StatCard
-              name="Total Inventory Quantity"
+              name="Total Inventory Amount"
               icon={Receipt}
               value={isLoading ? "Loading..." : inventoryValue}
               iconBg="#ECFDF5"

@@ -100,6 +100,7 @@ const PurchaseRequisionTable = () => {
   }, [isErrorAllProducts, errorAllProducts]);
 
   // ✅ Dropdown options (value = Id, label = name)
+
   const productDropdownOptions = useMemo(() => {
     return (productsData || []).map((p) => ({
       value: String(p.Id ?? p.id ?? p._id),
@@ -108,11 +109,19 @@ const PurchaseRequisionTable = () => {
   }, [productsData]);
 
   // ✅ productId -> productName map
+  // const productNameMap = useMemo(() => {
+  //   const m = new Map();
+  //   (productsData || []).forEach((p) => {
+  //     const key = String(p.Id ?? p.id ?? p._id);
+  //     m.set(key, p.name);
+  //   });
+  //   return m;
+  // }, [productsData]);
+
   const productNameMap = useMemo(() => {
     const m = new Map();
     (productsData || []).forEach((p) => {
-      const key = String(p.Id ?? p.id ?? p._id);
-      m.set(key, p.name);
+      m.set(String(p.name).trim().toLowerCase(), String(p.Id));
     });
     return m;
   }, [productsData]);
@@ -182,28 +191,71 @@ const PurchaseRequisionTable = () => {
 
   const [updatePurchaseRequisition] = useUpdatePurchaseRequisitionMutation();
 
+  // const handleEditClick = (rp) => {
+  //   setCurrentProduct({
+  //     ...rp,
+  //     productId: rp.productId ? String(rp.productId) : "",
+  //     quantity: rp.quantity ?? "",
+  //     supplier: rp.supplier ?? "",
+  //     note: rp.note ?? "",
+  //     date: rp.date ?? "",
+  //     userId,
+  //   });
+  //   setIsModalOpen(true);
+  // };
+
   const handleEditClick = (rp) => {
+    const pidFromRow = rp.productId ? String(rp.productId) : "";
+    const pidFromName =
+      productNameMap.get(
+        String(rp.name || "")
+          .trim()
+          .toLowerCase(),
+      ) || "";
+
     setCurrentProduct({
       ...rp,
-      productId: rp.productId ? String(rp.productId) : "",
+      productId: pidFromRow || pidFromName, // ✅ selected ঠিক রাখে
       quantity: rp.quantity ?? "",
       supplier: rp.supplier ?? "",
-      note: rp.note ?? "",
-      date: rp.date ?? "",
+      note: rp.note ?? rp.remarks ?? "",
+      date: rp.date ?? new Date().toISOString().slice(0, 10),
       userId,
     });
+
     setIsModalOpen(true);
   };
 
+  // const handleEditClick1 = (rp) => {
+  //   setCurrentProduct({
+  //     ...rp,
+  //     productId: rp.productId ? String(rp.productId) : "",
+  //     quantity: rp.quantity ?? "",
+  //     supplier: rp.supplier ?? "",
+  //     note: rp.note ?? "",
+  //     userId,
+  //   });
+  //   setIsModalOpen2(true);
+  // };
+
   const handleEditClick1 = (rp) => {
+    const pidFromRow = rp.productId ? String(rp.productId) : "";
+    const pidFromName =
+      productNameMap.get(
+        String(rp.name || "")
+          .trim()
+          .toLowerCase(),
+      ) || "";
+
     setCurrentProduct({
       ...rp,
-      productId: rp.productId ? String(rp.productId) : "",
+      productId: pidFromRow || pidFromName,
       quantity: rp.quantity ?? "",
       supplier: rp.supplier ?? "",
-      note: rp.note ?? "",
+      note: rp.note ?? rp.remarks ?? "",
       userId,
     });
+
     setIsModalOpen2(true);
   };
 
@@ -332,6 +384,9 @@ const PurchaseRequisionTable = () => {
     placeholder: (base) => ({ ...base, color: "#64748b" }),
     menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
   };
+
+  console.log("productsData", productsData);
+  console.log("firstRow", rows?.[0]);
 
   return (
     <motion.div
@@ -482,7 +537,10 @@ const PurchaseRequisionTable = () => {
                   {rp.supplier || "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                  {resolveProductName(rp)}
+                  {/* {resolveProductName(rp)} */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
+                    {rp.name || resolveProductName(rp)}
+                  </td>
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
@@ -642,6 +700,7 @@ const PurchaseRequisionTable = () => {
                 isDisabled={isLoadingAllProducts}
               />
             </div>
+
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Date</label>
               <input
@@ -668,21 +727,6 @@ const PurchaseRequisionTable = () => {
                 }
                 className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
                            focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              />
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Note</label>
-              <textarea
-                value={currentProduct?.note || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    note: e.target.value,
-                  })
-                }
-                className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
 

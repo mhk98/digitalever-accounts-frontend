@@ -1306,7 +1306,7 @@ const ReceivedProductTable = () => {
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.purchase_price * rp.quantity || 0).toFixed(2)}
+                  {Number(rp.price * rp.quantity || 0).toFixed(2)}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
@@ -1460,6 +1460,7 @@ const ReceivedProductTable = () => {
                 isDisabled={isLoadingAllProducts}
               />
             </div>
+
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Date</label>
               <input

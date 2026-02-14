@@ -596,7 +596,7 @@ const AssetsRequisitionTable = () => {
           >
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">
-                Edit Purchase Asset
+                Edit Purchase Requisition
               </h2>
               <button
                 type="button"
@@ -738,7 +738,6 @@ const AssetsRequisitionTable = () => {
                       })
                     }
                     className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    required
                   >
                     <option value="">Select Status</option>
                     <option value="Approved">Approved</option>
@@ -793,7 +792,7 @@ const AssetsRequisitionTable = () => {
           >
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">
-                Add Purchase Asset
+                Add Purchase Requisition
               </h2>
               <button
                 type="button"
@@ -856,7 +855,6 @@ const AssetsRequisitionTable = () => {
                   }
                   className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
                 />
               </div>
 

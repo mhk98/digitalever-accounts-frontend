@@ -1703,7 +1703,6 @@ const AssetsPurchaseTable = () => {
                   }
                   className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
                 />
               </div>
 
