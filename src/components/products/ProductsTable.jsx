@@ -717,7 +717,7 @@ const ProductsTable = () => {
     purchase_price: "",
     sale_price: "",
     warehouseId: "",
-    supplier: "",
+    supplierId: "",
   });
 
   const [products, setProducts] = useState([]);
@@ -727,6 +727,7 @@ const ProductsTable = () => {
   const [endDate, setEndDate] = useState("");
   const [name, setName] = useState("");
   const [warehouse, setWarehouse] = useState("");
+  const [supplier, setSupplier] = useState("");
 
   //Pagination calculation start
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -792,6 +793,20 @@ const ProductsTable = () => {
   }, [allProductsRes, allProductsLoading, allProductsError, allProductsErrObj]);
 
   // ✅ suppliers
+  // const {
+  //   data: allSupplierRes,
+  //   isLoading: isLoadingSupplier,
+  //   isError: isErrorSupplier,
+  //   error: errorSupplier,
+  // } = useGetAllSupplierWithoutQueryQuery();
+  // const suppliers = allSupplierRes?.data || [];
+
+  // useEffect(() => {
+  //   if (isErrorSupplier)
+  //     console.error("Error fetching suppliers", errorSupplier);
+  // }, [isErrorSupplier, errorSupplier]);
+
+  // ✅ suppliers
   const {
     data: allSupplierRes,
     isLoading: isLoadingSupplier,
@@ -804,6 +819,17 @@ const ProductsTable = () => {
     if (isErrorSupplier)
       console.error("Error fetching suppliers", errorSupplier);
   }, [isErrorSupplier, errorSupplier]);
+
+  // ✅ Dropdown options
+
+  const supplierOptions = useMemo(
+    () =>
+      (suppliers || []).map((w) => ({
+        value: w.Id,
+        label: w.name,
+      })),
+    [suppliers],
+  );
 
   // ✅ warehouses
   const {
@@ -819,6 +845,15 @@ const ProductsTable = () => {
       console.error("Error fetching warehouses", errorWarehouse);
   }, [isErrorWarehouse, errorWarehouse]);
 
+  const warehouseOptions = useMemo(
+    () =>
+      (warehouses || []).map((w) => ({
+        value: w.Id,
+        label: w.name,
+      })),
+    [warehouses],
+  );
+
   // ✅ Dropdown options
   const productOptions = useMemo(
     () =>
@@ -827,15 +862,6 @@ const ProductsTable = () => {
         label: p.name,
       })),
     [productsData],
-  );
-
-  const warehouseOptions = useMemo(
-    () =>
-      (warehouses || []).map((w) => ({
-        value: w.Id,
-        label: w.name,
-      })),
-    [warehouses],
   );
 
   // ✅ Query args (FIXED: itemsPerPage dependency included)
@@ -847,6 +873,7 @@ const ProductsTable = () => {
       endDate: endDate || undefined,
       name: name?.trim() ? name.trim() : undefined,
       warehouseId: warehouse || undefined,
+      supplierId: supplier || undefined,
     };
 
     Object.keys(args).forEach((k) => {
@@ -855,10 +882,20 @@ const ProductsTable = () => {
     });
 
     return args;
-  }, [currentPage, itemsPerPage, startDate, endDate, name, warehouse]);
+  }, [
+    currentPage,
+    itemsPerPage,
+    startDate,
+    endDate,
+    name,
+    warehouse,
+    supplier,
+  ]);
 
   const { data, isLoading, isError, error, refetch } =
     useGetAllProductQuery(queryArgs);
+
+  console.log("products", products);
 
   useEffect(() => {
     if (isError) {
@@ -898,12 +935,12 @@ const ProductsTable = () => {
     if (!createProduct.name?.trim())
       return toast.error("Product name is required");
     if (!createProduct.warehouseId) return toast.error("Warehouse is required");
-    if (!createProduct.supplier) return toast.error("Supplier is required");
+    if (!createProduct.supplierId) return toast.error("Supplier is required");
 
     try {
       const payload = {
         name: createProduct.name.trim(),
-        supplier: createProduct.supplier,
+        supplierId: Number(createProduct.supplierId),
         warehouseId: Number(createProduct.warehouseId),
         purchase_price: Number(createProduct.purchase_price),
         sale_price: Number(createProduct.sale_price),
@@ -918,7 +955,7 @@ const ProductsTable = () => {
           purchase_price: "",
           sale_price: "",
           warehouseId: "",
-          supplier: "",
+          supplierId: "",
         });
         refetch?.();
       } else toast.error(res?.message || "Create failed!");
@@ -936,12 +973,12 @@ const ProductsTable = () => {
       return toast.error("Product name is required");
     if (!currentProduct.warehouseId)
       return toast.error("Warehouse is required");
-    if (!currentProduct.supplier) return toast.error("Supplier is required");
+    if (!currentProduct.supplierId) return toast.error("Supplier is required");
 
     try {
       const updatedProduct = {
         name: currentProduct.name.trim(),
-        supplier: currentProduct.supplier,
+        supplierId: currentProduct.supplierId,
         warehouseId: Number(currentProduct.warehouseId),
         purchase_price: Number(currentProduct.purchase_price),
         sale_price: Number(currentProduct.sale_price),
@@ -1064,6 +1101,22 @@ const ProductsTable = () => {
         </div>
 
         <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Supplier</label>
+          <Select
+            options={supplierOptions}
+            value={
+              supplierOptions.find(
+                (o) => String(o.value) === String(supplier),
+              ) || null
+            }
+            onChange={(selected) => setSupplier(selected?.value || "")}
+            placeholder="Select Supplier"
+            isClearable
+            className="text-black"
+          />
+        </div>
+
+        <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Product</label>
           <Select
             options={productOptions}
@@ -1093,6 +1146,9 @@ const ProductsTable = () => {
                 Product
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Warehouse
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Supplier
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -1120,7 +1176,10 @@ const ProductsTable = () => {
                   {product.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {product.supplier || "-"}
+                  {product.warehouse.name || "-"}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {product.supplier.name || "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(product.purchase_price || 0).toFixed(2)}
@@ -1266,7 +1325,7 @@ const ProductsTable = () => {
                 onChange={(e) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    supplier: e.target.value,
+                    supplierId: e.target.value,
                   })
                 }
                 className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
@@ -1278,7 +1337,7 @@ const ProductsTable = () => {
                   <option disabled>Loading...</option>
                 ) : (
                   suppliers?.map((s) => (
-                    <option key={s.Id} value={s.name}>
+                    <option key={s.Id} value={s.Id}>
                       {s.name}
                     </option>
                   ))
@@ -1402,6 +1461,33 @@ const ProductsTable = () => {
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">Supplier</label>
                 <select
+                  value={createProduct.supplierId || ""}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      supplierId: e.target.value,
+                    })
+                  }
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  required
+                >
+                  <option value="">Select Supplier</option>
+                  {isLoadingSupplier ? (
+                    <option disabled>Loading...</option>
+                  ) : (
+                    suppliers?.map((s) => (
+                      <option key={s.Id} value={s.Id}>
+                        {s.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              {/* <div className="mt-4">
+                <label className="block text-sm text-slate-700">Supplier</label>
+                <select
                   value={createProduct.supplier || ""}
                   onChange={(e) =>
                     setCreateProduct({
@@ -1424,7 +1510,7 @@ const ProductsTable = () => {
                     ))
                   )}
                 </select>
-              </div>
+              </div> */}
 
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">

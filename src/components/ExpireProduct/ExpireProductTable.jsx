@@ -1,10 +1,9 @@
 import { motion } from "framer-motion";
-import { RotateCcw, Search, Notebook } from "lucide-react";
+import { RotateCcw, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import toast from "react-hot-toast";
+import { useGetAllWarrantyProductQuery } from "../../features/warrantyProduct/warrantyProduct";
 
 // ✅ তোমার query hook
-import { useGetAllConfirmOrderQuery } from "../../features/confirmOrder/confirmOrder";
 
 const ExpireProductTable = () => {
   const SOON_DAYS = 30;
@@ -68,7 +67,7 @@ const ExpireProductTable = () => {
 
   // ✅ API call
   const { data, isLoading, isError, error, refetch } =
-    useGetAllConfirmOrderQuery(queryArgs);
+    useGetAllWarrantyProductQuery(queryArgs);
 
   // ✅ rows from API response
   const rows = data?.data || [];
@@ -77,7 +76,7 @@ const ExpireProductTable = () => {
   useEffect(() => {
     if (isError) {
       console.error("ExpireProduct fetch error:", error);
-      toast.error(error?.data?.message || "Failed to load data");
+      // toast.error(error?.data?.message || "Failed to load data");
     }
     if (!isLoading && data?.meta) {
       const count = Number(data?.meta?.count || 0);
@@ -200,6 +199,8 @@ const ExpireProductTable = () => {
       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
+  console.log("rows", rows);
+  console.log("computedRows", computedRows);
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
@@ -363,19 +364,13 @@ const ExpireProductTable = () => {
                 Created
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Supplier
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Product
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Quantity
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Purchase Price
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Sale Price
+                Price
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Warranty
@@ -385,9 +380,6 @@ const ExpireProductTable = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Days Left
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Note
               </th>
             </tr>
           </thead>
@@ -405,10 +397,6 @@ const ExpireProductTable = () => {
                   {formatDate(rp.createdAt)}
                 </td>
 
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.supplier || "-"}
-                </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                   {rp.name || "-"}
                 </td>
@@ -418,11 +406,7 @@ const ExpireProductTable = () => {
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
-                  {formatMoney(rp.purchase_price)}
-                </td>
-
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
-                  {formatMoney(rp.sale_price)}
+                  {formatMoney(rp.price)}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
@@ -446,19 +430,6 @@ const ExpireProductTable = () => {
                     <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">
                       {rp.daysLeft} days
                     </span>
-                  )}
-                </td>
-
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.note && rp.note !== "---" ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Notebook size={16} className="text-slate-600" />
-                      <span className="truncate max-w-[220px]" title={rp.note}>
-                        {rp.note}
-                      </span>
-                    </span>
-                  ) : (
-                    "-"
                   )}
                 </td>
               </motion.tr>

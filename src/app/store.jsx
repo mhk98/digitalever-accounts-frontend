@@ -129,6 +129,7 @@ import { purchaseRequisitionApi } from "../features/purchaseRequisition/purchase
 import { receivedProductApi } from "../features/receivedProduct/receivedProduct";
 import { assetsRequisitionApi } from "../features/assetsRequisition/assetsRequisition";
 import { posReportApi } from "../features/posReport/posReport";
+import { warrantyroductApi } from "../features/warrantyProduct/warrantyProduct";
 
 // ✅ 1) Collect all apis once
 const apis = [
@@ -151,6 +152,7 @@ const apis = [
   bookApi,
   supplierApi,
   wirehouseApi,
+  warrantyroductApi,
   categoryApi,
   receiveableApi,
   payableApi,

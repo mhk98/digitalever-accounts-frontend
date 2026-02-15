@@ -1323,17 +1323,24 @@ import {
   useInsertDamageRepairMutation,
   useUpdateDamageRepairMutation,
 } from "../../features/damageRepair/damageRepair";
+import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
+import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 
 const DamageRepairTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isEditOpen1, setIsEditOpen1] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
+  const [warehouse, setWarehouse] = useState("");
+  const [supplier, setSupplier] = useState("");
+
   const role = localStorage.getItem("role");
   const [currentItem, setCurrentItem] = useState(null);
 
   // create form
   const [createForm, setCreateForm] = useState({
+    warehouseId: "",
+    supplierId: "",
     receivedId: "",
     quantity: "",
     note: "",
@@ -1620,6 +1627,54 @@ const DamageRepairTable = () => {
       Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
+  // ✅ suppliers
+  const {
+    data: allSupplierRes,
+    isLoading: isLoadingSupplier,
+    isError: isErrorSupplier,
+    error: errorSupplier,
+  } = useGetAllSupplierWithoutQueryQuery();
+  const suppliers = allSupplierRes?.data || [];
+
+  useEffect(() => {
+    if (isErrorSupplier)
+      console.error("Error fetching suppliers", errorSupplier);
+  }, [isErrorSupplier, errorSupplier]);
+
+  // ✅ Dropdown options
+
+  const supplierOptions = useMemo(
+    () =>
+      (suppliers || []).map((w) => ({
+        value: w.Id,
+        label: w.name,
+      })),
+    [suppliers],
+  );
+
+  // ✅ warehouses
+  const {
+    data: allWarehousesRes,
+    isLoading: isLoadingWarehouse,
+    isError: isErrorWarehouse,
+    error: errorWarehouse,
+  } = useGetAllWirehouseWithoutQueryQuery();
+  const warehouses = allWarehousesRes?.data || [];
+
+  useEffect(() => {
+    if (isErrorWarehouse)
+      console.error("Error fetching warehouses", errorWarehouse);
+  }, [isErrorWarehouse, errorWarehouse]);
+
+  const warehouseOptions = useMemo(
+    () =>
+      (warehouses || []).map((w) => ({
+        value: w.Id,
+        label: w.name,
+      })),
+    [warehouses],
+  );
+
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
@@ -1710,6 +1765,37 @@ const DamageRepairTable = () => {
           />
         </div>
 
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Warehouse</label>
+          <Select
+            options={warehouseOptions}
+            value={
+              warehouseOptions.find(
+                (o) => String(o.value) === String(warehouse),
+              ) || null
+            }
+            onChange={(selected) => setWarehouse(selected?.value || "")}
+            placeholder="Select Warehouse"
+            isClearable
+            className="text-black"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Supplier</label>
+          <Select
+            options={supplierOptions}
+            value={
+              supplierOptions.find(
+                (o) => String(o.value) === String(supplier),
+              ) || null
+            }
+            onChange={(selected) => setSupplier(selected?.value || "")}
+            placeholder="Select Supplier"
+            isClearable
+            className="text-black"
+          />
+        </div>
         <button
           type="button"
           className="h-11 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 transition rounded-xl px-4 text-sm font-semibold"
@@ -1894,7 +1980,7 @@ const DamageRepairTable = () => {
 
       {/* Edit Modal */}
       {isEditOpen && currentItem && (
-        <div className="fixed inset-0 flex items-center justify-center   p-4">
+        <div className="fixed inset-0 top-32 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -1939,6 +2025,61 @@ const DamageRepairTable = () => {
                            focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Warehouse</label>
+              <select
+                value={currentItem?.warehouseId || ""}
+                onChange={(e) =>
+                  setCurrentItem({
+                    ...currentItem,
+                    warehouseId: e.target.value,
+                  })
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                required
+              >
+                <option value="">Select Warehouse</option>
+                {isLoadingWarehouse ? (
+                  <option disabled>Loading...</option>
+                ) : (
+                  warehouses?.map((w) => (
+                    <option key={w.Id} value={w.Id}>
+                      {w.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Supplier</label>
+              <select
+                value={currentItem?.supplier || ""}
+                onChange={(e) =>
+                  setCurrentItem({
+                    ...currentItem,
+                    supplierId: e.target.value,
+                  })
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                required
+              >
+                <option value="">Select Supplier</option>
+                {isLoadingSupplier ? (
+                  <option disabled>Loading...</option>
+                ) : (
+                  suppliers?.map((s) => (
+                    <option key={s.Id} value={s.Id}>
+                      {s.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
             <div className="mt-4">
               <label className="block text-sm text-slate-600 mb-1">
                 Quantity
@@ -2069,7 +2210,7 @@ const DamageRepairTable = () => {
 
       {/* Add Modal */}
       {isAddOpen && (
-        <div className="fixed inset-0 flex items-center justify-center   p-4">
+        <div className="fixed top-32 inset-0 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -2119,6 +2260,63 @@ const DamageRepairTable = () => {
                            focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
               </div>
+
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">
+                  Warehouse
+                </label>
+                <select
+                  value={createForm?.warehouseId || ""}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      warehouseId: e.target.value,
+                    })
+                  }
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  required
+                >
+                  <option value="">Select Warehouse</option>
+                  {isLoadingWarehouse ? (
+                    <option disabled>Loading...</option>
+                  ) : (
+                    warehouses?.map((w) => (
+                      <option key={w.Id} value={w.Id}>
+                        {w.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Supplier</label>
+                <select
+                  value={createForm?.supplierId || ""}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      supplierId: e.target.value,
+                    })
+                  }
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  required
+                >
+                  <option value="">Select Supplier</option>
+                  {isLoadingSupplier ? (
+                    <option disabled>Loading...</option>
+                  ) : (
+                    suppliers?.map((s) => (
+                      <option key={s.Id} value={s.Id}>
+                        {s.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
                   Quantity
