@@ -1042,7 +1042,15 @@ const MetaTable = () => {
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.status}
+                  <span
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                      rp.status === "Approved"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    {rp.status}
+                  </span>
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -1063,9 +1071,7 @@ const MetaTable = () => {
                     <Edit size={18} />
                   </button>
 
-                  {role === "superAdmin" ||
-                  role === "admin" ||
-                  rp.status === "Approved" ? (
+                  {role === "superAdmin" || role === "admin" ? (
                     <button
                       onClick={() => handleDeleteProduct(rp.Id)}
                       className="text-red-600 hover:text-red-800 ml-3"

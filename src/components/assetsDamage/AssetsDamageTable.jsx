@@ -1330,7 +1330,15 @@ const AssetsDamageTable = () => {
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {row.status}
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                        row.status === "Approved"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
+                    >
+                      {row.status}
+                    </span>
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -1352,7 +1360,25 @@ const AssetsDamageTable = () => {
                         <Edit size={18} className="text-indigo-600" />
                       </button>
 
-                      {role === "superAdmin" || row.status === "Approved" ? (
+                      {/* {role === "superAdmin" || row.status === "Approved" ? (
+                        <button
+                          onClick={() => handleDeleteProduct(rowId)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
+                          title="Delete"
+                        >
+                          <Trash2 size={18} className="text-rose-600" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleDeleteClick(row)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
+                          title="Delete Request / Note"
+                        >
+                          <Trash2 size={18} className="text-rose-600" />
+                        </button>
+                      )} */}
+
+                      {role === "superAdmin" || role === "admin" ? (
                         <button
                           onClick={() => handleDeleteProduct(rowId)}
                           className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"

@@ -1328,21 +1328,16 @@ const AssetsSaleTable = () => {
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
-              {[
-                "Product",
-                "Quantity",
-                "Price",
-                "Total Price",
-                "Status",
-                "Note",
-              ].map((h) => (
-                <th
-                  key={h}
-                  className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                >
-                  {h}
-                </th>
-              ))}
+              {["Product", "Quantity", "Price", "Total Price", "Status"].map(
+                (h) => (
+                  <th
+                    key={h}
+                    className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                  >
+                    {h}
+                  </th>
+                ),
+              )}
 
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Actions
@@ -1382,27 +1377,27 @@ const AssetsSaleTable = () => {
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {row.status || "-"}
-                  </td>
-
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {row.note ? (
-                      <span className="inline-flex items-center gap-2">
-                        <Notebook size={16} className="text-slate-500" />
-                        <span
-                          className="max-w-[220px] truncate"
-                          title={row.note}
-                        >
-                          {row.note}
-                        </span>
-                      </span>
-                    ) : (
-                      "-"
-                    )}
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                        row.status === "Approved"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
+                    >
+                      {row.status}
+                    </span>
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-3">
+                      {row.note && (
+                        <button
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-slate-100 transition"
+                          title={row.note}
+                        >
+                          <Notebook size={18} className="text-slate-700" />
+                        </button>
+                      )}
                       <button
                         onClick={() => openEditModal(row)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-indigo-50 transition"

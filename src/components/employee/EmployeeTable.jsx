@@ -2742,6 +2742,7 @@ const EmployeeTable = () => {
               </th>
 
               {[
+                "Date",
                 "Employee",
                 "Employee ID",
                 "Basic Salary",
@@ -2790,6 +2791,11 @@ const EmployeeTable = () => {
                   />
                 </td>
 
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
+                  {emp.createdAt
+                    ? new Date(emp.createdAt).toLocaleDateString()
+                    : "-"}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                   {emp.name}
                 </td>

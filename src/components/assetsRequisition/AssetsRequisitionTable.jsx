@@ -447,6 +447,7 @@ const AssetsRequisitionTable = () => {
           <thead className="bg-slate-50">
             <tr>
               {[
+                "Date",
                 "Name",
                 "Quantity",
                 "Price",
@@ -474,6 +475,9 @@ const AssetsRequisitionTable = () => {
                 className="hover:bg-slate-50"
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
+                  {product.date}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                   {product.name}
                 </td>
 
@@ -490,7 +494,15 @@ const AssetsRequisitionTable = () => {
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {product.status}
+                  <span
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                      product.status === "Approved"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    {product.status}
+                  </span>
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -512,7 +524,7 @@ const AssetsRequisitionTable = () => {
                       <Edit size={18} className="text-indigo-600" />
                     </button>
 
-                    {role === "superAdmin" || product.status === "Approved" ? (
+                    {role === "superAdmin" || role === "admin" ? (
                       <button
                         onClick={() => handleDeleteProduct(product.Id)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
