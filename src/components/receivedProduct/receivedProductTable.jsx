@@ -1012,6 +1012,8 @@ const ReceivedProductTable = () => {
     setCurrentProduct({
       ...rp,
       productId: rp.productId ? String(rp.productId) : "",
+      supplierId: rp.supplierId ?? "",
+      warehouseId: rp.warehouseId ?? "",
       quantity: rp.quantity ?? "",
       supplier: rp.supplier ?? "",
       date: rp.date ?? "",
@@ -1024,6 +1026,8 @@ const ReceivedProductTable = () => {
     setCurrentProduct({
       ...rp,
       productId: rp.productId ? String(rp.productId) : "",
+      supplierId: rp.supplierId ?? "",
+      warehouseId: rp.warehouseId ?? "",
       quantity: rp.quantity ?? "",
       supplier: rp.supplier ?? "",
       userId,
@@ -1036,6 +1040,8 @@ const ReceivedProductTable = () => {
       const updatedProduct = {
         productId: Number(currentProduct.productId),
         quantity: Number(currentProduct.quantity),
+        supplierId: Number(currentProduct.supplierId),
+        warehouseId: Number(currentProduct.warehouseId),
         note: currentProduct.note,
         status: currentProduct.status,
         date: currentProduct.date,
@@ -1099,6 +1105,8 @@ const ReceivedProductTable = () => {
     try {
       const payload = {
         productId: Number(createProduct.productId),
+        supplierId: Number(createProduct.supplierId),
+        warehouseId: Number(createProduct.warehouseId),
         quantity: Number(createProduct.quantity),
         date: createProduct.date,
         note: createProduct.note,
@@ -1345,6 +1353,12 @@ const ReceivedProductTable = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Supplier
+              </th>{" "}
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Warehouse
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Warehouse
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Product
@@ -1358,11 +1372,9 @@ const ReceivedProductTable = () => {
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Sale Price
               </th>
-
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Status
               </th>
-
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Actions
               </th>
@@ -1382,24 +1394,26 @@ const ReceivedProductTable = () => {
                   {rp.date}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.supplier || "-"}
+                  {rp?.supplier?.name || "-"}
+                </td>{" "}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {rp?.warehouse?.name || "-"}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {rp?.warehouse?.name || "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                   {resolveProductName(rp)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.quantity || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.price * rp.quantity || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.sale_price * rp.quantity || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
                     className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
@@ -1413,7 +1427,6 @@ const ReceivedProductTable = () => {
                     {rp.status}
                   </span>
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center gap-2">
                     {rp.note && (
@@ -1591,7 +1604,7 @@ const ReceivedProductTable = () => {
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Supplier</label>
               <select
-                value={currentProduct?.supplier || ""}
+                value={currentProduct?.supplierId || ""}
                 onChange={(e) =>
                   setCurrentProduct({
                     ...currentProduct,

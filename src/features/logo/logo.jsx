@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const logoApi = createApi({
   reducerPath: "logoApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken(); // Fetch the token
       if (token) {

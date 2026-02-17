@@ -355,7 +355,7 @@
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {rp.supplier || "-"}
+//                   {rp?.supplier?.name || "-"}
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
@@ -985,7 +985,7 @@
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {rp.supplier || "-"}
+//                   {rp?.supplier?.name || "-"}
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
@@ -1509,6 +1509,8 @@ const DamageRepairedTable = () => {
     try {
       const payload = {
         receivedId: Number(createForm.receivedId),
+        supplierId: Number(createForm.supplierId),
+        warehouseId: Number(createForm.warehouseId),
         quantity: Number(createForm.quantity),
         remarks: createForm.remarks,
         date: createForm.date,
@@ -1537,6 +1539,8 @@ const DamageRepairedTable = () => {
       const payload = {
         note: currentItem.note,
         remarks: currentItem.remarks,
+        supplierId: Number(currentItem.supplierId),
+        warehouseId: Number(currentItem.warehouseId),
         date: currentItem.date,
         status: currentItem.status,
         quantity: Number(currentItem.quantity),
@@ -1565,6 +1569,8 @@ const DamageRepairedTable = () => {
       const payload = {
         note: currentItem.note,
         status: currentItem.status,
+        supplierId: Number(currentItem.supplierId),
+        warehouseId: Number(currentItem.warehouseId),
         remarks: currentItem.remarks,
         quantity: Number(currentItem.quantity || 0),
         receivedId: Number(currentItem.receivedId),
@@ -1818,6 +1824,9 @@ const DamageRepairedTable = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Supplier
+              </th>{" "}
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Warehouse
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Quantity
@@ -1857,34 +1866,30 @@ const DamageRepairedTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                   {rp.createdAt ? new Date(rp.edAt).toLocaleDateString() : "-"}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                   {resolveProductName(rp)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.supplier || "-"}
+                  {rp?.supplier?.name || "-"}
+                </td>{" "}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {rp?.warehouse?.name || "-"}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.quantity || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.purchase_price || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp.remarks || ""}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp.status || "-"}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-3">
                   {rp.note && (
                     <button
@@ -2054,7 +2059,7 @@ const DamageRepairedTable = () => {
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Supplier</label>
               <select
-                value={currentItem?.supplier || ""}
+                value={currentItem?.supplierId || ""}
                 onChange={(e) =>
                   setCurrentItem({
                     ...currentItem,

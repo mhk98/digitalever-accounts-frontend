@@ -272,6 +272,8 @@ const PurchaseRequisionTable = () => {
       const updatedProduct = {
         productId: Number(currentProduct.productId),
         quantity: Number(currentProduct.quantity),
+        supplierId: Number(currentProduct.supplierId),
+        warehouseId: Number(currentProduct.warehouseId),
         note: currentProduct.note,
         status: currentProduct.status,
         date: currentProduct.date,
@@ -336,6 +338,8 @@ const PurchaseRequisionTable = () => {
       const payload = {
         productId: Number(createProduct.productId),
         quantity: Number(createProduct.quantity),
+        supplierId: Number(createProduct.supplierId),
+        warehouseId: Number(createProduct.warehouseId),
         note: createProduct.note,
         date: createProduct.date,
         userId: userId,
@@ -585,6 +589,12 @@ const PurchaseRequisionTable = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Supplier
+              </th>{" "}
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Warehouse
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Warehouse
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Product
@@ -622,7 +632,13 @@ const PurchaseRequisionTable = () => {
                     : "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.supplier || "-"}
+                  {rp?.supplier?.name || "-"}
+                </td>{" "}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {rp?.warehouse?.name || "-"}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {rp?.warehouse?.name || "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                   {/* {resolveProductName(rp)} */}
@@ -630,19 +646,15 @@ const PurchaseRequisionTable = () => {
                     {rp.name || resolveProductName(rp)}
                   </td>
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.quantity || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.purchase_price || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
                     className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
@@ -654,7 +666,6 @@ const PurchaseRequisionTable = () => {
                     {rp.status || "Pending"}
                   </span>
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center gap-2">
                     {rp.note && (
@@ -676,9 +687,7 @@ const PurchaseRequisionTable = () => {
                       <Edit size={18} className="text-indigo-600" />
                     </button>
 
-                    {role === "superAdmin" ||
-                    role === "admin" ||
-                    rp.status === "Approved" ? (
+                    {role === "superAdmin" || role === "admin" ? (
                       <button
                         type="button"
                         onClick={() => handleDeleteProduct(rp.Id)}
@@ -819,7 +828,7 @@ const PurchaseRequisionTable = () => {
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Supplier</label>
               <select
-                value={currentProduct?.supplier || ""}
+                value={currentProduct?.supplierId || ""}
                 onChange={(e) =>
                   setCurrentProduct({
                     ...currentProduct,

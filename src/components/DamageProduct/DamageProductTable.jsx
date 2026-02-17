@@ -355,7 +355,7 @@
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {rp.supplier || "-"}
+//                   {rp?.supplier?.name || "-"}
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
@@ -986,7 +986,7 @@
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {rp.supplier || "-"}
+//                   {rp?.supplier?.name || "-"}
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
@@ -1511,6 +1511,8 @@ const DamageProductTable = () => {
     try {
       const payload = {
         receivedId: Number(createForm.receivedId),
+        supplierId: Number(createForm.supplierId),
+        warehouseId: Number(createForm.warehouseId),
         quantity: Number(createForm.quantity),
         date: createForm.date,
       };
@@ -1541,6 +1543,8 @@ const DamageProductTable = () => {
         status: currentItem.status,
         quantity: Number(currentItem.quantity),
         receivedId: Number(currentItem.receivedId),
+        supplierId: Number(currentItem.supplierId),
+        warehouseId: Number(currentItem.warehouseId),
       };
 
       const res = await updateDamageProduct({
@@ -1815,6 +1819,9 @@ const DamageProductTable = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Supplier
+              </th>{" "}
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Warehouse
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Quantity
@@ -1848,31 +1855,27 @@ const DamageProductTable = () => {
                     ? new Date(rp.createdAt).toLocaleDateString()
                     : "-"}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                   {resolveProductName(rp)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.supplier || "-"}
+                  {rp?.supplier?.name || "-"}
+                </td>{" "}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {rp?.warehouse?.name || "-"}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.quantity || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.purchase_price || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp.status || "-"}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-3">
                   {rp.note && (
                     <button
@@ -2042,7 +2045,7 @@ const DamageProductTable = () => {
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Supplier</label>
               <select
-                value={currentItem?.supplier || ""}
+                value={currentItem?.supplierId || ""}
                 onChange={(e) =>
                   setCurrentItem({
                     ...currentItem,

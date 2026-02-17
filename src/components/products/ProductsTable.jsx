@@ -1150,6 +1150,9 @@ const ProductsTable = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Supplier
+              </th>{" "}
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Warehouse
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Purchase
@@ -1321,7 +1324,7 @@ const ProductsTable = () => {
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Supplier</label>
               <select
-                value={currentProduct?.supplier || ""}
+                value={currentProduct?.supplierId || ""}
                 onChange={(e) =>
                   setCurrentProduct({
                     ...currentProduct,

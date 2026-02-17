@@ -10,7 +10,7 @@
 //   useUserUpdateMutation,
 // } from "../../features/auth/auth";
 
-// const API_BASE = " http://localhost:5000";
+// const API_BASE = " https://apikafela.digitalever.com.bd";
 
 // const UserManagementTable = () => {
 //   // Modals
@@ -674,7 +674,7 @@ import {
   useUserUpdateMutation,
 } from "../../features/auth/auth";
 
-const API_BASE = " http://localhost:5000";
+const API_BASE = " https://apikafela.digitalever.com.bd";
 
 const UserManagementTable = () => {
   // Modals

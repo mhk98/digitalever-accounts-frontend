@@ -355,7 +355,7 @@
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {rp.supplier || "-"}
+//                   {rp?.supplier?.name || "-"}
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
@@ -988,7 +988,7 @@
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {rp.supplier || "-"}
+//                   {rp?.supplier?.name || "-"}
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
@@ -1516,6 +1516,8 @@ const ConfirmOrderTable = () => {
     try {
       const payload = {
         receivedId: Number(createForm.receivedId),
+        supplierId: Number(createForm.supplierId),
+        warehouseId: Number(createForm.warehouseId),
         quantity: Number(createForm.quantity),
         date: createForm.date,
         warrantyValue: createForm.hasWarranty
@@ -1548,6 +1550,8 @@ const ConfirmOrderTable = () => {
         note: currentItem.note,
         status: currentItem.status,
         date: currentItem.date,
+        supplierId: Number(currentItem.supplierId),
+        warehouseId: Number(currentItem.warehouseId),
         quantity: Number(currentItem.quantity),
         receivedId: Number(currentItem.receivedId),
         userId,
@@ -1573,6 +1577,8 @@ const ConfirmOrderTable = () => {
 
     try {
       const payload = {
+        supplierId: Number(currentItem.supplierId),
+        warehouseId: Number(currentItem.warehouseId),
         note: currentItem.note,
         status: currentItem.status,
         quantity: Number(currentItem.quantity || 0),
@@ -1826,6 +1832,9 @@ const ConfirmOrderTable = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Supplier
+              </th>{" "}
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Warehouse
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Quantity
@@ -1862,35 +1871,40 @@ const ConfirmOrderTable = () => {
                     ? new Date(rp.createdAt).toLocaleDateString()
                     : "-"}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                   {resolveProductName(rp)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.supplier || "-"}
+                  {rp?.supplier?.name || "-"}
+                </td>{" "}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {rp?.warehouse?.name || "-"}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.quantity || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.purchase_price || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.status || "-"}
+                  <span
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                      rp.status === "Approved"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    {rp.status || "---"}
+                  </span>
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.warrantyValue} {rp.warrantyUnit}
+                  {rp.warrantyValue
+                    ? `${rp.warrantyValue} ${rp.warrantyUnit || ""}`
+                    : "-"}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-3">
                   {rp.note && (
                     <button
@@ -1908,9 +1922,7 @@ const ConfirmOrderTable = () => {
                     <Edit size={18} />
                   </button>
 
-                  {role === "superAdmin" ||
-                  role === "admin" ||
-                  rp.status === "Approved" ? (
+                  {role === "superAdmin" || role === "admin" ? (
                     <button
                       onClick={() => handleDelete(rp.Id)}
                       className="text-red-600 hover:text-red-700"
@@ -2062,7 +2074,7 @@ const ConfirmOrderTable = () => {
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Supplier</label>
               <select
-                value={currentItem?.supplier || ""}
+                value={currentItem?.supplierId || ""}
                 onChange={(e) =>
                   setCurrentItem({
                     ...currentItem,

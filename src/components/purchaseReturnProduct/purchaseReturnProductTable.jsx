@@ -433,7 +433,7 @@
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {rp.supplier || "-"}
+//                   {rp?.supplier?.name || "-"}
 //                 </td>
 
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
@@ -990,6 +990,8 @@ const PurchaseReturnProductTable = () => {
     try {
       const payload = {
         receivedId: Number(createForm.receivedId),
+        supplierId: Number(createForm.supplierId),
+        warehouseId: Number(createForm.warehouseId),
         quantity: Number(createForm.quantity),
         date: createForm.date,
       };
@@ -1281,6 +1283,12 @@ const PurchaseReturnProductTable = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Supplier
+              </th>{" "}
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Warehouse
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Warehouse
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Quantity
@@ -1314,27 +1322,27 @@ const PurchaseReturnProductTable = () => {
                     ? new Date(rp.createdAt).toLocaleDateString()
                     : "-"}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                   {resolveProductName(rp)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.supplier || "-"}
+                  {rp?.supplier?.name || "-"}
+                </td>{" "}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {rp?.warehouse?.name || "-"}
                 </td>
-
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {rp?.warehouse?.name || "-"}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.quantity || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.purchase_price || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
                     className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
@@ -1346,7 +1354,6 @@ const PurchaseReturnProductTable = () => {
                     {rp.status || "Pending"}
                   </span>
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center gap-2">
                     {rp.note && (
@@ -1527,7 +1534,7 @@ const PurchaseReturnProductTable = () => {
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Supplier</label>
               <select
-                value={currentItem?.supplier || ""}
+                value={currentItem?.supplierId || ""}
                 onChange={(e) =>
                   setCurrentItem({
                     ...currentItem,
