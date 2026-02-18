@@ -72,7 +72,7 @@
 //       toast.error("User load failed!");
 //       return;
 //     }
-//     if (!isLoading && data?.meta?.total != null) {
+//     if (!isLoading && data?.meta?.count != null) {
 //       setTotalPages(Math.max(1, Math.ceil(data.meta.total / itemsPerPage)));
 //     }
 //   }, [data, isLoading, isError, error]);
@@ -736,7 +736,7 @@ const UserManagementTable = () => {
       toast.error("User load failed!");
       return;
     }
-    if (!isLoading && data?.meta?.total != null) {
+    if (!isLoading && data?.meta?.count != null) {
       setTotalPages(Math.max(1, Math.ceil(data.meta.total / itemsPerPage)));
     }
   }, [data, isLoading, isError, error]);

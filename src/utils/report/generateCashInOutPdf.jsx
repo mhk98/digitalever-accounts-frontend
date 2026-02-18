@@ -19,16 +19,16 @@ export const generateCashInOutPdf = async ({
   doc.setLineWidth(0.2);
   doc.line(14, 18, 196, 18);
 
-  const fmtDate = (d) => {
-    if (!d) return "-";
-    const dt = new Date(d);
-    if (Number.isNaN(dt.getTime())) return "-";
-    return dt.toLocaleDateString();
-  };
+  // const fmtDate = (d) => {
+  //   if (!d) return "-";
+  //   const dt = new Date(d);
+  //   if (Number.isNaN(dt.getTime())) return "-";
+  //   return dt.toLocaleDateString();
+  // };
 
   const rows = products.map((p, idx) => [
     idx + 1,
-    fmtDate(p.createdAt),
+    p.date,
     p.paymentMode || "-",
     p.paymentStatus || "-",
     p.remarks || "-",

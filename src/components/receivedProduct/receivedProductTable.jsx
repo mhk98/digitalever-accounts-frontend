@@ -166,7 +166,7 @@
 //     }
 //     if (!isLoading && data) {
 //       setProducts(data.data || []);
-//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
 //     }
 //   }, [data, isLoading, isError, error, itemsPerPage]);
 
@@ -341,7 +341,7 @@
 //           </div>
 
 //           <span className="text-white font-semibold tabular-nums">
-//             {isLoading ? "Loading..." : data?.meta?.totalQuantity}
+//             {isLoading ? "Loading..." : data?.meta?.countQuantity}
 //           </span>
 //         </div>
 //       </div>
@@ -995,7 +995,7 @@ const ReceivedProductTable = () => {
     if (!isLoading && data) {
       setRows(data.data || []);
       setTotalPages(
-        Math.max(1, Math.ceil((data?.meta?.total || 0) / itemsPerPage)),
+        Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)),
       );
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
@@ -1236,7 +1236,7 @@ const ReceivedProductTable = () => {
           </div>
 
           <span className="text-slate-900 font-semibold tabular-nums">
-            {isLoading ? "Loading..." : (data?.meta?.totalQuantity ?? 0)}
+            {isLoading ? "Loading..." : (data?.meta?.countQuantity ?? 0)}
           </span>
         </div>
       </div>
@@ -1358,9 +1358,6 @@ const ReceivedProductTable = () => {
                 Warehouse
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Warehouse
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Product
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -1396,9 +1393,6 @@ const ReceivedProductTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp?.supplier?.name || "-"}
                 </td>{" "}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp?.warehouse?.name || "-"}
-                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp?.warehouse?.name || "-"}
                 </td>

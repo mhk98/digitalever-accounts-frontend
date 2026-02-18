@@ -11,16 +11,17 @@ export const generatePettyCashXlsx = ({
   // Header + rows
   const header = ["#", "Date", "Payment Mode", "Status", "Remarks", "Amount"];
 
-  const fmtDate = (d) => {
-    if (!d) return "-";
-    const dt = new Date(d);
-    if (Number.isNaN(dt.getTime())) return "-";
-    return dt.toLocaleDateString();
-  };
+  // const fmtDate = (d) => {
+  //   if (!d) return "-";
+  //   const dt = new Date(d);
+  //   if (Number.isNaN(dt.getTime())) return "-";
+  //   return dt.toLocaleDateString();
+  // };
 
   const rows = products.map((p, idx) => [
     idx + 1,
-    fmtDate(p.createdAt),
+    // fmtDate(p.createdAt),
+    p.date,
     p.paymentMode || "-",
     p.paymentStatus || "-",
     p.remarks || "-",

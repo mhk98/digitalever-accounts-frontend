@@ -134,7 +134,7 @@
 //     }
 //     if (!isLoading && data) {
 //       setProducts(data?.data || []);
-//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
 //     }
 //   }, [data, isLoading, isError, error, itemsPerPage]);
 
@@ -347,7 +347,7 @@
 //           </div>
 
 //           <span className="text-white font-semibold tabular-nums">
-//             {isLoading ? "Loading..." : data?.meta?.totalQuantity}
+//             {isLoading ? "Loading..." : data?.meta?.countQuantity}
 //           </span>
 //         </div>
 //       </div>
@@ -978,7 +978,7 @@ const AssetsSaleTable = () => {
     }
     if (!isLoading && data) {
       setProducts(data?.data || []);
-      setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+      setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
 
@@ -1239,7 +1239,7 @@ const AssetsSaleTable = () => {
         {/* <div className="inline-flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-slate-700">
           <span className="text-sm">Total Sale:</span>
           <span className="font-semibold tabular-nums text-slate-900">
-            {isLoading ? "Loading..." : (data?.meta?.totalQuantity ?? 0)}
+            {isLoading ? "Loading..." : (data?.meta?.countQuantity ?? 0)}
           </span>
         </div> */}
 
@@ -1250,7 +1250,7 @@ const AssetsSaleTable = () => {
           </div>
 
           <span className="text-slate-900 font-semibold tabular-nums">
-            {isLoading ? "Loading..." : data?.meta?.totalQuantity}
+            {isLoading ? "Loading..." : data?.meta?.countQuantity}
           </span>
         </div>
       </div>

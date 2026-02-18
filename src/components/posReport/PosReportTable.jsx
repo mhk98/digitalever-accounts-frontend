@@ -105,7 +105,7 @@
 //     }
 //     if (!isLoading && data?.data) {
 //       setReports(data.data);
-//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
 //     }
 //   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
 
@@ -1062,7 +1062,7 @@ const PosReportTable = () => {
     }
     if (!isLoading && data?.data) {
       setReports(data.data);
-      setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+      setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
 
@@ -1881,7 +1881,7 @@ const PosReportTable = () => {
 
       {/* -------------------- Invoice Modal (single) -------------------- */}
       {isInvoiceOpen && invoiceReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 top-28 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <motion.div
             className="bg-white rounded-2xl p-4 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full max-w-3xl border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -1923,7 +1923,7 @@ const PosReportTable = () => {
 
       {/* -------------------- Bulk Invoice Modal -------------------- */}
       {isBulkInvoiceOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 top-40 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <motion.div
             className="bg-white rounded-2xl p-4 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full max-w-5xl border border-slate-200"
             initial={{ opacity: 0, y: -30 }}

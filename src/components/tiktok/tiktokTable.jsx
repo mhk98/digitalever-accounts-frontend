@@ -165,7 +165,7 @@
 //         (item) => item.platform === "Tiktok",
 //       );
 //       setProducts(onlyTiktok);
-//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
 //     }
 //   }, [data, isLoading, isError, error, currentPage]);
 
@@ -760,7 +760,7 @@ const TiktokTable = () => {
       // );
       // setProducts(onlyMeta);
       setProducts(data?.data);
-      setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+      setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
 

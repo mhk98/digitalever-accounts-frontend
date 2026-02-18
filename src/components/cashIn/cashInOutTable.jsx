@@ -173,7 +173,7 @@
 //     if (isError) console.error("Error:", error);
 //     if (!isLoading && data) {
 //       setProducts(data?.data ?? []);
-//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
 //     }
 //   }, [data, isLoading, isError, error, itemsPerPage]);
 
@@ -637,14 +637,14 @@
 //           <div className="rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3">
 //             <p className="text-xs text-gray-400">Total CashIn</p>
 //             <p className="mt-1 text-lg font-semibold text-white tabular-nums">
-//               {isLoading ? "Loading..." : data?.meta?.totalCashIn}
+//               {isLoading ? "Loading..." : data?.meta?.countCashIn}
 //             </p>
 //           </div>
 
 //           <div className="rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3">
 //             <p className="text-xs text-gray-400">Total CashOut</p>
 //             <p className="mt-1 text-lg font-semibold text-white tabular-nums">
-//               {isLoading ? "Loading..." : data?.meta?.totalCashOut}
+//               {isLoading ? "Loading..." : data?.meta?.countCashOut}
 //             </p>
 //           </div>
 
@@ -1739,7 +1739,7 @@ const CashInOutTable = () => {
     if (isError) console.error("Error:", error);
     if (!isLoading && data) {
       setProducts(data?.data ?? []);
-      setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+      setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
 
@@ -2156,14 +2156,14 @@ const CashInOutTable = () => {
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <p className="text-xs text-slate-600">Total CashIn</p>
             <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">
-              {isLoading ? "Loading..." : data?.meta?.totalCashIn}
+              {isLoading ? "Loading..." : data?.meta?.countCashIn}
             </p>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <p className="text-xs text-slate-600">Total CashOut</p>
             <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">
-              {isLoading ? "Loading..." : data?.meta?.totalCashOut}
+              {isLoading ? "Loading..." : data?.meta?.countCashOut}
             </p>
           </div>
 
@@ -2222,7 +2222,6 @@ const CashInOutTable = () => {
             <option value="">All</option>
             <option value="Cash">Cash</option>
             <option value="Bkash">Bkash</option>
-            <option value="Petty Cash">Petty Cash</option>
             <option value="Nagad">Nagad</option>
             <option value="Rocket">Rocket</option>
             <option value="Bank">Bank</option>
@@ -2278,6 +2277,9 @@ const CashInOutTable = () => {
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Document
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -2326,6 +2328,9 @@ const CashInOutTable = () => {
                   transition={{ duration: 0.2 }}
                   className="hover:bg-slate-50"
                 >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp.date || "-"}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {!safePath ? (
                       "-"
@@ -2382,7 +2387,15 @@ const CashInOutTable = () => {
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {rp.status || "-"}
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                        rp.status === "Approved"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
+                    >
+                      {rp.status || "---"}
+                    </span>
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -2523,7 +2536,6 @@ const CashInOutTable = () => {
                 <option value="">Select Payment Mode</option>
                 <option value="Cash">Cash</option>
                 <option value="Bkash">Bkash</option>
-                <option value="Petty Cash">Petty Cash</option>
                 <option value="Nagad">Nagad</option>
                 <option value="Rocket">Rocket</option>
                 <option value="Bank">Bank</option>
@@ -2921,7 +2933,6 @@ const CashInOutTable = () => {
                   <option value="">Select Payment Mode</option>
                   <option value="Cash">Cash</option>
                   <option value="Bkash">Bkash</option>
-                  <option value="Petty Cash">Petty Cash</option>
                   <option value="Nagad">Nagad</option>
                   <option value="Rocket">Rocket</option>
                   <option value="Bank">Bank</option>

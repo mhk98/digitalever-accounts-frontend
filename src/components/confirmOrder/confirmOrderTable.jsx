@@ -99,7 +99,7 @@
 //     if (isError) console.error("PurchaseReturn fetch error:", error);
 //     if (!isLoading && data) {
 //       setRows(data?.data ?? []);
-//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
 //     }
 //   }, [data, isLoading, isError, error]);
 
@@ -257,7 +257,7 @@
 //             <span className="text-sm">Total Purchase Return</span>
 //           </div>
 //           <span className="text-white font-semibold tabular-nums">
-//             {isLoading ? "Loading..." : (data?.meta?.totalQuantity ?? 0)}
+//             {isLoading ? "Loading..." : (data?.meta?.countQuantity ?? 0)}
 //           </span>
 //         </div>
 //       </div>
@@ -676,7 +676,7 @@
 //     if (isError) console.error("PurchaseReturn fetch error:", error);
 //     if (!isLoading && data) {
 //       setRows(data?.data ?? []);
-//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
 //     }
 //   }, [data, isLoading, isError, error]);
 
@@ -886,7 +886,7 @@
 //             <span className="text-sm">Total Confirm Order</span>
 //           </div>
 //           <span className="text-white font-semibold tabular-nums">
-//             {isLoading ? "Loading..." : (data?.meta?.totalQuantity ?? 0)}
+//             {isLoading ? "Loading..." : (data?.meta?.countQuantity ?? 0)}
 //           </span>
 //         </div>
 //       </div>
@@ -1446,7 +1446,7 @@ const ConfirmOrderTable = () => {
     if (!isLoading && data) {
       setRows(data?.data ?? []);
       setTotalPages(
-        Math.max(1, Math.ceil((data?.meta?.total || 0) / itemsPerPage)),
+        Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)),
       );
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
@@ -1711,7 +1711,7 @@ const ConfirmOrderTable = () => {
             <span className="text-sm">Total Confirm Order</span>
           </div>
           <span className="text-slate-900 font-semibold tabular-nums">
-            {isLoading ? "Loading..." : (data?.meta?.totalQuantity ?? 0)}
+            {isLoading ? "Loading..." : (data?.meta?.countQuantity ?? 0)}
           </span>
         </div>
       </div>

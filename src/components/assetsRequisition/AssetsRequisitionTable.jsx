@@ -117,7 +117,7 @@ const AssetsRequisitionTable = () => {
       console.error("Error fetching product data", error);
     } else if (!isLoading && data) {
       setProducts(data.data || []);
-      setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+      setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
 
@@ -374,7 +374,7 @@ const AssetsRequisitionTable = () => {
           </div>
 
           <span className="text-slate-900 font-semibold tabular-nums">
-            {isLoading ? "Loading..." : data?.meta?.totalQuantity}
+            {isLoading ? "Loading..." : data?.meta?.countQuantity}
           </span>
         </div>
       </div>

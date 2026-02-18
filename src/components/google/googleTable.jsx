@@ -77,7 +77,7 @@
 //         (item) => item.platform === "Google",
 //       );
 //       setProducts(onlyGoogle);
-//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
 //     }
 //   }, [data, isLoading, isError, error, currentPage]);
 
@@ -759,7 +759,7 @@ const GoogleTable = () => {
       // setProducts(onlyMeta);
       setProducts(data?.data);
 
-      setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+      setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
 

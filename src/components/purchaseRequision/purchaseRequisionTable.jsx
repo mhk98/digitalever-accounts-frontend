@@ -186,7 +186,7 @@ const PurchaseRequisionTable = () => {
     if (!isLoading && data) {
       setRows(data.data || []);
       setTotalPages(
-        Math.max(1, Math.ceil((data?.meta?.total || 0) / itemsPerPage)),
+        Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)),
       );
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
@@ -472,7 +472,7 @@ const PurchaseRequisionTable = () => {
           </div>
 
           <span className="text-slate-900 font-semibold tabular-nums">
-            {isLoading ? "Loading..." : (data?.meta?.totalQuantity ?? 0)}
+            {isLoading ? "Loading..." : (data?.meta?.countQuantity ?? 0)}
           </span>
         </div>
       </div>
@@ -634,9 +634,6 @@ const PurchaseRequisionTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp?.supplier?.name || "-"}
                 </td>{" "}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp?.warehouse?.name || "-"}
-                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp?.warehouse?.name || "-"}
                 </td>

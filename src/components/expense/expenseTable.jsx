@@ -73,7 +73,7 @@ const ExpenseTable = () => {
       name: name || undefined, // (তোমার backend যদি Id নেয়)
       // যদি backend "id" বা "productId" নেয়, তাহলে উপরের key টা সেটায় বদলাবে
     }),
-    [currentPage, itemsPerPage, startDate, endDate, name] // ✅ FIXED
+    [currentPage, itemsPerPage, startDate, endDate, name], // ✅ FIXED
   );
 
   const { data, isLoading, isError, error, refetch } =
@@ -89,7 +89,7 @@ const ExpenseTable = () => {
       const list = data?.data || [];
       setProducts(list);
 
-      setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+      setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error, itemsPerPage]); // ✅ name removed
 
@@ -213,7 +213,7 @@ const ExpenseTable = () => {
 
   const handleNextSet = () =>
     setStartPage((prev) =>
-      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1))
+      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
   // ✅ Dropdown options: data?.data (same as products), but better than products state coupling
@@ -263,10 +263,7 @@ const ExpenseTable = () => {
         <div className="flex items-center justify-center">
           <Select
             options={productOptions}
-            value={
-              productOptions.find((o) => o.value === name) ||
-              null
-            }
+            value={productOptions.find((o) => o.value === name) || null}
             onChange={(selected) =>
               setName(selected?.value ? String(selected.value) : "")
             }

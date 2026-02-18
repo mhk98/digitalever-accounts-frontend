@@ -111,7 +111,7 @@
 //     if (!isLoading && data) {
 //       setProducts(data.data || []);
 //       setTotalPages(
-//         Math.max(1, Math.ceil((data?.meta?.total || 0) / itemsPerPage)),
+//         Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)),
 //       );
 //     }
 //   }, [data, isLoading, isError, error, itemsPerPage]);
@@ -1352,7 +1352,7 @@ export default function SellPosTable() {
     if (!isLoading && data) {
       setProducts(data.data || []);
       setTotalPages(
-        Math.max(1, Math.ceil((data?.meta?.total || 0) / itemsPerPage)),
+        Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)),
       );
     }
   }, [data, isLoading, isError, error, itemsPerPage]);

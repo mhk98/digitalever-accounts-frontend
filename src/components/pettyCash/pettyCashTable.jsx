@@ -134,7 +134,7 @@
 //     if (isError) console.error("Error:", error);
 //     if (!isLoading && data) {
 //       setProducts(data?.data ?? []);
-//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
 //     }
 //   }, [data, isLoading, isError, error]);
 
@@ -442,14 +442,14 @@
 //           <div className="rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3">
 //             <p className="text-xs text-gray-400">Total CashIn</p>
 //             <p className="mt-1 text-lg font-semibold text-white tabular-nums">
-//               {isLoading ? "Loading..." : data?.meta?.totalCashIn}
+//               {isLoading ? "Loading..." : data?.meta?.countCashIn}
 //             </p>
 //           </div>
 
 //           <div className="rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3">
 //             <p className="text-xs text-gray-400">Total CashOut</p>
 //             <p className="mt-1 text-lg font-semibold text-white tabular-nums">
-//               {isLoading ? "Loading..." : data?.meta?.totalCashOut}
+//               {isLoading ? "Loading..." : data?.meta?.countCashOut}
 //             </p>
 //           </div>
 
@@ -1321,7 +1321,7 @@ const PettyCashTable = () => {
     if (isError) console.error("Error:", error);
     if (!isLoading && data) {
       setProducts(data?.data ?? []);
-      setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+      setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error]);
 
@@ -1595,14 +1595,14 @@ const PettyCashTable = () => {
           <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
             <p className="text-xs text-slate-500">Total CashIn</p>
             <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">
-              {isLoading ? "Loading..." : data?.meta?.totalCashIn}
+              {isLoading ? "Loading..." : data?.meta?.countCashIn}
             </p>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
             <p className="text-xs text-slate-500">Total CashOut</p>
             <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">
-              {isLoading ? "Loading..." : data?.meta?.totalCashOut}
+              {isLoading ? "Loading..." : data?.meta?.countCashOut}
             </p>
           </div>
 

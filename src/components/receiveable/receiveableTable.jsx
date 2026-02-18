@@ -87,7 +87,7 @@
 //     if (isError) console.error("Error:", error);
 //     if (!isLoading && data) {
 //       setProducts(data?.data ?? []);
-//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
 //     }
 //   }, [data, isLoading, isError, error]);
 
@@ -316,7 +316,7 @@
 //           </div>
 
 //           <span className="text-white font-semibold tabular-nums">
-//             {isLoading ? "Loading..." : data?.meta?.totalAmount}
+//             {isLoading ? "Loading..." : data?.meta?.countAmount}
 //           </span>
 //         </div>
 //       </div>
@@ -940,7 +940,7 @@ const ReceiveableTable = () => {
     if (isError) console.error("Error:", error);
     if (!isLoading && data) {
       setProducts(data?.data ?? []);
-      setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+      setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error]);
 
@@ -1172,7 +1172,7 @@ const ReceiveableTable = () => {
           </div>
 
           <span className="text-slate-900 font-semibold tabular-nums">
-            {isLoading ? "Loading..." : data?.meta?.totalAmount}
+            {isLoading ? "Loading..." : data?.meta?.countAmount}
           </span>
         </div>
       </div>

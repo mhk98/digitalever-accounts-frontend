@@ -93,7 +93,7 @@
 //       console.error("Error fetching product data", error);
 //     } else if (!isLoading && data) {
 //       setProducts(data.data);
-//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
 //     }
 //   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
 
@@ -906,7 +906,7 @@ const ProductsTable = () => {
     if (!isLoading && data?.data) {
       setProducts(data.data);
       setTotalPages(
-        Math.max(1, Math.ceil((data?.meta?.total || 0) / itemsPerPage)),
+        Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)),
       );
     }
   }, [data, isLoading, isError, error, itemsPerPage]);

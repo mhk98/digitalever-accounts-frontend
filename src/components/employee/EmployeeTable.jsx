@@ -248,7 +248,7 @@
 //     }
 //     if (!isLoading && data?.data) {
 //       setEmployees(data.data);
-//       setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+//       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
 //     }
 //   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
 
@@ -2151,7 +2151,7 @@ const EmployeeTable = () => {
     }
     if (!isLoading && data?.data) {
       setEmployees(data.data);
-      setTotalPages(Math.ceil((data?.meta?.total || 0) / itemsPerPage) || 1);
+      setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
 

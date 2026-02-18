@@ -61,7 +61,7 @@
 //   useEffect(() => {
 //     if (isError) {
 //       console.error("Error fetching book data", error);
-//     } else if (!isLoading && data?.meta?.total != null) {
+//     } else if (!isLoading && data?.meta?.count != null) {
 //       setTotalPages(Math.max(1, Math.ceil(data.meta.total / itemsPerPage)));
 //     }
 //   }, [data, isLoading, isError, error, itemsPerPage]);
@@ -434,7 +434,7 @@ const AccountingTable = () => {
   useEffect(() => {
     if (isError) {
       console.error("Error fetching book data", error);
-    } else if (!isLoading && data?.meta?.total != null) {
+    } else if (!isLoading && data?.meta?.count != null) {
       setTotalPages(Math.max(1, Math.ceil(data.meta.total / itemsPerPage)));
     }
   }, [data, isLoading, isError, error, itemsPerPage]);

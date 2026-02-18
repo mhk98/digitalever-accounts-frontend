@@ -59,7 +59,7 @@
 //   useEffect(() => {
 //     if (isError) {
 //       console.error("Error fetching supplier data", error);
-//     } else if (!isLoading && data?.meta?.total != null) {
+//     } else if (!isLoading && data?.meta?.count != null) {
 //       setTotalPages(Math.max(1, Math.ceil(data.meta.total / itemsPerPage)));
 //     }
 //   }, [data, isLoading, isError, error, itemsPerPage]);
@@ -440,7 +440,7 @@ const WarehouseTable = () => {
       console.error("Error fetching warehouse data", error);
       return;
     }
-    if (!isLoading && data?.meta?.total != null) {
+    if (!isLoading && data?.meta?.count != null) {
       setTotalPages(Math.max(1, Math.ceil(data.meta.total / itemsPerPage)));
     }
   }, [data, isLoading, isError, error]);

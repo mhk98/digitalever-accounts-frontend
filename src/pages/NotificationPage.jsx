@@ -57,7 +57,7 @@
 //   const [updateNotification] = useUpdateNotificationMutation();
 
 //   const notifications = data?.data || [];
-//   // const totalPages = Math.ceil((data?.meta?.total || 0) / limit);
+//   // const totalPages = Math.ceil((data?.meta?.count || 0) / limit);
 
 //   const markAsRead = async (id) => {
 //     try {
@@ -218,7 +218,7 @@ const NotificationPage = () => {
 
   // ✅ totalPages fix
   useEffect(() => {
-    const total = data?.meta?.total ?? 0;
+    const total = data?.meta?.count ?? 0;
     const tp = Math.max(1, Math.ceil(total / itemsPerPage));
     setTotalPages(tp);
 
@@ -268,7 +268,7 @@ const NotificationPage = () => {
 
             {/* optional: total count */}
             <span className="text-xs text-gray-500">
-              {data?.meta?.total ?? 0} total
+              {data?.meta?.count ?? 0} total
             </span>
           </div>
 
