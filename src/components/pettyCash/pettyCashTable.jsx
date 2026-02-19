@@ -572,7 +572,7 @@
 
 //               const safePath = String(rp.file || "").replace(/\\/g, "/");
 //               const fileUrl = safePath
-//                 ? ` https://apikafela.digitalever.com.bd/${safePath}`
+//                 ? ` http://localhost:5000/${safePath}`
 //                 : "";
 //               const ext = safePath.split(".").pop()?.toLowerCase();
 //               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -1174,6 +1174,10 @@ import ReportPreviewModal from "./ReportPreviewModal";
 import ReportMenu from "./ReportMenu";
 import { generatePettyCashXlsx } from "../../utils/pettyCashReport/generatePettyCashXlsx";
 import { generatePettyCashPdf } from "../../utils/pettyCashReport/generatePettyCashPdf";
+import {
+  useGetAllCategoryQuery,
+  useInsertCategoryMutation,
+} from "../../features/category/category";
 
 const BANKS = [
   "Al Arafah",
@@ -1196,10 +1200,19 @@ const BANKS = [
   "Trust Bank",
 ];
 
+const STATIC_CATEGORIES = [
+  "Office Expense",
+  "Marketing",
+  "Salary",
+  "Transport",
+  "Utility Bill",
+  "Other",
+];
 const PettyCashTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // edit
   const [isModalOpen1, setIsModalOpen1] = useState(false); // add
   const [currentProduct, setCurrentProduct] = useState(null);
+  const [filterCategory, setFilterCategory] = useState("");
 
   const [createProduct, setCreateProduct] = useState({
     paymentMode: "",
@@ -1219,6 +1232,14 @@ const PettyCashTable = () => {
   const [filterPaymentMode, setFilterPaymentMode] = useState("");
   const [filterPaymentStatus, setFilterPaymentStatus] = useState("");
   const userId = localStorage.getItem("userId");
+
+  // ✅ Category states
+  const [categories, setCategories] = useState([]);
+  const [isNewCategoryAdd, setIsNewCategoryAdd] = useState(false);
+  const [newCategoryNameAdd, setNewCategoryNameAdd] = useState("");
+
+  const [isNewCategoryEdit, setIsNewCategoryEdit] = useState(false);
+  const [newCategoryNameEdit, setNewCategoryNameEdit] = useState("");
 
   //Pagination calculation start
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -1297,6 +1318,7 @@ const PettyCashTable = () => {
       endDate: endDate || undefined,
       paymentMode: filterPaymentMode || undefined,
       paymentStatus: filterPaymentStatus || undefined,
+      category: filterCategory || undefined,
     };
 
     Object.keys(args).forEach((k) => {
@@ -1312,6 +1334,7 @@ const PettyCashTable = () => {
     endDate,
     filterPaymentMode,
     filterPaymentStatus,
+    filterCategory,
   ]);
 
   const { data, isLoading, isError, error, refetch } =
@@ -1325,9 +1348,83 @@ const PettyCashTable = () => {
     }
   }, [data, isLoading, isError, error]);
 
+  // ✅ Category: fetch all
+  const {
+    data: categoryRes,
+    isLoading: categoryLoading,
+    isError: isCategoryError,
+    error: categoryError,
+  } = useGetAllCategoryQuery();
+
+  useEffect(() => {
+    if (isCategoryError) console.error("Category error:", categoryError);
+    if (!categoryLoading && categoryRes) {
+      setCategories(categoryRes?.data ?? []);
+    }
+  }, [categoryRes, categoryLoading, isCategoryError, categoryError]);
+
+  // ✅ Category options: static + api
+  const categoryOptions = useMemo(() => {
+    const staticOnes = STATIC_CATEGORIES.map((name) => ({
+      id: `static:${name}`,
+      name,
+      isStatic: true,
+    }));
+
+    const fromApi = (categories || []).map((c) => ({
+      id: String(c.Id ?? c.id ?? c._id),
+      name: c.name,
+      isStatic: false,
+    }));
+
+    // de-dup by name
+    const seen = new Set();
+    const merged = [...staticOnes, ...fromApi].filter((x) => {
+      const k = String(x.name || "")
+        .toLowerCase()
+        .trim();
+      if (!k) return false;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+
+    return merged;
+  }, [categories]);
+
+  // ✅ Insert category mutation
+  const [insertCategory, { isLoading: isAddingCategory }] =
+    useInsertCategoryMutation();
+
+  const addCategoryByName = async (name) => {
+    const n = name.trim();
+    if (!n) {
+      toast.error("New category name is required!");
+      return null;
+    }
+
+    try {
+      const res = await insertCategory({ name: n }).unwrap();
+      if (res?.success) {
+        const created = res?.data;
+        const createdId = String(created?.Id ?? created?.id ?? created?._id);
+        return createdId;
+      }
+      toast.error(res?.message || "Category add failed!");
+      return null;
+    } catch (err) {
+      toast.error(err?.data?.message || "Category add failed!");
+      return null;
+    }
+  };
+
   // modals
   const handleAddProduct = () => setIsModalOpen1(true);
-  const handleModalClose1 = () => setIsModalOpen1(false);
+  const handleModalClose1 = () => {
+    setIsModalOpen1(false);
+    setIsNewCategoryAdd(false);
+    setNewCategoryNameAdd("");
+  };
 
   const role = localStorage.getItem("role");
   const [updatePettyCash] = useUpdatePettyCashMutation();
@@ -1360,6 +1457,7 @@ const PettyCashTable = () => {
       formData.append("paymentMode", currentProduct.paymentMode);
       formData.append("paymentStatus", currentProduct.paymentStatus);
       formData.append("note", currentProduct.note);
+      formData.append("date", currentProduct.date);
       formData.append("status", currentProduct.status);
       formData.append("userId", userId);
       formData.append(
@@ -1449,6 +1547,7 @@ const PettyCashTable = () => {
     try {
       const formData = new FormData();
       formData.append("paymentMode", createProduct.paymentMode);
+      formData.append("date", createProduct.date);
       formData.append("paymentStatus", createProduct.paymentStatus);
       formData.append(
         "bankName",
@@ -1579,6 +1678,97 @@ const PettyCashTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+        {/* CashIn */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-emerald-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">Total CashIn</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {isLoading
+                  ? "—"
+                  : Number(data?.meta?.totalCashIn || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-emerald-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 19V5" />
+                <path d="M5 12l7-7 7 7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* CashOut */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-rose-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">
+                Total CashOut
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {isLoading
+                  ? "—"
+                  : Number(data?.meta?.totalCashOut || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-rose-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 5v14" />
+                <path d="M19 12l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Net */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-indigo-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">Net Balance</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {isLoading
+                  ? "—"
+                  : Number(data?.meta?.netBalance || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-indigo-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 19V5" />
+                <path d="M8 17V7" />
+                <path d="M12 19V9" />
+                <path d="M16 15V5" />
+                <path d="M20 19V11" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Header row */}
       <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Left: Add button */}
@@ -1591,28 +1781,6 @@ const PettyCashTable = () => {
         </button>
 
         {/* Middle: Totals */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full sm:w-auto">
-          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
-            <p className="text-xs text-slate-500">Total CashIn</p>
-            <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">
-              {isLoading ? "Loading..." : data?.meta?.countCashIn}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
-            <p className="text-xs text-slate-500">Total CashOut</p>
-            <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">
-              {isLoading ? "Loading..." : data?.meta?.countCashOut}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
-            <p className="text-xs text-slate-500">Net</p>
-            <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">
-              {isLoading ? "Loading..." : data?.meta?.netBalance}
-            </p>
-          </div>
-        </div>
 
         {/* Right: Report menu */}
         <div className="flex justify-end">
@@ -1682,6 +1850,22 @@ const PettyCashTable = () => {
           </select>
         </div>
         <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Category:</label>
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="border py-2 border-slate-300 rounded-lg px-3 text-slate-900 bg-white w-full outline-none
+               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
+          >
+            <option value="">All</option>
+            {categoryOptions.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Per Page</label>
           <select
             value={itemsPerPage}
@@ -1715,6 +1899,9 @@ const PettyCashTable = () => {
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Document
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -1747,7 +1934,7 @@ const PettyCashTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? ` https://apikafela.digitalever.com.bd/${safePath}`
+                ? ` http://localhost:5000/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -1763,6 +1950,9 @@ const PettyCashTable = () => {
                   transition={{ duration: 0.3 }}
                   className="hover:bg-slate-50"
                 >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp.date || "-"}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {!safePath ? (
                       "-"
@@ -2015,6 +2205,77 @@ const PettyCashTable = () => {
               </select>
             </div>
 
+            {/* ✅ Category (Edit) */}
+            <div className="mt-4">
+              <label className="block text-sm text-slate-600 mb-1">
+                Category
+              </label>
+              <select
+                value={
+                  isNewCategoryEdit
+                    ? "__new__"
+                    : currentProduct.categoryId || ""
+                }
+                onChange={(e) => {
+                  const v = e.target.value;
+
+                  if (v === "__new__") {
+                    setIsNewCategoryEdit(true);
+                    setCurrentProduct((p) => ({ ...p, categoryId: "" }));
+                    return;
+                  }
+
+                  setIsNewCategoryEdit(false);
+                  setNewCategoryNameEdit("");
+                  setCurrentProduct((p) => ({ ...p, categoryId: v }));
+                }}
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                required
+              >
+                <option value="">Select Category</option>
+
+                {categoryOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+
+                <option value="__new__">+ New Category</option>
+              </select>
+
+              {isNewCategoryEdit && (
+                <div className="mt-3 flex gap-2">
+                  <input
+                    type="text"
+                    value={newCategoryNameEdit}
+                    onChange={(e) => setNewCategoryNameEdit(e.target.value)}
+                    placeholder="Write new category name"
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const createdId =
+                        await addCategoryByName(newCategoryNameEdit);
+                      if (!createdId) return;
+                      setCurrentProduct((p) => ({
+                        ...p,
+                        categoryId: createdId,
+                      }));
+                      setIsNewCategoryEdit(false);
+                      setNewCategoryNameEdit("");
+                    }}
+                    disabled={isAddingCategory}
+                    className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold disabled:bg-slate-400"
+                  >
+                    {isAddingCategory ? "Adding..." : "Add"}
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Remarks</label>
               <input
@@ -2122,6 +2383,8 @@ const PettyCashTable = () => {
                 onClick={() => {
                   setIsModalOpen(false);
                   setCurrentProduct(null);
+                  setIsNewCategoryAdd(false);
+                  setNewCategoryNameAdd("");
                 }}
                 type="button"
               >
@@ -2231,6 +2494,77 @@ const PettyCashTable = () => {
                   <option value="CashIn">CashIn</option>
                   <option value="CashOut">CashOut</option>
                 </select>
+              </div>
+
+              {/* ✅ Category (Add) */}
+              <div className="mt-4">
+                <label className="block text-sm text-slate-600 mb-1">
+                  Category
+                </label>
+                <select
+                  value={
+                    isNewCategoryAdd
+                      ? "__new__"
+                      : createProduct.categoryId || ""
+                  }
+                  onChange={(e) => {
+                    const v = e.target.value;
+
+                    if (v === "__new__") {
+                      setIsNewCategoryAdd(true);
+                      setCreateProduct((p) => ({ ...p, categoryId: "" }));
+                      return;
+                    }
+
+                    setIsNewCategoryAdd(false);
+                    setNewCategoryNameAdd("");
+                    setCreateProduct((p) => ({ ...p, categoryId: v }));
+                  }}
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  required
+                >
+                  <option value="">Select Category</option>
+
+                  {categoryOptions.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+
+                  <option value="__new__">+ New Category</option>
+                </select>
+
+                {isNewCategoryAdd && (
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      type="text"
+                      value={newCategoryNameAdd}
+                      onChange={(e) => setNewCategoryNameAdd(e.target.value)}
+                      placeholder="Write new category name"
+                      className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const createdId =
+                          await addCategoryByName(newCategoryNameAdd);
+                        if (!createdId) return;
+                        setCreateProduct((p) => ({
+                          ...p,
+                          categoryId: createdId,
+                        }));
+                        setIsNewCategoryAdd(false);
+                        setNewCategoryNameAdd("");
+                      }}
+                      disabled={isAddingCategory}
+                      className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold disabled:bg-slate-400"
+                    >
+                      {isAddingCategory ? "Adding..." : "Add"}
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="mt-4">

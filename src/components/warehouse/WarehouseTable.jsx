@@ -441,7 +441,7 @@ const WarehouseTable = () => {
       return;
     }
     if (!isLoading && data?.meta?.count != null) {
-      setTotalPages(Math.max(1, Math.ceil(data.meta.total / itemsPerPage)));
+      setTotalPages(Math.max(1, Math.ceil(data.meta.count / itemsPerPage)));
     }
   }, [data, isLoading, isError, error]);
 

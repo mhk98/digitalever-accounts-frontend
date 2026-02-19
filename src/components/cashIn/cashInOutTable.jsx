@@ -768,7 +768,7 @@
 
 //               const safePath = String(rp.file || "").replace(/\\/g, "/");
 //               const fileUrl = safePath
-//                 ? ` https://apikafela.digitalever.com.bd/${safePath}`
+//                 ? ` http://localhost:5000/${safePath}`
 //                 : "";
 //               const ext = safePath.split(".").pop()?.toLowerCase();
 //               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -1539,7 +1539,7 @@
 // export default CashInOutTable;
 
 import { motion } from "framer-motion";
-import { Edit, Notebook, Plus, Trash2 } from "lucide-react";
+import { Edit, Minus, Notebook, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -1597,7 +1597,9 @@ const CashInOutTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // edit
   const [isModalOpen1, setIsModalOpen1] = useState(false); // add
   const [isModalOpen2, setIsModalOpen2] = useState(false); // delete/note
+  const [isModalOpen3, setIsModalOpen3] = useState(false); // delete/note
   const [currentProduct, setCurrentProduct] = useState(null);
+  const [filterCategory, setFilterCategory] = useState("");
 
   const userId = localStorage.getItem("userId");
 
@@ -1710,6 +1712,7 @@ const CashInOutTable = () => {
       endDate: endDate || undefined,
       paymentMode: filterPaymentMode || undefined,
       paymentStatus: filterPaymentStatus || undefined,
+      category: filterCategory || undefined,
     };
 
     Object.keys(args).forEach((k) => {
@@ -1726,6 +1729,7 @@ const CashInOutTable = () => {
     endDate,
     filterPaymentMode,
     filterPaymentStatus,
+    filterCategory,
   ]);
 
   const shouldSkip = !id;
@@ -1818,9 +1822,15 @@ const CashInOutTable = () => {
   };
 
   // modals
-  const handleAddProduct = () => setIsModalOpen1(true);
+  const handleAddCashIn = () => setIsModalOpen1(true);
+  const handleAddCashOut = () => setIsModalOpen1(true);
   const handleModalClose1 = () => {
     setIsModalOpen1(false);
+    setIsNewCategoryAdd(false);
+    setNewCategoryNameAdd("");
+  };
+  const handleModalClose3 = () => {
+    setIsModalOpen3(false);
     setIsNewCategoryAdd(false);
     setNewCategoryNameAdd("");
   };
@@ -1898,6 +1908,7 @@ const CashInOutTable = () => {
       formData.append("status", currentProduct.status);
       formData.append("date", currentProduct.date);
       formData.append("userId", userId);
+      formData.append("bookId", id);
       formData.append(
         "bankName",
         currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
@@ -1936,6 +1947,7 @@ const CashInOutTable = () => {
       formData.append("note", currentProduct.note);
       formData.append("status", currentProduct.status);
       formData.append("userId", userId);
+      formData.append("bookId", id);
 
       const res = await updateCashInOut({ id: rowId, data: formData }).unwrap();
       if (res?.success) {
@@ -1991,7 +2003,91 @@ const CashInOutTable = () => {
 
       const formData = new FormData();
       formData.append("paymentMode", createProduct.paymentMode);
-      formData.append("paymentStatus", createProduct.paymentStatus);
+      // formData.append("paymentStatus", createProduct.paymentStatus);
+      formData.append("paymentStatus", "CashIn");
+
+      formData.append("date", createProduct.date);
+      formData.append(
+        "bankName",
+        createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
+      );
+      formData.append(
+        "bankAccount",
+        createProduct.paymentMode === "Bank"
+          ? String(createProduct.bankAccount)
+          : "",
+      );
+      formData.append("category", String(finalCategoryId || ""));
+      formData.append("remarks", createProduct.remarks?.trim() || "");
+      formData.append("amount", String(Number(createProduct.amount)));
+      formData.append("bookId", id);
+      if (createProduct.file) formData.append("file", createProduct.file);
+
+      const res = await insertCashIn(formData).unwrap();
+
+      if (res?.success) {
+        toast.success("Successfully created!");
+        setIsModalOpen1(false);
+        setIsNewCategoryAdd(false);
+        setNewCategoryNameAdd("");
+        setCreateProduct({
+          paymentMode: "",
+          paymentStatus: "",
+          bankName: "",
+          bankAccount: "",
+          categoryId: "",
+          remarks: "",
+          amount: "",
+          date: "",
+          file: null,
+        });
+        refetch?.();
+      } else toast.error(res?.message || "Create failed!");
+    } catch (err) {
+      toast.error(err?.data?.message || "Create failed!");
+    }
+  };
+
+  const handleCreateProduct1 = async (e) => {
+    e.preventDefault();
+
+    if (!createProduct.amount) return toast.error("Amount is required!");
+    if (!createProduct.paymentMode)
+      return toast.error("Payment Mode is required!");
+    if (!createProduct.paymentStatus)
+      return toast.error("Payment Status is required!");
+
+    if (createProduct.paymentMode === "Bank") {
+      if (!createProduct.bankName) return toast.error("Bank Name is required!");
+      if (!createProduct.bankAccount)
+        return toast.error("Bank Account is required!");
+    }
+
+    if (!createProduct.categoryId && !isNewCategoryAdd) {
+      return toast.error("Category is required!");
+    }
+
+    try {
+      let finalCategoryId = createProduct.categoryId;
+
+      if (finalCategoryId?.startsWith("static:")) {
+        const name = finalCategoryId.replace("static:", "");
+        const createdId = await addCategoryByName(name);
+        if (!createdId) return;
+        finalCategoryId = createdId;
+      }
+
+      if (isNewCategoryAdd) {
+        const createdId = await addCategoryByName(newCategoryNameAdd);
+        if (!createdId) return;
+        finalCategoryId = createdId;
+      }
+
+      const formData = new FormData();
+      formData.append("paymentMode", createProduct.paymentMode);
+      // formData.append("paymentStatus", createProduct.paymentStatus);
+      formData.append("paymentStatus", "CashOut");
+
       formData.append("date", createProduct.date);
       formData.append(
         "bankName",
@@ -2141,49 +2237,139 @@ const CashInOutTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-      <div className="my-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Left: Add button */}
-        <button
-          className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition w-full sm:w-auto"
-          onClick={handleAddProduct}
-          type="button"
-        >
-          Add <Plus size={18} className="ml-2" />
-        </button>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+        {/* CashIn */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-emerald-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">Total CashIn</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {isLoading
+                  ? "—"
+                  : Number(data?.meta?.totalCashIn || 0).toLocaleString()}
+              </p>
+            </div>
 
-        {/* Middle: Totals */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full sm:w-auto">
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <p className="text-xs text-slate-600">Total CashIn</p>
-            <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">
-              {isLoading ? "Loading..." : data?.meta?.countCashIn}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <p className="text-xs text-slate-600">Total CashOut</p>
-            <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">
-              {isLoading ? "Loading..." : data?.meta?.countCashOut}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <p className="text-xs text-slate-600">Net</p>
-            <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">
-              {isLoading ? "Loading..." : data?.meta?.netBalance}
-            </p>
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-emerald-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 19V5" />
+                <path d="M5 12l7-7 7 7" />
+              </svg>
+            </div>
           </div>
         </div>
 
+        {/* CashOut */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-rose-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">
+                Total CashOut
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {isLoading
+                  ? "—"
+                  : Number(data?.meta?.totalCashOut || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-rose-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 5v14" />
+                <path d="M19 12l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Net */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-indigo-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">Net Balance</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {isLoading
+                  ? "—"
+                  : Number(data?.meta?.netBalance || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-indigo-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 19V5" />
+                <path d="M8 17V7" />
+                <path d="M12 19V9" />
+                <path d="M16 15V5" />
+                <path d="M20 19V11" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="my-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Left: Actions */}
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          {/* Cash In (Primary) */}
+          <button
+            type="button"
+            onClick={handleAddCashIn}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm
+                 hover:bg-indigo-700 active:bg-indigo-800 transition
+                 focus:outline-none focus:ring-2 focus:ring-indigo-500/30
+                 sm:w-auto"
+          >
+            <Plus size={18} />
+            Cash In
+          </button>
+
+          {/* Cash Out (Secondary / Neutral) */}
+          <button
+            type="button"
+            onClick={handleAddCashOut}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-800
+                 border border-slate-200 shadow-sm
+                 hover:bg-slate-50 active:bg-slate-100 transition
+                 focus:outline-none focus:ring-2 focus:ring-indigo-500/20
+                 sm:w-auto"
+          >
+            <Minus size={18} className="text-slate-700" />
+            Cash Out
+          </button>
+        </div>
+
         {/* Right: Report menu */}
-        <div className="flex justify-end">
-          <ReportMenu
-            isOpen={isReportMenuOpen}
-            setIsOpen={setIsReportMenuOpen}
-            onGoogleSheet={handleReportSheet}
-            onPdf={handleReportPdf}
-            disabled={isLoading || !id}
-          />
+        <div className="flex w-full justify-end sm:w-auto">
+          <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm">
+            <ReportMenu
+              isOpen={isReportMenuOpen}
+              setIsOpen={setIsReportMenuOpen}
+              onGoogleSheet={handleReportSheet}
+              onPdf={handleReportPdf}
+              disabled={isLoading || !id}
+            />
+          </div>
         </div>
       </div>
 
@@ -2242,6 +2428,24 @@ const CashInOutTable = () => {
             <option value="CashOut">CashOut</option>
           </select>
         </div>
+
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Category:</label>
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="border py-2 border-slate-300 rounded-lg px-3 text-slate-900 bg-white w-full outline-none
+               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
+          >
+            <option value="">All</option>
+            {categoryOptions.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* ✅ Per Page Dropdown (same position like your screenshot) */}
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Per Page</label>
@@ -2312,7 +2516,7 @@ const CashInOutTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `https://apikafela.digitalever.com.bd/${safePath}`
+                ? `http://localhost:5000/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -2888,7 +3092,7 @@ const CashInOutTable = () => {
         </div>
       )}
 
-      {/* ✅ Add Modal (Light) */}
+      {/* ✅ Add Cash In Modal (Light) */}
       {isModalOpen1 && (
         <div className="fixed inset-0 top-24 z-10 flex items-center justify-center   p-4">
           <motion.div
@@ -2898,7 +3102,7 @@ const CashInOutTable = () => {
             transition={{ duration: 0.2 }}
           >
             <h2 className="text-lg font-semibold text-slate-900">
-              Add Cash In/Out
+              Add Cash In
             </h2>
 
             <form onSubmit={handleCreateProduct}>
@@ -3059,7 +3263,7 @@ const CashInOutTable = () => {
                 )}
               </div>
 
-              <div className="mt-4">
+              {/* <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
                   Payment Status
                 </label>
@@ -3079,7 +3283,7 @@ const CashInOutTable = () => {
                   <option value="CashIn">CashIn</option>
                   <option value="CashOut">CashOut</option>
                 </select>
-              </div>
+              </div> */}
 
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
@@ -3153,6 +3357,280 @@ const CashInOutTable = () => {
                   type="button"
                   className="h-11 px-4 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-semibold"
                   onClick={handleModalClose1}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* ✅ Add Cash Out Modal (Light) */}
+      {isModalOpen3 && (
+        <div className="fixed inset-0 top-24 z-10 flex items-center justify-center   p-4">
+          <motion.div
+            className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <h2 className="text-lg font-semibold text-slate-900">
+              Add Cash Out
+            </h2>
+
+            <form onSubmit={handleCreateProduct1}>
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Date</label>
+                <input
+                  type="date"
+                  value={createProduct?.date || ""}
+                  onChange={(e) =>
+                    setCreateProduct((p) => ({ ...p, date: e.target.value }))
+                  }
+                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
+              <div className="mt-4">
+                <label className="block text-sm text-slate-600 mb-1">
+                  Payment Mode
+                </label>
+                <select
+                  value={createProduct.paymentMode}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      paymentMode: e.target.value,
+                    })
+                  }
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  required
+                >
+                  <option value="">Select Payment Mode</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Bkash">Bkash</option>
+                  <option value="Nagad">Nagad</option>
+                  <option value="Rocket">Rocket</option>
+                  <option value="Bank">Bank</option>
+                  <option value="Card">Card</option>
+                </select>
+              </div>
+
+              {createProduct.paymentMode === "Bank" && (
+                <>
+                  <div className="mt-4">
+                    <label className="block text-sm text-slate-600 mb-1">
+                      Bank Name
+                    </label>
+                    <select
+                      value={createProduct.bankName}
+                      onChange={(e) =>
+                        setCreateProduct({
+                          ...createProduct,
+                          bankName: e.target.value,
+                        })
+                      }
+                      className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                      required
+                    >
+                      <option value="">Select Bank</option>
+                      {BANKS.map((b) => (
+                        <option key={b} value={b}>
+                          {b}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-sm text-slate-600 mb-1">
+                      Bank Account
+                    </label>
+                    <input
+                      type="text"
+                      value={createProduct.bankAccount}
+                      onChange={(e) =>
+                        setCreateProduct({
+                          ...createProduct,
+                          bankAccount: e.target.value,
+                        })
+                      }
+                      className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* ✅ Category (Add) */}
+              <div className="mt-4">
+                <label className="block text-sm text-slate-600 mb-1">
+                  Category
+                </label>
+                <select
+                  value={
+                    isNewCategoryAdd
+                      ? "__new__"
+                      : createProduct.categoryId || ""
+                  }
+                  onChange={(e) => {
+                    const v = e.target.value;
+
+                    if (v === "__new__") {
+                      setIsNewCategoryAdd(true);
+                      setCreateProduct((p) => ({ ...p, categoryId: "" }));
+                      return;
+                    }
+
+                    setIsNewCategoryAdd(false);
+                    setNewCategoryNameAdd("");
+                    setCreateProduct((p) => ({ ...p, categoryId: v }));
+                  }}
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  required
+                >
+                  <option value="">Select Category</option>
+
+                  {categoryOptions.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+
+                  <option value="__new__">+ New Category</option>
+                </select>
+
+                {isNewCategoryAdd && (
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      type="text"
+                      value={newCategoryNameAdd}
+                      onChange={(e) => setNewCategoryNameAdd(e.target.value)}
+                      placeholder="Write new category name"
+                      className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const createdId =
+                          await addCategoryByName(newCategoryNameAdd);
+                        if (!createdId) return;
+                        setCreateProduct((p) => ({
+                          ...p,
+                          categoryId: createdId,
+                        }));
+                        setIsNewCategoryAdd(false);
+                        setNewCategoryNameAdd("");
+                      }}
+                      disabled={isAddingCategory}
+                      className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold disabled:bg-slate-400"
+                    >
+                      {isAddingCategory ? "Adding..." : "Add"}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* <div className="mt-4">
+                <label className="block text-sm text-slate-600 mb-1">
+                  Payment Status
+                </label>
+                <select
+                  value={createProduct.paymentStatus}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      paymentStatus: e.target.value,
+                    })
+                  }
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  required
+                >
+                  <option value="">Select Payment Status</option>
+                  <option value="CashIn">CashIn</option>
+                  <option value="CashOut">CashOut</option>
+                </select>
+              </div> */}
+
+              <div className="mt-4">
+                <label className="block text-sm text-slate-600 mb-1">
+                  Remarks
+                </label>
+                <input
+                  type="text"
+                  value={createProduct.remarks}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      remarks: e.target.value,
+                    })
+                  }
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  required
+                />
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm text-slate-600 mb-1">
+                  Amount
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={createProduct.amount}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      amount: e.target.value,
+                    })
+                  }
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  required
+                />
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm text-slate-600 mb-1">
+                  Upload Document
+                </label>
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      file: e.target.files?.[0] || null,
+                    })
+                  }
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white"
+                />
+                {createProduct.file && (
+                  <p className="mt-2 text-xs text-slate-600">
+                    Selected: {createProduct.file.name}
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  type="submit"
+                  className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  className="h-11 px-4 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-semibold"
+                  onClick={handleModalClose3}
                 >
                   Cancel
                 </button>

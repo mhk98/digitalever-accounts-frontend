@@ -81,7 +81,7 @@ const SuppliersTable = () => {
       console.error("Error fetching product data", error);
     } else if (!isLoading && data) {
       setSuppliers(data.data);
-      setTotalPages(Math.ceil(data.meta.total / itemsPerPage)); // totalPages is calculated dynamically from API response
+      setTotalPages(Math.ceil(data.meta.count / itemsPerPage)); // totalPages is calculated dynamically from API response
     }
   }, [
     data,
@@ -98,7 +98,7 @@ const SuppliersTable = () => {
   // useEffect(() => {
   //     const fetchData = async () => {
   //         try {
-  //             const response = await axios.get(` https://apikafela.digitalever.com.bd/api/v1/supplier`, {
+  //             const response = await axios.get(` http://localhost:5000/api/v1/supplier`, {
   //                 params: { startDate, endDate, supplierId }
   //             });
   //             setFilterData(response.data.data);

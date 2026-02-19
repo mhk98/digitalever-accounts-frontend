@@ -10,7 +10,7 @@
 //   useUserUpdateMutation,
 // } from "../../features/auth/auth";
 
-// const API_BASE = " https://apikafela.digitalever.com.bd";
+// const API_BASE = " http://localhost:5000";
 
 // const UserManagementTable = () => {
 //   // Modals
@@ -674,7 +674,7 @@ import {
   useUserUpdateMutation,
 } from "../../features/auth/auth";
 
-const API_BASE = " https://apikafela.digitalever.com.bd";
+const API_BASE = " http://localhost:5000";
 
 const UserManagementTable = () => {
   // Modals
@@ -737,7 +737,7 @@ const UserManagementTable = () => {
       return;
     }
     if (!isLoading && data?.meta?.count != null) {
-      setTotalPages(Math.max(1, Math.ceil(data.meta.total / itemsPerPage)));
+      setTotalPages(Math.max(1, Math.ceil(data.meta.count / itemsPerPage)));
     }
   }, [data, isLoading, isError, error]);
 
@@ -1028,7 +1028,7 @@ const UserManagementTable = () => {
             );
           })}
 
-        {!isLoading && users.length === 0 && (
+        {!isLoading && users?.length === 0 && (
           <div className="py-10 text-sm text-slate-600">No user found</div>
         )}
       </div>
