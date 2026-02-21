@@ -351,7 +351,7 @@ const ExpireProductTable = () => {
           Total Quantity (API)
         </div>
         <div className="text-slate-900 font-semibold tabular-nums">
-          {isLoading ? "Loading..." : (data?.meta?.countQuantity ?? 0)}
+          {isLoading ? "Loading..." : (data?.meta?.totalQuantity ?? 0)}
         </div>
       </div>
 

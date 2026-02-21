@@ -167,7 +167,7 @@ const LogoTable = () => {
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   <img
-                    src={` http://localhost:5000/${products.file}`}
+                    src={` https://api.digitalever.com.bd/${products.file}`}
                     alt="document"
                     className="h-12 w-12 object-cover rounded border border-gray-600 hover:opacity-80"
                   />

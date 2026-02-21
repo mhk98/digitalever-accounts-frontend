@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const buyerApi = createApi({
   reducerPath: "buyerApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://api.digitalever.com.bd/api/v1/",
 
     // Attach Authorization header to all requests
     prepareHeaders: (headers) => {

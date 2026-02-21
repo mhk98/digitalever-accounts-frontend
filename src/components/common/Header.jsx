@@ -35,7 +35,7 @@
 //   useEffect(() => {
 //     const fetchUser = async () => {
 //       try {
-//         const res = await fetch(` http://localhost:5000/api/v1/user/${userId}`);
+//         const res = await fetch(` https://api.digitalever.com.bd/api/v1/user/${userId}`);
 //         const data = await res.json();
 //         setUser(data.data);
 //       } catch (err) {
@@ -85,7 +85,7 @@
 //                 className="w-8 h-8 rounded-full object-cover"
 //                 src={
 //                   user?.image && user?.image !== "null"
-//                     ? `http://localhost:5000/${user?.image}`
+//                     ? `https://api.digitalever.com.bd/${user?.image}`
 //                     : "https://i.pravatar.cc/300"
 //                 }
 //                 alt="User avatar"
@@ -190,7 +190,7 @@ const Header = () => {
 
   const avatarSrc =
     user?.image && user?.image !== "null"
-      ? `http://localhost:5000/${user.image}`
+      ? `https://api.digitalever.com.bd/${user.image}`
       : "https://i.pravatar.cc/300";
 
   return (

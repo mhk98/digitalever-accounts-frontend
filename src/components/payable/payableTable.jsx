@@ -332,7 +332,7 @@
 
 //               const safePath = String(rp.file || "").replace(/\\/g, "/");
 //               const fileUrl = safePath
-//                 ? ` http://localhost:5000/${safePath}`
+//                 ? ` https://api.digitalever.com.bd/${safePath}`
 //                 : "";
 //               const ext = safePath.split(".").pop()?.toLowerCase();
 //               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -1073,7 +1073,7 @@
 
 //               const safePath = String(rp.file || "").replace(/\\/g, "/");
 //               const fileUrl = safePath
-//                 ? ` http://localhost:5000/${safePath}`
+//                 ? ` https://api.digitalever.com.bd/${safePath}`
 //                 : "";
 //               const ext = safePath.split(".").pop()?.toLowerCase();
 //               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -1823,6 +1823,18 @@ const PayableTable = () => {
       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [noteContent, setNoteContent] = useState("");
+
+  const handleNoteClick = (note) => {
+    setNoteContent(note);
+    setIsNoteModalOpen(true); // Open the modal
+  };
+
+  const handleNoteModalClose = () => {
+    setIsNoteModalOpen(false); // Close the modal
+  };
+
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
@@ -1928,7 +1940,7 @@ const PayableTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? ` http://localhost:5000/${safePath}`
+                ? ` https://api.digitalever.com.bd/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -1996,13 +2008,28 @@ const PayableTable = () => {
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {rp.note && (
+                    {rp.note ? (
+                      <div className="relative">
+                        <button
+                          className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                          title={rp.note}
+                          type="button"
+                          onClick={() => handleNoteClick(rp.note)} // Open modal on click
+                        >
+                          <Notebook size={18} className="text-slate-700" />
+                        </button>
+
+                        <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                          {rp.note ? 1 : null}
+                        </span>
+                      </div>
+                    ) : (
                       <button
-                        className="text-slate-500 hover:text-slate-800 mr-2"
+                        className="h-10 w-10 rounded-md flex items-center justify-center"
                         title={rp.note}
                         type="button"
                       >
-                        <Notebook size={18} />
+                        <Notebook size={18} className="text-slate-700" />
                       </button>
                     )}
 
@@ -2014,9 +2041,7 @@ const PayableTable = () => {
                       <Edit size={18} />
                     </button>
 
-                    {role === "superAdmin" ||
-                    role === "admin" ||
-                    rp.status === "Approved" ? (
+                    {role === "superAdmin" || role === "admin" ? (
                       <button
                         onClick={() => handleDeleteProduct(rowId)}
                         className="text-red-600 hover:text-red-800 ms-4"
@@ -2034,6 +2059,29 @@ const PayableTable = () => {
                       </button>
                     )}
                   </td>
+
+                  {/* ✅ Note Modal (Popup) */}
+                  {isNoteModalOpen && (
+                    <div className="fixed inset-0 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
+                        <h2 className="text-xl font-semibold text-slate-900">
+                          Note
+                        </h2>
+                        <p className="mt-4 text-sm text-slate-700">
+                          {noteContent}
+                        </p>
+
+                        <div className="mt-6 flex justify-end gap-2">
+                          <button
+                            onClick={handleNoteModalClose}
+                            className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+                          >
+                            Close
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </motion.tr>
               );
             })}

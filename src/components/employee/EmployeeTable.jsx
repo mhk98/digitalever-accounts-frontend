@@ -1903,7 +1903,7 @@
 // export default EmployeeTable;
 
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2, FileText, X } from "lucide-react";
+import { Edit, Plus, Trash2, FileText, X, Notebook } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -2637,6 +2637,18 @@ const EmployeeTable = () => {
     [],
   );
 
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [noteContent, setNoteContent] = useState("");
+
+  const handleNoteClick = (note) => {
+    setNoteContent(note);
+    setIsNoteModalOpen(true); // Open the modal
+  };
+
+  const handleModalClose = () => {
+    setIsNoteModalOpen(false); // Close the modal
+  };
+
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
@@ -2756,7 +2768,8 @@ const EmployeeTable = () => {
                 // "Unapproval Absent (Days)",
                 "Total Salary",
                 "Net Salary",
-                "Note",
+                "Status",
+                "Action",
               ].map((h) => (
                 <th
                   key={h}
@@ -2765,12 +2778,6 @@ const EmployeeTable = () => {
                   {h}
                 </th>
               ))}
-
-              {(role === "superAdmin" || role === "admin") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Actions
-                </th>
-              )}
             </tr>
           </thead>
 
@@ -2836,49 +2843,101 @@ const EmployeeTable = () => {
                   {Number(emp.net_salary || 0).toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {emp.note}
+                  <span
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                      emp.status === "Approved"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : emp.status === "Active"
+                          ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    {emp.status}
+                  </span>
                 </td>
 
-                {(role === "superAdmin" || role === "admin") && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => openInvoice(emp)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-emerald-50 transition"
-                        title="Invoice"
-                      >
-                        <FileText size={18} className="text-emerald-600" />
-                      </button>
-
-                      <button
-                        onClick={() => handleEditClick(emp)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-indigo-50 transition"
-                        title="Edit"
-                      >
-                        <Edit size={18} className="text-indigo-600" />
-                      </button>
-
-                      {role === "superAdmin" ||
-                      role === "admin" ||
-                      emp.status === "Approved" ? (
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex items-center gap-3">
+                    {emp.note ? (
+                      <div className="relative">
                         <button
-                          onClick={() => handleDeleteEmployee(emp.Id)}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
-                          title="Delete"
+                          className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                          title={emp.note}
+                          type="button"
+                          onClick={() => handleNoteClick(emp.note)} // Open modal on click
                         >
-                          <Trash2 size={18} className="text-rose-600" />
+                          <Notebook size={18} className="text-slate-700" />
                         </button>
-                      ) : (
+
+                        <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                          {emp.note ? 1 : null}
+                        </span>
+                      </div>
+                    ) : (
+                      <button
+                        className="h-10 w-10 rounded-md flex items-center justify-center"
+                        title={emp.note}
+                        type="button"
+                      >
+                        <Notebook size={18} className="text-slate-700" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => openInvoice(emp)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-emerald-50 transition"
+                      title="Invoice"
+                    >
+                      <FileText size={18} className="text-emerald-600" />
+                    </button>
+
+                    <button
+                      onClick={() => handleEditClick(emp)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-indigo-50 transition"
+                      title="Edit"
+                    >
+                      <Edit size={18} className="text-indigo-600" />
+                    </button>
+
+                    {role === "superAdmin" || role === "admin" ? (
+                      <button
+                        onClick={() => handleDeleteEmployee(emp.Id)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
+                        title="Delete"
+                      >
+                        <Trash2 size={18} className="text-rose-600" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleEditClick1(emp)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
+                        title="Delete Request / Note"
+                      >
+                        <Trash2 size={18} className="text-rose-600" />
+                      </button>
+                    )}
+                  </div>
+                </td>
+                {/* ✅ Note Modal (Popup) */}
+                {isNoteModalOpen && (
+                  <div className="fixed inset-0 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
+                      <h2 className="text-xl font-semibold text-slate-900">
+                        Note
+                      </h2>
+                      <p className="mt-4 text-sm text-slate-700">
+                        {noteContent}
+                      </p>
+
+                      <div className="mt-6 flex justify-end gap-2">
                         <button
-                          onClick={() => handleEditClick1(emp)}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
-                          title="Delete Request / Note"
+                          onClick={handleModalClose}
+                          className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
                         >
-                          <Trash2 size={18} className="text-rose-600" />
+                          Close
                         </button>
-                      )}
+                      </div>
                     </div>
-                  </td>
+                  </div>
                 )}
               </motion.tr>
             ))}

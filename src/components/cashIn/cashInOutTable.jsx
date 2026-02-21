@@ -768,7 +768,7 @@
 
 //               const safePath = String(rp.file || "").replace(/\\/g, "/");
 //               const fileUrl = safePath
-//                 ? ` http://localhost:5000/${safePath}`
+//                 ? ` https://api.digitalever.com.bd/${safePath}`
 //                 : "";
 //               const ext = safePath.split(".").pop()?.toLowerCase();
 //               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -1539,7 +1539,7 @@
 // export default CashInOutTable;
 
 import { motion } from "framer-motion";
-import { Edit, Minus, Notebook, Plus, Trash2 } from "lucide-react";
+import { Edit, Minus, Notebook, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -1616,7 +1616,9 @@ const CashInOutTable = () => {
     file: null,
     date: new Date().toISOString().slice(0, 10),
   });
+  const [searchTerm, setSearchTerm] = useState("");
 
+  console.log("searchTerm", searchTerm);
   const [products, setProducts] = useState([]);
 
   // filters
@@ -1713,11 +1715,12 @@ const CashInOutTable = () => {
       paymentMode: filterPaymentMode || undefined,
       paymentStatus: filterPaymentStatus || undefined,
       category: filterCategory || undefined,
+      searchTerm: searchTerm || undefined, // ensure it's included in the query
     };
 
     Object.keys(args).forEach((k) => {
       if (args[k] === undefined || args[k] === null || args[k] === "")
-        delete args[k];
+        delete args[k]; // Clean empty or undefined values
     });
 
     return args;
@@ -1727,6 +1730,7 @@ const CashInOutTable = () => {
     id,
     startDate,
     endDate,
+    searchTerm, // searchTerm should be included
     filterPaymentMode,
     filterPaymentStatus,
     filterCategory,
@@ -1823,7 +1827,7 @@ const CashInOutTable = () => {
 
   // modals
   const handleAddCashIn = () => setIsModalOpen1(true);
-  const handleAddCashOut = () => setIsModalOpen1(true);
+  const handleAddCashOut = () => setIsModalOpen3(true);
   const handleModalClose1 = () => {
     setIsModalOpen1(false);
     setIsNewCategoryAdd(false);
@@ -1881,24 +1885,76 @@ const CashInOutTable = () => {
   // update
   const [updateCashInOut] = useUpdateCashInOutMutation();
 
+  // const handleUpdateProduct = async () => {
+  //   const rowId = currentProduct?.Id ?? currentProduct?.id;
+  //   if (!rowId) return toast.error("Invalid item!");
+
+  //   try {
+  //     let finalCategoryId = currentProduct.categoryId;
+
+  //     if (finalCategoryId?.startsWith("static:")) {
+  //       const name = finalCategoryId.replace("static:", "");
+  //       const createdId = await addCategoryByName(name);
+  //       if (!createdId) return;
+  //       finalCategoryId = createdId;
+  //     }
+
+  //     if (isNewCategoryEdit) {
+  //       const createdId = await addCategoryByName(newCategoryNameEdit);
+  //       if (!createdId) return;
+  //       finalCategoryId = createdId;
+  //     }
+
+  //     const formData = new FormData();
+  //     formData.append("paymentMode", currentProduct.paymentMode);
+  //     formData.append("paymentStatus", currentProduct.paymentStatus);
+  //     formData.append("note", currentProduct.note);
+  //     formData.append("status", currentProduct.status);
+  //     formData.append("date", currentProduct.date);
+  //     formData.append("userId", userId);
+  //     formData.append("bookId", id);
+  //     formData.append(
+  //       "bankName",
+  //       currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
+  //     );
+  //     formData.append(
+  //       "bankAccount",
+  //       currentProduct.paymentMode === "Bank"
+  //         ? String(currentProduct.bankAccount)
+  //         : "",
+  //     );
+  //     formData.append("categoryId", String(finalCategoryId || ""));
+  //     formData.append("remarks", currentProduct.remarks?.trim() || "");
+  //     formData.append("amount", String(Number(currentProduct.amount)));
+  //     if (currentProduct.file) formData.append("file", currentProduct.file);
+
+  //     const res = await updateCashInOut({ id: rowId, data: formData }).unwrap();
+  //     if (res?.success) {
+  //       toast.success("Updated!");
+  //       setIsModalOpen(false);
+  //       setCurrentProduct(null);
+  //       setIsNewCategoryEdit(false);
+  //       setNewCategoryNameEdit("");
+  //       refetch?.();
+  //     } else toast.error(res?.message || "Update failed!");
+  //   } catch (err) {
+  //     toast.error(err?.data?.message || "Update failed!");
+  //   }
+  // };
+
   const handleUpdateProduct = async () => {
     const rowId = currentProduct?.Id ?? currentProduct?.id;
     if (!rowId) return toast.error("Invalid item!");
 
     try {
-      let finalCategoryId = currentProduct.categoryId;
+      let finalCategoryName = currentProduct.categoryName;
 
-      if (finalCategoryId?.startsWith("static:")) {
-        const name = finalCategoryId.replace("static:", "");
-        const createdId = await addCategoryByName(name);
-        if (!createdId) return;
-        finalCategoryId = createdId;
-      }
-
+      // If the category is new and being added dynamically
       if (isNewCategoryEdit) {
-        const createdId = await addCategoryByName(newCategoryNameEdit);
-        if (!createdId) return;
-        finalCategoryId = createdId;
+        const createdCategoryName =
+          await addCategoryByName(newCategoryNameEdit);
+        if (!createdCategoryName) return;
+        finalCategoryName = createdCategoryName; // Using the newly created category name
       }
 
       const formData = new FormData();
@@ -1909,6 +1965,7 @@ const CashInOutTable = () => {
       formData.append("date", currentProduct.date);
       formData.append("userId", userId);
       formData.append("bookId", id);
+
       formData.append(
         "bankName",
         currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
@@ -1919,7 +1976,9 @@ const CashInOutTable = () => {
           ? String(currentProduct.bankAccount)
           : "",
       );
-      formData.append("categoryId", String(finalCategoryId || ""));
+
+      // Use categoryName (not categoryId)
+      formData.append("categoryName", finalCategoryName); // Using category name here
       formData.append("remarks", currentProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(currentProduct.amount)));
       if (currentProduct.file) formData.append("file", currentProduct.file);
@@ -1937,6 +1996,33 @@ const CashInOutTable = () => {
       toast.error(err?.data?.message || "Update failed!");
     }
   };
+
+  // const handleUpdateProduct1 = async () => {
+  //   const rowId = currentProduct?.Id ?? currentProduct?.id;
+  //   if (!rowId) return toast.error("Invalid item!");
+
+  //   try {
+  //     const formData = new FormData();
+  //     formData.append("note", currentProduct.note);
+  //     formData.append("status", currentProduct.status);
+  //     formData.append("userId", userId);
+  //     formData.append("bookId", id);
+
+  //     const res = await updateCashInOut({ id: rowId, data: formData }).unwrap();
+  //     if (res?.success) {
+  //       toast.success("Updated!");
+  //       setIsModalOpen2(false);
+  //       setCurrentProduct(null);
+  //       setIsNewCategoryEdit(false);
+  //       setNewCategoryNameEdit("");
+  //       refetch?.();
+  //     } else toast.error(res?.message || "Update failed!");
+  //   } catch (err) {
+  //     toast.error(err?.data?.message || "Update failed!");
+  //   }
+  // };
+
+  // insert
 
   const handleUpdateProduct1 = async () => {
     const rowId = currentProduct?.Id ?? currentProduct?.id;
@@ -1963,50 +2049,46 @@ const CashInOutTable = () => {
     }
   };
 
-  // insert
   const [insertCashIn] = useInsertCashInOutMutation();
 
   const handleCreateProduct = async (e) => {
     e.preventDefault();
 
+    // Ensure required fields are filled
     if (!createProduct.amount) return toast.error("Amount is required!");
     if (!createProduct.paymentMode)
       return toast.error("Payment Mode is required!");
-    if (!createProduct.paymentStatus)
-      return toast.error("Payment Status is required!");
 
+    // Bank details check
     if (createProduct.paymentMode === "Bank") {
       if (!createProduct.bankName) return toast.error("Bank Name is required!");
       if (!createProduct.bankAccount)
         return toast.error("Bank Account is required!");
     }
 
-    if (!createProduct.categoryId && !isNewCategoryAdd) {
+    // Category check - Make sure categoryName is either selected or added
+    if (!createProduct.categoryName && !isNewCategoryAdd) {
       return toast.error("Category is required!");
     }
 
     try {
-      let finalCategoryId = createProduct.categoryId;
+      // Handling new category creation
+      let finalCategoryName = createProduct.categoryName;
 
-      if (finalCategoryId?.startsWith("static:")) {
-        const name = finalCategoryId.replace("static:", "");
-        const createdId = await addCategoryByName(name);
-        if (!createdId) return;
-        finalCategoryId = createdId;
-      }
-
+      // If the category is new and being added dynamically
       if (isNewCategoryAdd) {
-        const createdId = await addCategoryByName(newCategoryNameAdd);
-        if (!createdId) return;
-        finalCategoryId = createdId;
+        const createdCategoryName = await addCategoryByName(newCategoryNameAdd);
+        if (!createdCategoryName) return;
+        finalCategoryName = createdCategoryName; // Using the newly created category name
       }
 
+      // Form data preparation for submission
       const formData = new FormData();
       formData.append("paymentMode", createProduct.paymentMode);
-      // formData.append("paymentStatus", createProduct.paymentStatus);
       formData.append("paymentStatus", "CashIn");
-
       formData.append("date", createProduct.date);
+      formData.append("note", createProduct.note);
+
       formData.append(
         "bankName",
         createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
@@ -2017,11 +2099,14 @@ const CashInOutTable = () => {
           ? String(createProduct.bankAccount)
           : "",
       );
-      formData.append("category", String(finalCategoryId || ""));
+
+      // Use categoryName (not categoryId)
+      formData.append("category", finalCategoryName); // Using category name here
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
       formData.append("bookId", id);
       if (createProduct.file) formData.append("file", createProduct.file);
+      console.log("cash in data", formData);
 
       const res = await insertCashIn(formData).unwrap();
 
@@ -2035,8 +2120,9 @@ const CashInOutTable = () => {
           paymentStatus: "",
           bankName: "",
           bankAccount: "",
-          categoryId: "",
+          categoryName: "", // Reset the category name
           remarks: "",
+          note: "",
           amount: "",
           date: "",
           file: null,
@@ -2051,44 +2137,41 @@ const CashInOutTable = () => {
   const handleCreateProduct1 = async (e) => {
     e.preventDefault();
 
+    // Ensure required fields are filled
     if (!createProduct.amount) return toast.error("Amount is required!");
     if (!createProduct.paymentMode)
       return toast.error("Payment Mode is required!");
-    if (!createProduct.paymentStatus)
-      return toast.error("Payment Status is required!");
 
+    // Bank details check
     if (createProduct.paymentMode === "Bank") {
       if (!createProduct.bankName) return toast.error("Bank Name is required!");
       if (!createProduct.bankAccount)
         return toast.error("Bank Account is required!");
     }
 
-    if (!createProduct.categoryId && !isNewCategoryAdd) {
+    // Category check - Make sure categoryName is either selected or added
+    if (!createProduct.categoryName && !isNewCategoryAdd) {
       return toast.error("Category is required!");
     }
 
     try {
-      let finalCategoryId = createProduct.categoryId;
+      // Handling new category creation
+      let finalCategoryName = createProduct.categoryName;
 
-      if (finalCategoryId?.startsWith("static:")) {
-        const name = finalCategoryId.replace("static:", "");
-        const createdId = await addCategoryByName(name);
-        if (!createdId) return;
-        finalCategoryId = createdId;
-      }
-
+      // If the category is new and being added dynamically
       if (isNewCategoryAdd) {
-        const createdId = await addCategoryByName(newCategoryNameAdd);
-        if (!createdId) return;
-        finalCategoryId = createdId;
+        const createdCategoryName = await addCategoryByName(newCategoryNameAdd);
+        if (!createdCategoryName) return;
+        finalCategoryName = createdCategoryName; // Using the newly created category name
       }
 
+      // Form data preparation for submission
       const formData = new FormData();
       formData.append("paymentMode", createProduct.paymentMode);
-      // formData.append("paymentStatus", createProduct.paymentStatus);
       formData.append("paymentStatus", "CashOut");
-
       formData.append("date", createProduct.date);
+      formData.append("note", createProduct.note);
+
       formData.append(
         "bankName",
         createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
@@ -2099,7 +2182,9 @@ const CashInOutTable = () => {
           ? String(createProduct.bankAccount)
           : "",
       );
-      formData.append("category", String(finalCategoryId || ""));
+
+      // Use categoryName (not categoryId)
+      formData.append("category", finalCategoryName); // Using category name here
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
       formData.append("bookId", id);
@@ -2109,7 +2194,7 @@ const CashInOutTable = () => {
 
       if (res?.success) {
         toast.success("Successfully created!");
-        setIsModalOpen1(false);
+        setIsModalOpen3(false);
         setIsNewCategoryAdd(false);
         setNewCategoryNameAdd("");
         setCreateProduct({
@@ -2117,7 +2202,7 @@ const CashInOutTable = () => {
           paymentStatus: "",
           bankName: "",
           bankAccount: "",
-          categoryId: "",
+          categoryName: "", // Reset the category name
           remarks: "",
           amount: "",
           date: "",
@@ -2152,6 +2237,7 @@ const CashInOutTable = () => {
     setEndDate("");
     setFilterPaymentMode("");
     setFilterPaymentStatus("");
+    setFilterCategory("");
   };
 
   // report states
@@ -2228,6 +2314,18 @@ const CashInOutTable = () => {
     } finally {
       setReportLoading(false);
     }
+  };
+
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [noteContent, setNoteContent] = useState("");
+
+  const handleNoteClick = (note) => {
+    setNoteContent(note);
+    setIsNoteModalOpen(true); // Open the modal
+  };
+
+  const handleModalClose = () => {
+    setIsNoteModalOpen(false); // Close the modal
   };
 
   return (
@@ -2328,17 +2426,14 @@ const CashInOutTable = () => {
         </div>
       </div>
 
-      <div className="my-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="my-6 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         {/* Left: Actions */}
-        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+        <div className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-5">
           {/* Cash In (Primary) */}
           <button
             type="button"
             onClick={handleAddCashIn}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm
-                 hover:bg-indigo-700 active:bg-indigo-800 transition
-                 focus:outline-none focus:ring-2 focus:ring-indigo-500/30
-                 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 active:bg-indigo-800 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/30 sm:w-auto"
           >
             <Plus size={18} />
             Cash In
@@ -2348,20 +2443,34 @@ const CashInOutTable = () => {
           <button
             type="button"
             onClick={handleAddCashOut}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-800
-                 border border-slate-200 shadow-sm
-                 hover:bg-slate-50 active:bg-slate-100 transition
-                 focus:outline-none focus:ring-2 focus:ring-indigo-500/20
-                 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-800 border border-slate-200 shadow-md hover:bg-slate-50 active:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/20 sm:w-auto"
           >
             <Minus size={18} className="text-slate-700" />
             Cash Out
           </button>
         </div>
 
-        {/* Right: Report menu */}
+        {/* Right: Search Input */}
+        <div className="relative w-full sm:max-w-[520px]">
+          <input
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+              setStartPage(1);
+            }}
+            placeholder="Search..."
+            className="w-full rounded-lg border border-gray-200 bg-white px-5 py-3 pr-12 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 shadow-sm"
+          />
+          <Search
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+            size={18}
+          />
+        </div>
+
+        {/* Right: Report Menu */}
         <div className="flex w-full justify-end sm:w-auto">
-          <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-md">
             <ReportMenu
               isOpen={isReportMenuOpen}
               setIsOpen={setIsReportMenuOpen}
@@ -2439,7 +2548,7 @@ const CashInOutTable = () => {
           >
             <option value="">All</option>
             {categoryOptions.map((c) => (
-              <option key={c.id} value={c.id}>
+              <option key={c.id} value={c.name}>
                 {c.name}
               </option>
             ))}
@@ -2487,6 +2596,9 @@ const CashInOutTable = () => {
                 Document
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Category
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Payment Mode
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -2516,7 +2628,7 @@ const CashInOutTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `http://localhost:5000/${safePath}`
+                ? `https://api.digitalever.com.bd/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -2537,7 +2649,7 @@ const CashInOutTable = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {!safePath ? (
-                      "-"
+                      "---"
                     ) : isImage ? (
                       <a href={fileUrl} target="_blank" rel="noreferrer">
                         <img
@@ -2569,21 +2681,23 @@ const CashInOutTable = () => {
                       </a>
                     )}
                   </td>
-
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {rp.paymentMode || "-"}
+                    {rp.category || "---"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp.paymentMode || "---"}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {rp.paymentMode === "Bank" ? rp.bankName || "-" : "-"}
+                    {rp.paymentMode === "Bank" ? rp.bankName || "---" : "---"}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {rp.paymentStatus || "-"}
+                    {rp.paymentStatus || "---"}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {rp.remarks || "-"}
+                    {rp.remarks || "---"}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
@@ -2595,22 +2709,40 @@ const CashInOutTable = () => {
                       className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
                         rp.status === "Approved"
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : "bg-amber-50 text-amber-700 border-amber-200"
+                          : rp.status === "Active"
+                            ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                            : "bg-amber-50 text-amber-700 border-amber-200"
                       }`}
                     >
-                      {rp.status || "---"}
+                      {rp.status}
                     </span>
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-3">
-                      {rp.note && (
+                      {rp.note ? (
+                        <div className="relative">
+                          <button
+                            // className="text-slate-600 hover:text-slate-900"
+                            className="relative h-10 w-10 rounded-md  flex items-center justify-center"
+                            title={rp.note}
+                            type="button"
+                          >
+                            <Notebook size={18} className="text-slate-700" />
+                          </button>
+
+                          <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                            {rp.note ? 1 : null}
+                          </span>
+                        </div>
+                      ) : (
                         <button
-                          className="text-slate-600 hover:text-slate-900"
+                          // className="text-slate-600 hover:text-slate-900"
+                          className=" h-10 w-10 rounded-md   flex items-center justify-center"
                           title={rp.note}
                           type="button"
                         >
-                          <Notebook size={18} />
+                          <Notebook size={18} className="text-slate-700" />
                         </button>
                       )}
 
@@ -2622,9 +2754,62 @@ const CashInOutTable = () => {
                         <Edit size={18} />
                       </button>
 
-                      {role === "superAdmin" ||
-                      role === "admin" ||
-                      rp.status === "Approved" ? (
+                      {role === "superAdmin" || role === "admin" ? (
+                        <button
+                          onClick={() => handleDeleteProduct(rowId)}
+                          className="text-red-600 hover:text-red-700"
+                          type="button"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleEditClick1(rp)}
+                          className="text-red-600 hover:text-red-700"
+                          type="button"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
+                    </div>
+                  </td> */}
+
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center gap-3">
+                      {rp.note ? (
+                        <div className="relative">
+                          <button
+                            className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                            title={rp.note}
+                            type="button"
+                            onClick={() => handleNoteClick(rp.note)} // Open modal on click
+                          >
+                            <Notebook size={18} className="text-slate-700" />
+                          </button>
+
+                          <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                            {rp.note ? 1 : null}
+                          </span>
+                        </div>
+                      ) : (
+                        <button
+                          className="h-10 w-10 rounded-md flex items-center justify-center"
+                          title={rp.note}
+                          type="button"
+                        >
+                          <Notebook size={18} className="text-slate-700" />
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => handleEditClick(rp)}
+                        className="text-indigo-600 hover:text-indigo-700"
+                        type="button"
+                      >
+                        <Edit size={18} />
+                      </button>
+
+                      {role === "superAdmin" || role === "admin" ? (
                         <button
                           onClick={() => handleDeleteProduct(rowId)}
                           className="text-red-600 hover:text-red-700"
@@ -2643,6 +2828,29 @@ const CashInOutTable = () => {
                       )}
                     </div>
                   </td>
+
+                  {/* ✅ Note Modal (Popup) */}
+                  {isNoteModalOpen && (
+                    <div className="fixed inset-0 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
+                        <h2 className="text-xl font-semibold text-slate-900">
+                          Note
+                        </h2>
+                        <p className="mt-4 text-sm text-slate-700">
+                          {noteContent}
+                        </p>
+
+                        <div className="mt-6 flex justify-end gap-2">
+                          <button
+                            onClick={handleModalClose}
+                            className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+                          >
+                            Close
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </motion.tr>
               );
             })}
@@ -2804,29 +3012,29 @@ const CashInOutTable = () => {
                 value={
                   isNewCategoryEdit
                     ? "__new__"
-                    : currentProduct.categoryId || ""
+                    : currentProduct.categoryName || ""
                 }
                 onChange={(e) => {
                   const v = e.target.value;
 
                   if (v === "__new__") {
                     setIsNewCategoryEdit(true);
-                    setCurrentProduct((p) => ({ ...p, categoryId: "" }));
+                    setCurrentProduct((p) => ({ ...p, categoryName: "" }));
                     return;
                   }
 
                   setIsNewCategoryEdit(false);
                   setNewCategoryNameEdit("");
-                  setCurrentProduct((p) => ({ ...p, categoryId: v }));
+                  setCurrentProduct((p) => ({ ...p, categoryName: v }));
                 }}
                 className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 required
               >
                 <option value="">Select Category</option>
 
                 {categoryOptions.map((c) => (
-                  <option key={c.id} value={c.id}>
+                  <option key={c.id} value={c.name}>
                     {c.name}
                   </option>
                 ))}
@@ -2842,18 +3050,20 @@ const CashInOutTable = () => {
                     onChange={(e) => setNewCategoryNameEdit(e.target.value)}
                     placeholder="Write new category name"
                     className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                   focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   />
                   <button
                     type="button"
                     onClick={async () => {
-                      const createdId =
+                      const createdCategoryName =
                         await addCategoryByName(newCategoryNameEdit);
-                      if (!createdId) return;
+                      if (!createdCategoryName) return;
+
                       setCurrentProduct((p) => ({
                         ...p,
-                        categoryId: createdId,
+                        categoryName: createdCategoryName, // Update categoryName instead of categoryId
                       }));
+
                       setIsNewCategoryEdit(false);
                       setNewCategoryNameEdit("");
                     }}
@@ -2903,7 +3113,6 @@ const CashInOutTable = () => {
                 }
                 className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
                            focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                required
               />
             </div>
 
@@ -2927,7 +3136,7 @@ const CashInOutTable = () => {
               />
             </div>
 
-            {role === "superAdmin" ? (
+            {role === "superAdmin" || role === "admin" ? (
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
                   Status
@@ -3026,7 +3235,7 @@ const CashInOutTable = () => {
           >
             <h2 className="text-lg font-semibold text-slate-900">Edit</h2>
 
-            {role === "superAdmin" ? (
+            {role === "superAdmin" || role === "admin" ? (
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
                   Status
@@ -3193,7 +3402,7 @@ const CashInOutTable = () => {
               )}
 
               {/* ✅ Category (Add) */}
-              <div className="mt-4">
+              {/* <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
                   Category
                 </label>
@@ -3261,6 +3470,77 @@ const CashInOutTable = () => {
                     </button>
                   </div>
                 )}
+              </div> */}
+
+              <div className="mt-4">
+                <label className="block text-sm text-slate-600 mb-1">
+                  Category
+                </label>
+                <select
+                  value={
+                    isNewCategoryAdd
+                      ? "__new__"
+                      : createProduct.categoryName || ""
+                  }
+                  onChange={(e) => {
+                    const v = e.target.value;
+
+                    if (v === "__new__") {
+                      setIsNewCategoryAdd(true);
+                      setCreateProduct((p) => ({ ...p, categoryName: "" }));
+                      return;
+                    }
+
+                    setIsNewCategoryAdd(false);
+                    setNewCategoryNameAdd("");
+                    setCreateProduct((p) => ({ ...p, categoryName: v }));
+                  }}
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  required
+                >
+                  <option value="">Select Category</option>
+                  {categoryOptions.map((c) => (
+                    <option key={c.id} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                  <option value="__new__">+ New Category</option>
+                </select>
+
+                {isNewCategoryAdd && (
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      type="text"
+                      value={newCategoryNameAdd}
+                      onChange={(e) => setNewCategoryNameAdd(e.target.value)}
+                      placeholder="Write new category name"
+                      className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                   focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const createdCategoryName =
+                          await addCategoryByName(newCategoryNameAdd);
+                        if (!createdCategoryName) return;
+
+                        // Set the newly added category name
+                        setCreateProduct((p) => ({
+                          ...p,
+                          categoryName: createdCategoryName, // Update the categoryName state
+                        }));
+
+                        setIsNewCategoryAdd(false);
+                        setNewCategoryNameAdd("");
+                      }}
+                      disabled={isAddingCategory}
+                      className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold disabled:bg-slate-400"
+                    >
+                      {isAddingCategory ? "Adding..." : "Add"}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* <div className="mt-4">
@@ -3300,10 +3580,26 @@ const CashInOutTable = () => {
                   }
                   className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
                 />
               </div>
 
+              <div className="mt-4">
+                <label className="block text-sm text-slate-600 mb-1">
+                  Note
+                </label>
+                <input
+                  type="text"
+                  value={createProduct.note}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
                   Amount
@@ -3475,33 +3771,31 @@ const CashInOutTable = () => {
                   value={
                     isNewCategoryAdd
                       ? "__new__"
-                      : createProduct.categoryId || ""
+                      : createProduct.categoryName || ""
                   }
                   onChange={(e) => {
                     const v = e.target.value;
 
                     if (v === "__new__") {
                       setIsNewCategoryAdd(true);
-                      setCreateProduct((p) => ({ ...p, categoryId: "" }));
+                      setCreateProduct((p) => ({ ...p, categoryName: "" }));
                       return;
                     }
 
                     setIsNewCategoryAdd(false);
                     setNewCategoryNameAdd("");
-                    setCreateProduct((p) => ({ ...p, categoryId: v }));
+                    setCreateProduct((p) => ({ ...p, categoryName: v }));
                   }}
                   className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 >
                   <option value="">Select Category</option>
-
                   {categoryOptions.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.id} value={c.name}>
                       {c.name}
                     </option>
                   ))}
-
                   <option value="__new__">+ New Category</option>
                 </select>
 
@@ -3513,18 +3807,21 @@ const CashInOutTable = () => {
                       onChange={(e) => setNewCategoryNameAdd(e.target.value)}
                       placeholder="Write new category name"
                       className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                   focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                     />
                     <button
                       type="button"
                       onClick={async () => {
-                        const createdId =
+                        const createdCategoryName =
                           await addCategoryByName(newCategoryNameAdd);
-                        if (!createdId) return;
+                        if (!createdCategoryName) return;
+
+                        // Set the newly added category name
                         setCreateProduct((p) => ({
                           ...p,
-                          categoryId: createdId,
+                          categoryName: createdCategoryName, // Update the categoryName state
                         }));
+
                         setIsNewCategoryAdd(false);
                         setNewCategoryNameAdd("");
                       }}
@@ -3574,7 +3871,23 @@ const CashInOutTable = () => {
                   }
                   className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
+                />
+              </div>
+              <div className="mt-4">
+                <label className="block text-sm text-slate-600 mb-1">
+                  Note
+                </label>
+                <input
+                  type="text"
+                  value={createProduct.note}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      note: e.target.value,
+                    })
+                  }
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
               </div>
 

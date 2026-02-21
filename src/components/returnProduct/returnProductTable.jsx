@@ -256,7 +256,7 @@
 //             <span className="text-sm">Total Purchase Return</span>
 //           </div>
 //           <span className="text-white font-semibold tabular-nums">
-//             {isLoading ? "Loading..." : (data?.meta?.countQuantity ?? 0)}
+//             {isLoading ? "Loading..." : (data?.meta?.totalQuantity ?? 0)}
 //           </span>
 //         </div>
 //       </div>
@@ -944,6 +944,18 @@ const ReturnProductTable = () => {
     [warehouses],
   );
 
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [noteContent, setNoteContent] = useState("");
+
+  const handleNoteClick = (note) => {
+    setNoteContent(note);
+    setIsNoteModalOpen(true); // Open the modal
+  };
+
+  const handleNoteModalClose = () => {
+    setIsNoteModalOpen(false); // Close the modal
+  };
+
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
@@ -967,7 +979,7 @@ const ReturnProductTable = () => {
             <span className="text-sm">Total Return Product</span>
           </div>
           <span className="text-slate-900 font-semibold tabular-nums">
-            {isLoading ? "Loading..." : (data?.meta?.countQuantity ?? 0)}
+            {isLoading ? "Loading..." : (data?.meta?.totalQuantity ?? 0)}
           </span>
         </div>
       </div>
@@ -1144,19 +1156,36 @@ const ReturnProductTable = () => {
                     className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
                       rp.status === "Approved"
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : "bg-amber-50 text-amber-700 border-amber-200"
+                        : rp.status === "Active"
+                          ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                          : "bg-amber-50 text-amber-700 border-amber-200"
                     }`}
                   >
-                    {rp.status || "Pending"}
+                    {rp.status}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center gap-2">
-                    {rp.note && (
+                    {rp.note ? (
+                      <div className="relative">
+                        <button
+                          className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                          title={rp.note}
+                          type="button"
+                          onClick={() => handleNoteClick(rp.note)} // Open modal on click
+                        >
+                          <Notebook size={18} className="text-slate-700" />
+                        </button>
+
+                        <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                          {rp.note ? 1 : null}
+                        </span>
+                      </div>
+                    ) : (
                       <button
-                        type="button"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                        className="h-10 w-10 rounded-md flex items-center justify-center"
                         title={rp.note}
+                        type="button"
                       >
                         <Notebook size={18} className="text-slate-700" />
                       </button>
@@ -1192,6 +1221,28 @@ const ReturnProductTable = () => {
                     )}
                   </div>
                 </td>
+                {/* ✅ Note Modal (Popup) */}
+                {isNoteModalOpen && (
+                  <div className="fixed inset-0 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
+                      <h2 className="text-xl font-semibold text-slate-900">
+                        Note
+                      </h2>
+                      <p className="mt-4 text-sm text-slate-700">
+                        {noteContent}
+                      </p>
+
+                      <div className="mt-6 flex justify-end gap-2">
+                        <button
+                          onClick={handleNoteModalClose}
+                          className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </motion.tr>
             ))}
 

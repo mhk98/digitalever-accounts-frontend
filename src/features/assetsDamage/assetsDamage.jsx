@@ -10,7 +10,7 @@ import { baseApi } from "../baseApi/api";
 // export const assetsDamageApi = createApi({
 //   reducerPath: "assetsDamageApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " http://localhost:5000/api/v1/",
+//     baseUrl: " https://api.digitalever.com.bd/api/v1/",
 //     prepareHeaders: (headers) => {
 //       const token = getAuthToken(); // Fetch the token
 //       if (token) {
