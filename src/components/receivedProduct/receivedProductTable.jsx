@@ -1116,7 +1116,14 @@ const ReceivedProductTable = () => {
       if (res?.success) {
         toast.success("Successfully created received product");
         setIsModalOpen1(false);
-        setCreateProduct({ productId: "", quantity: "" });
+        setCreateProduct({
+          warehouseId: "",
+          supplierId: "",
+          productId: "",
+          quantity: "",
+          note: "",
+          date: "",
+        });
         refetch?.();
       } else toast.error(res?.message || "Create failed!");
     } catch (err) {

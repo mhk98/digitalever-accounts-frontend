@@ -947,7 +947,8 @@ const ProductsTable = () => {
       };
 
       const res = await insertProduct(payload).unwrap();
-      if (res?.success) {
+      console.log("product insert", res?.success);
+      if (res?.success === true) {
         toast.success("Successfully created product");
         setIsModalOpen1(false);
         setCreateProduct({

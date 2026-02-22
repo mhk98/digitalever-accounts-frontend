@@ -10,7 +10,7 @@
 //   useUserUpdateMutation,
 // } from "../../features/auth/auth";
 
-// const API_BASE = " https://api.digitalever.com.bd";
+// const API_BASE = " http://localhost:5000";
 
 // const UserManagementTable = () => {
 //   // Modals
@@ -674,7 +674,7 @@ import {
   useUserUpdateMutation,
 } from "../../features/auth/auth";
 
-const API_BASE = " https://api.digitalever.com.bd";
+const API_BASE = " http://localhost:5000";
 
 const UserManagementTable = () => {
   // Modals

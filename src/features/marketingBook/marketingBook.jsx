@@ -5,8 +5,8 @@ const getAuthToken = () => {
   return localStorage.getItem("token"); // Modify this based on your token storage logic
 };
 
-export const bookApi = createApi({
-  reducerPath: "bookApi",
+export const marketingBookApi = createApi({
+  reducerPath: "marketingBookApi",
   baseQuery: fetchBaseQuery({
     baseUrl: " http://localhost:5000/api/v1/",
     prepareHeaders: (headers) => {
@@ -19,35 +19,35 @@ export const bookApi = createApi({
     },
   }),
 
-  tagTypes: ["book"], // Define the tag type for invalidation and refetching
+  tagTypes: ["marketingBook"], // Define the tag type for invalidation and refetching
   endpoints: (build) => ({
-    insertBook: build.mutation({
+    insertMarketingBook: build.mutation({
       query: (data) => ({
-        url: "/book/create",
+        url: "/marketing-book/create",
         method: "POST",
         body: data,
       }),
       invalidatesTags: ["book"], // Invalidate the Book tag after this mutation
     }),
 
-    deleteBook: build.mutation({
+    deleteMarketingBook: build.mutation({
       query: (id) => ({
-        url: `/book/${id}`,
+        url: `/marketing-book/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["book"], // Invalidate the Book tag after deletion
+      invalidatesTags: ["marketingBook"], // Invalidate the Book tag after deletion
     }),
 
-    updateBook: build.mutation({
+    updateMarketingBook: build.mutation({
       query: ({ id, data }) => ({
-        url: `/book/${id}`,
+        url: `/marketing-book/${id}`,
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["book"], // Invalidate the Book tag after this mutation
+      invalidatesTags: ["marketingBook"], // Invalidate the Book tag after this mutation
     }),
 
-    getAllBook: build.query({
+    getAllMarketingBook: build.query({
       query: ({
         page,
         limit,
@@ -77,26 +77,26 @@ export const bookApi = createApi({
 
     getAllBookWithoutQuery: build.query({
       query: () => ({
-        url: "/book/all",
+        url: "/marketing-book/all",
       }),
-      providesTags: ["book"],
+      providesTags: ["marketingBook"],
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
-    getSingleBookDataById: build.query({
+    getSingleMarketingBookDataById: build.query({
       query: (id) => ({
-        url: `/book/${id}`,
+        url: `/marketing-book/${id}`,
       }),
-      providesTags: ["book"], // Provides the 'supplier' tag for caching and invalidation
+      providesTags: ["marketingBook"], // Provides the 'supplier' tag for caching and invalidation
     }),
   }),
 });
 
 export const {
-  useGetAllBookQuery,
+  useGetAllMarketingBookQuery,
   useGetAllBookWithoutQueryQuery,
-  useDeleteBookMutation,
-  useUpdateBookMutation,
-  useInsertBookMutation,
-  useGetSingleBookDataByIdQuery,
-} = bookApi;
+  useDeleteMarketingBookMutation,
+  useUpdateMarketingBookMutation,
+  useInsertMarketingBookMutation,
+  useGetSingleMarketingBookDataByIdQuery,
+} = marketingBookApi;

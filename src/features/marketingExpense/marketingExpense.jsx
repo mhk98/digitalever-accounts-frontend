@@ -2,8 +2,8 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 const getAuthToken = () => localStorage.getItem("token");
 
-export const pettyCashApi = createApi({
-  reducerPath: "pettyCashApi",
+export const marketingExpenseApi = createApi({
+  reducerPath: "marketingExpenseApi",
   baseQuery: fetchBaseQuery({
     baseUrl: " http://localhost:5000/api/v1/",
     prepareHeaders: (headers) => {
@@ -12,36 +12,36 @@ export const pettyCashApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["pettyCash"],
+  tagTypes: ["marketingExpense"],
   endpoints: (build) => ({
-    insertPettyCash: build.mutation({
+    insertMarketingExpense: build.mutation({
       query: (data) => ({
-        url: "/petty-cash/create",
+        url: "/marketing-expense/create",
         method: "POST",
         body: data, // FormData
       }),
-      invalidatesTags: ["pettyCash"],
+      invalidatesTags: ["marketingExpense"],
     }),
 
-    updatePettyCash: build.mutation({
+    updateMarketingExpense: build.mutation({
       query: ({ id, data }) => ({
-        url: `/petty-cash/${id}`,
+        url: `/marketing-expense/${id}`,
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["pettyCash"],
+      invalidatesTags: ["marketingExpense"],
     }),
 
-    deletePettyCash: build.mutation({
+    deleteMarketingExpense: build.mutation({
       query: (id) => ({
-        url: `/petty-cash/${id}`,
+        url: `/marketing-expense/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["pettyCash"],
+      invalidatesTags: ["marketingExpense"],
     }),
 
     // ✅ FIXED: FILTER PARAMS PASSING
-    getAllPettyCash: build.query({
+    getAllMarketingExpense: build.query({
       query: (arg) => {
         const {
           page,
@@ -51,16 +51,20 @@ export const pettyCashApi = createApi({
           searchTerm,
           paymentMode,
           paymentStatus,
+          category,
+          bookId,
         } = arg || {};
 
         const params = {
           page,
           limit,
+          bookId,
           startDate,
           endDate,
           searchTerm,
           paymentMode,
           paymentStatus,
+          category,
         };
 
         // ✅ remove undefined/empty
@@ -75,21 +79,28 @@ export const pettyCashApi = createApi({
         });
 
         return {
-          url: "/petty-cash",
+          url: "/marketing-expense",
           params,
         };
       },
-      providesTags: ["pettyCash"],
+      providesTags: ["marketingExpense"],
       refetchOnMountOrArgChange: true,
       // ✅ pollingInterval off (debug এ সমস্যা করে)
       // pollingInterval: 1000,
     }),
 
-    getAllPettyCashWithoutQuery: build.query({
-      query: () => ({
-        url: "/petty-cash/all",
+    getSingleMarketingExpense: build.query({
+      query: (id) => ({
+        url: `/marketing-expense/${id}`,
       }),
-      providesTags: ["pettyCash"],
+      providesTags: ["marketingExpense"], // Provides the 'supplier' tag for caching and invalidation
+    }),
+
+    getAllMarketingExpenseWithoutQuery: build.query({
+      query: () => ({
+        url: "/marketing-expense/all",
+      }),
+      providesTags: ["marketingExpense"],
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
@@ -97,9 +108,10 @@ export const pettyCashApi = createApi({
 });
 
 export const {
-  useGetAllPettyCashQuery,
-  useInsertPettyCashMutation,
-  useUpdatePettyCashMutation,
-  useDeletePettyCashMutation,
-  useGetAllPettyCashWithoutQueryQuery,
-} = pettyCashApi;
+  useGetAllMarketingExpenseQuery,
+  useGetSingleMarketingExpenseQuery,
+  useInsertMarketingExpenseMutation,
+  useUpdateMarketingExpenseMutation,
+  useDeleteMarketingExpenseMutation,
+  useGetAllMarketingExpenseWithoutQueryQuery,
+} = marketingExpenseApi;

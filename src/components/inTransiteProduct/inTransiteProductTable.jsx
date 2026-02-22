@@ -1378,6 +1378,8 @@ const IntransiteProductTable = () => {
 
   const receivedData = receivedRes?.data || [];
 
+  console.log("receivedData", receivedData);
+
   useEffect(() => {
     if (receivedError) console.error("Received fetch error:", receivedErrObj);
   }, [receivedError, receivedErrObj]);
@@ -1891,9 +1893,7 @@ const IntransiteProductTable = () => {
                 className="hover:bg-slate-50"
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.createdAt
-                    ? new Date(rp.createdAt).toLocaleDateString()
-                    : "-"}
+                  {rp.date}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                   {resolveProductName(rp)}

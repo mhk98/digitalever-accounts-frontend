@@ -43,6 +43,8 @@ import PurchaseRequisitionPage from "./pages/purchaseRequisitionPage";
 import AssetsRequisitionPage from "./pages/AssetsRequisitionPage";
 import ExpiredProductPage from "./pages/ExpiredProductPage";
 import PosReportPage from "./pages/PosReportPage";
+import MarketingBookPage from "./pages/MarketingBookPage";
+import MarketingExpensePage from "./pages/MarketingExpensePage";
 
 function App() {
   return (
@@ -285,6 +287,27 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <CashInOutPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+
+            <Route
+              path="/marketing-book"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <MarketingBookPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/marketing-book/:id"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <MarketingExpensePage />
                   </SidebarLayout>
                 </RequireAuth>
               }
