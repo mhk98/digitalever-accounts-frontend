@@ -2179,6 +2179,7 @@ const DamageRepairedTable = () => {
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 >
                   <option value="">Select Status</option>
+                  <option value="Active">Active</option>
                   <option value="Approved">Approved</option>
                   <option value="Pending">Pending</option>
                 </select>

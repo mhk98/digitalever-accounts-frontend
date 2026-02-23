@@ -117,10 +117,10 @@ export const purchaseReturnProductApi = baseApi.injectEndpoints({
         body: data,
       }),
 
-      // ✅ return insert affects ReceivedProduct stock too
+      // ✅ return insert affects InventoryOverview stock too
       invalidatesTags: [
         { type: "PurchaseReturn", id: "LIST" },
-        { type: "ReceivedProduct", id: "LIST" },
+        { type: "InventoryOverview", id: "LIST" },
       ],
     }),
 
@@ -135,7 +135,7 @@ export const purchaseReturnProductApi = baseApi.injectEndpoints({
       invalidatesTags: (res, err, arg) => [
         { type: "PurchaseReturn", id: arg.id },
         { type: "PurchaseReturn", id: "LIST" },
-        { type: "ReceivedProduct", id: "LIST" },
+        { type: "InventoryOverview", id: "LIST" },
       ],
     }),
 
@@ -149,7 +149,7 @@ export const purchaseReturnProductApi = baseApi.injectEndpoints({
       invalidatesTags: (res, err, id) => [
         { type: "PurchaseReturn", id },
         { type: "PurchaseReturn", id: "LIST" },
-        { type: "ReceivedProduct", id: "LIST" },
+        { type: "InventoryOverview", id: "LIST" },
       ],
     }),
   }),

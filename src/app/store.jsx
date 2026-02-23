@@ -101,13 +101,11 @@ import { configureStore } from "@reduxjs/toolkit";
 import { authApi } from "../features/auth/auth";
 import { inTransitProductApi } from "../features/inTransitProduct/inTransitProduct";
 import { returnProductApi } from "../features/returnProduct/returnProduct";
-import { metaApi } from "../features/marketing/marketing";
 import { assetsPurchaseApi } from "../features/assetsPurchase/assetsPurchase";
 import { confirmOrderApi } from "../features/confirmOrder/confirmOrder";
 import { pettyCashApi } from "../features/pettyCash/pettyCash";
 import { expenseApi } from "../features/expense/expense";
-import { bookApi } from "../features/book/book";
-import { cashInOutApi } from "../features/cashInOut/cashInOut";
+
 import { purchaseReturnProductApi } from "../features/purchaseReturnProduct/purchaseReturnProduct";
 import { receiveableApi } from "../features/receiveable/receiveable";
 import { payableApi } from "../features/payable/payable";
@@ -130,28 +128,33 @@ import { receivedProductApi } from "../features/receivedProduct/receivedProduct"
 import { assetsRequisitionApi } from "../features/assetsRequisition/assetsRequisition";
 import { posReportApi } from "../features/posReport/posReport";
 import { warrantyroductApi } from "../features/warrantyProduct/warrantyProduct";
+import { inventoryOverviewApi } from "../features/inventoryOverview/inventoryOverview";
+import { bookApi } from "../features/book/book";
+import { cashInOutApi } from "../features/cashInOut/cashInOut";
 import { marketingBookApi } from "../features/marketingBook/marketingBook";
+import { marketingExpenseApi } from "../features/marketingExpense/marketingExpense";
 
 // ✅ 1) Collect all apis once
 const apis = [
   productApi,
   purchaseRequisitionApi,
+  inventoryOverviewApi,
   receivedProductApi,
   inTransitProductApi,
   returnProductApi,
   purchaseReturnProductApi,
   damageProductApi,
   confirmOrderApi,
-  metaApi,
   assetsPurchaseApi,
   assetsRequisitionApi,
   assetsSaleApi,
   assetsDamageApi,
-  cashInOutApi,
   pettyCashApi,
   expenseApi,
   bookApi,
+  cashInOutApi,
   marketingBookApi,
+  marketingExpenseApi,
   supplierApi,
   wirehouseApi,
   warrantyroductApi,

@@ -1,4 +1,4 @@
-import AccountingTable from "../components/marketingBook/MarketingBookTable";
+import AccountingTable from "../components/accounting/AccountingTable";
 import Header from "../components/common/Header";
 
 const AccountingPage = () => {

@@ -835,6 +835,12 @@ const SIDEBAR_ITEMS = [
     roles: ["superAdmin", "admin", "inventor"],
     children: [
       {
+        name: "Overview",
+        icon: Warehouse,
+        href: "/inventory-overview",
+        roles: ["superAdmin", "admin"],
+      },
+      {
         name: "Warehouse",
         icon: Warehouse,
         href: "/warehouse",

@@ -10,7 +10,7 @@ export const damageProductApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [
         { type: "DamageProduct", id: "LIST" },
-        { type: "ReceivedProduct", id: "LIST" }, // ✅ receive stock affected
+        { type: "InventoryOverview", id: "LIST" }, // ✅ receive stock affected
       ],
     }),
 
@@ -23,7 +23,7 @@ export const damageProductApi = baseApi.injectEndpoints({
         { type: "DamageProduct", id },
         { type: "DamageProduct", id: "LIST" },
 
-        { type: "ReceivedProduct", id: "LIST" }, // ✅ stock return/update
+        { type: "InventoryOverview", id: "LIST" }, // ✅ stock return/update
       ],
     }),
 
@@ -37,7 +37,7 @@ export const damageProductApi = baseApi.injectEndpoints({
         { type: "DamageProduct", id: arg.id },
         { type: "DamageProduct", id: "LIST" },
 
-        { type: "ReceivedProduct", id: "LIST" }, // ✅ if update changes qty/status
+        { type: "InventoryOverview", id: "LIST" }, // ✅ if update changes qty/status
       ],
     }),
 

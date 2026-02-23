@@ -1316,8 +1316,6 @@ import { Edit, Notebook, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
-
-import { useGetAllReceivedProductWithoutQueryQuery } from "../../features/receivedProduct/receivedProduct";
 import {
   useDeleteDamageProductMutation,
   useGetAllDamageProductQuery,
@@ -1326,6 +1324,7 @@ import {
 } from "../../features/damageProduct/damageProduct";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
+import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
 
 const DamageProductTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -1368,7 +1367,7 @@ const DamageProductTable = () => {
     isLoading: receivedLoading,
     isError: receivedError,
     error: receivedErrObj,
-  } = useGetAllReceivedProductWithoutQueryQuery();
+  } = useGetAllProductWithoutQueryQuery();
 
   const receivedData = receivedRes?.data || [];
 
@@ -2150,6 +2149,7 @@ const DamageProductTable = () => {
                   required
                 >
                   <option value="">Select Status</option>
+                  <option value="Active">Active</option>
                   <option value="Approved">Approved</option>
                   <option value="Pending">Pending</option>
                 </select>

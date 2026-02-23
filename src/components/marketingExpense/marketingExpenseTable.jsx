@@ -9,14 +9,11 @@ import ReportPreviewModal from "./ReportPreviewModal";
 
 import { generateMarketingExpensePdf } from "../../utils/report/generateMarketingExpensePdf";
 import { generateMarketingExpenseXlsx } from "../../utils/report/generateMarketingExpenseXlsx";
-import { useGetSingleMarketingBookDataByIdQuery } from "../../features/marketingBook/marketingBook";
-import {
-  useGetAllCategoryQuery,
-  useInsertCategoryMutation,
-} from "../../features/category/category";
+
 import {
   useDeleteMarketingExpenseMutation,
   useGetAllMarketingExpenseQuery,
+  useGetSingleMarketingExpenseQuery,
   useInsertMarketingExpenseMutation,
   useUpdateMarketingExpenseMutation,
 } from "../../features/marketingExpense/marketingExpense";
@@ -40,15 +37,6 @@ const BANKS = [
   "Sonali Bank",
   "Standard Chartered",
   "Trust Bank",
-];
-
-const STATIC_CATEGORIES = [
-  "Office Expense",
-  "Marketing",
-  "Salary",
-  "Transport",
-  "Utility Bill",
-  "Other",
 ];
 
 const MarketingExpenseTable = () => {
@@ -87,13 +75,7 @@ const MarketingExpenseTable = () => {
   const [filterPaymentMode, setFilterPaymentMode] = useState("");
   const [filterPaymentStatus, setFilterPaymentStatus] = useState("");
 
-  // ✅ Category states
-  const [categories, setCategories] = useState([]);
-  const [isNewCategoryAdd, setIsNewCategoryAdd] = useState(false);
-  const [newCategoryNameAdd, setNewCategoryNameAdd] = useState("");
   const role = localStorage.getItem("role");
-  const [isNewCategoryEdit, setIsNewCategoryEdit] = useState(false);
-  const [newCategoryNameEdit, setNewCategoryNameEdit] = useState("");
 
   //Pagination calculation start
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -210,93 +192,19 @@ const MarketingExpenseTable = () => {
   }, [data, isLoading, isError, error, itemsPerPage]);
 
   // book info (name for report header)
-  const { data: bookRes } = useGetSingleMarketingBookDataByIdQuery(id, {
+  const { data: bookRes } = useGetSingleMarketingExpenseQuery(id, {
     skip: !id,
   });
   const bookName = bookRes?.data?.name || "";
-
-  // ✅ Category: fetch all
-  const {
-    data: categoryRes,
-    isLoading: categoryLoading,
-    isError: isCategoryError,
-    error: categoryError,
-  } = useGetAllCategoryQuery();
-
-  useEffect(() => {
-    if (isCategoryError) console.error("Category error:", categoryError);
-    if (!categoryLoading && categoryRes) {
-      setCategories(categoryRes?.data ?? []);
-    }
-  }, [categoryRes, categoryLoading, isCategoryError, categoryError]);
-
-  // ✅ Category options: static + api
-  const categoryOptions = useMemo(() => {
-    const staticOnes = STATIC_CATEGORIES.map((name) => ({
-      id: `static:${name}`,
-      name,
-      isStatic: true,
-    }));
-
-    const fromApi = (categories || []).map((c) => ({
-      id: String(c.Id ?? c.id ?? c._id),
-      name: c.name,
-      isStatic: false,
-    }));
-
-    // de-dup by name
-    const seen = new Set();
-    const merged = [...staticOnes, ...fromApi].filter((x) => {
-      const k = String(x.name || "")
-        .toLowerCase()
-        .trim();
-      if (!k) return false;
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    });
-
-    return merged;
-  }, [categories]);
-
-  // ✅ Insert category mutation
-  const [insertCategory, { isLoading: isAddingCategory }] =
-    useInsertCategoryMutation();
-
-  const addCategoryByName = async (name) => {
-    const n = name.trim();
-    if (!n) {
-      toast.error("New category name is required!");
-      return null;
-    }
-
-    try {
-      const res = await insertCategory({ name: n }).unwrap();
-      if (res?.success) {
-        const created = res?.data;
-        const createdId = String(created?.Id ?? created?.id ?? created?._id);
-        return createdId;
-      }
-      toast.error(res?.message || "Category add failed!");
-      return null;
-    } catch (err) {
-      toast.error(err?.data?.message || "Category add failed!");
-      return null;
-    }
-  };
 
   // modals
   const handleAddCashIn = () => setIsModalOpen1(true);
   const handleAddCashOut = () => setIsModalOpen3(true);
   const handleModalClose1 = () => {
     setIsModalOpen1(false);
-    setIsNewCategoryAdd(false);
-    setNewCategoryNameAdd("");
   };
   const handleModalClose3 = () => {
     setIsModalOpen3(false);
-    setIsNewCategoryAdd(false);
-    setNewCategoryNameAdd("");
   };
 
   const handleEditClick = (rp) => {
@@ -314,8 +222,6 @@ const MarketingExpenseTable = () => {
       category: rp.category,
       file: null,
     });
-    setIsNewCategoryEdit(false);
-    setNewCategoryNameEdit("");
     setIsModalOpen(true);
   };
 
@@ -333,8 +239,6 @@ const MarketingExpenseTable = () => {
       category: rp.category,
       file: null,
     });
-    setIsNewCategoryEdit(false);
-    setNewCategoryNameEdit("");
     setIsModalOpen2(true);
   };
 
@@ -346,15 +250,15 @@ const MarketingExpenseTable = () => {
     if (!rowId) return toast.error("Invalid item!");
 
     try {
-      let finalCategoryName = currentProduct.category;
+      // let finalCategoryName = currentProduct.category;
 
-      // If the category is new and being added dynamically
-      if (isNewCategoryEdit) {
-        const createdCategoryName =
-          await addCategoryByName(newCategoryNameEdit);
-        if (!createdCategoryName) return;
-        finalCategoryName = createdCategoryName; // Using the newly created category name
-      }
+      // // If the category is new and being added dynamically
+      // if (isNewCategoryEdit) {
+      //   const createdCategoryName =
+      //     await addCategoryByName(newCategoryNameEdit);
+      //   if (!createdCategoryName) return;
+      //   finalCategoryName = createdCategoryName; // Using the newly created category name
+      // }
 
       const formData = new FormData();
       formData.append("paymentMode", currentProduct.paymentMode);
@@ -377,7 +281,7 @@ const MarketingExpenseTable = () => {
       );
 
       // Use categoryName (not categoryId)
-      formData.append("category", finalCategoryName); // Using category name here
+      // formData.append("category", finalCategoryName); // Using category name here
       formData.append("remarks", currentProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(currentProduct.amount)));
       if (currentProduct.file) formData.append("file", currentProduct.file);
@@ -390,8 +294,6 @@ const MarketingExpenseTable = () => {
         toast.success("Updated!");
         setIsModalOpen(false);
         setCurrentProduct(null);
-        setIsNewCategoryEdit(false);
-        setNewCategoryNameEdit("");
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
     } catch (err) {
@@ -418,8 +320,6 @@ const MarketingExpenseTable = () => {
         toast.success("Updated!");
         setIsModalOpen2(false);
         setCurrentProduct(null);
-        setIsNewCategoryEdit(false);
-        setNewCategoryNameEdit("");
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
     } catch (err) {
@@ -444,22 +344,7 @@ const MarketingExpenseTable = () => {
         return toast.error("Bank Account is required!");
     }
 
-    // Category check - Make sure categoryName is either selected or added
-    if (!createProduct.category && !isNewCategoryAdd) {
-      return toast.error("Category is required!");
-    }
-
     try {
-      // Handling new category creation
-      let finalCategoryName = createProduct.category;
-
-      // If the category is new and being added dynamically
-      if (isNewCategoryAdd) {
-        const createdCategoryName = await addCategoryByName(newCategoryNameAdd);
-        if (!createdCategoryName) return;
-        finalCategoryName = createdCategoryName; // Using the newly created category name
-      }
-
       // Form data preparation for submission
       const formData = new FormData();
       formData.append("paymentMode", createProduct.paymentMode);
@@ -479,7 +364,7 @@ const MarketingExpenseTable = () => {
       );
 
       // Use categoryName (not category)
-      formData.append("category", finalCategoryName); // Using category name here
+      // formData.append("category", finalCategoryName); // Using category name here
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
       formData.append("bookId", id);
@@ -491,8 +376,6 @@ const MarketingExpenseTable = () => {
       if (res?.success) {
         toast.success("Successfully created!");
         setIsModalOpen1(false);
-        setIsNewCategoryAdd(false);
-        setNewCategoryNameAdd("");
         setCreateProduct({
           paymentMode: "",
           paymentStatus: "",
@@ -527,22 +410,7 @@ const MarketingExpenseTable = () => {
         return toast.error("Bank Account is required!");
     }
 
-    // Category check - Make sure category is either selected or added
-    if (!createProduct.category && !isNewCategoryAdd) {
-      return toast.error("Category is required!");
-    }
-
     try {
-      // Handling new category creation
-      let finalCategoryName = createProduct.category;
-
-      // If the category is new and being added dynamically
-      if (isNewCategoryAdd) {
-        const createdCategoryName = await addCategoryByName(newCategoryNameAdd);
-        if (!createdCategoryName) return;
-        finalCategoryName = createdCategoryName; // Using the newly created category name
-      }
-
       // Form data preparation for submission
       const formData = new FormData();
       formData.append("paymentMode", createProduct.paymentMode);
@@ -562,7 +430,7 @@ const MarketingExpenseTable = () => {
       );
 
       // Use category (not category)
-      formData.append("category", finalCategoryName); // Using category name here
+      // formData.append("category", finalCategoryName); // Using category name here
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
       formData.append("bookId", id);
@@ -573,8 +441,6 @@ const MarketingExpenseTable = () => {
       if (res?.success) {
         toast.success("Successfully created!");
         setIsModalOpen3(false);
-        setIsNewCategoryAdd(false);
-        setNewCategoryNameAdd("");
         setCreateProduct({
           paymentMode: "",
           paymentStatus: "",
@@ -916,7 +782,7 @@ const MarketingExpenseTable = () => {
           </select>
         </div>
 
-        <div className="flex flex-col">
+        {/* <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Category:</label>
           <select
             value={filterCategory}
@@ -931,7 +797,7 @@ const MarketingExpenseTable = () => {
               </option>
             ))}
           </select>
-        </div>
+        </div> */}
 
         {/* ✅ Per Page Dropdown (same position like your screenshot) */}
         <div className="flex flex-col">
@@ -1381,8 +1247,7 @@ const MarketingExpenseTable = () => {
               </>
             )}
 
-            {/* ✅ Category (Edit) */}
-            <div className="mt-4">
+            {/* <div className="mt-4">
               <label className="block text-sm text-slate-600 mb-1">
                 Category
               </label>
@@ -1450,7 +1315,7 @@ const MarketingExpenseTable = () => {
                   </button>
                 </div>
               )}
-            </div>
+            </div> */}
 
             <div className="mt-4">
               <label className="block text-sm text-slate-600 mb-1">
@@ -1530,6 +1395,7 @@ const MarketingExpenseTable = () => {
                   required
                 >
                   <option value="">Select Status</option>
+                  <option value="Active">Active</option>
                   <option value="Approved">Approved</option>
                   <option value="Pending">Pending</option>
                 </select>
@@ -1588,8 +1454,6 @@ const MarketingExpenseTable = () => {
                 onClick={() => {
                   setIsModalOpen(false);
                   setCurrentProduct(null);
-                  setIsNewCategoryEdit(false);
-                  setNewCategoryNameEdit("");
                 }}
                 type="button"
               >
@@ -1629,6 +1493,7 @@ const MarketingExpenseTable = () => {
                   required
                 >
                   <option value="">Select Status</option>
+                  <option value="Active">Active</option>
                   <option value="Approved">Approved</option>
                   <option value="Pending">Pending</option>
                 </select>
@@ -1665,8 +1530,6 @@ const MarketingExpenseTable = () => {
                 onClick={() => {
                   setIsModalOpen2(false);
                   setCurrentProduct(null);
-                  setIsNewCategoryEdit(false);
-                  setNewCategoryNameEdit("");
                 }}
                 type="button"
               >
@@ -1777,7 +1640,7 @@ const MarketingExpenseTable = () => {
                 </>
               )}
 
-              <div className="mt-4">
+              {/* <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
                   Category
                 </label>
@@ -1844,7 +1707,7 @@ const MarketingExpenseTable = () => {
                     </button>
                   </div>
                 )}
-              </div>
+              </div> */}
 
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
@@ -2043,8 +1906,7 @@ const MarketingExpenseTable = () => {
                 </>
               )}
 
-              {/* ✅ Category (Add) */}
-              <div className="mt-4">
+              {/* <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
                   Category
                 </label>
@@ -2111,7 +1973,7 @@ const MarketingExpenseTable = () => {
                     </button>
                   </div>
                 )}
-              </div>
+              </div> */}
 
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">

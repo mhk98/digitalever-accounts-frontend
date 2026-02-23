@@ -1539,6 +1539,7 @@ const ReceiveableTable = () => {
                   required
                 >
                   <option value="">Select Status</option>
+                  <option value="Active">Active</option>
                   <option value="Approved">Approved</option>
                   <option value="Pending">Pending</option>
                 </select>
@@ -1750,6 +1751,7 @@ const ReceiveableTable = () => {
                   required
                 >
                   <option value="">Select Status</option>
+                  <option value="Active">Active</option>
                   <option value="Approved">Approved</option>
                   <option value="Pending">Pending</option>
                 </select>

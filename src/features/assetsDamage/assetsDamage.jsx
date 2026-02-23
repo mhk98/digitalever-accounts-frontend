@@ -90,6 +90,7 @@ export const assetsDamageApi = baseApi.injectEndpoints({
       invalidatesTags: [
         { type: "AssetsDamage", id: "LIST" },
         { type: "AssetsPurchase", id: "LIST" }, // ✅ damage হলে stock কমে (যদি তোমার backend এ purchase qty update হয়)
+        { type: "Overview", id: "LIST" }, // ✅ damage হলে stock কমে (যদি তোমার backend এ purchase qty update হয়)
       ],
     }),
 
@@ -102,6 +103,7 @@ export const assetsDamageApi = baseApi.injectEndpoints({
         { type: "AssetsDamage", id: "LIST" },
         { type: "AssetsDamage", id },
         { type: "AssetsPurchase", id: "LIST" }, // ✅ delete হলে stock ফেরত যেতে পারে (তোমার logic অনুযায়ী)
+        { type: "Overview", id: "LIST" }, // ✅ delete হলে stock ফেরত যেতে পারে (তোমার logic অনুযায়ী)
       ],
     }),
 
@@ -115,6 +117,7 @@ export const assetsDamageApi = baseApi.injectEndpoints({
         { type: "AssetsDamage", id: "LIST" },
         { type: "AssetsDamage", id: arg.id },
         { type: "AssetsPurchase", id: "LIST" }, // ✅ update হলে stock adjust হতে পারে
+        { type: "Overview", id: "LIST" }, // ✅ update হলে stock adjust হতে পারে
       ],
     }),
 

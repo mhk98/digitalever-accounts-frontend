@@ -772,9 +772,9 @@ import {
   useUpdatePurchaseReturnProductMutation,
 } from "../../features/purchaseReturnProduct/purchaseReturnProduct";
 
-import { useGetAllReceivedProductWithoutQueryQuery } from "../../features/receivedProduct/receivedProduct";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
+import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
 
 const PurchaseReturnProductTable = () => {
   const role = localStorage.getItem("role");
@@ -811,7 +811,7 @@ const PurchaseReturnProductTable = () => {
     isLoading: receivedLoading,
     isError: receivedError,
     error: receivedErrObj,
-  } = useGetAllReceivedProductWithoutQueryQuery();
+  } = useGetAllProductWithoutQueryQuery();
 
   const receivedData = receivedRes?.data || [];
 
@@ -1628,6 +1628,7 @@ const PurchaseReturnProductTable = () => {
                   required
                 >
                   <option value="">Select Status</option>
+                  <option value="Active">Active</option>
                   <option value="Approved">Approved</option>
                   <option value="Pending">Pending</option>
                 </select>

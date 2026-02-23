@@ -1321,8 +1321,6 @@ import { Edit, Notebook, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
-
-import { useGetAllReceivedProductWithoutQueryQuery } from "../../features/receivedProduct/receivedProduct";
 import {
   useDeleteInTransitProductMutation,
   useGetAllInTransitProductQuery,
@@ -1331,6 +1329,7 @@ import {
 } from "../../features/inTransitProduct/inTransitProduct";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
+import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
 
 const IntransiteProductTable = () => {
   const role = localStorage.getItem("role");
@@ -1374,7 +1373,7 @@ const IntransiteProductTable = () => {
     isLoading: receivedLoading,
     isError: receivedError,
     error: receivedErrObj,
-  } = useGetAllReceivedProductWithoutQueryQuery();
+  } = useGetAllProductWithoutQueryQuery();
 
   const receivedData = receivedRes?.data || [];
 
@@ -2191,6 +2190,7 @@ const IntransiteProductTable = () => {
                   required
                 >
                   <option value="">Select Status</option>
+                  <option value="Active">Active</option>
                   <option value="Approved">Approved</option>
                   <option value="Pending">Pending</option>
                 </select>

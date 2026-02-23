@@ -90,6 +90,7 @@ export const assetsSaleApi = baseApi.injectEndpoints({
       invalidatesTags: [
         { type: "AssetsSale", id: "LIST" },
         { type: "AssetsPurchase", id: "LIST" }, // ✅ stock কমে, তাই purchase refetch
+        { type: "Overview", id: "LIST" }, // ✅ stock কমে, তাই purchase refetch
       ],
     }),
 
@@ -102,6 +103,7 @@ export const assetsSaleApi = baseApi.injectEndpoints({
         { type: "AssetsSale", id: "LIST" },
         { type: "AssetsSale", id },
         { type: "AssetsPurchase", id: "LIST" }, // ✅ stock ফেরত যায়
+        { type: "Overview", id: "LIST" }, // ✅ stock ফেরত যায়
       ],
     }),
 
@@ -115,6 +117,7 @@ export const assetsSaleApi = baseApi.injectEndpoints({
         { type: "AssetsSale", id: "LIST" },
         { type: "AssetsSale", id: arg.id },
         { type: "AssetsPurchase", id: "LIST" }, // ✅ stock change
+        { type: "Overview", id: "LIST" }, // ✅ stock change
       ],
     }),
 

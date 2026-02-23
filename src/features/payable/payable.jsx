@@ -1,26 +1,113 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+// import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-const getAuthToken = () => localStorage.getItem("token");
+// const getAuthToken = () => localStorage.getItem("token");
 
-export const payableApi = createApi({
-  reducerPath: "payableApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
-    prepareHeaders: (headers) => {
-      const token = getAuthToken();
-      if (token) headers.set("Authorization", `Bearer ${token}`);
-      return headers;
-    },
-  }),
-  tagTypes: ["payable"],
+// export const payableApi = createApi({
+//   reducerPath: "payableApi",
+//   baseQuery: fetchBaseQuery({
+//     baseUrl: " http://localhost:5000/api/v1/",
+//     prepareHeaders: (headers) => {
+//       const token = getAuthToken();
+//       if (token) headers.set("Authorization", `Bearer ${token}`);
+//       return headers;
+//     },
+//   }),
+//   tagTypes: ["payable"],
+//   endpoints: (build) => ({
+//     insertPayable: build.mutation({
+//       query: (data) => ({
+//         url: "/payable/create",
+//         method: "POST",
+//         body: data, // FormData
+//       }),
+//       invalidatesTags: ["payable"],
+//     }),
+
+//     updatePayable: build.mutation({
+//       query: ({ id, data }) => ({
+//         url: `/payable/${id}`,
+//         method: "PATCH",
+//         body: data,
+//       }),
+//       invalidatesTags: ["payable"],
+//     }),
+
+//     deletePayable: build.mutation({
+//       query: (id) => ({
+//         url: `/payable/${id}`,
+//         method: "DELETE",
+//       }),
+//       invalidatesTags: ["payable"],
+//     }),
+
+//     // ✅ FIXED: FILTER PARAMS PASSING
+//     getAllPayable: build.query({
+//       query: (arg) => {
+//         const { page, limit, startDate, endDate, searchTerm } = arg || {};
+
+//         const params = {
+//           page,
+//           limit,
+//           startDate,
+//           endDate,
+//           searchTerm,
+//         };
+
+//         // ✅ remove undefined/empty
+//         Object.keys(params).forEach((k) => {
+//           if (
+//             params[k] === undefined ||
+//             params[k] === null ||
+//             params[k] === ""
+//           ) {
+//             delete params[k];
+//           }
+//         });
+
+//         return {
+//           url: "/payable",
+//           params,
+//         };
+//       },
+//       providesTags: ["payable"],
+//       refetchOnMountOrArgChange: true,
+//       // ✅ pollingInterval off (debug এ সমস্যা করে)
+//       // pollingInterval: 1000,
+//     }),
+
+//     getAllPayableWithoutQuery: build.query({
+//       query: () => ({
+//         url: "/payable/all",
+//       }),
+//       providesTags: ["payable"],
+//       refetchOnMountOrArgChange: true,
+//       pollingInterval: 1000,
+//     }),
+//   }),
+// });
+
+// export const {
+//   useGetAllPayableQuery,
+//   useInsertPayableMutation,
+//   useUpdatePayableMutation,
+//   useDeletePayableMutation,
+//   useGetAllPayableWithoutQueryQuery,
+// } = payableApi;
+
+import { baseApi } from "../baseApi/api";
+
+export const payableApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     insertPayable: build.mutation({
       query: (data) => ({
         url: "/payable/create",
         method: "POST",
-        body: data, // FormData
+        body: data,
       }),
-      invalidatesTags: ["payable"],
+      invalidatesTags: [
+        { type: "Payable", id: "LIST" },
+        { type: "Overview", id: "LIST" },
+      ],
     }),
 
     updatePayable: build.mutation({
@@ -29,7 +116,11 @@ export const payableApi = createApi({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["payable"],
+      invalidatesTags: (res, err, arg) => [
+        { type: "Payable", id: arg.id },
+        { type: "Payable", id: "LIST" },
+        { type: "Overview", id: "LIST" },
+      ],
     }),
 
     deletePayable: build.mutation({
@@ -37,53 +128,52 @@ export const payableApi = createApi({
         url: `/payable/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["payable"],
+      invalidatesTags: (res, err, id) => [
+        { type: "Payable", id },
+        { type: "Payable", id: "LIST" },
+        { type: "Overview", id: "LIST" },
+      ],
     }),
 
-    // ✅ FIXED: FILTER PARAMS PASSING
     getAllPayable: build.query({
-      query: (arg) => {
-        const { page, limit, startDate, endDate, searchTerm } = arg || {};
+      query: (arg = {}) => {
+        const { page, limit, startDate, endDate, searchTerm } = arg;
 
-        const params = {
-          page,
-          limit,
-          startDate,
-          endDate,
-          searchTerm,
-        };
-
-        // ✅ remove undefined/empty
+        const params = { page, limit, startDate, endDate, searchTerm };
         Object.keys(params).forEach((k) => {
-          if (
-            params[k] === undefined ||
-            params[k] === null ||
-            params[k] === ""
-          ) {
+          if (params[k] === undefined || params[k] === null || params[k] === "")
             delete params[k];
-          }
         });
 
-        return {
-          url: "/payable",
-          params,
-        };
+        return { url: "/payable", params };
       },
-      providesTags: ["payable"],
+
+      providesTags: (result) => {
+        const rows = result?.data;
+        if (Array.isArray(rows) && rows.length) {
+          return [
+            { type: "Payable", id: "LIST" },
+            ...rows.map((r) => ({
+              type: "Payable",
+              id: r.Id ?? r.id,
+            })),
+          ];
+        }
+        return [{ type: "Payable", id: "LIST" }];
+      },
+
       refetchOnMountOrArgChange: true,
-      // ✅ pollingInterval off (debug এ সমস্যা করে)
-      // pollingInterval: 1000,
     }),
 
     getAllPayableWithoutQuery: build.query({
-      query: () => ({
-        url: "/payable/all",
-      }),
-      providesTags: ["payable"],
+      query: () => ({ url: "/payable/all" }),
+      providesTags: [{ type: "Payable", id: "LIST" }],
       refetchOnMountOrArgChange: true,
-      pollingInterval: 1000,
+      pollingInterval: 1000, // দরকার না হলে off করুন
     }),
   }),
+
+  overrideExisting: false,
 });
 
 export const {

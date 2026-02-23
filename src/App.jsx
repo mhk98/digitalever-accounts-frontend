@@ -43,6 +43,7 @@ import PurchaseRequisitionPage from "./pages/purchaseRequisitionPage";
 import AssetsRequisitionPage from "./pages/AssetsRequisitionPage";
 import ExpiredProductPage from "./pages/ExpiredProductPage";
 import PosReportPage from "./pages/PosReportPage";
+import InventoryOverviewPage from "./pages/InventoryOverviewPage";
 import MarketingBookPage from "./pages/MarketingBookPage";
 import MarketingExpensePage from "./pages/MarketingExpensePage";
 
@@ -97,6 +98,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <PosReportPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/inventory-overview"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <InventoryOverviewPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

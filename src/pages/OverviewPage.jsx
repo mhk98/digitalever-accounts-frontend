@@ -620,6 +620,8 @@ const OverviewPage = () => {
 
   const summary = summaryRes?.data || {};
 
+  console.log("summary", summary);
+
   const onApply = () => {
     if (!from || !to) return;
     setApplied({ from, to });
@@ -635,10 +637,11 @@ const OverviewPage = () => {
   if (isError) console.error("Overview Summary error:", error);
 
   // ✅ values (fallback 0)
-  const remainingAmount = Number(summary?.remainingAmount || 0);
-  const inventoryValue = Number(
-    summary?.inventoryStock_AfterAdd_SalesReturnProduct || 0,
-  );
+  const totalPurchaseAmount = Number(summary?.totalPurchaseAmount || 0);
+  const inventoryOverview = Number(summary?.totalInventoryOverview || 0);
+  // const inventoryValue = Number(
+  //   summary?.inventoryStock_AfterAdd_SalesReturnProduct || 0,
+  // );
   const totalMetaAmount = Number(summary?.totalMetaAmount || 0);
   const totalReceiveableAmount = Number(summary?.totalReceiveableAmount || 0);
   const totalPayableAmount = Number(summary?.totalPayableAmount || 0);
@@ -724,7 +727,7 @@ const OverviewPage = () => {
             <StatCard
               name="Total Asset Value"
               icon={Truck}
-              value={isLoading ? "Loading..." : remainingAmount.toFixed(2)}
+              value={isLoading ? "Loading..." : totalPurchaseAmount.toFixed(2)}
               iconBg="#EEF2FF"
               iconColor="#4F46E5"
             />
@@ -732,7 +735,7 @@ const OverviewPage = () => {
             <StatCard
               name="Total Inventory Amount"
               icon={Receipt}
-              value={isLoading ? "Loading..." : inventoryValue}
+              value={isLoading ? "Loading..." : inventoryOverview.toFixed(2)}
               iconBg="#ECFDF5"
               iconColor="#059669"
             />

@@ -88,7 +88,7 @@ export const returnProductApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [
         { type: "ReturnProduct", id: "LIST" },
-        { type: "ReceivedProduct", id: "LIST" }, // ✅ receive stock affected
+        { type: "InventoryOverview", id: "LIST" }, // ✅ receive stock affected
       ],
     }),
 
@@ -101,7 +101,7 @@ export const returnProductApi = baseApi.injectEndpoints({
         { type: "ReturnProduct", id },
         { type: "ReturnProduct", id: "LIST" },
 
-        { type: "ReceivedProduct", id: "LIST" }, // ✅ stock return/update
+        { type: "InventoryOverview", id: "LIST" }, // ✅ stock return/update
       ],
     }),
 
@@ -115,7 +115,7 @@ export const returnProductApi = baseApi.injectEndpoints({
         { type: "ReturnProduct", id: arg.id },
         { type: "ReturnProduct", id: "LIST" },
 
-        { type: "ReceivedProduct", id: "LIST" }, // ✅ if update changes qty/status
+        { type: "InventoryOverview", id: "LIST" }, // ✅ if update changes qty/status
       ],
     }),
 

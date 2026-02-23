@@ -19,6 +19,8 @@ export const baseApi = createApi({
     "AssetsPurchase",
     "AssetsSale",
     "AssetsDamage",
+    "Overview",
+    "InventoryOverview",
     "ReceivedProduct",
     "PurchaseReturn",
     "InTransitProduct",

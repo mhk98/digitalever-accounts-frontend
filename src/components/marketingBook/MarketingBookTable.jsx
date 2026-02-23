@@ -2,11 +2,11 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { BookOpen, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import {
-  useDeleteBookMutation,
-  useGetAllBookQuery,
-  useInsertBookMutation,
-  useUpdateBookMutation,
-} from "../../features/book/book";
+  useDeleteMarketingBookMutation,
+  useGetAllMarketingBookQuery,
+  useInsertMarketingBookMutation,
+  useUpdateMarketingBookMutation,
+} from "../../features/marketingBook/marketingBook.jsx";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 
@@ -37,13 +37,16 @@ const MarketingBookTable = () => {
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
 
-  const { data, isLoading, isError, error, refetch } = useGetAllBookQuery({
-    page: currentPage,
-    limit: itemsPerPage,
-    searchTerm: name || undefined,
-  });
+  const { data, isLoading, isError, error, refetch } =
+    useGetAllMarketingBookQuery({
+      page: currentPage,
+      limit: itemsPerPage,
+      searchTerm: name || undefined,
+    });
 
   const books = data?.data ?? [];
+
+  console.log("mBooks", books);
 
   useEffect(() => {
     if (isError) {
@@ -67,12 +70,12 @@ const MarketingBookTable = () => {
   };
 
   // Create
-  const [insertBook] = useInsertBookMutation();
+  const [insertMarketingBook] = useInsertMarketingBookMutation();
   const handleCreateBook = async (e) => {
     e.preventDefault();
     try {
       const payload = { name: createProduct.name };
-      const res = await insertBook(payload).unwrap();
+      const res = await insertMarketingBook(payload).unwrap();
 
       if (res?.success) {
         toast.success("Successfully created book");
@@ -88,13 +91,13 @@ const MarketingBookTable = () => {
   };
 
   // Update
-  const [updateBook] = useUpdateBookMutation();
+  const [updateMarketingBook] = useUpdateMarketingBookMutation();
   const handleUpdateBook = async () => {
     if (!currentProduct?.Id) return toast.error("Invalid book selected!");
 
     try {
       const updated = { name: currentProduct.name || "" };
-      const res = await updateBook({
+      const res = await updateMarketingBook({
         id: currentProduct.Id,
         data: updated,
       }).unwrap();
@@ -111,13 +114,13 @@ const MarketingBookTable = () => {
   };
 
   // Delete
-  const [deleteBook] = useDeleteBookMutation();
+  const [deleteMarketingBook] = useDeleteMarketingBookMutation();
   const handleDeleteBook = async (id) => {
     const confirmDelete = window.confirm("Do you want to delete this book?");
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {
-      const res = await deleteBook(id).unwrap();
+      const res = await deleteMarketingBook(id).unwrap();
       if (res?.success) {
         toast.success("Book deleted successfully!");
         refetch?.();
@@ -176,7 +179,7 @@ const MarketingBookTable = () => {
           className="inline-flex h-11 w-full sm:w-[260px] items-center justify-center gap-2 rounded-lg bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700 transition"
         >
           <Plus size={18} />
-          Add New Book
+          Add Marketing Book
         </button>
       </div>
 
@@ -184,12 +187,12 @@ const MarketingBookTable = () => {
       <div className="mt-8">
         {books.map((item) => (
           <div
-            key={item.Id ?? item.id}
+            key={item.Id}
             className="flex items-center justify-between border-b border-gray-200 py-5"
           >
             {/* Left */}
             <Link
-              to={`/book/${item.Id}`}
+              to={`/marketing-book/${item.Id}`}
               className="flex-1 rounded-lg -mx-2 px-2 py-2 hover:bg-gray-50 transition"
             >
               <div className="flex items-center gap-5">

@@ -45,6 +45,8 @@ const AccountingTable = () => {
 
   const books = data?.data ?? [];
 
+  console.log("accounting books", books);
+
   useEffect(() => {
     if (isError) {
       console.error("Error fetching book data", error);
