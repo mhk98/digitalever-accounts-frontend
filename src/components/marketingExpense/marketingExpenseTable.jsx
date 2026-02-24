@@ -267,6 +267,7 @@ const MarketingExpenseTable = () => {
       formData.append("status", currentProduct.status);
       formData.append("date", currentProduct.date);
       formData.append("userId", userId);
+      formData.append("actorRole", role);
       formData.append("bookId", id);
 
       formData.append(
@@ -310,6 +311,7 @@ const MarketingExpenseTable = () => {
       formData.append("note", currentProduct.note);
       formData.append("status", currentProduct.status);
       formData.append("userId", userId);
+      formData.append("actorRole", role);
       formData.append("bookId", id);
 
       const res = await updateMarketingExpense({

@@ -15,6 +15,7 @@ const MarketingBookTable = () => {
   const [isModalOpen1, setIsModalOpen1] = useState(false); // Add modal
 
   const role = localStorage.getItem("role");
+  const userId = localStorage.getItem("userId");
   const [currentProduct, setCurrentProduct] = useState(null);
 
   const [createProduct, setCreateProduct] = useState({ name: "" });
@@ -96,7 +97,11 @@ const MarketingBookTable = () => {
     if (!currentProduct?.Id) return toast.error("Invalid book selected!");
 
     try {
-      const updated = { name: currentProduct.name || "" };
+      const updated = {
+        name: currentProduct.name || "",
+        userId: userId,
+        actorRole: role,
+      };
       const res = await updateMarketingBook({
         id: currentProduct.Id,
         data: updated,

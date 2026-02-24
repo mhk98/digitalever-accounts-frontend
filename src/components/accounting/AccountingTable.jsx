@@ -95,7 +95,7 @@ const AccountingTable = () => {
     if (!currentProduct?.Id) return toast.error("Invalid book selected!");
 
     try {
-      const updated = { name: currentProduct.name || "" };
+      const updated = { name: currentProduct.name || "", actorRole: role };
       const res = await updateBook({
         id: currentProduct.Id,
         data: updated,

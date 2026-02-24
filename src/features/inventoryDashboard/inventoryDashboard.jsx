@@ -1,8 +1,8 @@
 import { baseApi } from "../baseApi/api";
 
-export const overviewApi = baseApi.injectEndpoints({
+export const inventorySummaryApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    getOverviewSummary: build.query({
+    getInventorySummary: build.query({
       query: (arg = {}) => {
         const { from, to } = arg;
 
@@ -12,10 +12,10 @@ export const overviewApi = baseApi.injectEndpoints({
             delete params[k];
         });
 
-        return { url: "/overview/summary", params };
+        return { url: "/inventory/summary", params };
       },
 
-      providesTags: [{ type: "Overview", id: "LIST" }],
+      providesTags: [{ type: "InventorySummary", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),
   }),
@@ -23,4 +23,4 @@ export const overviewApi = baseApi.injectEndpoints({
   overrideExisting: false,
 });
 
-export const { useGetOverviewSummaryQuery } = overviewApi;
+export const { useGetInventorySummaryQuery } = inventorySummaryApi;

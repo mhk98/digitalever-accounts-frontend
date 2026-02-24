@@ -46,6 +46,7 @@ import PosReportPage from "./pages/PosReportPage";
 import InventoryOverviewPage from "./pages/InventoryOverviewPage";
 import MarketingBookPage from "./pages/MarketingBookPage";
 import MarketingExpensePage from "./pages/MarketingExpensePage";
+import InventoryDashboardPage from "./pages/InventoryDashboardPage";
 
 function App() {
   return (
@@ -104,6 +105,16 @@ function App() {
             />
             <Route
               path="/inventory-overview"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <InventoryDashboardPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/stock-product"
               element={
                 <RequireAuth>
                   <SidebarLayout>

@@ -155,6 +155,7 @@ const AssetsRequisitionTable = () => {
         note: currentProduct.note,
         status: currentProduct.status,
         userId: userId,
+        actorRole: role,
       };
 
       const res = await updateAssetsRequisition({
@@ -204,6 +205,7 @@ const AssetsRequisitionTable = () => {
         status: currentProduct.status,
         date: currentProduct.date,
         userId: userId,
+        actorRole: role,
       };
 
       const res = await updateAssetsRequisition({

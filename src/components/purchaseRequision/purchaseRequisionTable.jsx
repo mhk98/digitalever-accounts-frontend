@@ -277,7 +277,8 @@ const PurchaseRequisionTable = () => {
         note: currentProduct.note,
         status: currentProduct.status,
         date: currentProduct.date,
-        userId,
+        userId: userId,
+        actorRole: role,
       };
 
       const res = await updatePurchaseRequisition({
@@ -306,7 +307,8 @@ const PurchaseRequisionTable = () => {
         quantity: Number(currentProduct.quantity),
         status: currentProduct.status,
         note: currentProduct.note,
-        userId,
+        userId: userId,
+        actorRole: role,
       };
 
       const res = await updatePurchaseRequisition({

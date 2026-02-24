@@ -1555,6 +1555,7 @@ const ConfirmOrderTable = () => {
         quantity: Number(currentItem.quantity),
         receivedId: Number(currentItem.receivedId),
         userId,
+        actorRole: role,
       };
 
       const res = await updateConfirmOrder({
@@ -1584,6 +1585,7 @@ const ConfirmOrderTable = () => {
         quantity: Number(currentItem.quantity || 0),
         receivedId: Number(currentItem.receivedId),
         userId,
+        actorRole: role,
       };
 
       const res = await updateConfirmOrder({

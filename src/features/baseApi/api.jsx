@@ -28,6 +28,7 @@ export const baseApi = createApi({
     "DamageProduct",
     "DamageRepair",
     "DamageRepaired",
+    "InventorySummary",
   ],
 
   endpoints: () => ({}),
