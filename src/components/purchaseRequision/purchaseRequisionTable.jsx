@@ -616,9 +616,9 @@ const PurchaseRequisionTable = () => {
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Purchase Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+              {/* <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Sale Price
-              </th>
+              </th> */}
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Status
               </th>
@@ -638,9 +638,7 @@ const PurchaseRequisionTable = () => {
                 className="hover:bg-slate-50"
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.createdAt
-                    ? new Date(rp.createdAt).toLocaleDateString()
-                    : "-"}
+                  {rp.date ? new Date(rp.date).toLocaleDateString() : "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp?.supplier?.name || "-"}
@@ -660,9 +658,9 @@ const PurchaseRequisionTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.purchase_price || 0).toFixed(2)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.sale_price || 0).toFixed(2)}
-                </td>
+                </td> */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
                     className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${

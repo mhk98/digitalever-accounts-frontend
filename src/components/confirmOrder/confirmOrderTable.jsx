@@ -186,7 +186,8 @@
 //       }).unwrap();
 
 //       if (res?.success) {
-//         toast.success("Updated!");
+//         toast.success("Successfully updated!");
+
 //         closeEdit();
 //         refetch?.();
 //       } else toast.error(res?.message || "Update failed!");
@@ -345,8 +346,8 @@
 //                 transition={{ duration: 0.2 }}
 //               >
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
-//                   {rp.createdAt
-//                     ? new Date(rp.createdAt).toLocaleDateString()
+//                   {rp.date
+//                     ? new Date(rp.date).toLocaleDateString()
 //                     : "-"}
 //                 </td>
 
@@ -785,7 +786,8 @@
 //       }).unwrap();
 
 //       if (res?.success) {
-//         toast.success("Updated!");
+//         toast.success("Successfully updated!");
+
 //         closeEdit();
 //         refetch?.();
 //       } else toast.error(res?.message || "Update failed!");
@@ -815,7 +817,8 @@
 //       }).unwrap();
 
 //       if (res?.success) {
-//         toast.success("Updated!");
+//         toast.success("Successfully updated!");
+
 //         closeEdit();
 //         refetch?.();
 //       } else toast.error(res?.message || "Update failed!");
@@ -978,8 +981,8 @@
 //                 transition={{ duration: 0.2 }}
 //               >
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
-//                   {rp.createdAt
-//                     ? new Date(rp.createdAt).toLocaleDateString()
+//                   {rp.date
+//                     ? new Date(rp.date).toLocaleDateString()
 //                     : "-"}
 //                 </td>
 
@@ -1564,7 +1567,8 @@ const ConfirmOrderTable = () => {
       }).unwrap();
 
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         closeEdit();
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
@@ -1594,7 +1598,8 @@ const ConfirmOrderTable = () => {
       }).unwrap();
 
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         closeEdit1();
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
@@ -1880,9 +1885,7 @@ const ConfirmOrderTable = () => {
                 className="hover:bg-slate-50"
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.createdAt
-                    ? new Date(rp.createdAt).toLocaleDateString()
-                    : "-"}
+                  {rp.date ? new Date(rp.date).toLocaleDateString() : "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                   {resolveProductName(rp)}

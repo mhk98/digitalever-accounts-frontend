@@ -292,7 +292,7 @@ const MarketingExpenseTable = () => {
         data: formData,
       }).unwrap();
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
         setIsModalOpen(false);
         setCurrentProduct(null);
         refetch?.();
@@ -319,7 +319,8 @@ const MarketingExpenseTable = () => {
         data: formData,
       }).unwrap();
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         setIsModalOpen2(false);
         setCurrentProduct(null);
         refetch?.();
@@ -842,9 +843,6 @@ const MarketingExpenseTable = () => {
                 Document
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Category
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Payment Mode
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -874,7 +872,7 @@ const MarketingExpenseTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `http://localhost:5000/${safePath}`
+                ? `https://apiholygift.digitalever.com.bd/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -926,9 +924,6 @@ const MarketingExpenseTable = () => {
                         Open File
                       </a>
                     )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {rp.category || "---"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.paymentMode || "---"}
@@ -1642,75 +1637,6 @@ const MarketingExpenseTable = () => {
                 </>
               )}
 
-              {/* <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Category
-                </label>
-                <select
-                  value={
-                    isNewCategoryAdd ? "__new__" : createProduct.category || ""
-                  }
-                  onChange={(e) => {
-                    const v = e.target.value;
-
-                    if (v === "__new__") {
-                      setIsNewCategoryAdd(true);
-                      setCreateProduct((p) => ({ ...p, category: "" }));
-                      return;
-                    }
-
-                    setIsNewCategoryAdd(false);
-                    setNewCategoryNameAdd("");
-                    setCreateProduct((p) => ({ ...p, category: v }));
-                  }}
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Category</option>
-                  {categoryOptions.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.name}
-                    </option>
-                  ))}
-                  <option value="__new__">+ New Category</option>
-                </select>
-
-                {isNewCategoryAdd && (
-                  <div className="mt-3 flex gap-2">
-                    <input
-                      type="text"
-                      value={newCategoryNameAdd}
-                      onChange={(e) => setNewCategoryNameAdd(e.target.value)}
-                      placeholder="Write new category name"
-                      className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                   focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const createdCategoryName =
-                          await addCategoryByName(newCategoryNameAdd);
-                        if (!createdCategoryName) return;
-
-                        // Set the newly added category name
-                        setCreateProduct((p) => ({
-                          ...p,
-                          category: createdCategoryName, // Update the category state
-                        }));
-
-                        setIsNewCategoryAdd(false);
-                        setNewCategoryNameAdd("");
-                      }}
-                      disabled={isAddingCategory}
-                      className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold disabled:bg-slate-400"
-                    >
-                      {isAddingCategory ? "Adding..." : "Add"}
-                    </button>
-                  </div>
-                )}
-              </div> */}
-
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
                   Remarks
@@ -1729,23 +1655,6 @@ const MarketingExpenseTable = () => {
                 />
               </div>
 
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Note
-                </label>
-                <input
-                  type="text"
-                  value={createProduct.note}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      note: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
                   Amount
@@ -1988,23 +1897,6 @@ const MarketingExpenseTable = () => {
                     setCreateProduct({
                       ...createProduct,
                       remarks: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Note
-                </label>
-                <input
-                  type="text"
-                  value={createProduct.note}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      note: e.target.value,
                     })
                   }
                   className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none

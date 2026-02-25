@@ -210,9 +210,7 @@ const MarketingBookTable = () => {
                     {item.name}
                   </div>
                   <div className="mt-1 text-sm text-gray-600">
-                    {item.createdAt
-                      ? new Date(item.createdAt).toLocaleDateString()
-                      : "-"}
+                    {item.date ? new Date(item.date).toLocaleDateString() : "-"}
                   </div>
                 </div>
               </div>

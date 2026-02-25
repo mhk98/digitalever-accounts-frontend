@@ -244,7 +244,8 @@ const DamageRepairedTable = () => {
       }).unwrap();
 
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         closeEdit();
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
@@ -275,7 +276,8 @@ const DamageRepairedTable = () => {
       }).unwrap();
 
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         closeEdit1();
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
@@ -564,12 +566,10 @@ const DamageRepairedTable = () => {
                 className="hover:bg-slate-50"
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.createdAt
-                    ? new Date(rp.createdAt).toLocaleDateString()
-                    : "-"}
+                  {rp.date ? new Date(rp.date).toLocaleDateString() : "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.createdAt ? new Date(rp.edAt).toLocaleDateString() : "-"}
+                  {rp.date ? new Date(rp.edAt).toLocaleDateString() : "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                   {resolveProductName(rp)}

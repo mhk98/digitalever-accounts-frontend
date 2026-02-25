@@ -1245,9 +1245,9 @@ import { useReactToPrint } from "react-to-print";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
-import { useGetAllReceivedProductQuery } from "../../features/receivedProduct/receivedProduct";
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
 import { useInsertPosReportMutation } from "../../features/posReport/posReport";
+import { useGetAllInventoryOverviewQuery } from "../../features/inventoryOverview/inventoryOverview";
 
 export default function SellPosTable() {
   const [cart, setCart] = useState([]);
@@ -1342,7 +1342,7 @@ export default function SellPosTable() {
   }, [currentPage, itemsPerPage, productName]);
 
   const { data, isLoading, isError, error } =
-    useGetAllReceivedProductQuery(queryArgs);
+    useGetAllInventoryOverviewQuery(queryArgs);
 
   useEffect(() => {
     if (isError) {

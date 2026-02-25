@@ -392,9 +392,7 @@ const InventoryOverviewTable = () => {
                 className="hover:bg-slate-50"
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.createdAt
-                    ? new Date(rp.createdAt).toLocaleDateString()
-                    : "-"}
+                  {rp.date ? new Date(rp.date).toLocaleDateString() : "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                   {resolveProductName(rp)}

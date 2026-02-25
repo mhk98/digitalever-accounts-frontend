@@ -261,7 +261,8 @@ const ReturnProductTable = () => {
       }).unwrap();
 
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         closeEdit();
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
@@ -289,7 +290,8 @@ const ReturnProductTable = () => {
       }).unwrap();
 
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         closeEdit1();
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
@@ -553,9 +555,7 @@ const ReturnProductTable = () => {
                 className="hover:bg-slate-50"
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.createdAt
-                    ? new Date(rp.createdAt).toLocaleDateString()
-                    : "-"}
+                  {rp.date ? new Date(rp.date).toLocaleDateString() : "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                   {resolveProductName(rp)}

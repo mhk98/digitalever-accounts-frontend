@@ -10,7 +10,7 @@ export const posReportApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [
         { type: "PosReport", id: "LIST" },
-        { type: "ReceivedProduct", id: "LIST" }, // ✅ receive stock affected
+        { type: "InventoryOverview", id: "LIST" }, // ✅ receive stock affected
       ],
     }),
 
@@ -23,7 +23,7 @@ export const posReportApi = baseApi.injectEndpoints({
         { type: "PosReport", id },
         { type: "PosReport", id: "LIST" },
 
-        { type: "ReceivedProduct", id: "LIST" }, // ✅ stock return/update
+        { type: "InventoryOverview", id: "LIST" }, // ✅ stock return/update
       ],
     }),
 
@@ -37,7 +37,7 @@ export const posReportApi = baseApi.injectEndpoints({
         { type: "PosReport", id: arg.id },
         { type: "PosReport", id: "LIST" },
 
-        { type: "ReceivedProduct", id: "LIST" }, // ✅ if update changes qty/status
+        { type: "InventoryOverview", id: "LIST" }, // ✅ if update changes qty/status
       ],
     }),
 

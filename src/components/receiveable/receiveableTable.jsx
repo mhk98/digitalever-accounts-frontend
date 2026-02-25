@@ -180,7 +180,8 @@ const ReceiveableTable = () => {
 
         const res = await updateReceiveable({ id: rowId, data: fd }).unwrap();
         if (res?.success) {
-          toast.success("Updated!");
+          toast.success("Successfully updated!");
+
           setIsModalOpen(false);
           refetch?.();
         } else toast.error(res?.message || "Update failed!");
@@ -201,7 +202,8 @@ const ReceiveableTable = () => {
       }).unwrap();
 
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         setIsModalOpen(false);
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
@@ -228,7 +230,8 @@ const ReceiveableTable = () => {
 
         const res = await updateReceiveable({ id: rowId, data: fd }).unwrap();
         if (res?.success) {
-          toast.success("Updated!");
+          toast.success("Successfully updated!");
+
           setIsModalOpen2(false);
           refetch?.();
         } else toast.error(res?.message || "Update failed!");
@@ -249,7 +252,8 @@ const ReceiveableTable = () => {
       }).unwrap();
 
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         setIsModalOpen2(false);
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
@@ -414,7 +418,7 @@ const ReceiveableTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? ` http://localhost:5000/${safePath}`
+                ? ` https://apiholygift.digitalever.com.bd/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(

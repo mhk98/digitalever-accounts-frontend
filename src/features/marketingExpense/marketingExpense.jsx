@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const marketingExpenseApi = createApi({
   reducerPath: "marketingExpenseApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apiholygift.digitalever.com.bd/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);

@@ -330,7 +330,8 @@ const PettyCashTable = () => {
       const res = await updatePettyCash({ id: rowId, data: formData }).unwrap();
 
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         setIsModalOpen(false);
         setCurrentProduct(null);
         setIsNewCategoryEdit(false);
@@ -384,7 +385,8 @@ const PettyCashTable = () => {
       const res = await updatePettyCash({ id: rowId, data: formData }).unwrap();
 
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         setIsModalOpen(false);
         setCurrentProduct(null);
         setIsNewCategoryEdit(false);
@@ -940,7 +942,7 @@ const PettyCashTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? ` http://localhost:5000/${safePath}`
+                ? ` https://apiholygift.digitalever.com.bd/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(

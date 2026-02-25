@@ -117,7 +117,7 @@
 //                     {item.message || "No message"}
 //                   </p>
 //                   <p className="text-xs text-gray-500 mt-1">
-//                     {new Date(item.createdAt).toLocaleString()}
+//                     {new Date(item.date).toLocaleString()}
 //                   </p>
 //                 </div>
 
@@ -310,9 +310,7 @@ const NotificationPage = () => {
                     {item.message || "No message"}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {item.createdAt
-                      ? new Date(item.createdAt).toLocaleString()
-                      : "-"}
+                    {item.date ? new Date(item.date).toLocaleString() : "-"}
                   </p>
                 </div>
 

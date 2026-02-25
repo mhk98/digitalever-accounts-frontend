@@ -347,8 +347,8 @@
 //                 transition={{ duration: 0.3 }}
 //               >
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                   {rp.createdAt
-//                     ? new Date(rp.createdAt).toLocaleDateString()
+//                   {rp.date
+//                     ? new Date(rp.date).toLocaleDateString()
 //                     : "-"}
 //                 </td>
 //                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
@@ -1029,9 +1029,7 @@ const GoogleTable = () => {
                 className="hover:bg-slate-50"
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.createdAt
-                    ? new Date(rp.createdAt).toLocaleDateString()
-                    : "-"}
+                  {rp.date ? new Date(rp.date).toLocaleDateString() : "-"}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">

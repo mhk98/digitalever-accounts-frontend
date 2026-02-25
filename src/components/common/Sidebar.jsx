@@ -119,27 +119,6 @@ const SIDEBAR_ITEMS = [
   },
 
   {
-    name: "Pos",
-    icon: Store,
-    color: "#f97316",
-    roles: ["superAdmin", "admin", "inventor"],
-    children: [
-      {
-        name: "Sell",
-        icon: ShoppingBag,
-        href: "/pos-sell",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-      {
-        name: "Pos Report",
-        icon: BarChart3,
-        href: "/pos-report",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-    ],
-  },
-
-  {
     name: "Inventory",
     icon: Boxes,
     color: "#8b5cf6",
@@ -231,7 +210,26 @@ const SIDEBAR_ITEMS = [
       },
     ],
   },
-
+  {
+    name: "Pos",
+    icon: Store,
+    color: "#f97316",
+    roles: ["superAdmin", "admin", "inventor"],
+    children: [
+      {
+        name: "Sell",
+        icon: ShoppingBag,
+        href: "/pos-sell",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Pos Report",
+        icon: BarChart3,
+        href: "/pos-report",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+    ],
+  },
   {
     name: "Accounting",
     icon: Wallet,
@@ -295,19 +293,19 @@ const SIDEBAR_ITEMS = [
     name: "Settings",
     icon: Settings,
     color: "#60a5fa",
-    roles: ["superAdmin", "admin", "accountant"],
+    roles: ["superAdmin", "admin"],
     children: [
       {
         name: "Payroll Fine",
         icon: DollarSign,
         href: "/salary",
-        roles: ["superAdmin", "admin", "accountant"],
+        roles: ["superAdmin", "admin"],
       },
       {
         name: "Logo",
         icon: Image,
         href: "/logo",
-        roles: ["superAdmin", "admin", "accountant"],
+        roles: ["superAdmin", "admin"],
       },
     ],
   },
@@ -317,7 +315,7 @@ const SIDEBAR_ITEMS = [
     icon: TriangleAlert,
     color: "#ef4444",
     href: "/expired-product",
-    roles: ["superAdmin", "admin", "inventor"],
+    roles: ["superAdmin", "admin"],
   },
 
   {
@@ -437,7 +435,11 @@ const Sidebar = () => {
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
                 <img
-                  src={logo ? ` http://localhost:5000/${logo}` : ""}
+                  src={
+                    logo
+                      ? ` https://apiholygift.digitalever.com.bd/${logo}`
+                      : ""
+                  }
                   alt="Logo"
                   className="h-full w-full object-cover"
                 />

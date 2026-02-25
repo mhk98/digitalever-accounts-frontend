@@ -254,7 +254,8 @@ const IntransiteProductTable = () => {
       }).unwrap();
 
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         closeEdit();
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
@@ -282,7 +283,8 @@ const IntransiteProductTable = () => {
       }).unwrap();
 
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         closeEdit1();
         refetch?.();
       } else toast.error(res?.message || "Update failed!");

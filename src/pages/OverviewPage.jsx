@@ -589,12 +589,6 @@ const OverviewPage = () => {
                   })}
                 </div>
               )}
-
-              {/* Footer hint */}
-              <div className="mt-4 text-xs text-slate-500">
-                Tip: “By Revenue” select করলে বেশি বিক্রি নয়, বেশি টাকার sale
-                আগে দেখাবে।
-              </div>
             </div>
           </motion.div>
         </div>

@@ -57,7 +57,8 @@ const LogoTable = () => {
       const res = await updateLogo({ id: Id, data: formData }).unwrap();
 
       if (res?.success) {
-        toast.success("Updated!");
+        toast.success("Successfully updated!");
+
         setIsModalOpen(false);
         setCurrentProduct(null);
         refetch?.();
@@ -167,7 +168,7 @@ const LogoTable = () => {
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   <img
-                    src={` http://localhost:5000/${products.file}`}
+                    src={` https://apiholygift.digitalever.com.bd/${products.file}`}
                     alt="document"
                     className="h-12 w-12 object-cover rounded border border-gray-600 hover:opacity-80"
                   />
