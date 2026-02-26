@@ -1029,7 +1029,7 @@ const GoogleTable = () => {
                 className="hover:bg-slate-50"
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.date ? new Date(rp.date).toLocaleDateString() : "-"}
+                  {rp.date}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">

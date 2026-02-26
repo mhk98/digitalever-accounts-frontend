@@ -168,7 +168,7 @@ const LogoTable = () => {
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   <img
-                    src={` https://apiholygift.digitalever.com.bd/${products.file}`}
+                    src={` https://apikafela.digitalever.com.bd/${products.file}`}
                     alt="document"
                     className="h-12 w-12 object-cover rounded border border-gray-600 hover:opacity-80"
                   />

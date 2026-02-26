@@ -98,7 +98,7 @@ const SuppliersTable = () => {
   // useEffect(() => {
   //     const fetchData = async () => {
   //         try {
-  //             const response = await axios.get(` https://apiholygift.digitalever.com.bd/api/v1/supplier`, {
+  //             const response = await axios.get(` https://apikafela.digitalever.com.bd/api/v1/supplier`, {
   //                 params: { startDate, endDate, supplierId }
   //             });
   //             setFilterData(response.data.data);

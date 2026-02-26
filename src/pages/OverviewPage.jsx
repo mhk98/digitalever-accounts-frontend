@@ -289,7 +289,7 @@ const OverviewPage = () => {
   // =========================
   // ✅ Trending Products
   // =========================
-  const [trendDays, setTrendDays] = useState(7);
+  const [trendDays, setTrendDays] = useState(1);
   // const [trendSortBy, setTrendSortBy] = useState("soldQty"); // soldQty | revenue
 
   const {
@@ -473,6 +473,8 @@ const OverviewPage = () => {
                   onChange={(e) => setTrendDays(Number(e.target.value))}
                   className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
                 >
+                  <option value={1}>Today</option>
+                  <option value={2}>Last 2 days</option>
                   <option value={7}>Last 7 days</option>
                   <option value={15}>Last 15 days</option>
                   <option value={30}>Last 30 days</option>

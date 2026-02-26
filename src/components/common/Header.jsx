@@ -35,7 +35,7 @@
 //   useEffect(() => {
 //     const fetchUser = async () => {
 //       try {
-//         const res = await fetch(` https://apiholygift.digitalever.com.bd/api/v1/user/${userId}`);
+//         const res = await fetch(` https://apikafela.digitalever.com.bd/api/v1/user/${userId}`);
 //         const data = await res.json();
 //         setUser(data.data);
 //       } catch (err) {
@@ -85,7 +85,7 @@
 //                 className="w-8 h-8 rounded-full object-cover"
 //                 src={
 //                   user?.image && user?.image !== "null"
-//                     ? `https://apiholygift.digitalever.com.bd/${user?.image}`
+//                     ? `https://apikafela.digitalever.com.bd/${user?.image}`
 //                     : "https://i.pravatar.cc/300"
 //                 }
 //                 alt="User avatar"
@@ -190,7 +190,7 @@ const Header = () => {
 
   const avatarSrc =
     user?.image && user?.image !== "null"
-      ? `https://apiholygift.digitalever.com.bd/${user.image}`
+      ? `https://apikafela.digitalever.com.bd/${user.image}`
       : "https://i.pravatar.cc/300";
 
   return (

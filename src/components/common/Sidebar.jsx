@@ -436,9 +436,7 @@ const Sidebar = () => {
               <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
                 <img
                   src={
-                    logo
-                      ? ` https://apiholygift.digitalever.com.bd/${logo}`
-                      : ""
+                    logo ? ` https://apikafela.digitalever.com.bd/${logo}` : ""
                   }
                   alt="Logo"
                   className="h-full w-full object-cover"

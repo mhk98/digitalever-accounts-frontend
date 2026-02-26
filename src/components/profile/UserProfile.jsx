@@ -5,7 +5,7 @@
 // } from "../../features/auth/auth";
 // import { useEffect, useMemo, useState } from "react";
 
-// // const API_BASE = "https://apiholygift.digitalever.com.bd";
+// // const API_BASE = "https://apikafela.digitalever.com.bd";
 
 // const UserProfile = () => {
 //   const [userUpdate] = useUserUpdateMutation();
@@ -141,7 +141,7 @@
 //           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
 //             <div className="flex items-center gap-4">
 //               <img
-//                 src={`https://apiholygift.digitalever.com.bd/${user.image}`}
+//                 src={`https://apikafela.digitalever.com.bd/${user.image}`}
 //                 alt="Profile"
 //                 className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover ring-2 ring-indigo-100"
 //               />
@@ -316,7 +316,7 @@
 //                     <img
 //                       src={
 //                         previewUrl ||
-//                         `https://apiholygift.digitalever.com.bd/api/v1/payable${user.image}`
+//                         `https://apikafela.digitalever.com.bd/api/v1/payable${user.image}`
 //                       }
 //                       alt="Preview"
 //                       className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-100"
@@ -392,7 +392,7 @@ import {
   useUserUpdateMutation,
 } from "../../features/auth/auth";
 
-const API_BASE = "https://apiholygift.digitalever.com.bd";
+const API_BASE = "https://apikafela.digitalever.com.bd";
 
 const UserProfile = () => {
   const [userUpdate] = useUserUpdateMutation();
