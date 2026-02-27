@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const notificationApi = createApi({
   reducerPath: "notificationApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
+    baseUrl: " http://localhost:5000/api/v1/",
   }),
 
   tagTypes: ["notification"], // Define the tag type

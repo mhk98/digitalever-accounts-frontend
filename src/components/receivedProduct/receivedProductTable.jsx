@@ -195,6 +195,7 @@ const ReceivedProductTable = () => {
       supplierId: rp.supplierId ?? "",
       warehouseId: rp.warehouseId ?? "",
       quantity: rp.quantity ?? "",
+      duePayment: rp.duePayment ?? "",
       supplier: rp.supplier ?? "",
       date: rp.date ?? "",
       userId,
@@ -217,21 +218,22 @@ const ReceivedProductTable = () => {
 
   const handleUpdateProduct = async () => {
     try {
-      const updatedProduct = {
-        productId: Number(currentProduct.productId),
-        quantity: Number(currentProduct.quantity),
-        supplierId: Number(currentProduct.supplierId),
-        warehouseId: Number(currentProduct.warehouseId),
-        note: currentProduct.note,
-        status: currentProduct.status,
-        date: currentProduct.date,
-        userId: userId,
-        actorRole: role,
-      };
+      const fd = new FormData();
+      fd.append("productId", Number(currentProduct.productId) || "");
+      fd.append("supplierId", Number(currentProduct.supplierId) || "");
+      fd.append("warehouseId", Number(currentProduct.warehouseId) || "");
+      fd.append("quantity", Number(currentProduct.quantity) || 0);
+      fd.append("duePayment", Number(currentProduct.duePayment) || 0);
+      fd.append("date", currentProduct.date || 0);
+      fd.append("note", currentProduct.note || 0);
+      fd.append("status", currentProduct.status || 0);
+      fd.append("userId", Number(currentProduct.userId) || 0);
+      fd.append("actorRole", role);
+      fd.append("file", currentProduct.file);
 
       const res = await updateReceivedProduct({
         id: currentProduct.Id,
-        data: updatedProduct,
+        data: fd,
       }).unwrap();
 
       if (res?.success) {
@@ -284,17 +286,18 @@ const ReceivedProductTable = () => {
     if (!createProduct.quantity || Number(createProduct.quantity) <= 0)
       return toast.error("Please enter a valid quantity");
 
-    try {
-      const payload = {
-        productId: Number(createProduct.productId),
-        supplierId: Number(createProduct.supplierId),
-        warehouseId: Number(createProduct.warehouseId),
-        quantity: Number(createProduct.quantity),
-        date: createProduct.date,
-        note: createProduct.note,
-      };
+    const fd = new FormData();
+    fd.append("productId", Number(createProduct.productId) || "");
+    fd.append("supplierId", Number(createProduct.supplierId) || "");
+    fd.append("warehouseId", Number(createProduct.warehouseId) || "");
+    fd.append("quantity", Number(createProduct.quantity) || 0);
+    fd.append("duePayment", Number(createProduct.duePayment) || 0);
+    fd.append("date", createProduct.date || 0);
+    fd.append("note", createProduct.note || 0);
+    fd.append("file", createProduct.file);
 
-      const res = await insertReceivedProduct(payload).unwrap();
+    try {
+      const res = await insertReceivedProduct(fd).unwrap();
       if (res?.success) {
         toast.success("Successfully created received product");
         setIsModalOpen1(false);
@@ -874,6 +877,25 @@ const ReceivedProductTable = () => {
               />
             </div>
 
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">
+                Due Payment
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={currentProduct.duePayment}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    duePayment: e.target.value,
+                  })
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
+
             {role === "superAdmin" || role === "admin" ? (
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">Status</label>
@@ -1054,6 +1076,26 @@ const ReceivedProductTable = () => {
                   required
                 />
               </div>
+
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">
+                  Due Payment
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={createProduct.duePayment}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      duePayment: e.target.value,
+                    })
+                  }
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
+
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">Note</label>
                 <textarea
@@ -1067,6 +1109,27 @@ const ReceivedProductTable = () => {
                   className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
+              </div>
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">
+                  Upload Document
+                </label>
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      file: e.target.files?.[0] || null,
+                    })
+                  }
+                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white"
+                />
+                {createProduct.file && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Selected: {createProduct.file.name}
+                  </p>
+                )}
               </div>
               <div className="mt-6 flex justify-end gap-2">
                 <button

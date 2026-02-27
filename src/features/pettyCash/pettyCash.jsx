@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const pettyCashApi = createApi({
   reducerPath: "pettyCashApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
+    baseUrl: " http://localhost:5000/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);

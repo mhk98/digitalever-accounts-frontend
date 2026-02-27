@@ -18,26 +18,26 @@ import {
   useUpdateMarketingExpenseMutation,
 } from "../../features/marketingExpense/marketingExpense";
 
-const BANKS = [
-  "Al Arafah",
-  "BRAC Bank",
-  "Bank Asia",
-  "City Bank",
-  "Dutch-Bangla Bank",
-  "Dhaka Bank",
-  "Eastern Bank",
-  "Islami Bank",
-  "Janata Bank",
-  "Mutual Trust Bank",
-  "One Bank",
-  "Prime Bank",
-  "Pubali Bank",
-  "Premier Bank",
-  "United Commercial Bank",
-  "Sonali Bank",
-  "Standard Chartered",
-  "Trust Bank",
-];
+// const BANKS = [
+//   "Al Arafah",
+//   "BRAC Bank",
+//   "Bank Asia",
+//   "City Bank",
+//   "Dutch-Bangla Bank",
+//   "Dhaka Bank",
+//   "Eastern Bank",
+//   "Islami Bank",
+//   "Janata Bank",
+//   "Mutual Trust Bank",
+//   "One Bank",
+//   "Prime Bank",
+//   "Pubali Bank",
+//   "Premier Bank",
+//   "United Commercial Bank",
+//   "Sonali Bank",
+//   "Standard Chartered",
+//   "Trust Bank",
+// ];
 
 const MarketingExpenseTable = () => {
   const { id } = useParams(); // bookId
@@ -210,13 +210,13 @@ const MarketingExpenseTable = () => {
   const handleEditClick = (rp) => {
     setCurrentProduct({
       ...rp,
-      paymentMode: rp.paymentMode ?? "",
+      // paymentMode: rp.paymentMode ?? "",
       paymentStatus: rp.paymentStatus ?? "",
       amount: rp.amount ?? "",
       bankName: rp.bankName ?? "",
       bankAccount: rp.bankAccount ?? "",
       note: rp.note ?? "",
-      status: rp.status ?? "",
+      // status: rp.status ?? "",
       date: rp.date ?? "",
       userId: userId,
       category: rp.category,
@@ -228,10 +228,10 @@ const MarketingExpenseTable = () => {
   const handleEditClick1 = (rp) => {
     setCurrentProduct({
       ...rp,
-      paymentMode: rp.paymentMode ?? "",
+      // paymentMode: rp.paymentMode ?? "",
       paymentStatus: rp.paymentStatus ?? "",
       amount: rp.amount ?? "",
-      bankName: rp.bankName ?? "",
+      // bankName: rp.bankName ?? "",
       bankAccount: rp.bankAccount ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
@@ -261,25 +261,26 @@ const MarketingExpenseTable = () => {
       // }
 
       const formData = new FormData();
-      formData.append("paymentMode", currentProduct.paymentMode);
+      // formData.append("paymentMode", currentProduct.paymentMode);
       formData.append("paymentStatus", currentProduct.paymentStatus);
       formData.append("note", currentProduct.note);
+      formData.append("category", currentProduct.category);
       formData.append("status", currentProduct.status);
       formData.append("date", currentProduct.date);
       formData.append("userId", userId);
       formData.append("actorRole", role);
       formData.append("bookId", id);
 
-      formData.append(
-        "bankName",
-        currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
-      );
-      formData.append(
-        "bankAccount",
-        currentProduct.paymentMode === "Bank"
-          ? String(currentProduct.bankAccount)
-          : "",
-      );
+      // formData.append(
+      //   "bankName",
+      //   currentProduct.paymentMode === "Bank" ? currentProduct.bankName : "",
+      // );
+      // formData.append(
+      //   "bankAccount",
+      //   currentProduct.paymentMode === "Bank"
+      //     ? String(currentProduct.bankAccount)
+      //     : "",
+      // );
 
       // Use categoryName (not categoryId)
       // formData.append("category", finalCategoryName); // Using category name here
@@ -337,34 +338,34 @@ const MarketingExpenseTable = () => {
 
     // Ensure required fields are filled
     if (!createProduct.amount) return toast.error("Amount is required!");
-    if (!createProduct.paymentMode)
-      return toast.error("Payment Mode is required!");
+    // if (!createProduct.paymentMode)
+    //   return toast.error("Payment Mode is required!");
 
-    // Bank details check
-    if (createProduct.paymentMode === "Bank") {
-      if (!createProduct.bankName) return toast.error("Bank Name is required!");
-      if (!createProduct.bankAccount)
-        return toast.error("Bank Account is required!");
-    }
+    // if (createProduct.paymentMode === "Bank") {
+    //   if (!createProduct.bankName) return toast.error("Bank Name is required!");
+    //   if (!createProduct.bankAccount)
+    //     return toast.error("Bank Account is required!");
+    // }
 
     try {
       // Form data preparation for submission
       const formData = new FormData();
-      formData.append("paymentMode", createProduct.paymentMode);
+      // formData.append("paymentMode", createProduct.paymentMode);
       formData.append("paymentStatus", "CashIn");
       formData.append("date", createProduct.date);
       formData.append("note", createProduct.note);
+      formData.append("category", createProduct.category);
 
-      formData.append(
-        "bankName",
-        createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
-      );
-      formData.append(
-        "bankAccount",
-        createProduct.paymentMode === "Bank"
-          ? String(createProduct.bankAccount)
-          : "",
-      );
+      // formData.append(
+      //   "bankName",
+      //   createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
+      // );
+      // formData.append(
+      //   "bankAccount",
+      //   createProduct.paymentMode === "Bank"
+      //     ? String(createProduct.bankAccount)
+      //     : "",
+      // );
 
       // Use categoryName (not category)
       // formData.append("category", finalCategoryName); // Using category name here
@@ -403,34 +404,35 @@ const MarketingExpenseTable = () => {
 
     // Ensure required fields are filled
     if (!createProduct.amount) return toast.error("Amount is required!");
-    if (!createProduct.paymentMode)
-      return toast.error("Payment Mode is required!");
+    // if (!createProduct.paymentMode)
+    //   return toast.error("Payment Mode is required!");
 
-    // Bank details check
-    if (createProduct.paymentMode === "Bank") {
-      if (!createProduct.bankName) return toast.error("Bank Name is required!");
-      if (!createProduct.bankAccount)
-        return toast.error("Bank Account is required!");
-    }
+    // // Bank details check
+    // if (createProduct.paymentMode === "Bank") {
+    //   if (!createProduct.bankName) return toast.error("Bank Name is required!");
+    //   if (!createProduct.bankAccount)
+    //     return toast.error("Bank Account is required!");
+    // }
 
     try {
       // Form data preparation for submission
       const formData = new FormData();
-      formData.append("paymentMode", createProduct.paymentMode);
+      // formData.append("paymentMode", createProduct.paymentMode);
       formData.append("paymentStatus", "CashOut");
       formData.append("date", createProduct.date);
       formData.append("note", createProduct.note);
+      formData.append("category", createProduct.category);
 
-      formData.append(
-        "bankName",
-        createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
-      );
-      formData.append(
-        "bankAccount",
-        createProduct.paymentMode === "Bank"
-          ? String(createProduct.bankAccount)
-          : "",
-      );
+      // formData.append(
+      //   "bankName",
+      //   createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
+      // );
+      // formData.append(
+      //   "bankAccount",
+      //   createProduct.paymentMode === "Bank"
+      //     ? String(createProduct.bankAccount)
+      //     : "",
+      // );
 
       // Use category (not category)
       // formData.append("category", finalCategoryName); // Using category name here
@@ -785,22 +787,21 @@ const MarketingExpenseTable = () => {
           </select>
         </div>
 
-        {/* <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Category:</label>
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Category</label>
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="border py-2 border-slate-300 rounded-lg px-3 text-slate-900 bg-white w-full outline-none
-               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
+            className="h-11 border border-slate-200 rounded-xl px-3 text-slate-900 bg-white outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           >
             <option value="">All</option>
-            {categoryOptions.map((c) => (
-              <option key={c.id} value={c.name}>
-                {c.name}
-              </option>
-            ))}
+            <option value="Facebook">Facebook</option>
+            <option value="Google">Google</option>
+            <option value="Tiktok">Tiktok</option>
+            <option value="SEO">SEO</option>
           </select>
-        </div> */}
+        </div>
 
         {/* ✅ Per Page Dropdown (same position like your screenshot) */}
         <div className="flex flex-col">
@@ -843,6 +844,9 @@ const MarketingExpenseTable = () => {
                 Document
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Category
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Payment Mode
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -872,7 +876,7 @@ const MarketingExpenseTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `https://apikafela.digitalever.com.bd/${safePath}`
+                ? `http://localhost:5000/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -924,6 +928,9 @@ const MarketingExpenseTable = () => {
                         Open File
                       </a>
                     )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp.category || "---"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.paymentMode || "---"}
@@ -1170,7 +1177,7 @@ const MarketingExpenseTable = () => {
               />
             </div>
 
-            <div className="mt-4">
+            {/* <div className="mt-4">
               <label className="block text-sm text-slate-600 mb-1">
                 Payment Mode
               </label>
@@ -1242,7 +1249,7 @@ const MarketingExpenseTable = () => {
                   />
                 </div>
               </>
-            )}
+            )} */}
 
             {/* <div className="mt-4">
               <label className="block text-sm text-slate-600 mb-1">
@@ -1336,6 +1343,29 @@ const MarketingExpenseTable = () => {
               </select>
             </div>
 
+            <div className="mt-4">
+              <label className="block text-sm text-slate-600 mb-1">
+                Category
+              </label>
+              <select
+                value={currentProduct.category || ""}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    category: e.target.value,
+                  })
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                required
+              >
+                <option value="">Select Add Category</option>
+                <option value="Facebook">Facebook</option>
+                <option value="Google">Google</option>
+                <option value="Tiktok">Tiktok</option>
+                <option value="SEO">SEO</option>
+              </select>
+            </div>
             <div className="mt-4">
               <label className="block text-sm text-slate-600 mb-1">
                 Remarks
@@ -1563,79 +1593,30 @@ const MarketingExpenseTable = () => {
                            focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
               </div>
+
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
-                  Payment Mode
+                  Category
                 </label>
                 <select
-                  value={createProduct.paymentMode}
+                  value={createProduct.category || ""}
                   onChange={(e) =>
                     setCreateProduct({
                       ...createProduct,
-                      paymentMode: e.target.value,
+                      category: e.target.value,
                     })
                   }
                   className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 >
-                  <option value="">Select Payment Mode</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Bkash">Bkash</option>
-                  <option value="Nagad">Nagad</option>
-                  <option value="Rocket">Rocket</option>
-                  <option value="Bank">Bank</option>
-                  <option value="Card">Card</option>
+                  <option value="">Select Add Category</option>
+                  <option value="Facebook">Facebook</option>
+                  <option value="Google">Google</option>
+                  <option value="Tiktok">Tiktok</option>
+                  <option value="SEO">SEO</option>
                 </select>
               </div>
-
-              {createProduct.paymentMode === "Bank" && (
-                <>
-                  <div className="mt-4">
-                    <label className="block text-sm text-slate-600 mb-1">
-                      Bank Name
-                    </label>
-                    <select
-                      value={createProduct.bankName}
-                      onChange={(e) =>
-                        setCreateProduct({
-                          ...createProduct,
-                          bankName: e.target.value,
-                        })
-                      }
-                      className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                      required
-                    >
-                      <option value="">Select Bank</option>
-                      {BANKS.map((b) => (
-                        <option key={b} value={b}>
-                          {b}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="block text-sm text-slate-600 mb-1">
-                      Bank Account
-                    </label>
-                    <input
-                      type="text"
-                      value={createProduct.bankAccount}
-                      onChange={(e) =>
-                        setCreateProduct({
-                          ...createProduct,
-                          bankAccount: e.target.value,
-                        })
-                      }
-                      className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                      required
-                    />
-                  </div>
-                </>
-              )}
 
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
@@ -1743,148 +1724,30 @@ const MarketingExpenseTable = () => {
                            focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
               </div>
+
               <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Payment Mode
-                </label>
-                <select
-                  value={createProduct.paymentMode}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      paymentMode: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Payment Mode</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Bkash">Bkash</option>
-                  <option value="Nagad">Nagad</option>
-                  <option value="Rocket">Rocket</option>
-                  <option value="Bank">Bank</option>
-                  <option value="Card">Card</option>
-                </select>
-              </div>
-
-              {createProduct.paymentMode === "Bank" && (
-                <>
-                  <div className="mt-4">
-                    <label className="block text-sm text-slate-600 mb-1">
-                      Bank Name
-                    </label>
-                    <select
-                      value={createProduct.bankName}
-                      onChange={(e) =>
-                        setCreateProduct({
-                          ...createProduct,
-                          bankName: e.target.value,
-                        })
-                      }
-                      className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                      required
-                    >
-                      <option value="">Select Bank</option>
-                      {BANKS.map((b) => (
-                        <option key={b} value={b}>
-                          {b}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="block text-sm text-slate-600 mb-1">
-                      Bank Account
-                    </label>
-                    <input
-                      type="text"
-                      value={createProduct.bankAccount}
-                      onChange={(e) =>
-                        setCreateProduct({
-                          ...createProduct,
-                          bankAccount: e.target.value,
-                        })
-                      }
-                      className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                      required
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">
                   Category
                 </label>
                 <select
-                  value={
-                    isNewCategoryAdd ? "__new__" : createProduct.category || ""
+                  value={createProduct.category || ""}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      category: e.target.value,
+                    })
                   }
-                  onChange={(e) => {
-                    const v = e.target.value;
-
-                    if (v === "__new__") {
-                      setIsNewCategoryAdd(true);
-                      setCreateProduct((p) => ({ ...p, category: "" }));
-                      return;
-                    }
-
-                    setIsNewCategoryAdd(false);
-                    setNewCategoryNameAdd("");
-                    setCreateProduct((p) => ({ ...p, category: v }));
-                  }}
                   className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 >
-                  <option value="">Select Category</option>
-                  {categoryOptions.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.name}
-                    </option>
-                  ))}
-                  <option value="__new__">+ New Category</option>
+                  <option value="">Select Add Category</option>
+                  <option value="Facebook">Facebook</option>
+                  <option value="Google">Google</option>
+                  <option value="Tiktok">Tiktok</option>
+                  <option value="SEO">SEO</option>
                 </select>
-
-                {isNewCategoryAdd && (
-                  <div className="mt-3 flex gap-2">
-                    <input
-                      type="text"
-                      value={newCategoryNameAdd}
-                      onChange={(e) => setNewCategoryNameAdd(e.target.value)}
-                      placeholder="Write new category name"
-                      className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                   focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const createdCategoryName =
-                          await addCategoryByName(newCategoryNameAdd);
-                        if (!createdCategoryName) return;
-
-                        // Set the newly added category name
-                        setCreateProduct((p) => ({
-                          ...p,
-                          category: createdCategoryName, // Update the category state
-                        }));
-
-                        setIsNewCategoryAdd(false);
-                        setNewCategoryNameAdd("");
-                      }}
-                      disabled={isAddingCategory}
-                      className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold disabled:bg-slate-400"
-                    >
-                      {isAddingCategory ? "Adding..." : "Add"}
-                    </button>
-                  </div>
-                )}
-              </div> */}
+              </div>
 
               <div className="mt-4">
                 <label className="block text-sm text-slate-600 mb-1">

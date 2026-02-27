@@ -1257,6 +1257,8 @@ export default function SellPosTable() {
   const [productName, setProductName] = useState("");
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
+  console.log("posItems", cart);
+
   // ✅ Drawer state
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
@@ -1573,6 +1575,7 @@ export default function SellPosTable() {
 
       const payload = buildPosPayload();
 
+      console.log("payload", payload);
       const res = await insertPosReport(payload).unwrap();
 
       const invoice = res?.data ||
@@ -2222,14 +2225,7 @@ function Field({ label, required, children }) {
   );
 }
 
-function InvoiceModal({
-  open,
-  onClose,
-  invoice,
-  invoiceRef,
-  onPrint,
-  onDownload,
-}) {
+function InvoiceModal({ open, onClose, invoice, invoiceRef, onPrint }) {
   if (!open) return null;
 
   return (
@@ -2254,14 +2250,14 @@ function InvoiceModal({
                 Print
               </button>
 
-              <button
+              {/* <button
                 type="button"
                 onClick={onDownload}
                 disabled={!invoice}
                 className="h-10 px-4 rounded-xl border border-slate-200 text-slate-900 font-semibold hover:bg-slate-50 disabled:opacity-60"
               >
                 Download PDF
-              </button>
+              </button> */}
 
               <button
                 onClick={onClose}
