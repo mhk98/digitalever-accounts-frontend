@@ -32,6 +32,8 @@ const ReceivedProductTable = () => {
     supplierId: "",
     productId: "",
     quantity: "",
+    purchase_price: "",
+    sale_price: "",
     note: "",
     date: new Date().toISOString().slice(0, 10),
   });
@@ -195,6 +197,8 @@ const ReceivedProductTable = () => {
       supplierId: rp.supplierId ?? "",
       warehouseId: rp.warehouseId ?? "",
       quantity: rp.quantity ?? "",
+      purchase_price: rp.purchase_price ?? "",
+      sale_price: rp.sale_price ?? "",
       duePayment: rp.duePayment ?? "",
       supplier: rp.supplier ?? "",
       date: rp.date ?? "",
@@ -210,6 +214,8 @@ const ReceivedProductTable = () => {
       supplierId: rp.supplierId ?? "",
       warehouseId: rp.warehouseId ?? "",
       quantity: rp.quantity ?? "",
+      purchase_price: rp.purchase_price ?? "",
+      sale_price: rp.sale_price ?? "",
       supplier: rp.supplier ?? "",
       userId,
     });
@@ -223,6 +229,8 @@ const ReceivedProductTable = () => {
       fd.append("supplierId", Number(currentProduct.supplierId) || "");
       fd.append("warehouseId", Number(currentProduct.warehouseId) || "");
       fd.append("quantity", Number(currentProduct.quantity) || 0);
+      fd.append("purchase_price", Number(currentProduct.purchase_price) || 0);
+      fd.append("sale_price", Number(currentProduct.sale_price) || 0);
       fd.append("duePayment", Number(currentProduct.duePayment) || 0);
       fd.append("date", currentProduct.date || 0);
       fd.append("note", currentProduct.note || 0);
@@ -252,18 +260,24 @@ const ReceivedProductTable = () => {
       return toast.error("Note is required!");
 
     try {
-      const payload = {
-        productId: Number(currentProduct.productId),
-        quantity: Number(currentProduct.quantity),
-        note: currentProduct.note,
-        status: currentProduct.status,
-        userId: userId,
-        actorRole: role,
-      };
+      const fd = new FormData();
+      fd.append("productId", Number(currentProduct.productId) || "");
+      fd.append("supplierId", Number(currentProduct.supplierId) || "");
+      fd.append("warehouseId", Number(currentProduct.warehouseId) || "");
+      fd.append("quantity", Number(currentProduct.quantity) || 0);
+      fd.append("purchase_price", Number(currentProduct.purchase_price) || 0);
+      fd.append("sale_price", Number(currentProduct.sale_price) || 0);
+      fd.append("duePayment", Number(currentProduct.duePayment) || 0);
+      fd.append("date", currentProduct.date || 0);
+      fd.append("note", currentProduct.note || 0);
+      fd.append("status", currentProduct.status || 0);
+      fd.append("userId", Number(currentProduct.userId) || 0);
+      fd.append("actorRole", role);
+      fd.append("file", currentProduct.file);
 
       const res = await updateReceivedProduct({
         id: currentProduct.Id,
-        data: payload,
+        data: fd,
       }).unwrap();
 
       if (res?.success) {
@@ -291,6 +305,8 @@ const ReceivedProductTable = () => {
     fd.append("supplierId", Number(createProduct.supplierId) || "");
     fd.append("warehouseId", Number(createProduct.warehouseId) || "");
     fd.append("quantity", Number(createProduct.quantity) || 0);
+    fd.append("purchase_price", Number(createProduct.purchase_price) || 0);
+    fd.append("sale_price", Number(createProduct.sale_price) || 0);
     fd.append("duePayment", Number(createProduct.duePayment) || 0);
     fd.append("date", createProduct.date || 0);
     fd.append("note", createProduct.note || 0);
@@ -607,10 +623,10 @@ const ReceivedProductTable = () => {
                   {Number(rp.quantity || 0).toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.purchase_price || 0).toFixed(2)}
+                  {Number(rp.purchase_price * rp.quantity).toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.sale_price || 0).toFixed(2)}
+                  {Number(rp.sale_price * rp.quantity).toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
@@ -934,6 +950,42 @@ const ReceivedProductTable = () => {
               </div>
             )}
 
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">
+                Purchase Price
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={currentProduct?.purchase_price || ""}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    purchase_price: e.target.value,
+                  })
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Sale Price</label>
+              <input
+                type="number"
+                step="0.01"
+                value={currentProduct?.sale_price || ""}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    sale_price: e.target.value,
+                  })
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
+
             <div className="mt-6 flex justify-end gap-2">
               <button
                 className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
@@ -956,7 +1008,7 @@ const ReceivedProductTable = () => {
 
       {/* Add Modal */}
       {isModalOpen1 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
+        <div className="fixed top-52 inset-0 z-50 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -16 }}
@@ -968,183 +1020,263 @@ const ReceivedProductTable = () => {
             </h2>
 
             <form onSubmit={handleCreateProduct}>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Product</label>
-                <Select
-                  options={productDropdownOptions}
-                  value={
-                    productDropdownOptions.find(
-                      (o) => o.value === String(createProduct.productId),
-                    ) || null
-                  }
-                  onChange={(selected) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      productId: selected?.value || "",
-                    })
-                  }
-                  placeholder="Select Product"
-                  isClearable
-                  className="text-black"
-                  styles={selectStyles}
-                  isDisabled={isLoadingAllProducts}
-                />
-              </div>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Date</label>
-                <input
-                  type="date"
-                  value={createProduct?.date || ""}
-                  onChange={(e) =>
-                    setCreateProduct((p) => ({ ...p, date: e.target.value }))
-                  }
-                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Product */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm text-slate-700">
+                    Product
+                  </label>
+                  <Select
+                    options={productDropdownOptions}
+                    value={
+                      productDropdownOptions.find(
+                        (o) => o.value === String(createProduct.productId),
+                      ) || null
+                    }
+                    onChange={(selected) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        productId: selected?.value || "",
+                      })
+                    }
+                    placeholder="Select Product"
+                    isClearable
+                    className="text-black"
+                    styles={selectStyles}
+                    isDisabled={isLoadingAllProducts}
+                  />
+                </div>
 
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">
-                  Warehouse
-                </label>
-                <select
-                  value={createProduct?.warehouseId || ""}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      warehouseId: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Warehouse</option>
-                  {isLoadingWarehouse ? (
-                    <option disabled>Loading...</option>
-                  ) : (
-                    warehouses?.map((w) => (
-                      <option key={w.Id} value={w.Id}>
-                        {w.name}
-                      </option>
-                    ))
+                {/* Date */}
+                <div>
+                  <label className="block text-sm text-slate-700">Date</label>
+                  <input
+                    type="date"
+                    value={createProduct?.date || ""}
+                    onChange={(e) =>
+                      setCreateProduct((p) => ({ ...p, date: e.target.value }))
+                    }
+                    className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  />
+                </div>
+
+                {/* Warehouse */}
+                <div>
+                  <label className="block text-sm text-slate-700">
+                    Warehouse
+                  </label>
+                  <select
+                    value={createProduct?.warehouseId || ""}
+                    onChange={(e) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        warehouseId: e.target.value,
+                      })
+                    }
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                    required
+                  >
+                    <option value="">Select Warehouse</option>
+                    {isLoadingWarehouse ? (
+                      <option disabled>Loading...</option>
+                    ) : (
+                      warehouses?.map((w) => (
+                        <option key={w.Id} value={w.Id}>
+                          {w.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                {/* Supplier */}
+                <div>
+                  <label className="block text-sm text-slate-700">
+                    Supplier
+                  </label>
+                  <select
+                    value={createProduct?.supplierId || ""}
+                    onChange={(e) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        supplierId: e.target.value,
+                      })
+                    }
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                    required
+                  >
+                    <option value="">Select Supplier</option>
+                    {isLoadingSupplier ? (
+                      <option disabled>Loading...</option>
+                    ) : (
+                      suppliers?.map((s) => (
+                        <option key={s.Id} value={s.Id}>
+                          {s.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                {/* Purchase Price */}
+                <div>
+                  <label className="block text-sm text-slate-700">
+                    Purchase Price
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={createProduct?.purchase_price || ""}
+                    onChange={(e) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        purchase_price: e.target.value,
+                      })
+                    }
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none
+                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  />
+                </div>
+
+                {/* Sale Price */}
+                <div>
+                  <label className="block text-sm text-slate-700">
+                    Sale Price
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={createProduct?.sale_price || ""}
+                    onChange={(e) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        sale_price: e.target.value,
+                      })
+                    }
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none
+                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  />
+                </div>
+
+                {/* Quantity */}
+                <div>
+                  <label className="block text-sm text-slate-700">
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={createProduct.quantity}
+                    onChange={(e) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        quantity: e.target.value,
+                      })
+                    }
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                    required
+                  />
+                </div>
+
+                {/* Paid Amount */}
+                <div>
+                  <label className="block text-sm text-slate-700">
+                    Paid Amount
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={createProduct.paidAmount || ""} // ✅ suggest separate state
+                    onChange={(e) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        paidAmount: e.target.value,
+                      })
+                    }
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  />
+                </div>
+
+                {/* Due Amount */}
+                <div>
+                  <label className="block text-sm text-slate-700">
+                    Due Amount
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={createProduct.dueAmount || ""} // ✅ suggest separate state
+                    onChange={(e) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        dueAmount: e.target.value,
+                      })
+                    }
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  />
+                </div>
+
+                {/* Note - full row */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm text-slate-700">Note</label>
+                  <textarea
+                    value={createProduct?.note || ""}
+                    onChange={(e) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        note: e.target.value,
+                      })
+                    }
+                    className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
+                 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  />
+                </div>
+
+                {/* Upload Document - full row */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm text-slate-700">
+                    Upload Document
+                  </label>
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    onChange={(e) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        file: e.target.files?.[0] || null,
+                      })
+                    }
+                    className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white"
+                  />
+                  {createProduct.file && (
+                    <p className="mt-2 text-xs text-slate-500">
+                      Selected: {createProduct.file.name}
+                    </p>
                   )}
-                </select>
-              </div>
+                </div>
 
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Supplier</label>
-                <select
-                  value={createProduct?.supplierId || ""}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      supplierId: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Supplier</option>
-                  {isLoadingSupplier ? (
-                    <option disabled>Loading...</option>
-                  ) : (
-                    suppliers?.map((s) => (
-                      <option key={s.Id} value={s.Id}>
-                        {s.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Quantity</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={createProduct.quantity}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      quantity: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">
-                  Due Payment
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={createProduct.duePayment}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      duePayment: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Note</label>
-                <textarea
-                  value={createProduct?.note || ""}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      note: e.target.value,
-                    })
-                  }
-                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">
-                  Upload Document
-                </label>
-                <input
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.pdf"
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      file: e.target.files?.[0] || null,
-                    })
-                  }
-                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white"
-                />
-                {createProduct.file && (
-                  <p className="mt-2 text-xs text-slate-500">
-                    Selected: {createProduct.file.name}
-                  </p>
-                )}
-              </div>
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                  onClick={handleModalClose1}
-                >
-                  Cancel
-                </button>
+                {/* Buttons - full row */}
+                <div className="md:col-span-2 mt-2 flex justify-end gap-2">
+                  <button
+                    type="submit"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
+                    onClick={handleModalClose1}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </form>
           </motion.div>

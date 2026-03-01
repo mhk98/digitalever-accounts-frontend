@@ -309,6 +309,7 @@ const PayableTable = () => {
     setIsNoteModalOpen(false); // Close the modal
   };
 
+  console.log("products", products);
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
@@ -388,16 +389,20 @@ const PayableTable = () => {
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Name
+                Supplier
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Document
               </th>
+
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Remarks
+                Payable Amount
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Amount
+                Paid Amount
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Due Amount
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Status
@@ -431,7 +436,7 @@ const PayableTable = () => {
                   className="hover:bg-slate-50"
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {rp.name}
+                    {rp?.supplier?.name}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
@@ -469,10 +474,12 @@ const PayableTable = () => {
                     )}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {rp.remarks || "-"}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
+                    {Number(rp.amount || 0).toFixed(2)}
                   </td>
-
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
+                    {Number(rp.amount || 0).toFixed(2)}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
                     {Number(rp.amount || 0).toFixed(2)}
                   </td>
@@ -481,7 +488,7 @@ const PayableTable = () => {
                     {rp.status}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     {rp.note ? (
                       <div className="relative">
                         <button
@@ -532,8 +539,65 @@ const PayableTable = () => {
                         <Trash2 size={18} />
                       </button>
                     )}
-                  </td>
+                  </td> */}
 
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      {rp.note ? (
+                        <div className="relative">
+                          <button
+                            className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                            title={rp.note}
+                            type="button"
+                            onClick={() => handleNoteClick(rp.note)} // Open modal on click
+                          >
+                            <Notebook size={18} className="text-slate-700" />
+                          </button>
+
+                          <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                            {rp.note ? 1 : null}
+                          </span>
+                        </div>
+                      ) : (
+                        <button
+                          className="h-10 w-10 rounded-md flex items-center justify-center"
+                          title={rp.note}
+                          type="button"
+                        >
+                          <Notebook size={18} className="text-slate-700" />
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleEditClick(rp)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                        title="Edit"
+                      >
+                        <Edit size={18} className="text-indigo-600" />
+                      </button>
+
+                      {role === "superAdmin" || role === "admin" ? (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProduct(rp.Id)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                          title="Delete"
+                        >
+                          <Trash2 size={18} className="text-red-600" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleEditClick1(rp)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                          title="Request Delete"
+                        >
+                          <Trash2 size={18} className="text-amber-600" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
                   {/* ✅ Note Modal (Popup) */}
                   {isNoteModalOpen && (
                     <div className="fixed inset-0 flex items-center justify-center p-4">
@@ -800,23 +864,6 @@ const PayableTable = () => {
                   value={createProduct.name}
                   onChange={(e) =>
                     setCreateProduct({ ...createProduct, name: e.target.value })
-                  }
-                  className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
-                  required
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Remarks</label>
-                <input
-                  type="text"
-                  value={createProduct.remarks}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      remarks: e.target.value,
-                    })
                   }
                   className="border border-slate-300 rounded-lg p-2 w-full mt-1 text-slate-900 bg-white outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"

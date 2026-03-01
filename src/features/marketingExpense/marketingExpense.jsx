@@ -104,6 +104,23 @@ export const marketingExpenseApi = createApi({
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
+
+    getOverviewSummary: build.query({
+      query: (arg = {}) => {
+        const { from, to } = arg;
+
+        const params = { from, to };
+        Object.keys(params).forEach((k) => {
+          if (params[k] === undefined || params[k] === null || params[k] === "")
+            delete params[k];
+        });
+
+        return { url: "/marketing-expense//summary", params };
+      },
+
+      providesTags: [{ type: "marketingExpense", id: "LIST" }],
+      refetchOnMountOrArgChange: true,
+    }),
   }),
 });
 
@@ -114,4 +131,5 @@ export const {
   useUpdateMarketingExpenseMutation,
   useDeleteMarketingExpenseMutation,
   useGetAllMarketingExpenseWithoutQueryQuery,
+  useGetOverviewSummaryQuery,
 } = marketingExpenseApi;

@@ -257,8 +257,8 @@ const InventoryOverviewTable = () => {
       </div>
 
       {/* Filters */}
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-5 gap-4 items-end w-full">
-        <div className="flex flex-col">
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 items-end w-full">
+        {/* <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">From</label>
           <input
             type="date"
@@ -267,9 +267,9 @@ const InventoryOverviewTable = () => {
             className="h-11 px-3 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none
                        focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           />
-        </div>
+        </div> */}
 
-        <div className="flex flex-col">
+        {/* <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">To</label>
           <input
             type="date"
@@ -278,7 +278,7 @@ const InventoryOverviewTable = () => {
             className="h-11 px-3 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none
                        focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           />
-        </div>
+        </div> */}
 
         {/* ✅ Per Page Dropdown (same position like your screenshot) */}
         <div className="flex flex-col">
@@ -360,7 +360,7 @@ const InventoryOverviewTable = () => {
 
       {/* Table */}
       <div className="overflow-x-auto mt-6 rounded-2xl border border-slate-200">
-        <table className="min-w-full divide-y divide-slate-200">
+        <table className="w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -370,14 +370,10 @@ const InventoryOverviewTable = () => {
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Product
               </th>
+
+              {/* ✅ Quantity placed at end */}
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Quantity
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Purchase Price
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Sale Price
               </th>
             </tr>
           </thead>
@@ -396,17 +392,14 @@ const InventoryOverviewTable = () => {
                     ? new Date(rp.createdAt).toLocaleDateString()
                     : "-"}
                 </td>
+
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                   {resolveProductName(rp)}
                 </td>
+
+                {/* ✅ Quantity placed at end */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.quantity || 0).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.purchase_price || 0).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.sale_price || 0).toFixed(2)}
                 </td>
               </motion.tr>
             ))}
@@ -414,7 +407,7 @@ const InventoryOverviewTable = () => {
             {!isLoading && rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={3}
                   className="px-6 py-10 text-center text-sm text-slate-500"
                 >
                   No data found

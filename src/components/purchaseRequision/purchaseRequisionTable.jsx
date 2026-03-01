@@ -655,9 +655,6 @@ const PurchaseRequisionTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.quantity || 0).toFixed(2)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.purchase_price || 0).toFixed(2)}
-                </td>
                 {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td> */}
@@ -925,6 +922,42 @@ const PurchaseRequisionTable = () => {
                            focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
+
+            {/* <div className="mt-4">
+              <label className="block text-sm text-slate-700">
+                Purchase Price
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={currentProduct?.purchase_price || ""}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    purchase_price: e.target.value,
+                  })
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Sale Price</label>
+              <input
+                type="number"
+                step="0.01"
+                value={currentProduct?.sale_price || ""}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    sale_price: e.target.value,
+                  })
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div> */}
 
             {role === "superAdmin" || role === "admin" ? (
               <div className="mt-4">

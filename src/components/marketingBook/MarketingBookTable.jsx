@@ -1,6 +1,13 @@
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { BookOpen, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  BookOpen,
+  Pencil,
+  Plus,
+  RefreshCcw,
+  Search,
+  Trash2,
+} from "lucide-react";
 import {
   useDeleteMarketingBookMutation,
   useGetAllMarketingBookQuery,
@@ -9,6 +16,20 @@ import {
 } from "../../features/marketingBook/marketingBook.jsx";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import { useGetOverviewSummaryQuery } from "../../features/marketingExpense/marketingExpense.jsx";
+
+// ✅ helper: default range (এই মাসের ১ তারিখ → আজ)
+const getDefaultRange = () => {
+  const now = new Date();
+
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+
+  const from = `${yyyy}-${mm}-01`;
+  const to = `${yyyy}-${mm}-${dd}`;
+  return { from, to };
+};
 
 const MarketingBookTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
@@ -150,6 +171,49 @@ const MarketingBookTable = () => {
       Math.min(p + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)),
     );
 
+  const defaultRange = useMemo(() => getDefaultRange(), []);
+
+  // ✅ input values
+  const [from, setFrom] = useState(defaultRange.from);
+  const [to, setTo] = useState(defaultRange.to);
+
+  // ✅ applied range (Apply না চাপা পর্যন্ত API call হবে না)
+  const [applied, setApplied] = useState(defaultRange);
+
+  const {
+    data: summaryRes,
+    isLoading1,
+    isError1,
+    error1,
+  } = useGetOverviewSummaryQuery({ from: applied.from, to: applied.to });
+
+  const summary = summaryRes?.data || {};
+
+  console.log("summary", summary);
+
+  const onApply = () => {
+    if (!from || !to) return;
+    setApplied({ from, to });
+  };
+
+  const onReset = () => {
+    const d = getDefaultRange();
+    setFrom(d.from);
+    setTo(d.to);
+    setApplied(d);
+  };
+
+  if (isError1) console.error("Overview Summary error:", error1);
+
+  // ✅ values (fallback 0)
+  const totalCashIn = Number(summary?.totalCashInAmount || 0);
+  const totalCashOut = Number(summary?.totalCashOutAmount || 0);
+  const netBalance = totalCashIn - totalCashOut;
+
+  console.log("totalCashIn", totalCashIn);
+  console.log("totalCashOut", totalCashOut);
+  console.log("netBalance", netBalance);
+
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
@@ -157,9 +221,101 @@ const MarketingBookTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      {/* Top bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Search */}
+      {/* <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[160px_160px_auto] gap-3 items-end">
+          <div className="flex flex-col">
+            <label className="text-xs text-slate-500 mb-1">From</label>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="h-10 px-3 rounded-xl date-black-icon border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-xs text-slate-500 mb-1">To</label>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={onApply}
+              className="h-10 px-4 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 active:scale-[0.99] transition"
+            >
+              Apply
+            </button>
+
+            <button
+              onClick={onReset}
+              className="h-10 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-semibold hover:bg-slate-50 active:scale-[0.99] transition flex items-center gap-2"
+            >
+              <RefreshCcw size={16} />
+              Reset
+            </button>
+          </div>
+        </div>
+      </div> */}
+
+      {/* Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6 w-full">
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">From</label>
+          <input
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className="h-10 px-3 rounded-xl date-black-icon border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">To</label>
+          <input
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+          />
+        </div>
+
+        {/* <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Payment Status</label>
+          <select
+            value={filterPaymentStatus}
+            onChange={(e) => setFilterPaymentStatus(e.target.value)}
+            className="h-11 border border-slate-200 rounded-xl px-3 text-slate-900 bg-white outline-none
+                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+          >
+            <option value="">All</option>
+            <option value="CashIn">CashIn</option>
+            <option value="CashOut">CashOut</option>
+          </select>
+        </div> */}
+        {/* Add button */}
+
+        <div className="flex gap-2">
+          <button
+            onClick={onApply}
+            className="h-10 px-4 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 active:scale-[0.99] transition"
+          >
+            Apply
+          </button>
+
+          <button
+            onClick={onReset}
+            className="h-10 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-semibold hover:bg-slate-50 active:scale-[0.99] transition flex items-center gap-2"
+          >
+            <RefreshCcw size={16} />
+            Reset
+          </button>
+        </div>
+
         <div className="relative w-full sm:max-w-[520px]">
           <input
             value={name}
@@ -168,7 +324,7 @@ const MarketingBookTable = () => {
               setCurrentPage(1);
               setStartPage(1);
             }}
-            placeholder="Search by book name..."
+            placeholder="Search by channel name..."
             className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
           />
           <Search
@@ -176,17 +332,101 @@ const MarketingBookTable = () => {
             size={18}
           />
         </div>
-
-        {/* Add button */}
         <button
           onClick={handleAddBook}
           type="button"
           className="inline-flex h-11 w-full sm:w-[260px] items-center justify-center gap-2 rounded-lg bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700 transition"
         >
           <Plus size={18} />
-          Add Marketing Book
+          Add DM Channel
         </button>
       </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+        {/* CashIn */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-emerald-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">Total CashIn</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {isLoading1 ? "—" : Number(totalCashIn || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-emerald-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 19V5" />
+                <path d="M5 12l7-7 7 7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* CashOut */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-rose-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">
+                Total CashOut
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {isLoading1 ? "—" : Number(totalCashOut || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-rose-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 5v14" />
+                <path d="M19 12l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Net */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-indigo-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">Net Balance</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {isLoading1 ? "—" : Number(netBalance || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-indigo-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 19V5" />
+                <path d="M8 17V7" />
+                <path d="M12 19V9" />
+                <path d="M16 15V5" />
+                <path d="M20 19V11" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Top bar */}
 
       {/* List */}
       <div className="mt-8">
@@ -335,11 +575,13 @@ const MarketingBookTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <h2 className="text-lg font-semibold text-gray-900">Add Book</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Add Channel</h2>
 
             <form onSubmit={handleCreateBook}>
               <div className="mt-4">
-                <label className="block text-sm text-gray-700">Book Name</label>
+                <label className="block text-sm text-gray-700">
+                  Channel Name
+                </label>
                 <input
                   type="text"
                   value={createProduct.name}
