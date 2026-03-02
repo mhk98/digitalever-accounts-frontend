@@ -37,7 +37,7 @@ const Register = () => {
     <div className="flex justify-center items-center h-screen bg-[#182130]">
       <div className="w-full max-w-md bg-white shadow-md rounded-lg p-8">
         <h2 className="text-2xl font-bold text-center mb-6 text-black">
-          Sign UP
+          Sign Up
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email Field */}

@@ -40,7 +40,7 @@ export const inventorySummaryApi = baseApi.injectEndpoints({
             delete params[k];
         });
 
-        return { url: "/inventory-overview/summary", params };
+        return { url: "/inventory/summary", params };
       },
       providesTags: [{ type: "InventorySummary", id: "LIST" }],
       refetchOnMountOrArgChange: true,
@@ -57,7 +57,7 @@ export const inventorySummaryApi = baseApi.injectEndpoints({
             delete params[k];
         });
 
-        return { url: "/inventory-overview/list", params };
+        return { url: "/inventory/list", params };
       },
       providesTags: [{ type: "InventoryList", id: "LIST" }],
       refetchOnMountOrArgChange: true,

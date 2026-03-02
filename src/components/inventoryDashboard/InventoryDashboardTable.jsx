@@ -215,6 +215,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useGetInventoryListQuery } from "../../features/inventoryDashboard/inventoryDashboard";
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
 import Select from "react-select";
+import { motion } from "framer-motion";
 
 const InventoryOverviewTable = () => {
   const [page, setPage] = useState(1);
@@ -239,6 +240,8 @@ const InventoryOverviewTable = () => {
   const { data, isLoading, isError, error } = useGetInventoryListQuery(query);
 
   const rows = data?.data ?? [];
+
+  console.log("rows", rows)
   const totalCount = Number(data?.meta?.count || 0);
   const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
@@ -366,10 +369,10 @@ const InventoryOverviewTable = () => {
       </div>
 
       {/* Table */}
-      <div className="mt-5 rounded-2xl border border-slate-200 overflow-hidden">
+      {/* <div className="mt-5 rounded-2xl border border-slate-200 overflow-hidden">
         <div className="grid grid-cols-[180px_1fr_140px] bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-600">
           <div>DATE</div>
-          <div className="text-center lg:text-left">PRODUCT</div>
+          <div className="text-center lg:text-left">Category</div>
           <div className="text-right">QUANTITY</div>
         </div>
 
@@ -392,15 +395,74 @@ const InventoryOverviewTable = () => {
                   {r.date ? new Date(r.date).toLocaleDateString() : "-"}
                 </div>
                 <div className="text-center lg:text-left font-medium text-slate-800">
-                  {r.name || "-"}
+                  {r.source || "-"}
                 </div>
                 <div className="text-right tabular-nums">{r.quantity ?? 0}</div>
               </div>
             ))
           )}
         </div>
-      </div>
+      </div> */}
 
+{/* Table */}
+      <div className="overflow-x-auto mt-6 rounded-2xl border border-slate-200">
+        <table className="w-full divide-y divide-slate-200">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Date
+              </th>
+
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Category
+              </th>
+
+              {/* ✅ Quantity placed at end */}
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Quantity
+              </th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-slate-200 bg-white">
+            {rows.map((rp) => (
+              <motion.tr
+                key={rp.Id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+                className="hover:bg-slate-50"
+              >
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                  {rp.date
+                    ? new Date(rp.date).toLocaleDateString()
+                    : "-"}
+                </td>
+
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
+                  {rp.source || "-"}
+                </td>
+
+                {/* ✅ Quantity placed at end */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {Number(rp.quantity || 0).toFixed(2)}
+                </td>
+              </motion.tr>
+            ))}
+
+            {!isLoading && rows.length === 0 && (
+              <tr>
+                <td
+                  colSpan={3}
+                  className="px-6 py-10 text-center text-sm text-slate-500"
+                >
+                  No data found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
       {/* Pagination */}
       <div className="flex items-center justify-center gap-3 mt-5">
         <button
