@@ -2824,7 +2824,7 @@ const CashInOutTable = () => {
 
       {/* ✅ Edit Modal (Light) */}
       {isModalOpen && currentProduct && (
-        <div className="fixed inset-0 flex items-center justify-center   p-4">
+        <div className="fixed top-8 inset-0 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}

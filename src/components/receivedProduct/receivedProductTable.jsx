@@ -964,7 +964,7 @@ const ReceivedProductTable = () => {
                     purchase_price: e.target.value,
                   })
                 }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
                            focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
@@ -981,7 +981,7 @@ const ReceivedProductTable = () => {
                     sale_price: e.target.value,
                   })
                 }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
                            focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
@@ -1008,7 +1008,7 @@ const ReceivedProductTable = () => {
 
       {/* Add Modal */}
       {isModalOpen1 && (
-        <div className="fixed top-52 inset-0 z-50 flex items-center justify-center   p-4">
+        <div className="fixed top-28 inset-0 z-50 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
             initial={{ opacity: 0, y: -16 }}
@@ -1136,7 +1136,7 @@ const ReceivedProductTable = () => {
                         purchase_price: e.target.value,
                       })
                     }
-                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
                  focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   />
                 </div>
@@ -1156,7 +1156,7 @@ const ReceivedProductTable = () => {
                         sale_price: e.target.value,
                       })
                     }
-                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
                  focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   />
                 </div>

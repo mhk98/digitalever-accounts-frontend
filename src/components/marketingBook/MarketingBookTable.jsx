@@ -449,9 +449,11 @@ const MarketingBookTable = () => {
                   <div className="text-[16px] font-semibold text-gray-900">
                     {item.name}
                   </div>
-                  <div className="mt-1 text-sm text-gray-600">
-                    {item.date ? new Date(item.date).toLocaleDateString() : "-"}
-                  </div>
+                  {/* <div className="mt-1 text-sm text-gray-600">
+                    {item.createdAt
+                      ? new Date(item.createdAt).toLocaleDateString()
+                      : "-"}
+                  </div> */}
                 </div>
               </div>
             </Link>

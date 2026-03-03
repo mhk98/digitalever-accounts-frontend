@@ -836,7 +836,7 @@ const AssetsSaleTable = () => {
 
       {/* -------------------- Add Modal -------------------- */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed top-16 inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-3/4 lg:w-1/2 border border-slate-200"
             initial={{ opacity: 0, y: -50 }}
