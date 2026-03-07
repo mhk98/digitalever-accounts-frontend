@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const warrantyroductApi = createApi({
   reducerPath: "warrantyroductApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken(); // Fetch the token
       if (token) {
@@ -41,7 +41,7 @@ export const warrantyroductApi = createApi({
     updateWarrantyProduct: build.mutation({
       query: ({ id, data }) => ({
         url: `/warranty-product/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: ["warranty-product"], // Invalidate the warranty-product tag after this mutation

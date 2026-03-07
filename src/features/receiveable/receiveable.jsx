@@ -5,7 +5,7 @@
 // export const receiveableApi = createApi({
 //   reducerPath: "receiveableApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " http://localhost:5000/api/v1/",
+//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 //     prepareHeaders: (headers) => {
 //       const token = getAuthToken();
 //       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -26,7 +26,7 @@
 //     updateReceiveable: build.mutation({
 //       query: ({ id, data }) => ({
 //         url: `/receiveable/${id}`,
-//         method: "PATCH",
+//         method: "PUT",
 //         body: data,
 //       }),
 //       invalidatesTags: ["receiveable"],
@@ -113,7 +113,7 @@ export const receiveableApi = baseApi.injectEndpoints({
     updateReceiveable: build.mutation({
       query: ({ id, data }) => ({
         url: `/receiveable/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [

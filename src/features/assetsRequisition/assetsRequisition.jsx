@@ -30,7 +30,7 @@ export const assetsRequisitionApi = baseApi.injectEndpoints({
     updateAssetsRequisition: build.mutation({
       query: ({ id, data }) => ({
         url: `assets-requisition/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [
@@ -48,12 +48,12 @@ export const assetsRequisitionApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data?.length
           ? [
-              { type: "AssetsRequisition", id: "LIST" },
-              ...result.data.map((r) => ({
-                type: "AssetsRequisition",
-                id: r.Id,
-              })),
-            ]
+            { type: "AssetsRequisition", id: "LIST" },
+            ...result.data.map((r) => ({
+              type: "AssetsRequisition",
+              id: r.Id,
+            })),
+          ]
           : [{ type: "AssetsRequisition", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),

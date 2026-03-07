@@ -8,6 +8,7 @@ import {
   useInsertSupplierMutation,
   useUpdateSupplierMutation,
 } from "../../features/supplier/supplier";
+import Modal from "../common/Modal";
 
 const SupplierTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
@@ -264,11 +265,10 @@ const SupplierTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
+              className={`px-4 py-2 rounded-xl border transition ${active
                   ? "bg-indigo-600 text-white border-indigo-600"
                   : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
+                }`}
             >
               {pageNum}
             </button>
@@ -284,102 +284,89 @@ const SupplierTable = () => {
         </button>
       </div>
 
-      {/* Edit Modal */}
-      {isModalOpen && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">
-              Rename Supplier
-            </h2>
+      {/* ✅ Edit Modal */}
+      <Modal
+        isOpen={isModalOpen && !!currentProduct}
+        onClose={handleModalClose}
+        title="Rename Supplier"
+        maxWidth="max-w-lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Supplier Name
+            </label>
+            <input
+              type="text"
+              value={currentProduct?.name || ""}
+              onChange={(e) =>
+                setCurrentProduct((prev) => ({
+                  ...prev,
+                  name: e.target.value,
+                }))
+              }
+              className="h-11 px-3 border border-slate-200 rounded-xl w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              placeholder="Enter supplier name"
+            />
+          </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">
-                Supplier Name
-              </label>
-              <input
-                type="text"
-                value={currentProduct?.name || ""}
-                onChange={(e) =>
-                  setCurrentProduct((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              />
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
-                onClick={handleUpdateSupplier}
-              >
-                Save
-              </button>
-              <button
-                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                onClick={handleModalClose}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
+          <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+              onClick={handleModalClose}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
+              onClick={handleUpdateSupplier}
+            >
+              Save Changes
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
 
-      {/* Add Modal */}
-      {isModalOpen1 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">
+      {/* ✅ Add Modal */}
+      <Modal
+        isOpen={isModalOpen1}
+        onClose={handleModalClose1}
+        title="Add New Supplier"
+        maxWidth="max-w-lg"
+      >
+        <form onSubmit={handleCreateSupplier} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Supplier Name
+            </label>
+            <input
+              type="text"
+              value={createProduct.name}
+              onChange={(e) => setCreateProduct({ name: e.target.value })}
+              className="h-11 px-3 border border-slate-200 rounded-xl w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              placeholder="Enter supplier name"
+              required
+            />
+          </div>
+
+          <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+              onClick={handleModalClose1}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
+            >
               Add Supplier
-            </h2>
-
-            <form onSubmit={handleCreateSupplier}>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">
-                  Supplier Name
-                </label>
-                <input
-                  type="text"
-                  value={createProduct.name}
-                  onChange={(e) => setCreateProduct({ name: e.target.value })}
-                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                />
-              </div>
-
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                  onClick={handleModalClose1}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </motion.div>
   );
 };

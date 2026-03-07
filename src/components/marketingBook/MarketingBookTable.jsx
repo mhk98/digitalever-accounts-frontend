@@ -16,6 +16,7 @@ import {
 } from "../../features/marketingBook/marketingBook.jsx";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import Modal from "../common/Modal";
 import { useGetOverviewSummaryQuery } from "../../features/marketingExpense/marketingExpense.jsx";
 
 // ✅ helper: default range (এই মাসের ১ তারিখ → আজ)
@@ -504,11 +505,10 @@ const MarketingBookTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-3 py-2 text-sm rounded-md border transition ${
-                pageNum === currentPage
+              className={`px-3 py-2 text-sm rounded-md border transition ${pageNum === currentPage
                   ? "bg-indigo-600 border-indigo-600 text-white"
                   : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-              }`}
+                }`}
             >
               {pageNum}
             </button>
@@ -525,93 +525,81 @@ const MarketingBookTable = () => {
       </div>
 
       {/* Edit Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-lg w-full max-w-lg border border-gray-200"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-gray-900">Rename Book</h2>
+      <Modal
+        isOpen={isModalOpen && !!currentProduct}
+        onClose={handleModalClose}
+        title="Rename Channel"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Channel Name</label>
+            <input
+              type="text"
+              value={currentProduct?.name || ""}
+              onChange={(e) =>
+                setCurrentProduct((prev) => ({
+                  ...prev,
+                  name: e.target.value,
+                }))
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              placeholder="e.g. Facebook Ads"
+            />
+          </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-gray-700">Book Name</label>
-              <input
-                type="text"
-                value={currentProduct?.name || ""}
-                onChange={(e) =>
-                  setCurrentProduct((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
-              />
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white"
-                onClick={handleUpdateBook}
-              >
-                Save
-              </button>
-              <button
-                className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700"
-                onClick={handleModalClose}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              onClick={handleModalClose}
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleUpdateBook}
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Save Changes
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       {/* Add Modal */}
-      {isModalOpen1 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-lg w-full max-w-lg border border-gray-200"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-gray-900">Add Channel</h2>
+      <Modal
+        isOpen={isModalOpen1}
+        onClose={handleModalClose1}
+        title="Add Marketing Channel"
+      >
+        <form onSubmit={handleCreateBook} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Channel Name</label>
+            <input
+              type="text"
+              value={createProduct.name}
+              onChange={(e) => setCreateProduct({ name: e.target.value })}
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              placeholder="e.g. Google Search"
+              required
+            />
+          </div>
 
-            <form onSubmit={handleCreateBook}>
-              <div className="mt-4">
-                <label className="block text-sm text-gray-700">
-                  Channel Name
-                </label>
-                <input
-                  type="text"
-                  value={createProduct.name}
-                  onChange={(e) => setCreateProduct({ name: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
-                  required
-                />
-              </div>
-
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700"
-                  onClick={handleModalClose1}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={handleModalClose1}
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Create Channel
+            </button>
+          </div>
+        </form>
+      </Modal>
     </motion.div>
   );
 };

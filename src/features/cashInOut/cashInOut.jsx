@@ -5,7 +5,7 @@
 // export const cashInOutApi = createApi({
 //   reducerPath: "cashInOutApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " http://localhost:5000/api/v1/",
+//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 //     prepareHeaders: (headers) => {
 //       const token = getAuthToken();
 //       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -26,7 +26,7 @@
 //     updateCashInOut: build.mutation({
 //       query: ({ id, data }) => ({
 //         url: `/cash-in-out/${id}`,
-//         method: "PATCH",
+//         method: "PUT",
 //         body: data,
 //       }),
 //       invalidatesTags: ["cashInOut"],
@@ -135,7 +135,7 @@ export const cashInOutApi = baseApi.injectEndpoints({
     updateCashInOut: build.mutation({
       query: ({ id, data }) => ({
         url: `/cash-in-out/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [

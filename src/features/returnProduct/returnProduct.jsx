@@ -8,7 +8,7 @@
 // export const returnProductApi = createApi({
 //   reducerPath: "returnProductApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " http://localhost:5000/api/v1/",
+//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 //     prepareHeaders: (headers) => {
 //       const token = getAuthToken(); // Fetch the token
 //       if (token) {
@@ -41,7 +41,7 @@
 //     updateReturnProduct: build.mutation({
 //       query: ({ id, data }) => ({
 //         url: `/return-product/${id}`,
-//         method: "PATCH",
+//         method: "PUT",
 //         body: data,
 //       }),
 //       invalidatesTags: ["return-product"], // Invalidate the return-product tag after this mutation
@@ -108,7 +108,7 @@ export const returnProductApi = baseApi.injectEndpoints({
     updateReturnProduct: build.mutation({
       query: ({ id, data }) => ({
         url: `/return-product/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [
@@ -134,12 +134,12 @@ export const returnProductApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-              { type: "ReturnProduct", id: "LIST" },
-              ...result.data.map((r) => ({
-                type: "ReturnProduct",
-                id: r.Id,
-              })),
-            ]
+            { type: "ReturnProduct", id: "LIST" },
+            ...result.data.map((r) => ({
+              type: "ReturnProduct",
+              id: r.Id,
+            })),
+          ]
           : [{ type: "ReturnProduct", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),

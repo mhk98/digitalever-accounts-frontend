@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const accountingApi = createApi({
   reducerPath: "accountingApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken(); // Fetch the token
       if (token) {
@@ -40,7 +40,7 @@ export const accountingApi = createApi({
     updateAccounting: build.mutation({
       query: ({ id, data }) => ({
         url: `/accounting/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: ["accounting"], // Invalidate the accounting tag after this mutation

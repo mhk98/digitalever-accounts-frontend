@@ -1,16 +1,16 @@
 const ToggleSwitch = ({ label, isOn, onToggle }) => {
 	return (
-		<div className='flex items-center justify-between py-3'>
-			<span className='text-gray-300'>{label}</span>
+		<div className='flex items-center justify-between py-4 group cursor-pointer' onClick={onToggle}>
+			<span className='text-slate-600 font-bold text-sm tracking-tight group-hover:text-slate-900 transition-colors'>{label}</span>
 			<button
 				className={`
-        relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none
-        ${isOn ? "bg-indigo-600" : "bg-gray-600"}
+        relative inline-flex items-center h-7 rounded-full w-12 transition-all focus:outline-none shadow-inner
+        ${isOn ? "bg-indigo-600 shadow-indigo-200" : "bg-slate-200 shadow-slate-300"}
         `}
-				onClick={onToggle}
+				type="button"
 			>
 				<span
-					className={`inline-block size-4 transform transition-transform bg-white rounded-full 
+					className={`inline-block size-5 transform transition-all bg-white rounded-full shadow-lg
             ${isOn ? "translate-x-6" : "translate-x-1"}
             `}
 				/>

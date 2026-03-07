@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const metaApi = createApi({
   reducerPath: "metaApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken(); // Fetch the token
       if (token) {
@@ -41,7 +41,7 @@ export const metaApi = createApi({
     updateMeta: build.mutation({
       query: ({ id, data }) => ({
         url: `/meta/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: ["meta"], // Invalidate the meta tag after this mutation

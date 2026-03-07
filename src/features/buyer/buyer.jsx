@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const buyerApi = createApi({
   reducerPath: "buyerApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 
     // Attach Authorization header to all requests
     prepareHeaders: (headers) => {
@@ -45,7 +45,7 @@ export const buyerApi = createApi({
     updateBuyer: build.mutation({
       query: ({ id, data }) => ({
         url: `/buyer/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: ["buyer"], // Invalidate buyer tag after update

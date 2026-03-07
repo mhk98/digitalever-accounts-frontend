@@ -8,7 +8,7 @@
 // export const marketingBookApi = createApi({
 //   reducerPath: "marketingBookApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " http://localhost:5000/api/v1/",
+//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 //     prepareHeaders: (headers) => {
 //       const token = getAuthToken(); // Fetch the token
 //       if (token) {
@@ -41,7 +41,7 @@
 //     updateMarketingBook: build.mutation({
 //       query: ({ id, data }) => ({
 //         url: `/marketing-book/${id}`,
-//         method: "PATCH",
+//         method: "PUT",
 //         body: data,
 //       }),
 //       invalidatesTags: ["marketingBook"], // Invalidate the Book tag after this mutation
@@ -108,7 +108,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const marketingBookApi = createApi({
   reducerPath: "marketingBookApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1/",
+    baseUrl: "https://apikafela.digitalever.com.bd/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -142,7 +142,7 @@ export const marketingBookApi = createApi({
     updateMarketingBook: build.mutation({
       query: ({ id, data }) => ({
         url: `/marketing-book/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [

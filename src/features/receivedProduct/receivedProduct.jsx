@@ -21,12 +21,12 @@ export const receivedProductApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-              { type: "ReceivedProduct", id: "LIST" },
-              ...result.data.map((r) => ({
-                type: "ReceivedProduct",
-                id: r.Id,
-              })),
-            ]
+            { type: "ReceivedProduct", id: "LIST" },
+            ...result.data.map((r) => ({
+              type: "ReceivedProduct",
+              id: r.Id,
+            })),
+          ]
           : [{ type: "ReceivedProduct", id: "LIST" }],
 
       refetchOnMountOrArgChange: true,
@@ -56,7 +56,7 @@ export const receivedProductApi = baseApi.injectEndpoints({
     updateReceivedProduct: build.mutation({
       query: ({ id, data }) => ({
         url: `/received-product/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [

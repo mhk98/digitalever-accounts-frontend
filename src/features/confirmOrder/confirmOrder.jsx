@@ -8,7 +8,7 @@
 // export const confirmOrderApi = createApi({
 //   reducerPath: "confirmOrderApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " http://localhost:5000/api/v1/",
+//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 //     prepareHeaders: (headers) => {
 //       const token = getAuthToken(); // Fetch the token
 //       if (token) {
@@ -41,7 +41,7 @@
 //     updateConfirmOrder: build.mutation({
 //       query: ({ id, data }) => ({
 //         url: `/confirm-order/${id}`,
-//         method: "PATCH",
+//         method: "PUT",
 //         body: data,
 //       }),
 //       invalidatesTags: ["confirm-order"], // Invalidate the confirm-order tag after this mutation
@@ -95,7 +95,7 @@ export const confirmOrderApi = baseApi.injectEndpoints({
     updateConfirmOrder: build.mutation({
       query: ({ id, data }) => ({
         url: `/confirm-order/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [
@@ -134,9 +134,9 @@ export const confirmOrderApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-              { type: "ConfirmOrder", id: "LIST" },
-              ...result.data.map((r) => ({ type: "ConfirmOrder", id: r.Id })),
-            ]
+            { type: "ConfirmOrder", id: "LIST" },
+            ...result.data.map((r) => ({ type: "ConfirmOrder", id: r.Id })),
+          ]
           : [{ type: "ConfirmOrder", id: "LIST" }],
 
       refetchOnMountOrArgChange: true,

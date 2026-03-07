@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const supplierApi = createApi({
   reducerPath: "supplierApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 
     // Prepare headers to include Authorization token if present
     prepareHeaders: (headers) => {
@@ -45,7 +45,7 @@ export const supplierApi = createApi({
     updateSupplier: build.mutation({
       query: ({ id, data }) => ({
         url: `/supplier/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: ["supplier"], // Invalidate the supplier cache after update

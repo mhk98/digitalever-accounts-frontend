@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search } from "lucide-react";
+import { Search, UserCheck, UserX, Edit, Trash2, X } from "lucide-react";
 
 const userData = [
 	{ id: 1, name: "John Doe", email: "john@example.com", role: "Customer", status: "Active" },
@@ -12,7 +12,7 @@ const userData = [
 
 const UsersTable = () => {
 	const [searchTerm, setSearchTerm] = useState("");
-	const [filteredUsers, setFilteredUsers] = useState(userData);
+	const [users, setUsers] = useState(userData);
 
 	const handleSearch = (e) => {
 		const term = e.target.value.toLowerCase();
@@ -20,104 +20,123 @@ const UsersTable = () => {
 		const filtered = userData.filter(
 			(user) => user.name.toLowerCase().includes(term) || user.email.toLowerCase().includes(term)
 		);
-		setFilteredUsers(filtered);
+		setUsers(filtered);
 	};
 
 	return (
 		<motion.div
-			className='bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700'
+			className="bg-white/90 backdrop-blur-md shadow-sm rounded-3xl p-4 sm:p-8 border border-slate-100 mb-8"
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ delay: 0.2 }}
+			transition={{ duration: 0.3 }}
 		>
-			<div className='flex justify-between items-center mb-6'>
-				<h2 className='text-xl font-semibold text-gray-100'>Users</h2>
-				<div className='relative'>
+			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+				<div>
+					<h2 className="text-2xl font-black text-slate-900 tracking-tight">Active Users</h2>
+					<p className="text-slate-500 text-sm mt-1 font-medium">Manage platform access and member privileges</p>
+				</div>
+
+				<div className="relative w-full lg:max-w-md">
+					<div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+						<Search className="text-slate-400" size={18} />
+					</div>
 					<input
-						type='text'
-						placeholder='Search users...'
-						className='bg-gray-700 text-white placeholder-gray-400 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
+						type="text"
+						placeholder="Search by name or email..."
+						className="w-full h-12 rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-medium"
 						value={searchTerm}
 						onChange={handleSearch}
 					/>
-					<Search className='absolute left-3 top-2.5 text-gray-400' size={18} />
+					{searchTerm && (
+						<button
+							onClick={() => { setSearchTerm(""); setUsers(userData); }}
+							className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600"
+						>
+							<X size={16} />
+						</button>
+					)}
 				</div>
 			</div>
 
-			<div className='overflow-x-auto'>
-				<table className='min-w-full divide-y divide-gray-700'>
-					<thead>
-						<tr>
-							<th className='px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider'>
-								Name
-							</th>
-							<th className='px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider'>
-								Email
-							</th>
-							<th className='px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider'>
-								Role
-							</th>
-							<th className='px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider'>
-								Status
-							</th>
-							<th className='px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider'>
-								Actions
-							</th>
-						</tr>
-					</thead>
+			<div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+				<div className="overflow-x-auto">
+					<table className="min-w-full divide-y divide-slate-100">
+						<thead className="bg-slate-50/50">
+							<tr>
+								<th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">User Identity</th>
+								<th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Contact Email</th>
+								<th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Account Role</th>
+								<th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Status</th>
+								<th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Actions</th>
+							</tr>
+						</thead>
 
-					<tbody className='divide-y divide-gray-700'>
-						{filteredUsers.map((user) => (
-							<motion.tr
-								key={user.id}
-								initial={{ opacity: 0 }}
-								animate={{ opacity: 1 }}
-								transition={{ duration: 0.3 }}
-							>
-								<td className='px-6 py-4 whitespace-nowrap'>
-									<div className='flex items-center'>
-										<div className='flex-shrink-0 h-10 w-10'>
-											<div className='h-10 w-10 rounded-full bg-gradient-to-r from-purple-400 to-blue-500 flex items-center justify-center text-white font-semibold'>
+						<tbody className="divide-y divide-slate-100">
+							{users.map((user) => (
+								<motion.tr
+									key={user.id}
+									initial={{ opacity: 0 }}
+									animate={{ opacity: 1 }}
+									className="hover:bg-indigo-50/30 transition-colors group"
+								>
+									<td className="px-6 py-5 whitespace-nowrap">
+										<div className="flex items-center">
+											<div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-indigo-100 group-hover:scale-110 transition-transform">
 												{user.name.charAt(0)}
 											</div>
+											<div className="ml-4">
+												<div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors tracking-tight">{user.name}</div>
+											</div>
 										</div>
-										<div className='ml-4'>
-											<div className='text-sm font-medium text-gray-100'>{user.name}</div>
+									</td>
+
+									<td className="px-6 py-5 whitespace-nowrap">
+										<div className="text-sm text-slate-500 font-medium">{user.email}</div>
+									</td>
+
+									<td className="px-6 py-5 whitespace-nowrap">
+										<span className="inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm shadow-indigo-50">
+											{user.role}
+										</span>
+									</td>
+
+									<td className="px-6 py-5 whitespace-nowrap">
+										<span
+											className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-black tracking-tighter shadow-sm border ${user.status === "Active"
+													? "bg-emerald-50 text-emerald-700 border-emerald-100 shadow-emerald-50"
+													: "bg-rose-50 text-rose-700 border-rose-100 shadow-rose-50"
+												}`}
+										>
+											{user.status === "Active" ? <UserCheck size={12} /> : <UserX size={12} />}
+											{user.status}
+										</span>
+									</td>
+
+									<td className="px-6 py-5 whitespace-nowrap text-center">
+										<div className="flex items-center justify-center gap-2">
+											<button className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm active:scale-90">
+												<Edit size={16} />
+											</button>
+											<button className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition shadow-sm active:scale-90">
+												<Trash2 size={16} />
+											</button>
 										</div>
-									</div>
-								</td>
+									</td>
+								</motion.tr>
+							))}
+						</tbody>
+					</table>
 
-								<td className='px-6 py-4 whitespace-nowrap'>
-									<div className='text-sm text-gray-300'>{user.email}</div>
-								</td>
-								<td className='px-6 py-4 whitespace-nowrap'>
-									<span className='px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100'>
-										{user.role}
-									</span>
-								</td>
-
-								<td className='px-6 py-4 whitespace-nowrap'>
-									<span
-										className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-											user.status === "Active"
-												? "bg-green-800 text-green-100"
-												: "bg-red-800 text-red-100"
-										}`}
-									>
-										{user.status}
-									</span>
-								</td>
-
-								<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>
-									<button className='text-indigo-400 hover:text-indigo-300 mr-2'>Edit</button>
-									<button className='text-red-400 hover:text-red-300'>Delete</button>
-								</td>
-							</motion.tr>
-						))}
-					</tbody>
-				</table>
+					{users.length === 0 && (
+						<div className="py-20 text-center text-slate-400">
+							<div className="text-4xl mb-4 opacity-20">🔍</div>
+							<p className="font-bold text-sm italic">No users matching "{searchTerm}"</p>
+						</div>
+					)}
+				</div>
 			</div>
 		</motion.div>
 	);
 };
+
 export default UsersTable;

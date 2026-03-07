@@ -1,28 +1,18 @@
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import Select from "react-select";
+import { ShoppingBasket, ChevronLeft, ChevronRight, X, Calendar } from "lucide-react";
 
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
 import { useGetAllInventoryOverviewQuery } from "../../features/inventoryOverview/inventoryOverview";
-import { ShoppingBasket } from "lucide-react";
-
-// import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
-// import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 
 const InventoryOverviewTable = () => {
-  // const [warehouse, setWarehouse] = useState("");
-  // const [supplier, setSupplier] = useState("");
-
   const [rows, setRows] = useState([]);
-
-  // ✅ Filters: start/end + product NAME
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [productName, setProductName] = useState("");
 
-  //Pagination calculation start
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -46,413 +36,231 @@ const InventoryOverviewTable = () => {
 
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    if (pageNumber < startPage) setStartPage(pageNumber);
-    else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
+  const handlePageChange = (p) => {
+    setCurrentPage(p);
+    if (p < startPage) setStartPage(p);
+    else if (p > endPage) setStartPage(p - pagesPerSet + 1);
   };
 
-  const handlePreviousSet = () =>
-    setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
+  const handlePreviousSet = () => setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
+  const handleNextSet = () => setStartPage((prev) => Math.min(prev + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)));
 
-  const handleNextSet = () =>
-    setStartPage((prev) =>
-      Math.min(prev + pagesPerSet, totalPages - pagesPerSet + 1),
-    );
-
-  //Pagination calculation end
-
-  // ✅ startDate > endDate fix
-  useEffect(() => {
-    if (startDate && endDate && startDate > endDate) setEndDate(startDate);
-  }, [startDate, endDate]);
-
-  // ✅ All products (for dropdown + name mapping)
-  const {
-    data: allProductsRes,
-    isLoading: isLoadingAllProducts,
-    isError: isErrorAllProducts,
-    error: errorAllProducts,
-  } = useGetAllProductWithoutQueryQuery();
-
+  const { data: allProductsRes, isLoading: isLoadingAllProducts } = useGetAllProductWithoutQueryQuery();
   const productsData = allProductsRes?.data || [];
 
-  useEffect(() => {
-    if (isErrorAllProducts)
-      console.error("Error fetching products", errorAllProducts);
-  }, [isErrorAllProducts, errorAllProducts]);
-
-  // ✅ Dropdown options (value = Id, label = name)
   const productDropdownOptions = useMemo(() => {
-    return (productsData || []).map((p) => ({
-      value: String(p.Id ?? p.id ?? p._id),
-      label: p.name,
-    }));
+    return (productsData || []).map((p) => ({ value: String(p.Id), label: p.name }));
   }, [productsData]);
 
-  // ✅ productId -> productName map
   const productNameMap = useMemo(() => {
     const m = new Map();
-    (productsData || []).forEach((p) => {
-      const key = String(p.Id ?? p.id ?? p._id);
-      m.set(key, p.name);
-    });
+    (productsData || []).forEach((p) => m.set(String(p.Id), p.name));
     return m;
   }, [productsData]);
 
-  // ✅ resolve name for table
   const resolveProductName = (rp) => {
-    const pid =
-      rp.productId ??
-      rp.product_id ??
-      rp.ProductId ??
-      rp.product?.Id ??
-      rp.product?.id ??
-      rp.product?._id;
-
+    const pid = rp.productId ?? rp.product_id ?? rp.ProductId ?? rp.product?.Id;
     if (rp.productName) return rp.productName;
     if (rp.product?.name) return rp.product?.name;
-
-    if (pid === null || pid === undefined || pid === "") return "N/A";
-
-    const byId = productNameMap.get(String(pid));
-    if (byId) return byId;
-
-    const pidText = String(pid);
-    const looksLikeName = (productsData || []).some((p) => p.name === pidText);
-    if (looksLikeName) return pidText;
-
-    return "N/A";
+    if (!pid) return "N/A";
+    return productNameMap.get(String(pid)) || pid;
   };
 
-  // ✅ Query args
   const queryArgs = useMemo(() => {
     const args = {
       page: currentPage,
       limit: itemsPerPage,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      name: productName || undefined, // ✅ backend filter by name
+      name: productName || undefined,
     };
-    Object.keys(args).forEach((k) => {
-      if (args[k] === undefined || args[k] === null || args[k] === "")
-        delete args[k];
-    });
+    Object.keys(args).forEach((k) => { if (!args[k]) delete args[k]; });
     return args;
   }, [currentPage, itemsPerPage, startDate, endDate, productName]);
 
-  const { data, isLoading, isError, error } =
-    useGetAllInventoryOverviewQuery(queryArgs);
+  const { data, isLoading } = useGetAllInventoryOverviewQuery(queryArgs);
 
   useEffect(() => {
-    if (isError) {
-      console.error("Error fetching received product data", error);
-      return;
-    }
     if (!isLoading && data) {
       setRows(data.data || []);
-      setTotalPages(
-        Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)),
-      );
+      setTotalPages(Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)));
     }
-  }, [data, isLoading, isError, error, itemsPerPage]);
+  }, [data, isLoading, itemsPerPage]);
 
-  // ✅ Filters clear
-  const clearFilters = () => {
-    setStartDate("");
-    setEndDate("");
-    setProductName("");
-  };
-
-  // ✅ react-select light styles (so it looks good in light UI)
   const selectStyles = {
     control: (base, state) => ({
       ...base,
       minHeight: 44,
       borderRadius: 14,
-      borderColor: state.isFocused ? "#c7d2fe" : "#e2e8f0", // indigo-200 / slate-200
-      boxShadow: state.isFocused ? "0 0 0 4px rgba(99,102,241,0.15)" : "none",
+      borderColor: state.isFocused ? "#6366f1" : "#e2e8f0",
+      boxShadow: state.isFocused ? "0 0 0 4px rgba(99,102,241,0.1)" : "none",
       "&:hover": { borderColor: "#cbd5e1" },
+      backgroundColor: "white",
     }),
-    valueContainer: (base) => ({ ...base, padding: "0 12px" }),
-    placeholder: (base) => ({ ...base, color: "#64748b" }),
-    menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
+    placeholder: (base) => ({ ...base, color: "#94a3b8", fontSize: "14px" }),
+    singleValue: (base) => ({ ...base, color: "#1e293b", fontSize: "14px", fontWeight: "500" }),
+    menu: (base) => ({
+      ...base,
+      borderRadius: 14,
+      overflow: "hidden",
+      border: "1px solid #f1f5f9",
+      boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+      zIndex: 50
+    }),
   };
-
-  // ✅ suppliers
-  // const {
-  //   data: allSupplierRes,
-  //   isLoading: isLoadingSupplier,
-  //   isError: isErrorSupplier,
-  //   error: errorSupplier,
-  // } = useGetAllSupplierWithoutQueryQuery();
-  // const suppliers = allSupplierRes?.data || [];
-
-  // useEffect(() => {
-  //   if (isErrorSupplier)
-  //     console.error("Error fetching suppliers", errorSupplier);
-  // }, [isErrorSupplier, errorSupplier]);
-
-  // ✅ Dropdown options
-
-  // const supplierOptions = useMemo(
-  //   () =>
-  //     (suppliers || []).map((w) => ({
-  //       value: w.Id,
-  //       label: w.name,
-  //     })),
-  //   [suppliers],
-  // );
-
-  // ✅ warehouses
-  // const {
-  //   data: allWarehousesRes,
-  //   isLoading: isLoadingWarehouse,
-  //   isError: isErrorWarehouse,
-  //   error: errorWarehouse,
-  // } = useGetAllWirehouseWithoutQueryQuery();
-  // const warehouses = allWarehousesRes?.data || [];
-
-  // useEffect(() => {
-  //   if (isErrorWarehouse)
-  //     console.error("Error fetching warehouses", errorWarehouse);
-  // }, [isErrorWarehouse, errorWarehouse]);
-
-  // const warehouseOptions = useMemo(
-  //   () =>
-  //     (warehouses || []).map((w) => ({
-  //       value: w.Id,
-  //       label: w.name,
-  //     })),
-  //   [warehouses],
-  // );
 
   return (
     <motion.div
-      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
-      initial={{ opacity: 0, y: 16 }}
+      className="bg-white/90 backdrop-blur-md shadow-sm rounded-3xl p-4 sm:p-8 border border-slate-100 mb-8"
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: 0.3 }}
     >
-      {/* Top Bar */}
-      <div className="my-2 flex flex-col gap-3 md:justify-end sm:flex-row sm:items-center sm:justify-center">
-        {/* <button
-          type="button"
-          onClick={handleAddProduct}
-          className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
-        >
-          Add <Plus size={18} className="ml-2" />
-        </button> */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Inventory Overview</h2>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Real-time stock levels across all categories</p>
+        </div>
 
-        <div className="flex items-center justify-between sm:justify-end gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
-          <div className="flex items-center gap-2 text-slate-700">
-            <ShoppingBasket size={18} className="text-amber-500" />
-            <span className="text-sm">Total Inventory Quantity</span>
+        <div className="inline-flex items-center gap-4 bg-indigo-50 border border-indigo-100 px-6 py-3 rounded-2xl shadow-sm shadow-indigo-50">
+          <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm">
+            <ShoppingBasket size={20} />
           </div>
-
-          <span className="text-slate-900 font-semibold tabular-nums">
-            {isLoading ? "Loading..." : (data?.meta?.totalQuantity ?? 0)}
-          </span>
+          <div>
+            <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">Total Stock</div>
+            <div className="text-xl font-black text-indigo-900 tabular-nums">
+              {isLoading ? "Syncing..." : (data?.meta?.totalQuantity ?? 0).toLocaleString()}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 items-end w-full">
-        {/* <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">From</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="h-11 px-3 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none
-                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-          />
-        </div> */}
-
-        {/* <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">To</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="h-11 px-3 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none
-                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-          />
-        </div> */}
-
-        {/* ✅ Per Page Dropdown (same position like your screenshot) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Per Page</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Per Page</label>
           <select
             value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-              setStartPage(1);
-            }}
-            className="px-3 py-[10px] rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+            onChange={(e) => setItemsPerPage(Number(e.target.value))}
+            className="h-11 px-4 rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold text-sm appearance-none cursor-pointer"
           >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
+            {[10, 20, 50, 100].map(v => <option key={v} value={v}>{v}</option>)}
           </select>
         </div>
 
-        {/* Product Filter (stores NAME) */}
-        <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Product</label>
+        <div className="flex flex-col sm:col-span-2">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Search Product</label>
           <Select
             options={productDropdownOptions}
-            value={
-              productDropdownOptions.find((o) => o.label === productName) ||
-              null
-            }
+            value={productDropdownOptions.find((o) => o.label === productName) || null}
             onChange={(selected) => setProductName(selected?.label || "")}
-            placeholder={isLoadingAllProducts ? "Loading..." : "Select Product"}
+            placeholder={isLoadingAllProducts ? "Syncing..." : "Select product name..."}
             isClearable
-            className="text-black"
             isDisabled={isLoadingAllProducts}
             styles={selectStyles}
           />
         </div>
 
-        {/* <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Warehouse</label>
-          <Select
-            options={warehouseOptions}
-            value={
-              warehouseOptions.find(
-                (o) => String(o.value) === String(warehouse),
-              ) || null
-            }
-            onChange={(selected) => setWarehouse(selected?.value || "")}
-            placeholder="Select Warehouse"
-            isClearable
-            className="text-black"
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Supplier</label>
-          <Select
-            options={supplierOptions}
-            value={
-              supplierOptions.find(
-                (o) => String(o.value) === String(supplier),
-              ) || null
-            }
-            onChange={(selected) => setSupplier(selected?.value || "")}
-            placeholder="Select Supplier"
-            isClearable
-            className="text-black"
-          />
-        </div> */}
-
         <button
+          className="h-11 bg-slate-100 hover:bg-slate-200 text-slate-600 transition rounded-xl px-4 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 border border-slate-200"
+          onClick={() => { setProductName(""); setStartDate(""); setEndDate(""); }}
           type="button"
-          className="h-11 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 transition rounded-xl px-4 text-sm font-semibold"
-          onClick={clearFilters}
         >
-          Clear Filters
+          <X size={16} /> Reset
         </button>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto mt-6 rounded-2xl border border-slate-200">
-        <table className="w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Date
-              </th>
-
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Product
-              </th>
-
-              {/* ✅ Quantity placed at end */}
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Quantity
-              </th>
-            </tr>
-          </thead>
-
-          <tbody className="divide-y divide-slate-200 bg-white">
-            {rows.map((rp) => (
-              <motion.tr
-                key={rp.Id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-                className="hover:bg-slate-50"
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.createdAt
-                    ? new Date(rp.createdAt).toLocaleDateString()
-                    : "-"}
-                </td>
-
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                  {resolveProductName(rp)}
-                </td>
-
-                {/* ✅ Quantity placed at end */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.quantity || 0).toFixed(2)}
-                </td>
-              </motion.tr>
-            ))}
-
-            {!isLoading && rows.length === 0 && (
+      <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-100">
+            <thead className="bg-slate-50/50">
               <tr>
-                <td
-                  colSpan={3}
-                  className="px-6 py-10 text-center text-sm text-slate-500"
-                >
-                  No data found
-                </td>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Last Updated</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Item Detail</th>
+                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">In-Hand Qty</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody className="divide-y divide-slate-100">
+              {rows.map((rp) => (
+                <motion.tr
+                  key={rp.Id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="hover:bg-indigo-50/30 transition-colors group"
+                >
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="flex items-center gap-2 text-sm font-medium text-slate-500 group-hover:text-indigo-600">
+                      <Calendar size={14} className="opacity-40" />
+                      {rp.createdAt ? new Date(rp.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : "—"}
+                    </div>
+                  </td>
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
+                      {resolveProductName(rp)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-5 whitespace-nowrap text-center">
+                    <span className="inline-flex items-center px-4 py-1.5 rounded-2xl text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm shadow-indigo-50 tabular-nums">
+                      {Number(rp.quantity || 0).toLocaleString()}
+                    </span>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+
+          {isLoading && (
+            <div className="py-24 text-center">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 border-[3px] border-indigo-600/20 border-t-indigo-600"></div>
+              <p className="text-slate-500 text-sm mt-4 font-bold tracking-tight">Analyzing Stock Levels...</p>
+            </div>
+          )}
+
+          {!isLoading && rows.length === 0 && (
+            <div className="py-24 text-center text-slate-400">
+              <div className="text-4xl mb-4 opacity-20">📦</div>
+              <p className="font-bold text-sm italic">Nothing found in inventory matches your filter</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-center flex-wrap gap-2 mt-6">
-        <button
-          onClick={handlePreviousSet}
-          disabled={startPage === 1}
-          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
-        >
-          Prev
-        </button>
-
-        {[...Array(endPage - startPage + 1)].map((_, index) => {
-          const pageNum = startPage + index;
-          const active = pageNum === currentPage;
-          return (
-            <button
-              key={pageNum}
-              onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              {pageNum}
-            </button>
-          );
-        })}
-
-        <button
-          onClick={handleNextSet}
-          disabled={endPage === totalPages}
-          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
-        >
-          Next
-        </button>
+      <div className="flex flex-col sm:flex-row items-center justify-between mt-10 gap-6 px-2">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+          Showing Page <span className="text-indigo-600">{currentPage}</span> of <span className="text-slate-900">{totalPages}</span>
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePreviousSet}
+            disabled={startPage === 1}
+            className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
+          >
+            <ChevronLeft size={16} /> Prev
+          </button>
+          <div className="flex items-center gap-1.5">
+            {[...Array(endPage - startPage + 1)].map((_, index) => {
+              const pageNum = startPage + index;
+              const active = pageNum === currentPage;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${active ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100" : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
+                    }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            onClick={handleNextSet}
+            disabled={endPage === totalPages}
+            className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
+          >
+            Next <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
     </motion.div>
   );

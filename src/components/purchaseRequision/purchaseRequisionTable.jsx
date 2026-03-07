@@ -14,6 +14,7 @@ import {
 
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
+import Modal from "../common/Modal";
 
 const PurchaseRequisionTable = () => {
   const role = localStorage.getItem("role");
@@ -613,12 +614,7 @@ const PurchaseRequisionTable = () => {
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Quantity
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Purchase Price
-              </th>
-              {/* <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Sale Price
-              </th> */}
+
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Status
               </th>
@@ -653,20 +649,19 @@ const PurchaseRequisionTable = () => {
                   </td>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.quantity || 0).toFixed(2)}
+                  {Number(rp.quantity || 0)}
                 </td>
                 {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td> */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
-                      rp.status === "Approved"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : rp.status === "Active"
-                          ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                          : "bg-amber-50 text-amber-700 border-amber-200"
-                    }`}
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${rp.status === "Approved"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : rp.status === "Active"
+                        ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
                   >
                     {rp.status}
                   </span>
@@ -728,28 +723,6 @@ const PurchaseRequisionTable = () => {
                     )}
                   </div>
                 </td>
-                {/* ✅ Note Modal (Popup) */}
-                {isNoteModalOpen && (
-                  <div className="fixed inset-0 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
-                      <h2 className="text-xl font-semibold text-slate-900">
-                        Note
-                      </h2>
-                      <p className="mt-4 text-sm text-slate-700">
-                        {noteContent}
-                      </p>
-
-                      <div className="mt-6 flex justify-end gap-2">
-                        <button
-                          onClick={handleNoteModalClose}
-                          className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </motion.tr>
             ))}
 
@@ -784,11 +757,10 @@ const PurchaseRequisionTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
+              className={`px-4 py-2 rounded-xl border transition ${active
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                }`}
             >
               {pageNum}
             </button>
@@ -805,33 +777,20 @@ const PurchaseRequisionTable = () => {
       </div>
 
       {/* Edit Modal */}
-      {isModalOpen && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">
-              Edit Product
-            </h2>
-
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Product</label>
+      <Modal
+        isOpen={isModalOpen && !!currentProduct}
+        onClose={handleModalClose}
+        title="Edit Purchase Requisition"
+        maxWidth="max-w-2xl"
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Product</label>
               <Select
                 options={productDropdownOptions}
-                value={
-                  productDropdownOptions.find(
-                    (o) => o.value === String(currentProduct?.productId),
-                  ) || null
-                }
-                onChange={(selected) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    productId: selected?.value || "",
-                  })
-                }
+                value={productDropdownOptions.find(o => o.value === String(currentProduct?.productId)) || null}
+                onChange={(selected) => setCurrentProduct({ ...currentProduct, productId: selected?.value || "" })}
                 placeholder="Select Product"
                 isClearable
                 styles={selectStyles}
@@ -839,413 +798,260 @@ const PurchaseRequisionTable = () => {
                 isDisabled={isLoadingAllProducts}
               />
             </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Warehouse</label>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Warehouse</label>
               <select
                 value={currentProduct?.warehouseId || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    warehouseId: e.target.value,
-                  })
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                required
+                onChange={(e) => setCurrentProduct({ ...currentProduct, warehouseId: e.target.value })}
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
                 <option value="">Select Warehouse</option>
-                {isLoadingWarehouse ? (
-                  <option disabled>Loading...</option>
-                ) : (
-                  warehouses?.map((w) => (
-                    <option key={w.Id} value={w.Id}>
-                      {w.name}
-                    </option>
-                  ))
-                )}
+                {warehouses?.map(w => <option key={w.Id} value={w.Id}>{w.name}</option>)}
               </select>
             </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Supplier</label>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Supplier</label>
               <select
                 value={currentProduct?.supplierId || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    supplierId: e.target.value,
-                  })
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                required
+                onChange={(e) => setCurrentProduct({ ...currentProduct, supplierId: e.target.value })}
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
                 <option value="">Select Supplier</option>
-                {isLoadingSupplier ? (
-                  <option disabled>Loading...</option>
-                ) : (
-                  suppliers?.map((s) => (
-                    <option key={s.Id} value={s.Id}>
-                      {s.name}
-                    </option>
-                  ))
-                )}
+                {suppliers?.map(s => <option key={s.Id} value={s.Id}>{s.name}</option>)}
               </select>
             </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Date</label>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date</label>
               <input
                 type="date"
                 value={currentProduct?.date || ""}
-                onChange={(e) =>
-                  setCurrentProduct((p) => ({ ...p, date: e.target.value }))
-                }
-                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                onChange={(e) => setCurrentProduct({ ...currentProduct, date: e.target.value })}
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
             </div>
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Quantity</label>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Quantity</label>
               <input
                 type="number"
                 step="0.01"
                 value={currentProduct?.quantity || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    quantity: e.target.value,
-                  })
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                onChange={(e) => setCurrentProduct({ ...currentProduct, quantity: e.target.value })}
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
             </div>
+          </div>
 
-            {/* <div className="mt-4">
-              <label className="block text-sm text-slate-700">
-                Purchase Price
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={currentProduct?.purchase_price || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    purchase_price: e.target.value,
-                  })
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              />
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Sale Price</label>
-              <input
-                type="number"
-                step="0.01"
-                value={currentProduct?.sale_price || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    sale_price: e.target.value,
-                  })
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              />
-            </div> */}
-
-            {role === "superAdmin" || role === "admin" ? (
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Status</label>
-                <select
-                  value={currentProduct?.status || ""}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      status: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Status</option>
-                  <option value="Active">Active</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Pending">Pending</option>
-                </select>
-              </div>
-            ) : (
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Note</label>
-                <textarea
-                  value={currentProduct?.note || ""}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      note: e.target.value,
-                    })
-                  }
-                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-            )}
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
-                onClick={handleUpdateProduct}
-                type="button"
+          {(role === "superAdmin" || role === "admin") ? (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+              <select
+                value={currentProduct?.status || ""}
+                onChange={(e) => setCurrentProduct({ ...currentProduct, status: e.target.value })}
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
-                Save
-              </button>
-              <button
-                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                onClick={handleModalClose}
-                type="button"
-              >
-                Cancel
-              </button>
+                <option value="Active">Active</option>
+                <option value="Approved">Approved</option>
+                <option value="Pending">Pending</option>
+              </select>
             </div>
-          </motion.div>
+          ) : (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Note</label>
+              <textarea
+                value={currentProduct?.note || ""}
+                onChange={(e) => setCurrentProduct({ ...currentProduct, note: e.target.value })}
+                className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                rows={3}
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              onClick={handleModalClose}
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleUpdateProduct}
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Save Changes
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       {/* Add Modal */}
-      {isModalOpen1 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">
-              Add Product
-            </h2>
-
-            <form onSubmit={handleCreateProduct}>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Product</label>
-                <Select
-                  options={productDropdownOptions}
-                  value={
-                    productDropdownOptions.find(
-                      (o) => o.value === String(createProduct.productId),
-                    ) || null
-                  }
-                  onChange={(selected) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      productId: selected?.value || "",
-                    })
-                  }
-                  placeholder="Select Product"
-                  isClearable
-                  className="text-black"
-                  styles={selectStyles}
-                  isDisabled={isLoadingAllProducts}
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Date</label>
-                <input
-                  type="date"
-                  value={createProduct?.date || ""}
-                  onChange={(e) =>
-                    setCreateProduct((p) => ({ ...p, date: e.target.value }))
-                  }
-                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">
-                  Warehouse
-                </label>
-                <select
-                  value={createProduct?.warehouseId || ""}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      warehouseId: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Warehouse</option>
-                  {isLoadingWarehouse ? (
-                    <option disabled>Loading...</option>
-                  ) : (
-                    warehouses?.map((w) => (
-                      <option key={w.Id} value={w.Id}>
-                        {w.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Supplier</label>
-                <select
-                  value={createProduct?.supplierId || ""}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      supplierId: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Supplier</option>
-                  {isLoadingSupplier ? (
-                    <option disabled>Loading...</option>
-                  ) : (
-                    suppliers?.map((s) => (
-                      <option key={s.Id} value={s.Id}>
-                        {s.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Quantity</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={createProduct.quantity}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      quantity: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Note</label>
-                <textarea
-                  value={createProduct?.note || ""}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      note: e.target.value,
-                    })
-                  }
-                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                  onClick={handleModalClose1}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Note / Status Modal (your isModalOpen2) */}
-      {isModalOpen2 && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">
-              Request Delete
-            </h2>
-
-            {role === "superAdmin" ? (
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Status</label>
-                <select
-                  value={currentProduct?.status || ""}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      status: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Status</option>
-                  <option value="Active">Active</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Pending">Pending</option>
-                </select>
-              </div>
-            ) : (
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Note</label>
-                <textarea
-                  value={currentProduct?.note || ""}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      note: e.target.value,
-                    })
-                  }
-                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-            )}
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
-                onClick={handleUpdateProduct1}
-                type="button"
-              >
-                Save
-              </button>
-              <button
-                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                onClick={handleModalClose2}
-                type="button"
-              >
-                Cancel
-              </button>
+      <Modal
+        isOpen={isModalOpen1}
+        onClose={handleModalClose1}
+        title="Add Purchase Requisition"
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={handleCreateProduct} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Product</label>
+              <Select
+                options={productDropdownOptions}
+                value={productDropdownOptions.find(o => o.value === String(createProduct.productId)) || null}
+                onChange={(selected) => setCreateProduct({ ...createProduct, productId: selected?.value || "" })}
+                placeholder="Select Product"
+                isClearable
+                className="text-black"
+                styles={selectStyles}
+                isDisabled={isLoadingAllProducts}
+              />
             </div>
-          </motion.div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date</label>
+              <input
+                type="date"
+                value={createProduct.date}
+                onChange={(e) => setCreateProduct({ ...createProduct, date: e.target.value })}
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Warehouse</label>
+              <select
+                value={createProduct.warehouseId}
+                onChange={(e) => setCreateProduct({ ...createProduct, warehouseId: e.target.value })}
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                required
+              >
+                <option value="">Select Warehouse</option>
+                {warehouses?.map(w => <option key={w.Id} value={w.Id}>{w.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Supplier</label>
+              <select
+                value={createProduct.supplierId}
+                onChange={(e) => setCreateProduct({ ...createProduct, supplierId: e.target.value })}
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                required
+              >
+                <option value="">Select Supplier</option>
+                {suppliers?.map(s => <option key={s.Id} value={s.Id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Quantity</label>
+              <input
+                type="number"
+                step="0.01"
+                value={createProduct.quantity}
+                onChange={(e) => setCreateProduct({ ...createProduct, quantity: e.target.value })}
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Note</label>
+            <textarea
+              value={createProduct.note}
+              onChange={(e) => setCreateProduct({ ...createProduct, note: e.target.value })}
+              className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              rows={3}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={handleModalClose1}
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Submit Requisition
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Note / Status Modal */}
+      <Modal
+        isOpen={isModalOpen2 && !!currentProduct}
+        onClose={handleModalClose2}
+        title={role === "superAdmin" ? "Update Status" : "Request Delete"}
+      >
+        <div className="space-y-6">
+          {role === "superAdmin" ? (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+              <select
+                value={currentProduct?.status || ""}
+                onChange={(e) => setCurrentProduct({ ...currentProduct, status: e.target.value })}
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              >
+                <option value="Active">Active</option>
+                <option value="Approved">Approved</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Reason for Deletion</label>
+              <textarea
+                value={currentProduct?.note || ""}
+                onChange={(e) => setCurrentProduct({ ...currentProduct, note: e.target.value })}
+                className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                rows={4}
+                placeholder="Briefly explain why this requisition should be deleted..."
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              onClick={handleModalClose2}
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleUpdateProduct1}
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Confirm Changes
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
+
+      {/* Note View Modal */}
+      <Modal
+        isOpen={isNoteModalOpen}
+        onClose={handleNoteModalClose}
+        title="Requisition Note"
+      >
+        <div className="space-y-6">
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+            <p className="text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {noteContent}
+            </p>
+          </div>
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              onClick={handleNoteModalClose}
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </Modal>
     </motion.div>
   );
 };

@@ -10,6 +10,7 @@ import {
   useUpdateBuyerMutation,
 } from "../../features/buyer/buyer";
 import Select from "react-select";
+import Modal from "../common/Modal";
 
 const BuyersTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -191,45 +192,46 @@ const BuyersTable = () => {
 
   return (
     <motion.div
-      className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
-      initial={{ opacity: 0, y: 20 }}
+      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
+      transition={{ duration: 0.25 }}
     >
-      <div className="my-6 flex justify-start">
+      <div className="my-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
+          className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
           onClick={handleAddProduct}
         >
-          Add <Plus size={18} className="ms-2" />
+          Add <Plus size={18} className="ml-2" />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
-        <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">Start Date:</label>
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-4 gap-4 items-end w-full">
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Start Date</label>
           <input
             type="date"
+            value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="border border-gray-300 rounded p-1 text-black bg-white"
+            className="h-11 px-3 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           />
         </div>
-        <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">End Date:</label>
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">End Date</label>
           <input
             type="date"
+            value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="border border-gray-300 rounded p-1 text-black bg-white"
+            className="h-11 px-3 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
           />
         </div>
 
-        <div className="flex items-center justify-center">
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Buyer</label>
           <Select
             options={buyerOptions}
-            value={buyerOptions.find(
-              (option) => option.value === currentBuyer?.buyerId,
-            )} // Optional chaining ব্যবহার করা হলো
-            onChange={(selectedOption) => setBuyerId(selectedOption?.value)}
+            value={buyerOptions.find((option) => option.value === buyerId)}
+            onChange={(selectedOption) => setBuyerId(selectedOption?.value || "")}
             placeholder="Select Buyer"
             isClearable
             className="text-black"
@@ -237,32 +239,32 @@ const BuyersTable = () => {
         </div>
 
         <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
+          className="h-11 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 transition rounded-xl px-4 text-sm font-semibold"
           onClick={clearFilters}
         >
           Clear Filters
         </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead>
+      <div className="overflow-x-auto mt-6">
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Due Amount
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Remarks
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-700">
+          <tbody className="divide-y divide-slate-200 bg-white">
             {buyers.map((product) => (
               <motion.tr
                 key={product.id}
@@ -270,28 +272,32 @@ const BuyersTable = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                   {product.name}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(product.due_amount || 0).toFixed(2)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {product.remarks}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  <button
-                    className="text-indigo-400 hover:text-indigo-300 mr-2"
-                    onClick={() => handleEditClick(product)}
-                  >
-                    <Edit size={18} />
-                  </button>
-                  <button
-                    className="text-red-400 hover:text-red-300"
-                    onClick={() => handleDeleteProduct(product.Id)}
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex items-center gap-3">
+                    <button
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-indigo-50 transition"
+                      onClick={() => handleEditClick(product)}
+                      title="Edit"
+                    >
+                      <Edit size={18} className="text-indigo-600" />
+                    </button>
+                    <button
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
+                      onClick={() => handleDeleteProduct(product.Id)}
+                      title="Delete"
+                    >
+                      <Trash2 size={18} className="text-rose-600" />
+                    </button>
+                  </div>
                 </td>
               </motion.tr>
             ))}
@@ -299,22 +305,26 @@ const BuyersTable = () => {
         </table>
       </div>
 
-      <div className="flex items-center justify-center space-x-2 mt-6">
+      <div className="flex items-center justify-center flex-wrap gap-2 mt-6">
         <button
           onClick={handlePreviousSet}
           disabled={startPage === 1}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
           Prev
         </button>
 
         {[...Array(endPage - startPage + 1)].map((_, index) => {
           const pageNum = startPage + index;
+          const active = pageNum === currentPage;
           return (
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-3 py-2 text-white rounded-md ${pageNum === currentPage ? "bg-indigo-600" : "bg-indigo-500 hover:bg-indigo-400"}`}
+              className={`px-4 py-2 rounded-xl border transition ${active
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                }`}
             >
               {pageNum}
             </button>
@@ -324,123 +334,109 @@ const BuyersTable = () => {
         <button
           onClick={handleNextSet}
           disabled={endPage === totalPages}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
           Next
         </button>
       </div>
 
-      {/* Modal for editing product */}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h2 className="text-lg font-semibold text-white">Edit Buyer</h2>
-            <div className="mt-4">
-              <label className="block text-sm text-white">Name:</label>
-              <input
-                type="text"
-                value={currentBuyer?.name}
-                onChange={(e) =>
-                  setCurrentBuyer({ ...currentBuyer, name: e.target.value })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-              />
-            </div>
-            {/* <div className='mt-4'>
-                            <label className='block text-sm text-white'>Due Amount:</label>
-                            <input type='number' value={currentBuyer?.due_amount} onChange={(e) => setCurrentBuyer({ ...currentBuyer, due_amount: e.target.value })} className='border border-gray-300 rounded p-2 w-full mt-1 text-black' />
-                        </div> */}
-            <div className="mt-4">
-              <label className="block text-sm text-white">Remarks:</label>
-              <textarea
-                value={currentBuyer?.remarks}
-                onChange={(e) =>
-                  setCurrentBuyer({ ...currentBuyer, remarks: e.target.value })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-                rows={4} // You can adjust the number of rows as needed
-              />
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
-                onClick={handleUpdateProduct}
-              >
-                Save
-              </button>
-              <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
-                onClick={handleModalClose}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      {/* ✅ Edit Modal */}
+      <Modal
+        isOpen={isModalOpen && !!currentBuyer}
+        onClose={handleModalClose}
+        title="Edit Buyer"
+        maxWidth="max-w-lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+            <input
+              type="text"
+              value={currentBuyer?.name || ""}
+              onChange={(e) =>
+                setCurrentBuyer({ ...currentBuyer, name: e.target.value })
+              }
+              className="h-11 px-3 border border-slate-200 rounded-xl w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Remarks</label>
+            <textarea
+              value={currentBuyer?.remarks || ""}
+              onChange={(e) =>
+                setCurrentBuyer({ ...currentBuyer, remarks: e.target.value })
+              }
+              className="min-h-[100px] border border-slate-200 rounded-xl p-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              rows={4}
+            />
+          </div>
 
-      {/* Modal for adding product */}
-      {isModalOpen1 && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h2 className="text-lg font-semibold text-white">Add Buyer</h2>
-            <form onSubmit={handlecreateBuyer}>
-              <div className="mt-4">
-                <label className="block text-sm text-white">Name:</label>
-                <input
-                  type="text"
-                  value={createBuyer.name}
-                  onChange={(e) =>
-                    setCreateBuyer({ ...createBuyer, name: e.target.value })
-                  }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-                  required
-                />
-              </div>
-              {/* <div className='mt-4'>
-                                <label className='block text-sm text-white'>Due Amount:</label>
-                                <input type='number' value={createBuyer.due_amount} onChange={(e) => setCreateBuyer({ ...createBuyer, due_amount: parseInt(e.target.value) })} className='border border-gray-300 rounded p-2 w-full mt-1 text-black' required />
-                            </div> */}
-              <div className="mt-4">
-                <label className="block text-sm text-white">Remarks:</label>
-                <textarea
-                  value={createBuyer?.remarks}
-                  onChange={(e) =>
-                    setCreateBuyer({ ...createBuyer, remarks: e.target.value })
-                  }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-                  rows={4} // You can adjust the number of rows as needed
-                />
-              </div>
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
-                  onClick={handleModalClose1}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
+          <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+              onClick={handleModalClose}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
+              onClick={handleUpdateProduct}
+            >
+              Save Changes
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
+
+      {/* ✅ Add Modal */}
+      <Modal
+        isOpen={isModalOpen1}
+        onClose={handleModalClose1}
+        title="Add New Buyer"
+        maxWidth="max-w-lg"
+      >
+        <form onSubmit={handlecreateBuyer} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+            <input
+              type="text"
+              value={createBuyer.name}
+              onChange={(e) =>
+                setCreateBuyer({ ...createBuyer, name: e.target.value })
+              }
+              className="h-11 px-3 border border-slate-200 rounded-xl w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Remarks</label>
+            <textarea
+              value={createBuyer?.remarks || ""}
+              onChange={(e) =>
+                setCreateBuyer({ ...createBuyer, remarks: e.target.value })
+              }
+              className="min-h-[100px] border border-slate-200 rounded-xl p-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              rows={4}
+            />
+          </div>
+          <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+              onClick={handleModalClose1}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
+            >
+              Add Buyer
+            </button>
+          </div>
+        </form>
+      </Modal>
     </motion.div>
   );
 };

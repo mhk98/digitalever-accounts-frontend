@@ -11,6 +11,7 @@ export const damageRepairApi = baseApi.injectEndpoints({
       invalidatesTags: [
         { type: "DamageRepair", id: "LIST" },
         { type: "DamageProduct", id: "LIST" }, // ✅ receive stock affected
+        { type: "DamageStock", id: "LIST" }, // ✅ receive stock affected
       ],
     }),
 
@@ -24,13 +25,14 @@ export const damageRepairApi = baseApi.injectEndpoints({
         { type: "DamageRepair", id: "LIST" },
 
         { type: "DamageProduct", id: "LIST" }, // ✅ stock return/update
+        { type: "DamageStock", id: "LIST" }, // ✅ stock return/update
       ],
     }),
 
     updateDamageRepair: build.mutation({
       query: ({ id, data }) => ({
         url: `/damage-repair/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [
@@ -38,6 +40,7 @@ export const damageRepairApi = baseApi.injectEndpoints({
         { type: "DamageRepair", id: "LIST" },
 
         { type: "DamageProduct", id: "LIST" }, // ✅ if update changes qty/status
+        { type: "DamageStock", id: "LIST" }, // ✅ if update changes qty/status
       ],
     }),
 
@@ -56,12 +59,12 @@ export const damageRepairApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-              { type: "DamageRepair", id: "LIST" },
-              ...result.data.map((r) => ({
-                type: "DamageRepair",
-                id: r.Id,
-              })),
-            ]
+            { type: "DamageRepair", id: "LIST" },
+            ...result.data.map((r) => ({
+              type: "DamageRepair",
+              id: r.Id,
+            })),
+          ]
           : [{ type: "DamageRepair", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),

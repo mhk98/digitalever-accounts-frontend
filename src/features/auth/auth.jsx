@@ -8,7 +8,7 @@
 // export const authApi = createApi({
 //   reducerPath: "authApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " http://localhost:5000/api/v1/",
+//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 
 //     // This will attach the token to every request that requires authorization
 //     prepareHeaders: (headers) => {
@@ -50,7 +50,7 @@
 //     userUpdate: build.mutation({
 //       query: ({ id, data }) => ({
 //         url: `/user/${id}`,
-//         method: "PATCH",
+//         method: "PUT",
 //         body: data,
 //       }),
 //       invalidatesTags: ["auth"],
@@ -93,7 +93,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1",
+    baseUrl: "https://apikafela.digitalever.com.bd/api/v1",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -132,7 +132,7 @@ export const authApi = createApi({
     userUpdate: build.mutation({
       query: ({ id, data }) => ({
         url: `/user/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data, // FormData যাবে
       }),
       // ✅ Update হলে singleUser auto refetch হবে

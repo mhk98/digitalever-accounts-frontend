@@ -21,12 +21,12 @@ export const inventoryOverviewApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-              { type: "InventoryOverview", id: "LIST" },
-              ...result.data.map((r) => ({
-                type: "InventoryOverview",
-                id: r.Id,
-              })),
-            ]
+            { type: "InventoryOverview", id: "LIST" },
+            ...result.data.map((r) => ({
+              type: "InventoryOverview",
+              id: r.Id,
+            })),
+          ]
           : [{ type: "InventoryOverview", id: "LIST" }],
 
       refetchOnMountOrArgChange: true,
@@ -50,7 +50,7 @@ export const inventoryOverviewApi = baseApi.injectEndpoints({
     updateInventoryOverview: build.mutation({
       query: ({ id, data }) => ({
         url: `/inventory-master/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [

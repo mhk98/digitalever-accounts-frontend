@@ -1,24 +1,30 @@
 import { motion } from "framer-motion";
-import { Trash2 } from "lucide-react";
+import { Trash2, AlertTriangle } from "lucide-react";
 
 const DangerZone = () => {
 	return (
 		<motion.div
-			className='bg-red-900 bg-opacity-50 backdrop-filter backdrop-blur-lg shadow-lg rounded-xl p-6 border border-red-700 mb-8'
-			initial={{ opacity: 0, y: 20 }}
+			className='bg-rose-50 rounded-3xl p-6 sm:p-8 border border-rose-100 shadow-sm shadow-rose-100/50 mb-8 overflow-hidden relative group'
+			initial={{ opacity: 0, y: 10 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.5, delay: 0.2 }}
+			transition={{ duration: 0.3 }}
 		>
-			<div className='flex items-center mb-4'>
-				<Trash2 className='text-red-400 mr-3' size={24} />
-				<h2 className='text-xl font-semibold text-gray-100'>Danger Zone</h2>
+			<div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+				<AlertTriangle size={120} className="text-rose-600" />
 			</div>
-			<p className='text-gray-300 mb-4'>Permanently delete your account and all of your content.</p>
+
+			<div className='flex items-center gap-4 mb-4 relative z-10'>
+				<div className="h-10 w-10 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-600 border border-rose-200/50">
+					<Trash2 size={20} />
+				</div>
+				<h2 className='text-lg font-black text-rose-900 tracking-tight'>Destructive Actions</h2>
+			</div>
+			<p className='text-rose-600/70 mb-8 text-sm font-medium italic relative z-10'>Warning: These operations are irreversible. Initiating a system purge will permanently remove all associated record clusters.</p>
+
 			<button
-				className='bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded 
-      transition duration-200'
+				className='relative z-10 w-full sm:w-auto px-10 py-3 bg-rose-600 hover:bg-rose-700 text-white font-black text-sm rounded-2xl transition duration-200 active:scale-95 shadow-xl shadow-rose-100'
 			>
-				Delete Account
+				Purge System Account
 			</button>
 		</motion.div>
 	);

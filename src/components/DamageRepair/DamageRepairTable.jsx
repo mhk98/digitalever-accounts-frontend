@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
-import { useGetAllDamageProductWithoutQueryQuery } from "../../features/damageProduct/damageProduct";
 import {
   useDeleteDamageRepairMutation,
   useGetAllDamageRepairQuery,
@@ -13,6 +12,7 @@ import {
 } from "../../features/damageRepair/damageRepair";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
+import { useGetAllDamageStockWithoutQueryQuery } from "../../features/damageStock/damageStock";
 
 const DamageRepairTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -56,7 +56,7 @@ const DamageRepairTable = () => {
     isLoading: receivedLoading,
     isError: receivedError,
     error: receivedErrObj,
-  } = useGetAllDamageProductWithoutQueryQuery();
+  } = useGetAllDamageStockWithoutQueryQuery();
 
   const receivedData = receivedRes?.data || [];
 
@@ -572,7 +572,9 @@ const DamageRepairTable = () => {
                   {rp.date}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.date ? new Date(rp.edAt).toLocaleDateString() : "-"}
+                  {rp.updatedAt
+                    ? new Date(rp.updatedAt).toLocaleDateString()
+                    : "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                   {resolveProductName(rp)}
@@ -584,7 +586,7 @@ const DamageRepairTable = () => {
                   {rp?.warehouse?.name || "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.quantity || 0).toFixed(2)}
+                  {Number(rp.quantity || 0)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.purchase_price || 0).toFixed(2)}
@@ -704,11 +706,10 @@ const DamageRepairTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
+              className={`px-4 py-2 rounded-xl border transition ${active
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                }`}
             >
               {pageNum}
             </button>

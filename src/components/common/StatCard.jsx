@@ -67,17 +67,19 @@ const StatCard = ({ name, icon: Icon, value, iconBg, iconColor }) => {
         p-4 hover:shadow-md transition
       "
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-500">{name}</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{value}</p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-slate-500 truncate">{name}</p>
+          <p className="mt-1 sm:mt-2 text-xl sm:text-2xl font-bold text-slate-900 truncate">
+            {value}
+          </p>
         </div>
 
         <div
-          className="w-11 h-11 rounded-2xl flex items-center justify-center"
+          className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-sm"
           style={{ backgroundColor: iconBg || "#F1F5F9" }}
         >
-          <Icon size={20} style={{ color: iconColor || "#0F172A" }} />
+          <Icon size={18} className="sm:size-5" style={{ color: iconColor || "#0F172A" }} />
         </div>
       </div>
     </motion.div>

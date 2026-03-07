@@ -1,791 +1,658 @@
 import { motion } from "framer-motion";
-import { Download, Edit, FileDown, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Download, Edit, FileDown, Plus, Trash2, X, ChevronLeft, ChevronRight, ReceiptText, Calendar, User, Package } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import Select from "react-select";
 import {
   useDeletePurchaseMutation,
   useGetAllPurchaseQuery,
   useInsertPurchaseMutation,
   useUpdatePurchaseMutation,
 } from "../../features/purchase/purchase";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable"; // Import autoTable
-import * as XLSX from "xlsx";
-import Select from "react-select";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
+import Modal from "../common/Modal";
+
 const PurchaseTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPurchase, setCurrentPurchase] = useState(null);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
+
   const [createPurchase, setCreatePurchase] = useState({
-    product_name: "",
-    supplier_name: "",
-    transaction_date: "",
-    quantity: 0,
-    rate: 0,
-    paid_amount: 0,
-    due_amount: 0,
-    remarks: "",
+    productId: "",
     supplierId: "",
+    transaction_date: new Date().toISOString().split("T")[0],
+    quantity: "",
+    rate: "",
+    paid_amount: "",
+    remarks: "",
   });
+
   const [purchases, setPurchases] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [supplierId, setSupplierId] = useState("");
+  const [filterSupplierId, setFilterSupplierId] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1); // initial value as 1
+  const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
-  // eslint-disable-next-line no-unused-vars
-  const [itemsPerPage, setItemsPerPage] = useState(10); // 2 items per page
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const updatePagesPerSet = () => {
-      if (window.innerWidth < 640) {
-        setPagesPerSet(5);
-      } else if (window.innerWidth < 1024) {
-        setPagesPerSet(7);
-      } else {
-        setPagesPerSet(10);
-      }
+      if (window.innerWidth < 640) setPagesPerSet(5);
+      else if (window.innerWidth < 1024) setPagesPerSet(7);
+      else setPagesPerSet(10);
     };
-
     updatePagesPerSet();
     window.addEventListener("resize", updatePagesPerSet);
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
 
-  console.log("supplierId", supplierId);
-
-  const { data, isLoading, isError, error } = useGetAllPurchaseQuery({
-    startDate,
-    endDate,
-    supplierId,
+  const queryArgs = useMemo(() => ({
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    supplierId: filterSupplierId || undefined,
     page: currentPage,
     limit: itemsPerPage,
-  });
+  }), [startDate, endDate, filterSupplierId, currentPage, itemsPerPage]);
+
+  const { data, isLoading, refetch } = useGetAllPurchaseQuery(queryArgs);
 
   useEffect(() => {
-    if (isError) {
-      console.error("Error fetching product data", error);
-    } else if (!isLoading && data) {
-      setPurchases(data.data);
-      setTotalPages(Math.ceil(data.meta.count / itemsPerPage)); // totalPages is calculated dynamically from API response
+    if (!isLoading && data) {
+      setPurchases(data.data || []);
+      setTotalPages(Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)));
     }
-  }, [
-    data,
-    isLoading,
-    isError,
-    error,
-    currentPage,
-    itemsPerPage,
-    startDate,
-    endDate,
-    supplierId,
-  ]);
+  }, [data, isLoading, itemsPerPage]);
 
-  const handleEditClick = (product) => {
-    console.log("editPurchase", product);
-    setCurrentPurchase(product);
-    setIsModalOpen(true);
-  };
+  // Suppliers & Products for Selects
+  const { data: supplierRes } = useGetAllSupplierWithoutQueryQuery();
+  const { data: productRes } = useGetAllProductWithoutQueryQuery();
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-  };
+  const supplierOptions = useMemo(() =>
+    (supplierRes?.data || []).map(s => ({ value: s.Id, label: s.name })),
+    [supplierRes]
+  );
 
-  const handleAddProduct = () => setIsModalOpen1(true);
-  const handleModalClose1 = () => {
-    setIsModalOpen1(false);
-  };
+  const productOptions = useMemo(() =>
+    (productRes?.data || []).map(p => ({ value: p.Id, label: p.name })),
+    [productRes]
+  );
 
   const [insertPurchase] = useInsertPurchaseMutation();
-  const handlecreatePurchase = async (e) => {
+  const handleCreatePurchase = async (e) => {
     e.preventDefault();
-
-    const purchaseData = {
-      transaction_date: createPurchase.transaction_date,
-      quantity: parseFloat(createPurchase.quantity),
-      rate: parseFloat(createPurchase.rate),
-      paid_amount: parseFloat(createPurchase.paid_amount),
-      remarks: createPurchase.remarks,
-      supplierId: createPurchase.supplierId,
-      productId: createPurchase.productId,
-    };
-
-    console.log("purchaseData", purchaseData);
-
     try {
-      const res = await insertPurchase(purchaseData).unwrap();
+      const res = await insertPurchase({
+        ...createPurchase,
+        quantity: Number(createPurchase.quantity),
+        rate: Number(createPurchase.rate),
+        paid_amount: Number(createPurchase.paid_amount),
+      }).unwrap();
       if (res.success) {
-        toast.success("Successfully created purchase");
-        // window.location.reload();
+        toast.success("Purchase recorded successfully");
         setIsModalOpen1(false);
-      } else {
-        toast.error("Insert failed!");
+        setCreatePurchase({
+          productId: "",
+          supplierId: "",
+          transaction_date: new Date().toISOString().split("T")[0],
+          quantity: "",
+          rate: "",
+          paid_amount: "",
+          remarks: "",
+        });
+        refetch();
       }
-    } catch (error) {
-      console.log(error);
-      toast.error(error.data.message);
+    } catch (err) {
+      toast.error(err?.data?.message || "Creation failed");
     }
   };
 
-  const [updateProduct] = useUpdatePurchaseMutation();
-  const handleUpdateProduct = async () => {
-    const updatedProduct = {
-      transaction_date: currentPurchase.transaction_date,
-      quantity: parseFloat(currentPurchase.quantity),
-      rate: parseFloat(currentPurchase.rate),
-      paid_amount: parseFloat(currentPurchase.paid_amount),
-      remarks: currentPurchase.remarks,
-      supplierId: currentPurchase.supplierId,
-      productId: currentPurchase.productId,
-    };
-
+  const [updatePurchase] = useUpdatePurchaseMutation();
+  const handleUpdatePurchase = async (e) => {
+    e.preventDefault();
     try {
-      const res = await updateProduct({
+      const res = await updatePurchase({
         id: currentPurchase.Id,
-        data: updatedProduct,
+        data: {
+          productId: currentPurchase.productId,
+          supplierId: currentPurchase.supplierId,
+          transaction_date: currentPurchase.transaction_date,
+          quantity: Number(currentPurchase.quantity),
+          rate: Number(currentPurchase.rate),
+          paid_amount: Number(currentPurchase.paid_amount),
+          remarks: currentPurchase.remarks,
+        },
       }).unwrap();
       if (res.success) {
-        toast.success("Successfully updated purchase!");
-        // window.location.reload();
+        toast.success("Purchase updated successfully");
         setIsModalOpen(false);
-      } else {
-        toast.error("Update failed!");
+        refetch();
       }
-    } catch (error) {
-      console.log(error);
-      toast.error(error.data.message);
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed");
     }
   };
 
   const [deletePurchase] = useDeletePurchaseMutation();
-  const handleDeleteProduct = async (id) => {
-    const confirmDelete = window.confirm(
-      "Do you want to delete this purchase?",
-    );
-    if (confirmDelete) {
+  const handleDeletePurchase = async (id) => {
+    if (window.confirm("Are you sure you want to delete this purchase record?")) {
       try {
         const res = await deletePurchase(id).unwrap();
         if (res.success) {
-          toast.success("Successfully deleted purchase!");
-          // window.location.reload();
-        } else {
-          toast.error("Delete failed!");
+          toast.success("Deleted successfully");
+          refetch();
         }
-      } catch (error) {
-        toast.error(error.data.message);
+      } catch (err) {
+        toast.error(err?.data?.message || "Delete failed");
       }
-    } else {
-      toast.info("Delete action was cancelled.");
     }
   };
 
-  // New function to clear filters
-  const clearFilters = () => {
-    setStartDate("");
-    setEndDate("");
-    setSupplierId("");
-  };
-
-  const [suppliers, setSuppliers] = useState([]);
-
-  const {
-    data: data1,
-    isLoading: isLoading1,
-    isError: isError1,
-    error: error1,
-  } = useGetAllSupplierWithoutQueryQuery();
-
-  useEffect(() => {
-    if (isError1) {
-      console.error("Error fetching purchase data", error1);
-    } else if (!isLoading1 && data1) {
-      setSuppliers(data1.data);
-    }
-  }, [data1, isLoading1, isError1, error1]);
-
-  console.log("suppliers", suppliers);
-
-  const [products, setProducts] = useState([]);
-
-  const {
-    data: data2,
-    isLoading: isLoading2,
-    isError: isError2,
-    error: error2,
-  } = useGetAllProductWithoutQueryQuery();
-
-  useEffect(() => {
-    if (isError2) {
-      console.error("Error fetching purchase data", error2);
-    } else if (!isLoading2 && data2) {
-      setProducts(data2.data);
-    }
-  }, [data2, isLoading2, isError2, error2]);
-
-  console.log("suppliers", suppliers);
-
-  const handleDownload = (product) => {
+  const handleDownloadPDF = (p) => {
     const doc = new jsPDF();
+    doc.setFontSize(22);
+    doc.setTextColor(79, 70, 229); // Indigo-600
+    doc.text("PURCHASE INVOICE", 105, 20, { align: "center" });
 
-    // Add Invoice Header
-    doc.setFontSize(20);
-    doc.text("Purchase Record", 14, 20);
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139); // Slate-500
+    doc.text(`Invoice ID: ${p.Id}`, 14, 35);
+    doc.text(`Date: ${p.transaction_date}`, 14, 40);
 
-    // Add Invoice Details with reduced bottom margin
-    doc.setFontSize(12);
-    doc.text(`Record #${product.Id}`, 14, 30); // Changed from 60 to 30
-    // doc.text(`Date: ${product.supplier_name}`, 14, 35); // Changed from 65 to 35
-    doc.text(`Date: ${product.transaction_date}`, 14, 35); // Changed from 65 to 35
-
-    const data = [
+    const tableData = [
+      ["Product", "Supplier", "Quantity", "Rate", "Total", "Paid", "Due"],
       [
-        "Product Name",
-        "Supplier Name",
-        "Quantity",
-        "Price",
-        "Paid Amount",
-        "Due Amount",
-      ],
-      [
-        product.product_name,
-        product.supplier_name,
-        product.quantity,
-        product.price,
-        product.paid_amount,
-        product.due_amount,
-      ],
+        p.product_name,
+        p.supplier_name,
+        `${Number(p.quantity).toFixed(2)}`,
+        `৳${Number(p.rate).toLocaleString()}`,
+        `৳${Number(p.price).toLocaleString()}`,
+        `৳${Number(p.paid_amount).toLocaleString()}`,
+        `৳${Number(p.due_amount).toLocaleString()}`
+      ]
     ];
 
     autoTable(doc, {
-      head: data.slice(0, 1), // Header row
-      body: data.slice(1), // Data rows
-      startY: 50, // Adjust starting position for the table to accommodate reduced spacing
+      head: [tableData[0]],
+      body: [tableData[1]],
+      startY: 50,
+      theme: "grid",
+      headStyles: { fillGray: [79, 70, 229], textColor: 255 },
+      styles: { fontSize: 9, cellPadding: 5 }
     });
 
-    doc.save(`Purchaserecord.pdf`);
-  };
-
-  // Function to export data to Excel
-  const exportToExcel = () => {
-    // Extract the "data" array from the JSON response
-    const jsonData = purchases;
-
-    // Create a worksheet from the JSON data
-    const ws = XLSX.utils.json_to_sheet(jsonData);
-
-    // Create a new workbook and append the worksheet to it
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-
-    // Generate Excel file and trigger download
-    XLSX.writeFile(wb, "purchase.xlsx");
-  };
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    if (pageNumber < startPage) {
-      setStartPage(pageNumber);
-    } else if (pageNumber > endPage) {
-      setStartPage(pageNumber - pagesPerSet + 1);
+    if (p.remarks) {
+      doc.text("Remarks:", 14, doc.lastAutoTable.finalY + 15);
+      doc.setFontSize(9);
+      doc.setTextColor(30, 41, 59);
+      doc.text(p.remarks, 14, doc.lastAutoTable.finalY + 22);
     }
+
+    doc.save(`Purchase_${p.Id}.pdf`);
   };
 
-  const handlePreviousSet = () =>
-    setStartPage((prevStart) => Math.max(prevStart - pagesPerSet, 1));
-  const handleNextSet = () =>
-    setStartPage((prevStart) =>
-      Math.min(prevStart + pagesPerSet, totalPages - pagesPerSet + 1),
-    );
+  const exportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(purchases);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Purchases");
+    XLSX.writeFile(wb, `Purchases_Export_${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
 
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
+  const handlePageChange = (p) => {
+    setCurrentPage(p);
+    if (p < startPage) setStartPage(p);
+    else if (p > endPage) setStartPage(p - pagesPerSet + 1);
+  };
 
-  const productOptions = products.map((product) => ({
-    value: product.Id,
-    label: product.name,
-  }));
+  const handlePreviousSet = () => setStartPage((p) => Math.max(p - pagesPerSet, 1));
+  const handleNextSet = () => setStartPage((p) => Math.min(p + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)));
 
-  const supplierOptions = suppliers.map((supplier) => ({
-    value: supplier.Id,
-    label: supplier.name,
-  }));
-
-  console.log("productOptions", productOptions);
+  const selectStyles = {
+    control: (base, state) => ({
+      ...base,
+      minHeight: 44,
+      borderRadius: 14,
+      borderColor: state.isFocused ? "#6366f1" : "#e2e8f0",
+      boxShadow: state.isFocused ? "0 0 0 4px rgba(99,102,241,0.1)" : "none",
+      "&:hover": { borderColor: "#cbd5e1" },
+      backgroundColor: "white",
+    }),
+    placeholder: (base) => ({ ...base, color: "#94a3b8", fontSize: "14px" }),
+    singleValue: (base) => ({ ...base, color: "#1e293b", fontSize: "14px", fontWeight: "500" }),
+    menu: (base) => ({
+      ...base,
+      borderRadius: 14,
+      overflow: "hidden",
+      border: "1px solid #f1f5f9",
+      boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+      zIndex: 50
+    }),
+  };
 
   return (
     <motion.div
-      className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-sm rounded-3xl p-4 sm:p-8 border border-slate-100 mb-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
+      transition={{ duration: 0.3 }}
     >
-      <div className="my-6 flex flex-col md:flex-row justify-between items-center md:items-start gap-4">
-        <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
-          onClick={handleAddProduct}
-        >
-          Add <Plus size={18} className="ms-2" />
-        </button>
-        <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
-          onClick={exportToExcel}
-        >
-          Export <FileDown size={18} className="ms-2" />
-        </button>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Purchase Inventory</h2>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Manage and monitor all incoming product supplies</p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <button
+            onClick={exportToExcel}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all px-6 py-3 rounded-2xl text-sm font-bold active:scale-95"
+          >
+            <FileDown size={18} /> Export Excel
+          </button>
+          <button
+            onClick={() => setIsModalOpen1(true)}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition-all px-6 py-3 rounded-2xl text-sm font-bold shadow-xl shadow-indigo-100 active:scale-95"
+          >
+            <Plus size={18} /> Record Purchase
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
-        <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">Start Date:</label>
+      {/* Filters */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">From Date</label>
           <input
             type="date"
+            value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="border border-gray-300 rounded p-1 text-black bg-white"
-          />
-        </div>
-        <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">End Date:</label>
-          <input
-            type="date"
-            onChange={(e) => setEndDate(e.target.value)}
-            className="border border-gray-300 rounded p-1 text-black bg-white"
+            className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-medium text-sm"
           />
         </div>
 
-        <div className="flex items-center justify-center">
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">To Date</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-medium text-sm"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Supplier</label>
           <Select
             options={supplierOptions}
-            value={supplierOptions.find(
-              (option) => option.value === currentPurchase?.supplierId,
-            )} // Optional chaining ব্যবহার করা হলো
-            onChange={(selectedOption) => setSupplierId(selectedOption?.value)}
-            placeholder="Select Supplier"
+            value={supplierOptions.find(o => o.value === filterSupplierId) || null}
+            onChange={(s) => setFilterSupplierId(s?.value || "")}
+            placeholder="Search supplier..."
             isClearable
-            className="text-black"
+            styles={selectStyles}
           />
         </div>
 
         <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
-          onClick={clearFilters}
+          className="h-11 bg-white hover:bg-slate-100 text-slate-600 transition rounded-xl px-4 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 border border-slate-200"
+          onClick={() => { setStartDate(""); setEndDate(""); setFilterSupplierId(""); }}
         >
-          Clear Filters
+          <X size={16} /> Clear All
         </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead>
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Transaction Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Product Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Supplier Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Quantity
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Rate
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Total Price
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Paid Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Due Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Remarks
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-700">
-            {purchases.map((product) => (
-              <motion.tr
-                key={product.Id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
-                  {new Date(product.transaction_date).toLocaleDateString(
-                    "en-GB",
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
-                  {product.product_name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {product.supplier_name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {Number(product.quantity || 0).toFixed(3)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {Number(product.rate || 0).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {Number(product.price || 0).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {Number(product.paid_amount || 0).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {Number(product.due_amount || 0).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {product.remarks}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  <button
-                    className="text-indigo-400 hover:text-indigo-300 mr-2"
-                    onClick={() => handleDownload(product)}
-                  >
-                    <Download size={18} />
-                  </button>
-                  <button
-                    className="text-indigo-400 hover:text-indigo-300 mr-2"
-                    onClick={() => handleEditClick(product)}
-                  >
-                    <Edit size={18} />
-                  </button>
-                  <button
-                    className="text-red-400 hover:text-red-300"
-                    onClick={() => handleDeleteProduct(product.Id)}
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Table */}
+      <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-100">
+            <thead className="bg-slate-50/50">
+              <tr>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Transaction</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Item Details</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Financials</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Payments</th>
+                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {purchases.map((p) => (
+                <motion.tr
+                  key={p.Id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="hover:bg-indigo-50/30 transition-colors group"
+                >
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <div className="text-sm font-bold text-slate-900">{new Date(p.transaction_date).toLocaleDateString()}</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">ID: #{p.Id}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{p.product_name}</div>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                          {p.supplier_name}
+                        </span>
+                        <span className="text-xs font-bold text-slate-400">Qty: {Number(p.quantity).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-5 whitespace-nowrap font-medium">
+                    <div className="flex flex-col gap-1">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                        Rate: <span className="text-slate-900">৳{Number(p.rate).toLocaleString()}</span>
+                      </div>
+                      <div className="text-sm font-black text-indigo-600">
+                        ৳{Number(p.price).toLocaleString()}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
+                        <span className="text-[11px] font-bold text-slate-700">Paid: ৳{Number(p.paid_amount).toLocaleString()}</span>
+                      </div>
+                      {Number(p.due_amount) > 0 && (
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></div>
+                          <span className="text-[11px] font-black text-rose-600">Due: ৳{Number(p.due_amount).toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-5 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleDownloadPDF(p)}
+                        className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm active:scale-90"
+                        title="Download Invoice"
+                      >
+                        <Download size={16} />
+                      </button>
+                      <button
+                        onClick={() => { setCurrentPurchase(p); setIsModalOpen(true); }}
+                        className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm active:scale-90"
+                        title="Edit"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeletePurchase(p.Id)}
+                        className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition shadow-sm active:scale-90"
+                        title="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+
+          {isLoading && (
+            <div className="py-24 text-center">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 border-[3px] border-indigo-600/20 border-t-indigo-600"></div>
+            </div>
+          )}
+
+          {!isLoading && purchases.length === 0 && (
+            <div className="py-24 text-center text-slate-400">
+              <div className="text-4xl mb-4 opacity-20">📦</div>
+              <p className="font-bold text-sm italic">No purchase records found</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center justify-center space-x-2 mt-6">
-        <button
-          onClick={handlePreviousSet}
-          disabled={startPage === 1}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
-        >
-          Prev
-        </button>
-
-        {[...Array(endPage - startPage + 1)].map((_, index) => {
-          const pageNum = startPage + index;
-          return (
-            <button
-              key={pageNum}
-              onClick={() => handlePageChange(pageNum)}
-              className={`px-3 py-2 text-white rounded-md ${pageNum === currentPage ? "bg-indigo-600" : "bg-indigo-500 hover:bg-indigo-400"}`}
-            >
-              {pageNum}
-            </button>
-          );
-        })}
-
-        <button
-          onClick={handleNextSet}
-          disabled={endPage === totalPages}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
-        >
-          Next
-        </button>
-      </div>
-
-      {/* Modal for editing product */}
-      {isModalOpen && (
-        <div className="fixed inset-0 top-72 flex items-center justify-center bg-black bg-opacity-50">
-          <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+      {/* Pagination */}
+      <div className="flex flex-col sm:flex-row items-center justify-between mt-10 gap-6 px-2">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+          Showing Page <span className="text-indigo-600">{currentPage}</span> of <span className="text-slate-900">{totalPages}</span>
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePreviousSet}
+            disabled={startPage === 1}
+            className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
           >
-            <h2 className="text-lg font-semibold text-white">Edit Purchase</h2>
+            <ChevronLeft size={16} /> Prev
+          </button>
+          <div className="flex items-center gap-1.5">
+            {[...Array(endPage - startPage + 1)].map((_, index) => {
+              const pageNum = startPage + index;
+              const active = pageNum === currentPage;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${active ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100" : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
+                    }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            onClick={handleNextSet}
+            disabled={endPage === totalPages}
+            className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
+          >
+            Next <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-white">Product Name:</label>
+      {/* Modals */}
+      <Modal isOpen={isModalOpen1} onClose={() => setIsModalOpen1(false)} title="Add Purchase Record">
+        <form onSubmit={handleCreatePurchase} className="space-y-5 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1 flex items-center gap-1.5">
+                <Package size={12} className="text-indigo-500" /> Select Product
+              </label>
               <Select
                 options={productOptions}
-                value={productOptions.find(
-                  (option) => option.value === currentPurchase.productId,
-                )}
-                onChange={(selectedOption) =>
-                  setCurrentPurchase({
-                    ...currentPurchase,
-                    productId: selectedOption?.value,
-                  })
-                }
-                placeholder="Select Product"
-                isClearable
-                className="text-black"
+                value={productOptions.find(o => o.value === createPurchase.productId) || null}
+                onChange={(s) => setCreatePurchase({ ...createPurchase, productId: s?.value || "" })}
+                placeholder="Find product..."
+                styles={selectStyles}
+                required
               />
             </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-white">Supplier Name:</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1 flex items-center gap-1.5">
+                <User size={12} className="text-indigo-500" /> Select Supplier
+              </label>
               <Select
                 options={supplierOptions}
-                value={supplierOptions.find(
-                  (option) => option.value === currentPurchase.supplierId,
-                )}
-                onChange={(selectedOption) =>
-                  setCurrentPurchase({
-                    ...currentPurchase,
-                    supplierId: selectedOption?.value,
-                  })
-                }
-                placeholder="Select Supplier"
-                isClearable
-                className="text-black"
+                value={supplierOptions.find(o => o.value === createPurchase.supplierId) || null}
+                onChange={(s) => setCreatePurchase({ ...createPurchase, supplierId: s?.value || "" })}
+                placeholder="Find supplier..."
+                styles={selectStyles}
+                required
               />
             </div>
+          </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-white"> Date:</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1 flex items-center gap-1.5">
+                <Calendar size={12} className="text-indigo-500" /> Date
+              </label>
               <input
                 type="date"
-                value={currentPurchase?.transaction_date}
-                onChange={(e) =>
-                  setCurrentPurchase({
-                    ...currentPurchase,
-                    transaction_date: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded p-1 text-black bg-white"
+                required
+                value={createPurchase.transaction_date}
+                onChange={(e) => setCreatePurchase({ ...createPurchase, transaction_date: e.target.value })}
+                className="h-11 w-full px-4 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold text-sm"
               />
             </div>
-            <div className="mt-4">
-              <label className="block text-sm text-white">Quantity:</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1 flex items-center gap-1.5">
+                <ReceiptText size={12} className="text-indigo-500" /> Quantity
+              </label>
               <input
                 type="number"
-                value={currentPurchase?.quantity}
-                onChange={(e) =>
-                  setCurrentPurchase({
-                    ...currentPurchase,
-                    quantity: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                step="0.01"
+                required
+                value={createPurchase.quantity}
+                onChange={(e) => setCreatePurchase({ ...createPurchase, quantity: e.target.value })}
+                className="h-11 w-full px-4 rounded-xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold text-sm"
+                placeholder="0.00"
               />
             </div>
-            <div className="mt-4">
-              <label className="block text-sm text-white">Rate:</label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1 flex items-center gap-1.5">
+                <span className="text-indigo-500 font-black">৳</span> Rate / Unit
+              </label>
               <input
                 type="number"
-                value={currentPurchase?.rate}
-                onChange={(e) =>
-                  setCurrentPurchase({
-                    ...currentPurchase,
-                    rate: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                step="0.01"
+                required
+                value={createPurchase.rate}
+                onChange={(e) => setCreatePurchase({ ...createPurchase, rate: e.target.value })}
+                className="h-11 w-full px-4 rounded-xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold text-sm"
+                placeholder="0.00"
               />
             </div>
-            <div className="mt-4">
-              <label className="block text-sm text-white">Paid Amount:</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1 flex items-center gap-1.5">
+                <span className="text-emerald-500 font-black">৳</span> Amount Paid
+              </label>
               <input
                 type="number"
-                value={currentPurchase?.paid_amount}
-                onChange={(e) =>
-                  setCurrentPurchase({
-                    ...currentPurchase,
-                    paid_amount: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
+                step="0.01"
+                required
+                value={createPurchase.paid_amount}
+                onChange={(e) => setCreatePurchase({ ...createPurchase, paid_amount: e.target.value })}
+                className="h-11 w-full px-4 rounded-xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold text-sm"
+                placeholder="0.00"
               />
             </div>
-            {/* <div className='mt-4'>
-                            <label className='block text-sm text-white'>Due Amount:</label>
-                            <input type='number' value={currentPurchase?.due_amount} onChange={(e) => setCurrentPurchase({ ...currentPurchase, due_amount: e.target.value })} className='border border-gray-300 rounded p-2 w-full mt-1 text-black' />
-                        </div> */}
-            <div className="mt-4">
-              <label className="block text-sm text-white">Remarks:</label>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1">Remarks / Note</label>
+            <textarea
+              value={createPurchase.remarks}
+              onChange={(e) => setCreatePurchase({ ...createPurchase, remarks: e.target.value })}
+              className="w-full min-h-[80px] px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-medium text-sm resize-none"
+              placeholder="Add any extra details..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <button type="button" onClick={() => setIsModalOpen1(false)} className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition">Cancel</button>
+            <button type="submit" className="px-10 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100">Log Purchase</button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Edit Purchase Record">
+        {currentPurchase && (
+          <form onSubmit={handleUpdatePurchase} className="space-y-5 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1">Update Product</label>
+                <Select
+                  options={productOptions}
+                  value={productOptions.find(o => o.value === currentPurchase.productId) || null}
+                  onChange={(s) => setCurrentPurchase({ ...currentPurchase, productId: s?.value || "" })}
+                  styles={selectStyles}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1">Update Supplier</label>
+                <Select
+                  options={supplierOptions}
+                  value={supplierOptions.find(o => o.value === currentPurchase.supplierId) || null}
+                  onChange={(s) => setCurrentPurchase({ ...currentPurchase, supplierId: s?.value || "" })}
+                  styles={selectStyles}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1">Transaction Date</label>
+                <input
+                  type="date"
+                  required
+                  value={currentPurchase.transaction_date.split("T")[0]}
+                  onChange={(e) => setCurrentPurchase({ ...currentPurchase, transaction_date: e.target.value })}
+                  className="h-11 w-full px-4 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1">Update Quantity</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={currentPurchase.quantity}
+                  onChange={(e) => setCurrentPurchase({ ...currentPurchase, quantity: e.target.value })}
+                  className="h-11 w-full px-4 rounded-xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1">Unit Rate (৳)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={currentPurchase.rate}
+                  onChange={(e) => setCurrentPurchase({ ...currentPurchase, rate: e.target.value })}
+                  className="h-11 w-full px-4 rounded-xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1">Paid Amount (৳)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={currentPurchase.paid_amount}
+                  onChange={(e) => setCurrentPurchase({ ...currentPurchase, paid_amount: e.target.value })}
+                  className="h-11 w-full px-4 rounded-xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1">Maintenance Note</label>
               <textarea
-                value={currentPurchase?.remarks}
-                onChange={(e) =>
-                  setCurrentPurchase({
-                    ...currentPurchase,
-                    remarks: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-                rows={4} // You can adjust the number of rows as needed
-              />
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
-                onClick={handleUpdateProduct}
-              >
-                Save
-              </button>
-              <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
-                onClick={handleModalClose}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Modal for adding product */}
-      {isModalOpen1 && (
-        <div className="fixed inset-0 top-72  flex items-center justify-center bg-black bg-opacity-50">
-          <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h2 className="text-lg font-semibold text-white">Add Purchase</h2>
-
-            <div className="mt-4">
-              <label className="block text-sm text-white">Product Name:</label>
-              <Select
-                options={productOptions}
-                value={productOptions.find(
-                  (option) => option.value === createPurchase.productId,
-                )}
-                onChange={(selectedOption) =>
-                  setCreatePurchase({
-                    ...createPurchase,
-                    productId: selectedOption?.value,
-                  })
-                }
-                placeholder="Select Product"
-                isClearable
-                className="text-black"
+                value={currentPurchase.remarks}
+                onChange={(e) => setCurrentPurchase({ ...currentPurchase, remarks: e.target.value })}
+                className="w-full min-h-[80px] px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-medium text-sm resize-none"
               />
             </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-white">Supplier Name:</label>
-              <Select
-                options={supplierOptions}
-                value={supplierOptions.find(
-                  (option) => option.value === createPurchase.supplierId,
-                )}
-                onChange={(selectedOption) =>
-                  setCreatePurchase({
-                    ...createPurchase,
-                    supplierId: selectedOption?.value,
-                  })
-                }
-                placeholder="Select Supplier"
-                isClearable
-                className="text-black"
-              />
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition">Cancel</button>
+              <button type="submit" className="px-10 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100">Update Record</button>
             </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-white"> Date:</label>
-              <input
-                type="date"
-                value={createPurchase?.transaction_date}
-                onChange={(e) =>
-                  setCreatePurchase({
-                    ...createPurchase,
-                    transaction_date: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded p-1 text-black bg-white"
-              />
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-white">Quantity:</label>
-              <input
-                type="number"
-                value={createPurchase?.quantity}
-                onChange={(e) =>
-                  setCreatePurchase({
-                    ...createPurchase,
-                    quantity: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-              />
-            </div>
-            <div className="mt-4">
-              <label className="block text-sm text-white">Rate:</label>
-              <input
-                type="number"
-                value={createPurchase?.rate}
-                onChange={(e) =>
-                  setCreatePurchase({ ...createPurchase, rate: e.target.value })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-              />
-            </div>
-            <div className="mt-4">
-              <label className="block text-sm text-white">Paid Amount:</label>
-              <input
-                type="number"
-                value={createPurchase?.paid_amount}
-                onChange={(e) =>
-                  setCreatePurchase({
-                    ...createPurchase,
-                    paid_amount: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-              />
-            </div>
-            {/* <div className='mt-4'>
-                            <label className='block text-sm text-white'>Due Amount:</label>
-                            <input type='number' value={createPurchase?.due_amount} onChange={(e) => setCreatePurchase({ ...createPurchase, due_amount: e.target.value })} className='border border-gray-300 rounded p-2 w-full mt-1 text-black' />
-                        </div> */}
-            <div className="mt-4">
-              <label className="block text-sm text-white">Remarks:</label>
-              <textarea
-                value={createPurchase?.remarks}
-                onChange={(e) =>
-                  setCreatePurchase({
-                    ...createPurchase,
-                    remarks: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-                rows={4} // You can adjust the number of rows as needed
-              />
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
-                onClick={handlecreatePurchase}
-              >
-                Save
-              </button>
-              <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
-                onClick={handleModalClose1}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+          </form>
+        )}
+      </Modal>
     </motion.div>
   );
 };

@@ -1,507 +1,418 @@
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2 } from "lucide-react";
+import { Edit, Plus, Trash2, X, ChevronLeft, ChevronRight, Receipt } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import Select from "react-select"; // ✅ FIXED
-
+import Select from "react-select";
 import {
   useDeleteExpenseMutation,
   useGetAllExpenseQuery,
   useInsertExpenseMutation,
   useUpdateExpenseMutation,
 } from "../../features/expense/expense";
+import Modal from "../common/Modal";
 
 const ExpenseTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
+  const [currentExpense, setCurrentExpense] = useState(null);
 
-  const [currentProduct, setCurrentProduct] = useState(null);
+  const [createExpense, setCreateExpense] = useState({ name: "", amount: "" });
+  const [expenses, setExpenses] = useState([]);
 
-  // Add form state
-  const [createProduct, setCreateProduct] = useState({
-    name: "",
-    amount: "",
-  });
-
-  const [products, setProducts] = useState([]);
-
-  // Filters
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [name, setName] = useState("");
+  const [expenseFilter, setExpenseFilter] = useState("");
 
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
   const itemsPerPage = 10;
 
-  // Responsive pagesPerSet
   useEffect(() => {
     const updatePagesPerSet = () => {
       if (window.innerWidth < 640) setPagesPerSet(5);
       else if (window.innerWidth < 1024) setPagesPerSet(7);
       else setPagesPerSet(10);
     };
-
     updatePagesPerSet();
     window.addEventListener("resize", updatePagesPerSet);
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
 
-  // Filters change হলে page reset
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate, name]);
+  }, [startDate, endDate, expenseFilter]);
 
-  // startDate > endDate হলে endDate ঠিক করে দেবে
-  useEffect(() => {
-    if (startDate && endDate && startDate > endDate) {
-      setEndDate(startDate);
-    }
-  }, [startDate, endDate]);
+  const queryArgs = useMemo(() => ({
+    page: currentPage,
+    limit: itemsPerPage,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    name: expenseFilter || undefined,
+  }), [currentPage, itemsPerPage, startDate, endDate, expenseFilter]);
 
-  // ✅ Query args (backend এ যাবে)
-  const queryArgs = useMemo(
-    () => ({
-      page: currentPage,
-      limit: itemsPerPage,
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
-      name: name || undefined, // (তোমার backend যদি Id নেয়)
-      // যদি backend "id" বা "productId" নেয়, তাহলে উপরের key টা সেটায় বদলাবে
-    }),
-    [currentPage, itemsPerPage, startDate, endDate, name], // ✅ FIXED
-  );
-
-  const { data, isLoading, isError, error, refetch } =
-    useGetAllExpenseQuery(queryArgs);
+  const { data, isLoading, refetch } = useGetAllExpenseQuery(queryArgs);
 
   useEffect(() => {
-    if (isError) {
-      console.error("Error fetching expense data", error);
-      return;
-    }
-
     if (!isLoading && data) {
-      const list = data?.data || [];
-      setProducts(list);
-
-      setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
+      setExpenses(data.data || []);
+      setTotalPages(Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)));
     }
-  }, [data, isLoading, isError, error, itemsPerPage]); // ✅ name removed
+  }, [data, isLoading, itemsPerPage]);
 
-  // Modals
-  const handleAddProduct = () => setIsModalOpen1(true);
-  const handleModalClose1 = () => {
-    setIsModalOpen1(false);
-    setCreateProduct({ name: "", amount: "" });
-  };
-
-  const handleEditClick = (rp) => {
-    setCurrentProduct({
-      ...rp,
-      name: rp?.name ?? "",
-      amount: rp?.amount ?? "",
-    });
+  const handleEditClick = (expense) => {
+    setCurrentExpense({ ...expense });
     setIsModalOpen(true);
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setCurrentProduct(null);
-  };
-
-  // Insert
   const [insertExpense] = useInsertExpenseMutation();
-  const handleCreateProduct = async (e) => {
+  const handleCreateExpense = async (e) => {
     e.preventDefault();
-
-    if (!createProduct.name?.trim()) return toast.error("Name is required!");
-    if (createProduct.amount === "" || createProduct.amount === null)
-      return toast.error("Amount is required!");
-
     try {
-      const payload = {
-        name: createProduct.name.trim(),
-        amount: Number(createProduct.amount),
-      };
-
-      const res = await insertExpense(payload).unwrap();
+      const res = await insertExpense({
+        name: createExpense.name.trim(),
+        amount: Number(createExpense.amount),
+      }).unwrap();
       if (res?.success) {
         toast.success("Successfully created expense");
-        handleModalClose1();
-        refetch?.();
-      } else {
-        toast.error(res?.message || "Create failed!");
+        setIsModalOpen1(false);
+        setCreateExpense({ name: "", amount: "" });
+        refetch();
       }
     } catch (err) {
       toast.error(err?.data?.message || "Create failed!");
     }
   };
 
-  // Update
   const [updateExpense] = useUpdateExpenseMutation();
-  const handleUpdateProduct = async () => {
-    if (!currentProduct?.Id) return toast.error("Invalid item!");
-    if (!currentProduct?.name?.trim()) return toast.error("Name is required!");
-    if (currentProduct?.amount === "" || currentProduct?.amount === null)
-      return toast.error("Amount is required!");
-
+  const handleUpdateExpenseAction = async (e) => {
+    e.preventDefault();
     try {
-      const payload = {
-        name: currentProduct.name.trim(),
-        amount: Number(currentProduct.amount),
-      };
-
       const res = await updateExpense({
-        id: currentProduct.Id,
-        data: payload,
+        id: currentExpense.Id,
+        data: {
+          name: currentExpense.name.trim(),
+          amount: Number(currentExpense.amount),
+        },
       }).unwrap();
-
       if (res?.success) {
         toast.success("Successfully updated!");
-        handleModalClose();
-        refetch?.();
-      } else {
-        toast.error(res?.message || "Update failed!");
+        setIsModalOpen(false);
+        refetch();
       }
     } catch (err) {
       toast.error(err?.data?.message || "Update failed!");
     }
   };
 
-  // Delete
   const [deleteExpense] = useDeleteExpenseMutation();
-  const handleDeleteProduct = async (id) => {
-    const confirmDelete = window.confirm("Do you want to delete this item?");
-    if (!confirmDelete) return toast.info("Delete action was cancelled.");
-
-    try {
-      const res = await deleteExpense(id).unwrap();
-      if (res?.success) {
-        toast.success("Deleted successfully!");
-        refetch?.();
-      } else {
-        toast.error(res?.message || "Delete failed!");
+  const handleDeleteExpenseAction = async (id) => {
+    if (window.confirm("Do you want to delete this item?")) {
+      try {
+        const res = await deleteExpense(id).unwrap();
+        if (res?.success) {
+          toast.success("Deleted successfully!");
+          refetch();
+        }
+      } catch (err) {
+        toast.error(err?.data?.message || "Delete failed!");
       }
-    } catch (err) {
-      toast.error(err?.data?.message || "Delete failed!");
     }
   };
 
-  // Filters clear
-  const clearFilters = () => {
-    setStartDate("");
-    setEndDate("");
-    setName("");
-  };
-
-  // Pagination
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    if (pageNumber < startPage) setStartPage(pageNumber);
-    else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
+  const handlePageChange = (p) => {
+    setCurrentPage(p);
+    if (p < startPage) setStartPage(p);
+    else if (p > endPage) setStartPage(p - pagesPerSet + 1);
   };
 
-  const handlePreviousSet = () =>
-    setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
+  const handlePreviousSet = () => setStartPage((p) => Math.max(p - pagesPerSet, 1));
+  const handleNextSet = () => setStartPage((p) => Math.min(p + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)));
 
-  const handleNextSet = () =>
-    setStartPage((prev) =>
-      Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
-    );
-
-  // ✅ Dropdown options: data?.data (same as products), but better than products state coupling
-  const productOptions = (data?.data || []).map((p) => ({
-    value: p.Id,
+  const expenseOptions = (data?.data || []).map((p) => ({
+    value: p.name,
     label: p.name,
   }));
 
+  const selectStyles = {
+    control: (base, state) => ({
+      ...base,
+      minHeight: 44,
+      borderRadius: 14,
+      borderColor: state.isFocused ? "#6366f1" : "#e2e8f0",
+      boxShadow: state.isFocused ? "0 0 0 4px rgba(99,102,241,0.1)" : "none",
+      "&:hover": { borderColor: "#cbd5e1" },
+      backgroundColor: "white",
+    }),
+    placeholder: (base) => ({ ...base, color: "#94a3b8", fontSize: "14px" }),
+    singleValue: (base) => ({ ...base, color: "#1e293b", fontSize: "14px", fontWeight: "500" }),
+    menu: (base) => ({
+      ...base,
+      borderRadius: 14,
+      overflow: "hidden",
+      border: "1px solid #f1f5f9",
+      boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+      zIndex: 50
+    }),
+  };
+
   return (
     <motion.div
-      className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-sm rounded-3xl p-4 sm:p-8 border border-slate-100 mb-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
+      transition={{ duration: 0.3 }}
     >
-      <div className="my-6 flex justify-start">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Expense Tracker</h2>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Monitor and categorize your business expenditures</p>
+        </div>
         <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
-          onClick={handleAddProduct}
+          className="group relative inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition-all px-6 py-3 rounded-2xl text-sm font-bold shadow-xl shadow-indigo-100 active:scale-95 overflow-hidden"
+          onClick={() => setIsModalOpen1(true)}
+          type="button"
         >
-          Add <Plus size={18} className="ms-2" />
+          <Plus size={18} /> Log New Expense
         </button>
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
-        <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">Start Date:</label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">From</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="border border-gray-300 rounded p-1 text-black bg-white"
+            className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-medium text-sm"
           />
         </div>
 
-        <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">End Date:</label>
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">To</label>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="border border-gray-300 rounded p-1 text-black bg-white"
+            className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-medium text-sm"
           />
         </div>
 
-        <div className="flex items-center justify-center">
+        <div className="flex flex-col lg:col-span-1">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Search Meta</label>
           <Select
-            options={productOptions}
-            value={productOptions.find((o) => o.value === name) || null}
-            onChange={(selected) =>
-              setName(selected?.value ? String(selected.value) : "")
-            }
-            placeholder="Select Expense"
+            options={expenseOptions}
+            value={expenseOptions.find(o => o.value === expenseFilter) || null}
+            onChange={(s) => setExpenseFilter(s?.value || "")}
+            placeholder="Search name..."
             isClearable
-            className="text-black w-full"
+            styles={selectStyles}
           />
         </div>
 
         <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
-          onClick={clearFilters}
+          className="h-11 bg-slate-100 hover:bg-slate-200 text-slate-600 transition rounded-xl px-4 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 border border-slate-200"
+          onClick={() => { setStartDate(""); setEndDate(""); setExpenseFilter(""); }}
+          type="button"
         >
-          Clear Filters
+          <X size={16} /> Reset
         </button>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead>
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-
-          <tbody className="divide-y divide-gray-700">
-            {products.map((rp) => (
-              <motion.tr
-                key={rp.Id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {rp.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {Number(rp.amount || 0).toFixed(2)}
-                </td>
-
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => handleEditClick(rp)}
-                    className="text-indigo-600 hover:text-indigo-900"
-                  >
-                    <Edit size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteProduct(rp.Id)}
-                    className="text-red-600 hover:text-red-900 ms-4"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </td>
-              </motion.tr>
-            ))}
-
-            {!isLoading && products.length === 0 && (
+      <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-100">
+            <thead className="bg-slate-50/50">
               <tr>
-                <td
-                  colSpan={3}
-                  className="px-6 py-6 text-center text-sm text-gray-300"
-                >
-                  No data found
-                </td>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Expense Description
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Amount Paid
+                </th>
+                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Actions
+                </th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody className="divide-y divide-slate-100">
+              {expenses.map((rp) => (
+                <motion.tr
+                  key={rp.Id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="hover:bg-indigo-50/30 transition-colors group"
+                >
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-100 text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+                        <Receipt size={18} />
+                      </div>
+                      <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
+                        {rp.name}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <span className="inline-flex items-center px-4 py-1.5 rounded-2xl text-xs font-black bg-rose-50 text-rose-700 border border-rose-100 shadow-sm shadow-rose-50 tabular-nums">
+                      ৳ {Number(rp.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-5 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => handleEditClick(rp)}
+                        className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm active:scale-90"
+                        title="Edit"
+                        type="button"
+                      >
+                        <Edit size={16} />
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteExpenseAction(rp.Id)}
+                        className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition shadow-sm active:scale-90"
+                        title="Delete"
+                        type="button"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+
+          {isLoading && (
+            <div className="py-24 text-center">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 border-[3px] border-indigo-600/20 border-t-indigo-600"></div>
+            </div>
+          )}
+
+          {!isLoading && expenses.length === 0 && (
+            <div className="py-24 text-center text-slate-400">
+              <div className="text-4xl mb-4 opacity-20">💸</div>
+              <p className="font-bold text-sm italic">No expense records found</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-center space-x-2 mt-6">
-        <button
-          onClick={handlePreviousSet}
-          disabled={startPage === 1}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
-        >
-          Prev
-        </button>
-
-        {[...Array(endPage - startPage + 1)].map((_, index) => {
-          const pageNum = startPage + index;
-          return (
-            <button
-              key={pageNum}
-              onClick={() => handlePageChange(pageNum)}
-              className={`px-3 py-2 text-black rounded-md ${
-                pageNum === currentPage
-                  ? "bg-white"
-                  : "bg-indigo-500 hover:bg-indigo-400"
-              }`}
-            >
-              {pageNum}
-            </button>
-          );
-        })}
-
-        <button
-          onClick={handleNextSet}
-          disabled={endPage === totalPages}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
-        >
-          Next
-        </button>
+      <div className="flex flex-col sm:flex-row items-center justify-between mt-10 gap-6 px-2">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+          Showing Page <span className="text-indigo-600">{currentPage}</span> of <span className="text-slate-900">{totalPages}</span>
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePreviousSet}
+            disabled={startPage === 1}
+            className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
+          >
+            <ChevronLeft size={16} /> Prev
+          </button>
+          <div className="flex items-center gap-1.5">
+            {[...Array(endPage - startPage + 1)].map((_, index) => {
+              const pageNum = startPage + index;
+              const active = pageNum === currentPage;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${active ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100" : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
+                    }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            onClick={handleNextSet}
+            disabled={endPage === totalPages}
+            className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
+          >
+            Next <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
 
-      {/* Edit Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h2 className="text-lg font-semibold text-white">
-              Edit Meta Expense
-            </h2>
+      {/* Modals */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Update Meta Expense info">
+        <form onSubmit={handleUpdateExpenseAction} className="space-y-6">
+          <div>
+            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Meta Name</label>
+            <input
+              type="text"
+              required
+              value={currentExpense?.name || ""}
+              onChange={(e) => setCurrentExpense({ ...currentExpense, name: e.target.value })}
+              className="h-12 border border-slate-200 rounded-2xl px-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+              placeholder="e.g. Office Rent"
+            />
+          </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-white">Name:</label>
-              <input
-                type="text"
-                value={currentProduct?.name || ""}
-                onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, name: e.target.value })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Standard Amount</label>
+            <input
+              type="number"
+              step="0.01"
+              required
+              value={currentExpense?.amount || ""}
+              onChange={(e) => setCurrentExpense({ ...currentExpense, amount: e.target.value })}
+              className="h-12 border border-slate-200 rounded-2xl px-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+              placeholder="0.00"
+            />
+          </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-white">Amount:</label>
-              <input
-                type="number"
-                step="0.01"
-                value={currentProduct?.amount || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    amount: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-              />
-            </div>
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition">Cancel</button>
+            <button type="submit" className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100">Save Changes</button>
+          </div>
+        </form>
+      </Modal>
 
-            <div className="mt-6 flex justify-end">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
-                onClick={handleUpdateProduct}
-              >
-                Save
-              </button>
-              <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
-                onClick={handleModalClose}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      <Modal isOpen={isModalOpen1} onClose={() => setIsModalOpen1(false)} title="Add Meta Expense record">
+        <form onSubmit={handleCreateExpense} className="space-y-6">
+          <div>
+            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Item Description</label>
+            <input
+              type="text"
+              required
+              value={createExpense.name}
+              onChange={(e) => setCreateExpense({ ...createExpense, name: e.target.value })}
+              className="h-12 border border-slate-200 rounded-2xl px-4 w-full bg-white text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+              placeholder="e.g. Electricity Bill"
+            />
+          </div>
 
-      {/* Add Modal */}
-      {isModalOpen1 && (
-        <div className="fixed inset-0 top-12 z-10 flex items-center justify-center bg-black bg-opacity-50">
-          <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h2 className="text-lg font-semibold text-white">
-              Add Meta Expense
-            </h2>
+          <div>
+            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Payment Amount</label>
+            <input
+              type="number"
+              step="0.01"
+              required
+              value={createExpense.amount}
+              onChange={(e) => setCreateExpense({ ...createExpense, amount: e.target.value })}
+              className="h-12 border border-slate-200 rounded-2xl px-4 w-full bg-white text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+              placeholder="0.00"
+            />
+          </div>
 
-            <form onSubmit={handleCreateProduct}>
-              <div className="mt-4">
-                <label className="block text-sm text-white">Name:</label>
-                <input
-                  type="text"
-                  value={createProduct.name}
-                  onChange={(e) =>
-                    setCreateProduct({ ...createProduct, name: e.target.value })
-                  }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-                  required
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-white">Amount</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={createProduct.amount}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      amount: e.target.value,
-                    })
-                  }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-                  required
-                />
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
-                  onClick={handleModalClose1}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button type="button" onClick={() => setIsModalOpen1(false)} className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition">Cancel</button>
+            <button type="submit" className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100">Log Expense</button>
+          </div>
+        </form>
+      </Modal>
     </motion.div>
   );
 };

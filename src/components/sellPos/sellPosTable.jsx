@@ -1238,7 +1238,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, X } from "lucide-react";
 import Select from "react-select";
 
 import { useReactToPrint } from "react-to-print";
@@ -1394,7 +1394,7 @@ export default function SellPosTable() {
 
   // ---- Normalizers ----
   const getReceivedId = (rp) => String(rp.Id);
-  const getReceivedPrice = (rp) => Number(rp.price);
+  const getReceivedPrice = (rp) => Number(rp.sale_price);
   const getReceivedStock = (rp) => Number(rp.quantity);
 
   const resolveProductName = (rp) => {
@@ -1581,26 +1581,26 @@ export default function SellPosTable() {
       const invoice = res?.data ||
         res?.posReport ||
         res || {
-          invoiceNo: res?.invoiceNo || `INV-${Date.now()}`,
-          date: payload.date,
-          customer: {
-            name: payload.name,
-            mobile: payload.mobile,
-            address: payload.address,
-          },
-          subTotal: payload.subTotal,
-          discount: payload.discount,
-          deliveryCharge: payload.deliveryCharge,
-          total: payload.total,
-          paidAmount: payload.paidAmount,
-          dueAmount: payload.dueAmount,
-          items: payload.items,
-          note: payload.note,
+        invoiceNo: res?.invoiceNo || `INV-${Date.now()}`,
+        date: payload.date,
+        customer: {
+          name: payload.name,
+          mobile: payload.mobile,
+          address: payload.address,
+        },
+        subTotal: payload.subTotal,
+        discount: payload.discount,
+        deliveryCharge: payload.deliveryCharge,
+        total: payload.total,
+        paidAmount: payload.paidAmount,
+        dueAmount: payload.dueAmount,
+        items: payload.items,
+        note: payload.note,
 
-          // ✅ keep warranty in invoice too (optional)
-          warrantyValue: payload.warrantyValue,
-          warrantyUnit: payload.warrantyUnit,
-        };
+        // ✅ keep warranty in invoice too (optional)
+        warrantyValue: payload.warrantyValue,
+        warrantyUnit: payload.warrantyUnit,
+      };
 
       const normalizedInvoice = normalizeInvoice(invoice, payload);
 
@@ -1699,37 +1699,34 @@ export default function SellPosTable() {
                   return (
                     <div
                       key={rid}
-                      className="px-4 py-4 flex items-center gap-3"
+                      className="px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3 group hover:bg-slate-50 transition-colors"
                     >
-                      <div className="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center">
-                        <span className="text-lg">📦</span>
-                      </div>
-
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-slate-900">
-                          {name}
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="h-10 w-10 shrink-0 rounded-xl bg-slate-100 flex items-center justify-center text-lg group-hover:bg-white transition-colors shadow-sm shadow-slate-200/50">
+                          📦
                         </div>
 
-                        <div className="mt-1 flex items-center justify-between text-xs text-slate-600">
-                          <span>Price: {price}</span>
-                          <span>Stock: {stock}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold text-slate-900 truncate">
+                            {name}
+                          </div>
+
+                          <div className="mt-0.5 flex items-center gap-3 text-xs font-semibold text-slate-500">
+                            <span className="text-emerald-600">৳{Number(price).toLocaleString()}</span>
+                            <span className="h-1 w-1 rounded-full bg-slate-300" />
+                            <span>Stock: {stock}</span>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center">
+                      <div className="flex items-center self-end sm:self-center">
                         <button
                           onClick={() => addToCart({ Id: rid, name, price })}
-                          className="h-9 px-3 rounded-l-md bg-black text-white text-sm hover:bg-black/90 disabled:opacity-60"
+                          className="h-9 px-5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition shadow-sm shadow-indigo-100 disabled:opacity-50 active:scale-95"
                           type="button"
-                          disabled={!rid}
+                          disabled={!rid || stock <= 0}
                         >
-                          Add
-                        </button>
-                        <button
-                          className="h-9 w-9 rounded-r-md bg-black text-white border-l border-white/15 hover:bg-black/90"
-                          type="button"
-                        >
-                          ▾
+                          Add to Cart
                         </button>
                       </div>
                     </div>
@@ -1761,11 +1758,10 @@ export default function SellPosTable() {
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`px-4 py-2 rounded-xl border transition ${
-                      active
-                        ? "bg-indigo-600 text-white border-indigo-600"
-                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                    }`}
+                    className={`px-4 py-2 rounded-xl border transition ${active
+                      ? "bg-indigo-600 text-white border-indigo-600"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                      }`}
                   >
                     {pageNum}
                   </button>
@@ -1797,37 +1793,48 @@ export default function SellPosTable() {
                     {cart.map((x) => (
                       <div
                         key={x.Id}
-                        className="border border-gray-200 rounded-lg p-3 flex items-center gap-3"
+                        className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4 transition hover:border-indigo-200 group"
                       >
-                        <div className="flex-1">
-                          <div className="text-sm font-semibold text-black">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold text-slate-900 truncate uppercase tracking-tight">
                             {x.name}
                           </div>
-                          <div className="text-xs text-slate-700 mt-0.5">
-                            Price: {Number(x.price) || 0} ৳
+                          <div className="text-xs text-indigo-600 font-bold mt-1">
+                            ৳{Number(x.price || 0).toLocaleString()}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <input
-                            value={x.qty}
-                            onChange={(e) => updateQty(x.Id, e.target.value)}
-                            className="w-16 h-9 rounded-md border border-gray-200 px-2 text-black text-sm outline-none"
-                            type="number"
-                            min={1}
-                          />
-                          <div className="w-24 text-right text-sm font-semibold text-black">
-                            {(
-                              (Number(x.price) || 0) * (Number(x.qty) || 0)
-                            ).toFixed(0)}{" "}
-                            ৳
+                        <div className="flex items-center justify-between sm:justify-end gap-3">
+                          <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden h-9 shadow-sm">
+                            <button
+                              onClick={() => updateQty(x.Id, Math.max(1, (x.qty || 1) - 1))}
+                              className="w-8 h-full flex items-center justify-center hover:bg-slate-50 text-slate-500 transition border-r border-slate-100"
+                            >-</button>
+                            <input
+                              value={x.qty}
+                              onChange={(e) => updateQty(x.Id, e.target.value)}
+                              className="w-12 h-full text-center text-slate-900 text-xs font-bold outline-none bg-transparent"
+                              type="number"
+                              min={1}
+                            />
+                            <button
+                              onClick={() => updateQty(x.Id, (x.qty || 1) + 1)}
+                              className="w-8 h-full flex items-center justify-center hover:bg-slate-50 text-slate-500 transition border-l border-slate-100"
+                            >+</button>
                           </div>
+
+                          <div className="w-20 text-right text-xs font-extrabold text-slate-900">
+                            ৳{(
+                              (Number(x.price) || 0) * (Number(x.qty) || 0)
+                            ).toLocaleString()}
+                          </div>
+
                           <button
                             onClick={() => removeFromCart(x.Id)}
-                            className="h-9 px-3 rounded-md border border-gray-200 hover:bg-gray-50 text-sm text-black"
+                            className="h-9 w-9 flex items-center justify-center rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 transition active:scale-95"
                             type="button"
                           >
-                            ✕
+                            <X size={14} />
                           </button>
                         </div>
                       </div>
@@ -2031,78 +2038,76 @@ function PaymentDrawer({
 
           {/* Drawer */}
           <motion.aside
-            className="fixed top-0 right-0 h-full w-full sm:w-[460px] bg-white z-[90] shadow-2xl flex flex-col"
-            initial={{ x: 480 }}
+            className="fixed top-0 right-0 h-full w-full sm:w-[500px] bg-white/95 backdrop-blur-xl z-[90] shadow-[-20px_0_50px_rgba(0,0,0,0.1)] flex flex-col border-l border-white/20"
+            initial={{ x: "100%" }}
             animate={{ x: 0 }}
-            exit={{ x: 480 }}
-            transition={{ type: "tween", duration: 0.22 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
             role="dialog"
             aria-modal="true"
           >
             {/* Header */}
-            <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
-              <div className="text-xl font-semibold text-slate-900">
-                Confirm Payment
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white/50">
+              <div>
+                <div className="text-xl font-black text-slate-900 tracking-tight uppercase">
+                  Checkout
+                </div>
+                <div className="text-xs font-bold text-slate-400 mt-0.5">Finalize transaction & payment</div>
               </div>
               <button
                 onClick={onClose}
-                className="h-9 w-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700"
+                className="h-10 w-10 rounded-2xl hover:bg-slate-100 flex items-center justify-center text-slate-500 transition active:scale-90"
                 type="button"
                 aria-label="Close"
               >
-                ✕
+                <X size={20} />
               </button>
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-auto px-6 py-5 space-y-4">
-              <Field label="Date">
-                <input
-                  value={sellDate}
-                  onChange={(e) => setSellDate(e.target.value)}
-                  type="date"
-                  className="w-full h-11 rounded-lg border border-slate-200 px-3 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </Field>
+            <div className="flex-1 overflow-auto px-8 py-6 space-y-6 scrollbar-hide">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Transaction Date">
+                  <input
+                    value={sellDate}
+                    onChange={(e) => setSellDate(e.target.value)}
+                    type="date"
+                    className="w-full h-12 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition bg-white"
+                  />
+                </Field>
 
-              <Field label="Amount" required>
-                <input
-                  value={paidAmount}
-                  onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
-                  type="number"
-                  min={0}
-                  className="w-full h-11 rounded-lg border border-slate-200 px-3 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </Field>
-
-              <Field label="Remarks">
-                <input
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  type="text"
-                  placeholder="Write Something"
-                  className="w-full h-11 rounded-lg border border-slate-200 px-3 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </Field>
+                <Field label="Amount Received" required>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">৳</span>
+                    <input
+                      value={paidAmount}
+                      onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
+                      type="number"
+                      min={0}
+                      className="w-full h-12 rounded-xl border border-slate-200 pl-8 pr-4 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition bg-white"
+                    />
+                  </div>
+                </Field>
+              </div>
 
               <Field label="Customer Name">
-                <div className="relative">
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                    <span className="text-lg">👤</span>
+                  </div>
                   <input
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     type="text"
-                    placeholder="Customer Name"
-                    className="w-full h-11 rounded-lg border border-slate-200 px-3 pr-10 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                    placeholder="Enter customer name..."
+                    className="w-full h-12 rounded-xl border border-slate-200 pl-11 pr-4 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition bg-white"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                    👤
-                  </span>
                 </div>
               </Field>
 
-              <Field label="Customer Mobile Number">
-                <div className="flex items-center gap-2">
-                  <div className="h-11 px-3 rounded-lg border border-slate-200 flex items-center text-sm text-slate-700 bg-white">
+              <Field label="Mobile Number">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 px-4 rounded-xl border border-slate-200 flex items-center text-xs font-bold text-slate-500 bg-slate-50 shrink-0">
                     🇧🇩 +88
                   </div>
                   <input
@@ -2110,27 +2115,39 @@ function PaymentDrawer({
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     type="text"
                     placeholder="XXXXXXXXXXX"
-                    className="flex-1 h-11 rounded-lg border border-slate-200 px-3 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                    className="flex-1 h-12 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition bg-white"
                   />
                 </div>
               </Field>
 
-              <Field label="Address">
-                <input
+              <Field label="Shipping Address">
+                <textarea
                   value={customerAddress}
                   onChange={(e) => setCustomerAddress(e.target.value)}
-                  type="text"
-                  placeholder="Address"
-                  className="w-full h-11 rounded-lg border border-slate-200 px-3 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  placeholder="Street address, city, area..."
+                  className="w-full h-24 rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition bg-white resize-none"
                 />
               </Field>
 
-              {/* ✅ NEW: Warranty */}
-              <div className="rounded-xl border border-slate-200 bg-white">
+              <Field label="Payment Note / Remarks">
+                <input
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  type="text"
+                  placeholder="Special instructions or notes..."
+                  className="w-full h-12 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition bg-white"
+                />
+              </Field>
+
+              {/* ✅ Warranty Section */}
+              {/* <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-1">
                 <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm font-medium text-slate-700">
-                    Warranty
-                  </span>
+                  <div>
+                    <span className="text-sm font-black text-slate-700 uppercase tracking-tight">
+                      Warranty Coverage
+                    </span>
+                    <p className="text-[10px] font-bold text-slate-400">Enable if product has warranty</p>
+                  </div>
 
                   <button
                     type="button"
@@ -2141,24 +2158,20 @@ function PaymentDrawer({
                         setWarrantyUnit("Day");
                       }
                     }}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                      hasWarranty ? "bg-indigo-600" : "bg-slate-300"
-                    }`}
-                    aria-pressed={hasWarranty}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition ${
-                        hasWarranty ? "translate-x-5" : "translate-x-1"
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${hasWarranty ? "bg-indigo-600" : "bg-slate-300"
                       }`}
+                  >
+                    <span className="sr-only">Toggle Warranty</span>
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${hasWarranty ? "translate-x-6" : "translate-x-1"
+                        }`}
                     />
                   </button>
                 </div>
 
                 {hasWarranty && (
-                  <div className="border-t border-slate-200 px-4 py-3">
-                    <label className="block text-xs text-slate-600 mb-1">
-                      Warranty Duration
-                    </label>
+                  <div className="bg-white rounded-xl border border-slate-100 m-1 p-4 space-y-3 shadow-sm">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Duration</label>
 
                     <div className="flex gap-2">
                       <input
@@ -2166,35 +2179,33 @@ function PaymentDrawer({
                         min="1"
                         value={warrantyValue}
                         onChange={(e) => setWarrantyValue(e.target.value)}
-                        placeholder="e.g. 30"
-                        className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-slate-900 outline-none
-                     focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                        placeholder="30"
+                        className="h-11 flex-1 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 outline-none
+                         focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                       />
 
                       <select
                         value={warrantyUnit}
                         onChange={(e) => setWarrantyUnit(e.target.value)}
-                        className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-slate-900 outline-none
-                     focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                        className="h-11 w-32 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none
+                         focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition appearance-none cursor-pointer"
                       >
-                        <option value="Day">Day</option>
-                        <option value="Month">Month</option>
-                        <option value="Year">Year</option>
+                        <option value="Day">Days</option>
+                        <option value="Month">Months</option>
+                        <option value="Year">Years</option>
                       </select>
                     </div>
                   </div>
                 )}
-              </div>
+              </div> */}
             </div>
 
-            {/* Bottom fixed bar */}
-            <div className="border-t border-slate-200 px-6 py-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-sm text-slate-600">
-                  You have received the payment
-                </div>
-                <div className="text-sm font-semibold text-slate-900">
-                  {Number(total || 0).toFixed(0)} ৳
+            {/* Bottom sticky bar */}
+            <div className="border-t border-slate-200 px-8 py-6 bg-slate-50/50 backdrop-blur-md">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm font-bold text-slate-500">Total Payable:</div>
+                <div className="text-2xl font-black text-indigo-600">
+                  ৳{Number(total || 0).toLocaleString()}
                 </div>
               </div>
 
@@ -2202,9 +2213,16 @@ function PaymentDrawer({
                 type="button"
                 onClick={onConfirm}
                 disabled={isSaving}
-                className="w-full h-12 rounded-xl bg-black text-white font-semibold hover:bg-black/90 disabled:opacity-60"
+                className="w-full h-14 rounded-2xl bg-slate-900 text-white font-black text-sm uppercase tracking-widest hover:bg-slate-800 disabled:opacity-50 transition-all shadow-xl shadow-slate-200 active:scale-[0.98] flex items-center justify-center gap-3"
               >
-                {isSaving ? "Saving..." : "You have received the payment"}
+                {isSaving ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Complete Transaction"
+                )}
               </button>
             </div>
           </motion.aside>
@@ -2298,7 +2316,7 @@ function InvoiceModal({ open, onClose, invoice, invoiceRef, onPrint }) {
 
                 <div className="text-right">
                   <div className="text-sm font-semibold text-slate-900">
-                    Kafela / Holy Gift
+                    Kafela Mart
                   </div>
                   <div className="text-xs text-slate-600">POS Sale Invoice</div>
                 </div>
@@ -2475,17 +2493,17 @@ function normalizeInvoice(raw, payloadFallback) {
     inv.Customer ||
     (inv.name || inv.mobile || inv.address
       ? {
-          name: inv.name || "",
-          mobile: inv.mobile || "",
-          address: inv.address || "",
-        }
+        name: inv.name || "",
+        mobile: inv.mobile || "",
+        address: inv.address || "",
+      }
       : null) ||
     (payloadFallback
       ? {
-          name: payloadFallback.name,
-          mobile: payloadFallback.mobile,
-          address: payloadFallback.address,
-        }
+        name: payloadFallback.name,
+        mobile: payloadFallback.mobile,
+        address: payloadFallback.address,
+      }
       : null);
 
   inv.customer = {
@@ -2500,9 +2518,9 @@ function normalizeInvoice(raw, payloadFallback) {
   inv.discount = Number(inv.discount ?? payloadFallback?.discount ?? 0);
   inv.deliveryCharge = Number(
     inv.deliveryCharge ??
-      inv.delivery_charge ??
-      payloadFallback?.deliveryCharge ??
-      0,
+    inv.delivery_charge ??
+    payloadFallback?.deliveryCharge ??
+    0,
   );
   inv.total = Number(inv.total ?? payloadFallback?.total ?? 0);
   inv.paidAmount = Number(

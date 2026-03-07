@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const categoryApi = createApi({
   reducerPath: "categoryApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken(); // Fetch the token
       if (token) {
@@ -41,7 +41,7 @@ export const categoryApi = createApi({
     updateCategory: build.mutation({
       query: ({ id, data }) => ({
         url: `/category/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: ["category"], // Invalidate the Category tag after this mutation

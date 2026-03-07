@@ -1,26 +1,23 @@
-// // SidebarLayout.js (to wrap your main content with the sidebar)
-// // eslint-disable-next-line no-unused-vars
-
-// import Sidebar from "./Sidebar"; // Assuming you have Sidebar component
-
-// const SidebarLayout = ({ children }) => {
-//   return (
-//     <div className="flex">
-//       <Sidebar /> {/* Sidebar for protected routes */}
-//       <div className="flex-1">{children}</div> {/* Main content */}
-//     </div>
-//   );
-// };
-
-// export default SidebarLayout;
-
 import Sidebar from "./Sidebar";
+import { useLayout } from "../../context/LayoutContext";
 
 const SidebarLayout = ({ children }) => {
+  const { isSidebarOpen } = useLayout();
+
   return (
-    <div className="flex min-h-dvh bg-slate-50">
+    <div className="flex min-h-dvh bg-slate-50 relative overflow-x-hidden">
+      {/* Sidebar - handles its own fixed/sticky desktop and mobile drawer logic */}
       <Sidebar />
-      <div className="flex-1 min-h-dvh bg-slate-50">{children}</div>
+
+      {/* Main Container */}
+      <div
+        className={`flex-1 flex flex-col min-h-dvh transition-all duration-300 w-full ${isSidebarOpen ? "lg:ml-[280px]" : "lg:ml-[88px]"
+          }`}
+      >
+        <div className="flex-1 w-full relative">
+          {children}
+        </div>
+      </div>
     </div>
   );
 };

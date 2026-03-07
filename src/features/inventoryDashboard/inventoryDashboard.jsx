@@ -49,9 +49,9 @@ export const inventorySummaryApi = baseApi.injectEndpoints({
     // ✅ List (UI table এর জন্য)
     getInventoryList: build.query({
       query: (arg = {}) => {
-        const { from, to, name, page = 1, limit = 10 } = arg;
+        const { from, to, name, source, page = 1, limit = 10 } = arg;
 
-        const params = { from, to, name, page, limit };
+        const params = { from, to, name, source, page, limit };
         Object.keys(params).forEach((k) => {
           if (params[k] === undefined || params[k] === null || params[k] === "")
             delete params[k];

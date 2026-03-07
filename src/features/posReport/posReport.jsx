@@ -32,7 +32,7 @@ export const posReportApi = baseApi.injectEndpoints({
     updatePosReport: build.mutation({
       query: ({ id, data }) => ({
         url: `/pos-report/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [
@@ -59,12 +59,12 @@ export const posReportApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-              { type: "PosReport", id: "LIST" },
-              ...result.data.map((r) => ({
-                type: "PosReport",
-                id: r.Id,
-              })),
-            ]
+            { type: "PosReport", id: "LIST" },
+            ...result.data.map((r) => ({
+              type: "PosReport",
+              id: r.Id,
+            })),
+          ]
           : [{ type: "PosReport", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),

@@ -12,6 +12,7 @@ import {
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
+import Modal from "../common/Modal";
 
 const DamageProductTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -568,7 +569,7 @@ const DamageProductTable = () => {
                   {rp?.warehouse?.name || "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.quantity || 0).toFixed(2)}
+                  {Number(rp.quantity || 0)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.purchase_price || 0).toFixed(2)}
@@ -577,79 +578,71 @@ const DamageProductTable = () => {
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.status || "-"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-3">
-                  {rp.note ? (
-                    <div className="relative">
-                      <button
-                        className="relative h-10 w-10 rounded-md flex items-center justify-center"
-                        title={rp.note}
-                        type="button"
-                        onClick={() => handleNoteClick(rp.note)} // Open modal on click
-                      >
-                        <Notebook size={18} className="text-slate-700" />
-                      </button>
-
-                      <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
-                        {rp.note ? 1 : null}
-                      </span>
-                    </div>
-                  ) : (
-                    <button
-                      className="h-10 w-10 rounded-md flex items-center justify-center"
-                      title={rp.note}
-                      type="button"
-                    >
-                      <Notebook size={18} className="text-slate-700" />
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => openEdit(rp)}
-                    className="text-indigo-600 hover:text-indigo-700"
+                  <span
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${rp.status === "Approved"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : rp.status === "Active"
+                        ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
                   >
-                    <Edit size={18} />
-                  </button>
-
-                  {role === "superAdmin" || role === "admin" ? (
-                    <button
-                      onClick={() => handleDelete(rp.Id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => openEdit1(rp)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
+                    {rp.status}
+                  </span>
                 </td>
-                {/* ✅ Note Modal (Popup) */}
-                {isNoteModalOpen && (
-                  <div className="fixed inset-0 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
-                      <h2 className="text-xl font-semibold text-slate-900">
-                        Note
-                      </h2>
-                      <p className="mt-4 text-sm text-slate-700">
-                        {noteContent}
-                      </p>
-
-                      <div className="mt-6 flex justify-end gap-2">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex items-center gap-3">
+                    {rp.note ? (
+                      <div className="relative">
                         <button
-                          onClick={handleNoteModalClose}
-                          className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+                          className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                          title={rp.note}
+                          type="button"
+                          onClick={() => handleNoteClick(rp.note)}
                         >
-                          Close
+                          <Notebook size={18} className="text-slate-700" />
                         </button>
+
+                        <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                          1
+                        </span>
                       </div>
-                    </div>
+                    ) : (
+                      <button
+                        className="h-10 w-10 rounded-md flex items-center justify-center cursor-default"
+                        title="No note available"
+                        type="button"
+                      >
+                        <Notebook size={18} className="text-slate-300" />
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => openEdit(rp)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-indigo-50 transition"
+                      title="Edit"
+                    >
+                      <Edit size={18} className="text-indigo-600" />
+                    </button>
+
+                    {role === "superAdmin" || role === "admin" ? (
+                      <button
+                        onClick={() => handleDelete(rp.Id)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
+                        title="Delete"
+                      >
+                        <Trash2 size={18} className="text-rose-600" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => openEdit1(rp)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
+                        title="Delete Request / Note"
+                      >
+                        <Trash2 size={18} className="text-rose-600" />
+                      </button>
+                    )}
                   </div>
-                )}
+                </td>
               </motion.tr>
             ))}
 
@@ -685,11 +678,10 @@ const DamageProductTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
+              className={`px-4 py-2 rounded-xl border transition ${active
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                }`}
             >
               {pageNum}
             </button>
@@ -705,26 +697,43 @@ const DamageProductTable = () => {
         </button>
       </div>
 
-      {/* Edit Modal */}
-      {isEditOpen && currentItem && (
-        <div className="fixed inset-0 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
+      {/* ✅ Note View Modal */}
+      <Modal
+        isOpen={isNoteModalOpen}
+        onClose={handleNoteModalClose}
+        title="Note Content"
+      >
+        <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-6">
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+            {noteContent || "No note available."}
+          </p>
+        </div>
+        <div className="flex justify-end">
+          <button
+            onClick={handleNoteModalClose}
+            className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
           >
-            <h2 className="text-lg font-semibold text-slate-900">
-              Edit Product
-            </h2>
+            Close
+          </button>
+        </div>
+      </Modal>
 
-            <div className="mt-4">
-              <label className="block text-sm text-slate-600 mb-1">Name</label>
+      {/* ✅ Edit Modal */}
+      <Modal
+        isOpen={isEditOpen && !!currentItem}
+        onClose={closeEdit}
+        title="Edit Damage Product"
+        maxWidth="max-w-2xl"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
               <Select
                 options={receivedDropdownOptions}
                 value={
                   receivedDropdownOptions.find(
-                    (o) => o.value === String(currentItem.receivedId),
+                    (o) => o.value === String(currentItem?.receivedId),
                   ) || null
                 }
                 onChange={(selected) =>
@@ -737,25 +746,24 @@ const DamageProductTable = () => {
                 isClearable
                 isDisabled={receivedLoading}
                 styles={selectStyles}
-                className="text-black"
               />
             </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Date</label>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
               <input
                 type="date"
                 value={currentItem?.date || ""}
                 onChange={(e) =>
                   setCurrentItem((p) => ({ ...p, date: e.target.value }))
                 }
-                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                className="h-11 px-3 border border-slate-200 rounded-xl w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
+          </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Warehouse</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Warehouse</label>
               <select
                 value={currentItem?.warehouseId || ""}
                 onChange={(e) =>
@@ -764,25 +772,19 @@ const DamageProductTable = () => {
                     warehouseId: e.target.value,
                   })
                 }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 required
               >
                 <option value="">Select Warehouse</option>
-                {isLoadingWarehouse ? (
-                  <option disabled>Loading...</option>
-                ) : (
-                  warehouses?.map((w) => (
-                    <option key={w.Id} value={w.Id}>
-                      {w.name}
-                    </option>
-                  ))
-                )}
+                {warehouses?.map((w) => (
+                  <option key={w.Id} value={w.Id}>
+                    {w.name}
+                  </option>
+                ))}
               </select>
             </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Supplier</label>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
               <select
                 value={currentItem?.supplierId || ""}
                 onChange={(e) =>
@@ -791,53 +793,45 @@ const DamageProductTable = () => {
                     supplierId: e.target.value,
                   })
                 }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 required
               >
                 <option value="">Select Supplier</option>
-                {isLoadingSupplier ? (
-                  <option disabled>Loading...</option>
-                ) : (
-                  suppliers?.map((s) => (
-                    <option key={s.Id} value={s.Id}>
-                      {s.name}
-                    </option>
-                  ))
-                )}
+                {suppliers?.map((s) => (
+                  <option key={s.Id} value={s.Id}>
+                    {s.name}
+                  </option>
+                ))}
               </select>
             </div>
-            <div className="mt-4">
-              <label className="block text-sm text-slate-600 mb-1">
-                Quantity
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={currentItem.quantity ?? ""}
-                onChange={(e) =>
-                  setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
-                }
-                className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              />
-            </div>
+          </div>
 
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Quantity</label>
+            <input
+              type="number"
+              step="0.01"
+              value={currentItem?.quantity ?? ""}
+              onChange={(e) =>
+                setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
+              }
+              className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+            />
+          </div>
+
+          <div className="space-y-4 pt-2">
             {role === "superAdmin" || role === "admin" ? (
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Status
-                </label>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
                 <select
-                  value={currentItem.status || ""}
+                  value={currentItem?.status || ""}
                   onChange={(e) =>
                     setCurrentItem((p) => ({
                       ...p,
                       status: e.target.value,
                     }))
                   }
-                  className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 >
                   <option value="">Select Status</option>
@@ -847,238 +841,210 @@ const DamageProductTable = () => {
                 </select>
               </div>
             ) : (
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Note
-                </label>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
                 <textarea
                   value={currentItem?.note || ""}
                   onChange={(e) =>
                     setCurrentItem((p) => ({ ...p, note: e.target.value }))
                   }
-                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full text-slate-900 outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  className="min-h-[100px] border border-slate-200 rounded-xl p-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  rows={3}
                 />
               </div>
             )}
+          </div>
 
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 h-11 rounded-xl font-semibold"
-                onClick={handleUpdate}
-              >
-                Save
-              </button>
-              <button
-                className="bg-white hover:bg-slate-50 text-slate-800 px-4 h-11 rounded-xl border border-slate-200 font-semibold"
-                onClick={closeEdit}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
+          <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+              onClick={closeEdit}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
+              onClick={handleUpdate}
+            >
+              Save Changes
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
 
-      {/* Note Modal */}
-      {isEditOpen1 && currentItem && (
-        <div className="fixed inset-0 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">Edit Note</h2>
+      {/* ✅ Edit Note/Delete Request Modal */}
+      <Modal
+        isOpen={isEditOpen1 && !!currentItem}
+        onClose={closeEdit1}
+        title="Edit Note / Request"
+        maxWidth="max-w-xl"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
+            <textarea
+              value={currentItem?.note || ""}
+              onChange={(e) =>
+                setCurrentItem((p) => ({ ...p, note: e.target.value }))
+              }
+              className="min-h-[120px] border border-slate-200 rounded-xl p-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              placeholder="Enter note or reason for request..."
+            />
+          </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-slate-600 mb-1">Note</label>
-              <textarea
-                value={currentItem?.note || ""}
-                onChange={(e) =>
-                  setCurrentItem((p) => ({ ...p, note: e.target.value }))
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+              onClick={closeEdit1}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
+              onClick={handleUpdate1}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ✅ Add Modal */}
+      <Modal
+        isOpen={isAddOpen}
+        onClose={closeAdd}
+        title="Add Damage Product"
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={handleCreate} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
+              <Select
+                options={receivedDropdownOptions}
+                value={
+                  receivedDropdownOptions.find(
+                    (o) => o.value === String(createForm.receivedId),
+                  ) || null
                 }
-                className="min-h-[110px] border border-slate-200 rounded-xl p-3 w-full text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                onChange={(selected) =>
+                  setCreateForm((p) => ({
+                    ...p,
+                    receivedId: selected?.value || "",
+                  }))
+                }
+                placeholder={receivedLoading ? "Loading..." : "Select Product"}
+                isClearable
+                isDisabled={receivedLoading}
+                styles={selectStyles}
               />
             </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 h-11 rounded-xl font-semibold"
-                onClick={handleUpdate1}
-              >
-                Save
-              </button>
-              <button
-                className="bg-white hover:bg-slate-50 text-slate-800 px-4 h-11 rounded-xl border border-slate-200 font-semibold"
-                onClick={closeEdit1}
-              >
-                Cancel
-              </button>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+              <input
+                type="date"
+                value={createForm?.date || ""}
+                onChange={(e) =>
+                  setCreateForm((p) => ({ ...p, date: e.target.value }))
+                }
+                className="h-11 px-3 border border-slate-200 rounded-xl w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
             </div>
-          </motion.div>
-        </div>
-      )}
+          </div>
 
-      {/* Add Modal */}
-      {isAddOpen && (
-        <div className="fixed top-6 inset-0 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Warehouse</label>
+              <select
+                value={createForm?.warehouseId || ""}
+                onChange={(e) =>
+                  setCreateForm({
+                    ...createForm,
+                    warehouseId: e.target.value,
+                  })
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                required
+              >
+                <option value="">Select Warehouse</option>
+                {warehouses?.map((w) => (
+                  <option key={w.Id} value={w.Id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
+              <select
+                value={createForm?.supplierId || ""}
+                onChange={(e) =>
+                  setCreateForm({
+                    ...createForm,
+                    supplierId: e.target.value,
+                  })
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                required
+              >
+                <option value="">Select Supplier</option>
+                {suppliers?.map((s) => (
+                  <option key={s.Id} value={s.Id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Quantity</label>
+            <input
+              type="number"
+              step="0.01"
+              value={createForm.quantity}
+              onChange={(e) =>
+                setCreateForm((p) => ({ ...p, quantity: e.target.value }))
+              }
+              className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
+            <textarea
+              value={createForm?.note || ""}
+              onChange={(e) =>
+                setCreateForm({
+                  ...createForm,
+                  note: e.target.value,
+                })
+              }
+              className="min-h-[100px] border border-slate-200 rounded-xl p-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              placeholder="Enter additional notes..."
+            />
+          </div>
+
+          <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+              onClick={closeAdd}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
+            >
               Add Product
-            </h2>
-
-            <form onSubmit={handleCreate}>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Name
-                </label>
-                <Select
-                  options={receivedDropdownOptions}
-                  value={
-                    receivedDropdownOptions.find(
-                      (o) => o.value === String(createForm.receivedId),
-                    ) || null
-                  }
-                  onChange={(selected) =>
-                    setCreateForm((p) => ({
-                      ...p,
-                      receivedId: selected?.value || "",
-                    }))
-                  }
-                  placeholder={
-                    receivedLoading ? "Loading..." : "Select Product"
-                  }
-                  isClearable
-                  isDisabled={receivedLoading}
-                  styles={selectStyles}
-                  className="text-black"
-                />
-              </div>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Date</label>
-                <input
-                  type="date"
-                  value={createForm?.date || ""}
-                  onChange={(e) =>
-                    setCreateForm((p) => ({ ...p, date: e.target.value }))
-                  }
-                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">
-                  Warehouse
-                </label>
-                <select
-                  value={createForm?.warehouseId || ""}
-                  onChange={(e) =>
-                    setCreateForm({
-                      ...createForm,
-                      warehouseId: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Warehouse</option>
-                  {isLoadingWarehouse ? (
-                    <option disabled>Loading...</option>
-                  ) : (
-                    warehouses?.map((w) => (
-                      <option key={w.Id} value={w.Id}>
-                        {w.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Supplier</label>
-                <select
-                  value={createForm?.supplierId || ""}
-                  onChange={(e) =>
-                    setCreateForm({
-                      ...createForm,
-                      supplierId: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Supplier</option>
-                  {isLoadingSupplier ? (
-                    <option disabled>Loading...</option>
-                  ) : (
-                    suppliers?.map((s) => (
-                      <option key={s.Id} value={s.Id}>
-                        {s.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Quantity
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={createForm.quantity}
-                  onChange={(e) =>
-                    setCreateForm((p) => ({ ...p, quantity: e.target.value }))
-                  }
-                  className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                />
-              </div>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Note</label>
-                <textarea
-                  value={createForm?.note || ""}
-                  onChange={(e) =>
-                    setCreateForm({
-                      ...createForm,
-                      note: e.target.value,
-                    })
-                  }
-                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 h-11 rounded-xl font-semibold"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-white hover:bg-slate-50 text-slate-800 px-4 h-11 rounded-xl border border-slate-200 font-semibold"
-                  onClick={closeAdd}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </motion.div>
   );
 };

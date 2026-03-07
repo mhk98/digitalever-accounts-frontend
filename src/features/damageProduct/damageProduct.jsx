@@ -11,6 +11,7 @@ export const damageProductApi = baseApi.injectEndpoints({
       invalidatesTags: [
         { type: "DamageProduct", id: "LIST" },
         { type: "InventoryOverview", id: "LIST" }, // ✅ receive stock affected
+        { type: "DamageStock", id: "LIST" }, // ✅ receive stock affected
       ],
     }),
 
@@ -24,13 +25,14 @@ export const damageProductApi = baseApi.injectEndpoints({
         { type: "DamageProduct", id: "LIST" },
 
         { type: "InventoryOverview", id: "LIST" }, // ✅ stock return/update
+        { type: "DamageStock", id: "LIST" }, // ✅ stock return/update
       ],
     }),
 
     updateDamageProduct: build.mutation({
       query: ({ id, data }) => ({
         url: `/damage-product/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [
@@ -38,6 +40,7 @@ export const damageProductApi = baseApi.injectEndpoints({
         { type: "DamageProduct", id: "LIST" },
 
         { type: "InventoryOverview", id: "LIST" }, // ✅ if update changes qty/status
+        { type: "DamageStock", id: "LIST" }, // ✅ if update changes qty/status
       ],
     }),
 
@@ -56,12 +59,12 @@ export const damageProductApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-              { type: "DamageProduct", id: "LIST" },
-              ...result.data.map((r) => ({
-                type: "DamageProduct",
-                id: r.Id,
-              })),
-            ]
+            { type: "DamageProduct", id: "LIST" },
+            ...result.data.map((r) => ({
+              type: "DamageProduct",
+              id: r.Id,
+            })),
+          ]
           : [{ type: "DamageProduct", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),

@@ -32,7 +32,7 @@ export const assetsPurchaseApi = baseApi.injectEndpoints({
     updateAssetsPurchase: build.mutation({
       query: ({ id, data }) => ({
         url: `assets-purchase/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [
@@ -51,9 +51,9 @@ export const assetsPurchaseApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data?.length
           ? [
-              { type: "AssetsPurchase", id: "LIST" },
-              ...result.data.map((r) => ({ type: "AssetsPurchase", id: r.Id })),
-            ]
+            { type: "AssetsPurchase", id: "LIST" },
+            ...result.data.map((r) => ({ type: "AssetsPurchase", id: r.Id })),
+          ]
           : [{ type: "AssetsPurchase", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),

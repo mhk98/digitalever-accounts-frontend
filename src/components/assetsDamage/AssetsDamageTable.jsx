@@ -193,6 +193,8 @@ const AssetsDamageTable = () => {
         quantity: Number(createProduct.quantity),
         price: Number(createProduct.price),
         date: createProduct.date,
+        note: createProduct.note,
+
       };
 
       const res = await insertAssetsDamage(payload).unwrap();
@@ -433,8 +435,8 @@ const AssetsDamageTable = () => {
             value={
               filterProductName
                 ? productDropdownOptions.find(
-                    (o) => o.label === filterProductName,
-                  )
+                  (o) => o.label === filterProductName,
+                )
                 : null
             }
             onChange={(selected) => setFilterProductName(selected?.label || "")}
@@ -527,13 +529,12 @@ const AssetsDamageTable = () => {
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
-                        row.status === "Approved"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : row.status === "Active"
-                            ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                            : "bg-amber-50 text-amber-700 border-amber-200"
-                      }`}
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${row.status === "Approved"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : row.status === "Active"
+                          ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                        }`}
                     >
                       {row.status}
                     </span>
@@ -541,7 +542,7 @@ const AssetsDamageTable = () => {
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-3">
-                      {row.note ? (
+                      {/* {row.note ? (
                         <div className="relative">
                           <button
                             className="relative h-10 w-10 rounded-md flex items-center justify-center"
@@ -563,6 +564,31 @@ const AssetsDamageTable = () => {
                           type="button"
                         >
                           <Notebook size={18} className="text-slate-700" />
+                        </button>
+                      )} */}
+
+                      {row.note ? (
+                        <div className="relative">
+                          <button
+                            className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                            title={row.note}
+                            type="button"
+                            onClick={() => handleNoteClick(row.note)}
+                          >
+                            <Notebook size={18} className="text-slate-700" />
+                          </button>
+
+                          <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                            1
+                          </span>
+                        </div>
+                      ) : (
+                        <button
+                          className="h-10 w-10 rounded-md flex items-center justify-center cursor-default"
+                          title="No note available"
+                          type="button"
+                        >
+                          <Notebook size={18} className="text-slate-300" />
                         </button>
                       )}
 
@@ -669,11 +695,10 @@ const AssetsDamageTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
+              className={`px-4 py-2 rounded-xl border transition ${active
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                }`}
             >
               {pageNum}
             </button>
@@ -721,8 +746,8 @@ const AssetsDamageTable = () => {
                 value={
                   currentProduct.productId
                     ? productDropdownOptions.find(
-                        (o) => o.value === String(currentProduct.productId),
-                      )
+                      (o) => o.value === String(currentProduct.productId),
+                    )
                     : null
                 }
                 onChange={(selected) =>
@@ -848,8 +873,8 @@ const AssetsDamageTable = () => {
                 value={
                   createProduct.productId
                     ? productDropdownOptions.find(
-                        (o) => o.value === String(createProduct.productId),
-                      )
+                      (o) => o.value === String(createProduct.productId),
+                    )
                     : null
                 }
                 onChange={(selected) =>
@@ -1021,9 +1046,8 @@ const Field = ({
       onChange={(e) => onChange(e.target.value)}
       readOnly={readOnly}
       required={required}
-      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${
-        readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
-      }`}
+      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
+        }`}
     />
   </div>
 );

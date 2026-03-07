@@ -5,7 +5,7 @@
 // export const payableApi = createApi({
 //   reducerPath: "payableApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " http://localhost:5000/api/v1/",
+//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 //     prepareHeaders: (headers) => {
 //       const token = getAuthToken();
 //       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -26,7 +26,7 @@
 //     updatePayable: build.mutation({
 //       query: ({ id, data }) => ({
 //         url: `/payable/${id}`,
-//         method: "PATCH",
+//         method: "PUT",
 //         body: data,
 //       }),
 //       invalidatesTags: ["payable"],
@@ -113,7 +113,7 @@ export const payableApi = baseApi.injectEndpoints({
     updatePayable: build.mutation({
       query: ({ id, data }) => ({
         url: `/payable/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [

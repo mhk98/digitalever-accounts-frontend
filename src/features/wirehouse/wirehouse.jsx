@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const wirehouseApi = createApi({
   reducerPath: "wirehouseApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 
     // Prepare headers to include Authorization token if present
     prepareHeaders: (headers) => {
@@ -45,7 +45,7 @@ export const wirehouseApi = createApi({
     updateWirehouse: build.mutation({
       query: ({ id, data }) => ({
         url: `/warehouse/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: ["warehouse"], // Invalidate the warehouse cache after update

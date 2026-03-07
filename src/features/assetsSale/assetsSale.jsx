@@ -10,7 +10,7 @@ import { baseApi } from "../baseApi/api";
 // export const assetsSaleApi = createApi({
 //   reducerPath: "assetsSaleApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " http://localhost:5000/api/v1/",
+//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 //     prepareHeaders: (headers) => {
 //       const token = getAuthToken(); // Fetch the token
 //       if (token) {
@@ -43,7 +43,7 @@ import { baseApi } from "../baseApi/api";
 //     updateAssetsSale: build.mutation({
 //       query: ({ id, data }) => ({
 //         url: `/assets-sale/${id}`,
-//         method: "PATCH",
+//         method: "PUT",
 //         body: data,
 //       }),
 //       invalidatesTags: ["assets-sale"], // Invalidate the product tag after this mutation
@@ -110,7 +110,7 @@ export const assetsSaleApi = baseApi.injectEndpoints({
     updateAssetsSale: build.mutation({
       query: ({ id, data }) => ({
         url: `assets-sale/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [
@@ -129,9 +129,9 @@ export const assetsSaleApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data?.length
           ? [
-              { type: "AssetsSale", id: "LIST" },
-              ...result.data.map((r) => ({ type: "AssetsSale", id: r.Id })),
-            ]
+            { type: "AssetsSale", id: "LIST" },
+            ...result.data.map((r) => ({ type: "AssetsSale", id: r.Id })),
+          ]
           : [{ type: "AssetsSale", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),

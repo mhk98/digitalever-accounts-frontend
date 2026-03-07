@@ -3,6 +3,7 @@ import { BadgeDollarSign, Edit, Notebook, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
+import Modal from "../common/Modal";
 
 import { useGetAllAssetsPurchaseWithoutQueryQuery } from "../../features/assetsPurchase/assetsPurchase";
 import {
@@ -213,6 +214,7 @@ const AssetsSaleTable = () => {
         quantity: Number(createProduct.quantity),
         price: Number(createProduct.price),
         date: createProduct.date,
+        note: createProduct.note,
       };
 
       const res = await insertAssetsSale(payload).unwrap();
@@ -466,8 +468,8 @@ const AssetsSaleTable = () => {
             value={
               filterProductName
                 ? productDropdownOptions.find(
-                    (o) => o.label === filterProductName,
-                  ) || null
+                  (o) => o.label === filterProductName,
+                ) || null
                 : null
             }
             onChange={(selected) => setFilterProductName(selected?.label || "")}
@@ -561,13 +563,12 @@ const AssetsSaleTable = () => {
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
-                        row.status === "Approved"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : row.status === "Active"
-                            ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                            : "bg-amber-50 text-amber-700 border-amber-200"
-                      }`}
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${row.status === "Approved"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : row.status === "Active"
+                          ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                        }`}
                     >
                       {row.status}
                     </span>
@@ -575,30 +576,46 @@ const AssetsSaleTable = () => {
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-3">
+                      {/* <button
+                        className="relative h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition shadow-sm text-indigo-600"
+                        title="View Note"
+                        type="button"
+                        onClick={() => handleNoteClick(row.note)}
+                      >
+                        <Notebook size={16} />
+                        {row.note && (
+                          <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                          </span>
+                        )}
+                      </button> */}
                       {row.note ? (
                         <div className="relative">
                           <button
                             className="relative h-10 w-10 rounded-md flex items-center justify-center"
                             title={row.note}
                             type="button"
-                            onClick={() => handleNoteClick(row.note)} // Open modal on click
+                            onClick={() => handleNoteClick(row.note)}
                           >
                             <Notebook size={18} className="text-slate-700" />
                           </button>
 
                           <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
-                            {row.note ? 1 : null}
+                            1
                           </span>
                         </div>
                       ) : (
                         <button
-                          className="h-10 w-10 rounded-md flex items-center justify-center"
-                          title={row.note}
+                          className="h-10 w-10 rounded-md flex items-center justify-center cursor-default"
+                          title="No note available"
                           type="button"
                         >
-                          <Notebook size={18} className="text-slate-700" />
+                          <Notebook size={18} className="text-slate-300" />
                         </button>
                       )}
+
+
                       <button
                         onClick={() => openEditModal(row)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-indigo-50 transition"
@@ -606,6 +623,25 @@ const AssetsSaleTable = () => {
                       >
                         <Edit size={18} className="text-indigo-600" />
                       </button>
+
+                      {/* {role === "superAdmin" || role === "admin" ? (
+                        <button
+                          onClick={() => handleDeleteProduct(rowId)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition shadow-sm"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => openNoteModal(row)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-amber-600 hover:border-amber-200 hover:bg-amber-50 transition shadow-sm"
+                          title="Delete Request / Note"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )} */}
+
 
                       {role === "superAdmin" || role === "admin" ? (
                         <button
@@ -627,28 +663,8 @@ const AssetsSaleTable = () => {
                     </div>
                   </td>
 
-                  {/* ✅ Note Modal (Popup) */}
-                  {isNoteModalOpen1 && (
-                    <div className="fixed inset-0 flex items-center justify-center p-4">
-                      <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
-                        <h2 className="text-xl font-semibold text-slate-900">
-                          Note
-                        </h2>
-                        <p className="mt-4 text-sm text-slate-700">
-                          {noteContent}
-                        </p>
 
-                        <div className="mt-6 flex justify-end gap-2">
-                          <button
-                            onClick={handleNoteModalClose}
-                            className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                          >
-                            Close
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+
                 </motion.tr>
               );
             })}
@@ -684,11 +700,10 @@ const AssetsSaleTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
+              className={`px-4 py-2 rounded-xl border transition ${active
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                }`}
             >
               {pageNum}
             </button>
@@ -704,326 +719,313 @@ const AssetsSaleTable = () => {
         </button>
       </div>
 
-      {/* -------------------- Edit Modal -------------------- */}
-      {isEditModalOpen && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-3/4 lg:w-1/2 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Edit Assets Sale
-              </h2>
-              <button
-                type="button"
-                onClick={closeEditModal}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
+      {/* ✅ Note View Modal */}
+      <Modal
+        isOpen={isNoteModalOpen1}
+        onClose={handleNoteModalClose}
+        title="Transaction Note"
+      >
+        <div className="space-y-4">
+          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 min-h-[120px]">
+            <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {noteContent || "No note available."}
+            </p>
+          </div>
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={handleNoteModalClose}
+              className="px-6 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition shadow-sm active:scale-95"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </Modal>
 
-            <div className="grid grid-cols-1 gap-3 mt-4">
+      {/* ✅ Edit Modal */}
+      <Modal
+        isOpen={isEditModalOpen && !!currentProduct}
+        onClose={closeEditModal}
+        title="Edit Assets Sale"
+        maxWidth="max-w-xl"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              Product
+            </label>
+            <Select
+              options={productDropdownOptions}
+              value={
+                currentProduct?.productId
+                  ? productDropdownOptions.find(
+                    (o) => o.value === String(currentProduct.productId),
+                  ) || null
+                  : null
+              }
+              onChange={(selected) =>
+                setCurrentProduct((p) => ({
+                  ...p,
+                  productId: selected?.value || "",
+                }))
+              }
+              placeholder="Select Assets"
+              isClearable
+              styles={selectStyles}
+              className="w-full"
+              isDisabled={isLoadingAllProducts}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <LightField
+              label="Date"
+              type="date"
+              value={currentProduct?.date}
+              onChange={(v) =>
+                setCurrentProduct({ ...currentProduct, date: v })
+              }
+              required
+            />
+            <LightField
+              label="Quantity"
+              type="number"
+              step="0.01"
+              value={currentProduct?.quantity}
+              onChange={(v) =>
+                setCurrentProduct((p) => ({ ...p, quantity: v }))
+              }
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <LightField
+              label="Price"
+              type="number"
+              step="0.01"
+              value={currentProduct?.price}
+              onChange={(v) => setCurrentProduct((p) => ({ ...p, price: v }))}
+              required
+            />
+            {role === "superAdmin" ? (
               <div>
-                <label className="block text-sm text-slate-700">Product</label>
-                <Select
-                  options={productDropdownOptions}
-                  value={
-                    currentProduct.productId
-                      ? productDropdownOptions.find(
-                          (o) => o.value === String(currentProduct.productId),
-                        ) || null
-                      : null
-                  }
-                  onChange={(selected) =>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                  Status
+                </label>
+                <select
+                  value={currentProduct?.status || ""}
+                  onChange={(e) =>
                     setCurrentProduct((p) => ({
                       ...p,
-                      productId: selected?.value || "",
+                      status: e.target.value,
                     }))
                   }
-                  placeholder="Select Assets"
-                  isClearable
-                  styles={selectStyles}
-                  className="w-full"
-                  isDisabled={isLoadingAllProducts}
-                />
+                  className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
               </div>
-              <LightField
-                label="Date:"
-                type="date"
-                value={currentProduct.date}
-                onChange={(v) =>
-                  setCreateProduct({ ...currentProduct, date: v })
-                }
-                required
-              />
-              <LightField
-                label="Quantity"
-                type="number"
-                step="0.01"
-                value={currentProduct.quantity}
-                onChange={(v) =>
-                  setCurrentProduct((p) => ({ ...p, quantity: v }))
-                }
-                required
-              />
-
-              <LightField
-                label="Price"
-                type="number"
-                step="0.01"
-                value={currentProduct.price}
-                onChange={(v) => setCurrentProduct((p) => ({ ...p, price: v }))}
-                required
-              />
-
-              {role === "superAdmin" ? (
-                <div>
-                  <label className="block text-sm text-slate-700">Status</label>
-                  <select
-                    value={currentProduct.status || ""}
-                    onChange={(e) =>
-                      setCurrentProduct((p) => ({
-                        ...p,
-                        status: e.target.value,
-                      }))
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    required
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Pending">Pending</option>
-                  </select>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-sm text-slate-700">Note</label>
-                  <textarea
-                    value={currentProduct?.note || ""}
-                    onChange={(e) =>
-                      setCurrentProduct((p) => ({ ...p, note: e.target.value }))
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    rows={3}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                onClick={handleUpdateProduct}
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                onClick={closeEditModal}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* -------------------- Add Modal -------------------- */}
-      {isAddModalOpen && (
-        <div className="fixed top-16 inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-3/4 lg:w-1/2 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Add Assets Sale
-              </h2>
-              <button
-                type="button"
-                onClick={closeAddModal}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateProduct} className="grid gap-3 mt-4">
+            ) : (
               <div>
-                <label className="block text-sm text-slate-700">Product</label>
-                <Select
-                  options={productDropdownOptions}
-                  value={
-                    createProduct.productId
-                      ? productDropdownOptions.find(
-                          (o) => o.value === String(createProduct.productId),
-                        ) || null
-                      : null
-                  }
-                  onChange={(selected) =>
-                    setCreateProduct((p) => ({
-                      ...p,
-                      productId: selected?.value || "",
-                    }))
-                  }
-                  placeholder="Select Assets"
-                  isClearable
-                  styles={selectStyles}
-                  className="w-full"
-                  isDisabled={isLoadingAllProducts}
-                />
-              </div>
-
-              <LightField
-                label="Date:"
-                type="date"
-                value={createProduct.date}
-                onChange={(v) =>
-                  setCreateProduct({ ...createProduct, date: v })
-                }
-                required
-              />
-              <LightField
-                label="Quantity"
-                type="number"
-                step="0.01"
-                value={createProduct.quantity}
-                onChange={(v) =>
-                  setCreateProduct((p) => ({ ...p, quantity: v }))
-                }
-                required
-              />
-
-              <LightField
-                label="Price"
-                type="number"
-                step="0.01"
-                value={createProduct.price}
-                onChange={(v) => setCreateProduct((p) => ({ ...p, price: v }))}
-                required
-              />
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Note</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                  Note
+                </label>
                 <textarea
-                  value={createProduct?.note || ""}
+                  value={currentProduct?.note || ""}
                   onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      note: e.target.value,
-                    })
+                    setCurrentProduct((p) => ({ ...p, note: e.target.value }))
                   }
-                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  className="w-full min-h-[44px] border border-slate-200 rounded-xl p-3 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
+                  rows={1}
                 />
               </div>
+            )}
+          </div>
 
-              <div className="mt-2 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                  onClick={closeAddModal}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100 mt-6">
+            <button
+              onClick={closeEditModal}
+              className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition active:scale-95"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleUpdateProduct}
+              className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-100 active:scale-95"
+            >
+              Save Changes
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
 
-      {/* -------------------- Note/Status Modal (Delete Request) -------------------- */}
-      {isNoteModalOpen && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-3/4 lg:w-1/2 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Delete Request / Note
-              </h2>
-              <button
-                type="button"
-                onClick={closeNoteModal}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
+      {/* ✅ Add Modal */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={closeAddModal}
+        title="Add Assets Sale"
+        maxWidth="max-w-xl"
+      >
+        <form onSubmit={handleCreateProduct} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              Product
+            </label>
+            <Select
+              options={productDropdownOptions}
+              value={
+                createProduct.productId
+                  ? productDropdownOptions.find(
+                    (o) => o.value === String(createProduct.productId),
+                  ) || null
+                  : null
+              }
+              onChange={(selected) =>
+                setCreateProduct((p) => ({
+                  ...p,
+                  productId: selected?.value || "",
+                }))
+              }
+              placeholder="Select Assets"
+              isClearable
+              styles={selectStyles}
+              className="w-full"
+              isDisabled={isLoadingAllProducts}
+            />
+          </div>
 
-            <div className="mt-4">
-              {role === "superAdmin" ? (
-                <div>
-                  <label className="block text-sm text-slate-700">Status</label>
-                  <select
-                    value={currentProduct.status || ""}
-                    onChange={(e) =>
-                      setCurrentProduct((p) => ({
-                        ...p,
-                        status: e.target.value,
-                      }))
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    required
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Pending">Pending</option>
-                  </select>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-sm text-slate-700">Note</label>
-                  <textarea
-                    value={currentProduct?.note || ""}
-                    onChange={(e) =>
-                      setCurrentProduct((p) => ({ ...p, note: e.target.value }))
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    rows={3}
-                  />
-                </div>
-              )}
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <LightField
+              label="Date"
+              type="date"
+              value={createProduct.date}
+              onChange={(v) =>
+                setCreateProduct({ ...createProduct, date: v })
+              }
+              required
+            />
+            <LightField
+              label="Quantity"
+              type="number"
+              step="0.01"
+              value={createProduct.quantity}
+              onChange={(v) =>
+                setCreateProduct((p) => ({ ...p, quantity: v }))
+              }
+              required
+            />
+          </div>
 
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                onClick={handleUpdateProductNote}
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                onClick={closeNoteModal}
-              >
-                Cancel
-              </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <LightField
+              label="Price"
+              type="number"
+              step="0.01"
+              value={createProduct.price}
+              onChange={(v) => setCreateProduct((p) => ({ ...p, price: v }))}
+              required
+            />
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                Note
+              </label>
+              <textarea
+                value={createProduct?.note || ""}
+                onChange={(e) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    note: e.target.value,
+                  })
+                }
+                className="w-full min-h-[44px] border border-slate-200 rounded-xl p-3 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
+                rows={1}
+              />
             </div>
-          </motion.div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100 mt-6">
+            <button
+              type="button"
+              onClick={closeAddModal}
+              className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition active:scale-95"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-100 active:scale-95"
+            >
+              Save Assets Sale
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ✅ Delete Request / Note Modal */}
+      <Modal
+        isOpen={isNoteModalOpen && !!currentProduct}
+        onClose={closeNoteModal}
+        title="Action Confirmation"
+      >
+        <div className="space-y-4">
+          {role === "superAdmin" ? (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                Status
+              </label>
+              <select
+                value={currentProduct?.status || ""}
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({
+                    ...p,
+                    status: e.target.value,
+                  }))
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                required
+              >
+                <option value="">Select Status</option>
+                <option value="Approved">Approved</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                Reason for Change
+              </label>
+              <textarea
+                value={currentProduct?.note || ""}
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({ ...p, note: e.target.value }))
+                }
+                className="w-full min-h-[120px] border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
+                placeholder="Please explain the reason..."
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              onClick={closeNoteModal}
+              className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition active:scale-95"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleUpdateProductNote}
+              className="px-8 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition shadow-md shadow-amber-100 active:scale-95"
+            >
+              Submit Note
+            </button>
+          </div>
         </div>
-      )}
-    </motion.div>
+      </Modal>
+    </motion.div >
   );
 };
 
@@ -1045,9 +1047,8 @@ const LightField = ({
       onChange={(e) => onChange(e.target.value)}
       readOnly={readOnly}
       required={required}
-      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${
-        readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
-      }`}
+      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
+        }`}
     />
   </div>
 );

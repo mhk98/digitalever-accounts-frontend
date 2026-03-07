@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2, FileText, X, Notebook } from "lucide-react";
+import { Edit, Plus, Trash2, FileText, X, Notebook, Download } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -14,6 +14,8 @@ import {
   useUpdateEmployeeMutation,
 } from "../../features/employee/employee";
 import { useGetAllSalaryQuery } from "../../features/salary/salary";
+import Modal from "../common/Modal";
+
 
 const EmployeeTable = () => {
   const role = localStorage.getItem("role");
@@ -608,62 +610,315 @@ const EmployeeTable = () => {
   // ----------------------------
   // Bulk invoice PDF
   // ----------------------------
-  const downloadBulkInvoicePDF = async () => {
-    try {
-      if (!bulkInvoiceRef.current || selectedEmployees.length === 0) return;
+  // const downloadBulkInvoicePDF = async () => {
+  //   try {
+  //     if (!bulkInvoiceRef.current || selectedEmployees.length === 0) return;
 
-      if (document.fonts?.ready) await document.fonts.ready;
+  //     if (document.fonts?.ready) await document.fonts.ready;
 
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
+  //     const pdf = new jsPDF("p", "mm", "a4");
+  //     const pageW = pdf.internal.pageSize.getWidth();
+  //     const pageH = pdf.internal.pageSize.getHeight();
 
-      const invoiceNodes =
-        bulkInvoiceRef.current.querySelectorAll(".invoice-page");
+  //     const invoiceNodes =
+  //       bulkInvoiceRef.current.querySelectorAll(".invoice-page");
 
-      for (let i = 0; i < invoiceNodes.length; i++) {
-        const node = invoiceNodes[i];
+  //     for (let i = 0; i < invoiceNodes.length; i++) {
+  //       const node = invoiceNodes[i];
 
-        const canvas = await html2canvas(node, {
-          scale: 3,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: "#ffffff",
-          logging: false,
-          scrollX: 0,
-          scrollY: -window.scrollY,
-        });
+  //       const canvas = await html2canvas(node, {
+  //         scale: 3,
+  //         useCORS: true,
+  //         allowTaint: true,
+  //         backgroundColor: "#ffffff",
+  //         logging: false,
+  //         scrollX: 0,
+  //         scrollY: -window.scrollY,
+  //       });
 
-        const imgData = canvas.toDataURL("image/jpeg", 0.98);
-        const imgH = (canvas.height * pageW) / canvas.width;
+  //       const imgData = canvas.toDataURL("image/jpeg", 0.98);
+  //       const imgH = (canvas.height * pageW) / canvas.width;
 
-        let heightLeft = imgH;
-        let position = 0;
+  //       let heightLeft = imgH;
+  //       let position = 0;
 
-        if (i > 0) pdf.addPage();
+  //       if (i > 0) pdf.addPage();
 
-        pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
-        heightLeft -= pageH;
+  //       pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
+  //       heightLeft -= pageH;
 
-        while (heightLeft > 0) {
-          position -= pageH;
-          pdf.addPage();
-          pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
-          heightLeft -= pageH;
-        }
-      }
+  //       while (heightLeft > 0) {
+  //         position -= pageH;
+  //         pdf.addPage();
+  //         pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
+  //         heightLeft -= pageH;
+  //       }
+  //     }
 
-      pdf.save(`Invoices_${Date.now()}.pdf`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Bulk PDF download failed!");
-    }
-  };
+  //     pdf.save(`Invoices_${Date.now()}.pdf`);
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Bulk PDF download failed!");
+  //   }
+  // };
+
+
+  // const printBulkInvoices = () => {
+  //   if (!selectedEmployees?.length) return;
+
+  //   const printWindow = window.open("", "_blank", "width=900,height=650");
+  //   if (!printWindow) {
+  //     toast.error("Popup blocked! Allow popups then try again.");
+  //     return;
+  //   }
+
+  //   const formatDate = (d = new Date()) =>
+  //     new Date(d).toLocaleDateString("en-GB"); // dd/mm/yyyy
+
+  //   const escapeHtml = (v) => {
+  //     const s = String(v ?? "");
+  //     return s
+  //       .replaceAll("&", "&amp;")
+  //       .replaceAll("<", "&lt;")
+  //       .replaceAll(">", "&gt;")
+  //       .replaceAll('"', "&quot;")
+  //       .replaceAll("'", "&#039;");
+  //   };
+
+  //   const money = (n) => Number(n || 0).toFixed(2);
+  //   const num = (n) => Number(n || 0);
+
+  //   // ✅ Stable unique suffix so every invoice no is unique in the same print session
+  //   const sessionSuffix = String(Date.now()).slice(-6);
+
+  //   const invoicesHtml = selectedEmployees
+  //     .map((emp, idx) => {
+  //       const invoiceDate = formatDate(new Date());
+
+  //       // Unique invoice no (empId + date + session + index)
+  //       const invoiceNo = `${escapeHtml(emp?.employee_id || "EMP")}-${invoiceDate.replaceAll(
+  //         "/",
+  //         "",
+  //       )}-${sessionSuffix}${idx}`;
+
+  //       return `
+  //       <div class="invoice-container invoice-page">
+  //         <div class="invoice-header">
+  //           <h1>Kafela Mart</h1>
+  //           <p>Address line | Phone: +880 9647-555333</p>
+  //           <p>Invoice Date: ${invoiceDate} | Invoice No: ${invoiceNo}</p>
+  //         </div>
+
+  //         <div class="invoice-details">
+  //           <div class="left">
+  //             <p><strong>Employee:</strong> ${escapeHtml(emp?.name || "-")}</p>
+  //             <p><strong>Employee ID:</strong> ${escapeHtml(
+  //         emp?.employee_id || "-",
+  //       )}</p>
+  //           </div>
+  //           <div class="right">
+  //             <p><strong>Total Salary:</strong> ${money(emp?.total_salary)}</p>
+  //             <p>
+  //               <strong>Net Salary:</strong>
+  //               <span class="net-salary-inline">${money(emp?.net_salary)}</span>
+  //             </p>
+  //           </div>
+  //         </div>
+
+  //         <table class="invoice-table">
+  //           <thead>
+  //             <tr>
+  //               <th>Description</th>
+  //               <th class="amount-col">Amount</th>
+  //             </tr>
+  //           </thead>
+  //           <tbody>
+  //             <tr><td>Basic Salary</td><td class="amount-col">${money(
+  //         emp?.basic_salary,
+  //       )}</td></tr>
+  //             <tr><td>Incentive</td><td class="amount-col">${money(
+  //         emp?.incentive,
+  //       )}</td></tr>
+  //             <tr><td>Holiday Days</td><td class="amount-col">${num(
+  //         emp?.holiday_payment,
+  //       )}</td></tr>
+  //             <tr><td>Advance</td><td class="amount-col">-${money(
+  //         emp?.advance,
+  //       )}</td></tr>
+
+  //             <tr><td>Late (days)</td><td class="amount-col">${num(
+  //         emp?.late,
+  //       )}</td></tr>
+  //             <tr><td>Early Leave (days)</td><td class="amount-col">${num(
+  //         emp?.early_leave,
+  //       )}</td></tr>
+  //             <tr><td>Absent (days)</td><td class="amount-col">${num(
+  //         emp?.absent,
+  //       )}</td></tr>
+  //             <tr><td>Friday Absent (days)</td><td class="amount-col">${num(
+  //         emp?.friday_absent,
+  //       )}</td></tr>
+  //             <tr><td>Unapproval Absent (days)</td><td class="amount-col">${num(
+  //         emp?.unapproval_absent,
+  //       )}</td></tr>
+
+  //             <tr class="total-row">
+  //               <td><strong>Total Salary</strong></td>
+  //               <td class="amount-col"><strong>${money(
+  //         emp?.total_salary,
+  //       )}</strong></td>
+  //             </tr>
+  //             <tr class="net-salary-row">
+  //               <td><strong>Net Salary</strong></td>
+  //               <td class="amount-col net-salary"><strong>${money(
+  //         emp?.net_salary,
+  //       )}</strong></td>
+  //             </tr>
+  //           </tbody>
+  //         </table>
+
+  //         <div class="signature-section">
+  //           <div class="signature"><p>Employee Signature</p></div>
+  //           <div class="signature"><p>Authorized Signature</p></div>
+  //         </div>
+
+  //         <div class="note-section">
+  //           <p><strong>Note:</strong> ${escapeHtml(emp?.note || "")}</p>
+  //         </div>
+  //       </div>
+  //     `;
+  //     })
+  //     .join("");
+
+  //   printWindow.document.open();
+  //   printWindow.document.write(`
+  //   <html>
+  //     <head>
+  //       <title>Print Invoices</title>
+  //       <style>
+  //         * { box-sizing: border-box; }
+  //         body {
+  //           font-family: Arial, sans-serif;
+  //           margin: 0;
+  //           padding: 0;
+  //           background: #fff;
+  //           color: #111;
+  //         }
+
+  //         /* Page break per invoice */
+  //         .invoice-page{
+  //           page-break-after: always;
+  //           break-after: page;
+  //         }
+
+  //         .invoice-container {
+  //           width: 100%;
+  //           margin: 0 auto;
+  //           padding: 25px;
+  //           max-width: 900px;
+  //           background: #f7f7f7;
+  //         }
+
+  //         .invoice-header { text-align: center; margin-bottom: 18px; }
+  //         .invoice-header h1 { font-size: 28px; color: #333; margin: 0; }
+  //         .invoice-header p { font-size: 14px; color: #666; margin: 3px 0; }
+
+  //         .invoice-details {
+  //           display: flex;
+  //           justify-content: space-between;
+  //           gap: 16px;
+  //           margin-bottom: 18px;
+  //         }
+  //         .invoice-details .left { width: 60%; }
+  //         .invoice-details .right { width: 40%; text-align: right; }
+  //         .invoice-details p { margin: 4px 0; }
+  //         .net-salary-inline { font-size: 18px; font-weight: 700; margin-left: 6px; }
+
+  //         /* Table */
+  //         .invoice-table{
+  //           width: 100%;
+  //           border-collapse: collapse;
+  //           border: 1px solid #cbd5e1;
+  //           table-layout: fixed;
+  //           background: #fff;
+  //         }
+  //         .invoice-table th,
+  //         .invoice-table td{
+  //           padding: 10px 12px;
+  //           border: 1px solid #cbd5e1;
+  //           font-size: 14px;
+  //         }
+  //         .invoice-table th{
+  //           background: #f1f5f9;
+  //           font-weight: 700;
+  //         }
+
+  //         /* Force right border (print bug fix) */
+  //         .invoice-table th:last-child,
+  //         .invoice-table td:last-child{
+  //           border-right: 1px solid #cbd5e1 !important;
+  //         }
+
+  //         .amount-col { text-align: right; }
+
+  //         .total-row td { background: #f8fafc; font-weight: 700; }
+  //         .net-salary { font-size: 18px; font-weight: 800; }
+  //         .net-salary-row td { border-bottom: none; }
+
+  //         /* Signatures */
+  //         .signature-section {
+  //           display: flex;
+  //           justify-content: space-between;
+  //           gap: 30px;
+  //           margin-top: 45px;
+  //           break-inside: avoid;
+  //           page-break-inside: avoid;
+  //         }
+  //         .signature {
+  //           width: 45%;
+  //           text-align: center;
+  //           border-top: 1px solid #cbd5e1;
+  //           padding-top: 8px;
+  //           font-size: 14px;
+  //           font-weight: 600;
+  //         }
+  //         .signature p { margin: 0; }
+
+  //         /* Note */
+  //         .note-section{
+  //           margin-top: 18px;
+  //           font-size: 13px;
+  //           color: #555;
+  //         }
+  //         .note-section p { margin: 0; }
+
+  //         @media print{
+  //           body{ background: #fff; }
+  //           .invoice-container{
+  //             max-width: 100%;
+  //             background: #fff; /* change to #f7f7f7 if you want */
+  //           }
+  //         }
+  //       </style>
+  //     </head>
+
+  //     <body>
+  //       ${invoicesHtml}
+  //       <script>
+  //         window.onload = function() {
+  //           window.print();
+  //           window.onafterprint = function() { window.close(); }
+  //         }
+  //       </script>
+  //     </body>
+  //   </html>
+  // `);
+  //   printWindow.document.close();
+  // };
+
 
   const printBulkInvoices = () => {
-    if (!bulkInvoiceRef.current || selectedEmployees.length === 0) return;
-
-    const html = bulkInvoiceRef.current.innerHTML;
+    if (!selectedEmployees?.length) return;
 
     const printWindow = window.open("", "_blank", "width=900,height=650");
     if (!printWindow) {
@@ -671,30 +926,362 @@ const EmployeeTable = () => {
       return;
     }
 
+    const formatDate = (d = new Date()) =>
+      new Date(d).toLocaleDateString("en-GB");
+
+    const escapeHtml = (v) => {
+      const s = String(v ?? "");
+      return s
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    };
+
+    const money = (n) => Number(n || 0).toLocaleString();
+
+    const sessionSuffix = String(Date.now()).slice(-6);
+
+    const invoicesHtml = selectedEmployees
+      .map((emp, idx) => {
+        const invoiceDate = formatDate(new Date());
+        const invoiceNo = `${escapeHtml(
+          emp?.employee_id || "EMP",
+        )}-${invoiceDate.replaceAll("/", "")}-${sessionSuffix}${idx}`;
+
+        return `
+        <div class="invoice-container invoice-page">
+          <div class="invoice-header">
+            <div class="left-header">
+              <h1>Kafela Mart</h1>
+              <p class="sub">Official Salary Statement</p>
+              <p class="phone">Phone: +880 9647-555333</p>
+            </div>
+            <div class="right-header">
+              <h2>INVOICE</h2>
+              <p>Date: ${invoiceDate}</p>
+              <p>ID: ${invoiceNo}</p>
+            </div>
+          </div>
+
+          <div class="employee-box">
+            <div>
+              <p class="label">Employee Name</p>
+              <p class="value">${escapeHtml(emp?.name || "-")}</p>
+            </div>
+            <div>
+              <p class="label">Employee ID</p>
+              <p class="value">${escapeHtml(emp?.employee_id || "-")}</p>
+            </div>
+          </div>
+
+          <table class="invoice-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th class="amount-col">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Basic Salary</td>
+                <td class="amount-col">${money(emp?.basic_salary)}</td>
+              </tr>
+              <tr>
+                <td>Incentive</td>
+                <td class="amount-col">${money(emp?.incentive)}</td>
+              </tr>
+              <tr>
+                <td>Holiday Days</td>
+                <td class="amount-col">${Number(emp?.holiday_payment || 0)}</td>
+              </tr>
+              <tr>
+                <td>Advance (Deduction)</td>
+                <td class="amount-col red">-${money(emp?.advance)}</td>
+              </tr>
+              <tr>
+                <td>Attendance Penalty</td>
+                <td class="amount-col muted">
+                  L:${Number(emp?.late || 0)} |
+                  E:${Number(emp?.early_leave || 0)} |
+                  A:${Number(emp?.absent || 0)} |
+                  F:${Number(emp?.friday_absent || 0)} |
+                  U:${Number(emp?.unapproval_absent || 0)}
+                </td>
+              </tr>
+              <tr class="total-row">
+                <td>Total Calculation</td>
+                <td class="amount-col total-border">${money(emp?.total_salary)}</td>
+              </tr>
+              <tr class="net-row">
+                <td>NET SALARY PAYABLE</td>
+                <td class="amount-col">৳ ${money(emp?.net_salary)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          ${emp?.note
+            ? `
+            <div class="note-box">
+              <p class="note-title">Important Note</p>
+              <p class="note-text">${escapeHtml(emp?.note)}</p>
+            </div>
+          `
+            : ""
+          }
+
+          <div class="signature-section">
+            <div class="signature-box">
+              <p class="sig-label">Received By</p>
+              <p class="sig-value">${escapeHtml(emp?.name || "-")}</p>
+            </div>
+            <div class="signature-box">
+              <p class="sig-label">Authorized By</p>
+              <p class="sig-value">Kafela Mart Management</p>
+            </div>
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+
     printWindow.document.open();
     printWindow.document.write(`
-      <html>
-        <head>
-          <title>Print Invoices</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 12px; }
-            .invoice-page { page-break-after: always; border: 1px solid #e5e7eb; padding: 16px; margin-bottom: 16px; }
-            table { width: 100%; border-collapse: collapse; }
-            td { border: 1px solid #d1d5db; padding: 8px; }
-            hr { margin: 14px 0; }
-          </style>
-        </head>
-        <body>
-          ${html}
-          <script>
-            window.onload = function() {
-              window.print();
-              window.onafterprint = function() { window.close(); }
-            }
-          </script>
-        </body>
-      </html>
-    `);
+    <html>
+      <head>
+        <title>Print Invoices</title>
+        <style>
+          * { box-sizing: border-box; }
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #111;
+          }
+
+          .invoice-page {
+            page-break-after: always;
+            break-after: page;
+          }
+
+          .invoice-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px;
+            background: #fff;
+          }
+
+          .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 28px;
+          }
+
+          .left-header h1 {
+            margin: 0;
+            font-size: 30px;
+            font-weight: 800;
+            color: #4f46e5;
+          }
+
+          .sub {
+            margin: 6px 0 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #64748b;
+          }
+
+          .phone {
+            margin: 10px 0 0;
+            font-size: 12px;
+            color: #94a3b8;
+          }
+
+          .right-header {
+            text-align: right;
+          }
+
+          .right-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            color: #0f172a;
+          }
+
+          .right-header p {
+            margin: 6px 0 0;
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+          }
+
+          .employee-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin-bottom: 28px;
+            padding: 20px 24px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+          }
+
+          .label {
+            margin: 0 0 6px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+          }
+
+          .value {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+          }
+
+          .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+          }
+
+          .invoice-table th {
+            text-align: left;
+            padding: 12px 0;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #64748b;
+            border-bottom: 1px solid #cbd5e1;
+          }
+
+          .invoice-table td {
+            padding: 16px 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+            border-bottom: 1px solid #e2e8f0;
+          }
+
+          .amount-col {
+            text-align: right;
+            color: #0f172a;
+            font-weight: 800;
+          }
+
+          .red {
+            color: #dc2626;
+          }
+
+          .muted {
+            color: #94a3b8;
+            font-weight: 600;
+          }
+
+          .total-row td {
+            background: #f8fafc;
+            font-weight: 800;
+          }
+
+          .total-border {
+            border-top: 2px solid #0f172a !important;
+          }
+
+          .net-row td {
+            background: #4f46e5;
+            color: #fff;
+            font-weight: 800;
+            padding: 18px 14px;
+            font-size: 16px;
+          }
+
+          .net-row td:first-child {
+            border-radius: 14px 0 0 14px;
+          }
+
+          .net-row td:last-child {
+            border-radius: 0 14px 14px 0;
+          }
+
+          .note-box {
+            margin-top: 28px;
+            padding: 16px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 12px;
+          }
+
+          .note-title {
+            margin: 0 0 6px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #d97706;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+          }
+
+          .note-text {
+            margin: 0;
+            font-size: 12px;
+            font-weight: 700;
+            color: #92400e;
+            line-height: 1.6;
+          }
+
+          .signature-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            margin-top: 64px;
+          }
+
+          .signature-box {
+            text-align: center;
+            padding-top: 14px;
+            border-top: 1px solid #cbd5e1;
+          }
+
+          .sig-label {
+            margin: 0 0 6px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+          }
+
+          .sig-value {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+          }
+
+          @media print {
+            body { background: #fff; }
+            .invoice-container { max-width: 100%; }
+          }
+        </style>
+      </head>
+      <body>
+        ${invoicesHtml}
+        <script>
+          window.onload = function() {
+            window.print();
+            window.onafterprint = function() { window.close(); }
+          }
+        </script>
+      </body>
+    </html>
+  `);
     printWindow.document.close();
   };
 
@@ -942,13 +1529,12 @@ const EmployeeTable = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
-                      emp.status === "Approved"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : emp.status === "Active"
-                          ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                          : "bg-amber-50 text-amber-700 border-amber-200"
-                    }`}
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${emp.status === "Approved"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : emp.status === "Active"
+                        ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
                   >
                     {emp.status}
                   </span>
@@ -1015,28 +1601,7 @@ const EmployeeTable = () => {
                     )}
                   </div>
                 </td>
-                {/* ✅ Note Modal (Popup) */}
-                {isNoteModalOpen && (
-                  <div className="fixed inset-0 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
-                      <h2 className="text-xl font-semibold text-slate-900">
-                        Note
-                      </h2>
-                      <p className="mt-4 text-sm text-slate-700">
-                        {noteContent}
-                      </p>
 
-                      <div className="mt-6 flex justify-end gap-2">
-                        <button
-                          onClick={handleModalClose}
-                          className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </motion.tr>
             ))}
           </tbody>
@@ -1060,11 +1625,10 @@ const EmployeeTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
+              className={`px-4 py-2 rounded-xl border transition ${active
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                }`}
             >
               {pageNum}
             </button>
@@ -1081,784 +1645,788 @@ const EmployeeTable = () => {
       </div>
 
       {/* -------------------- Edit Modal -------------------- */}
-      {isEditModalOpen && currentEmployee && (
-        <div className="fixed inset-0 z-50 top-52 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-3/4 lg:w-2/3 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Edit Employee Salary Calculation
-              </h2>
-              <button
-                type="button"
-                onClick={closeEditModal}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
+      <Modal
+        isOpen={isEditModalOpen && !!currentEmployee}
+        onClose={closeEditModal}
+        title="Edit Employee Salary Calculation"
+        maxWidth="max-w-4xl"
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Field
+              label="Employee Name:"
+              value={currentEmployee?.name}
+              onChange={(v) =>
+                setCurrentEmployee({ ...currentEmployee, name: v })
+              }
+            />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-              <Field
-                label="Employee Name:"
-                value={currentEmployee.name}
-                onChange={(v) =>
-                  setCurrentEmployee({ ...currentEmployee, name: v })
-                }
-              />
+            <Field
+              label="Employee Id:"
+              type="number"
+              value={currentEmployee?.employee_id}
+              onChange={(v) =>
+                setCurrentEmployee({ ...currentEmployee, employee_id: v })
+              }
+            />
 
-              <Field
-                label="Employee Id:"
-                type="number"
-                value={currentEmployee.employee_id}
-                onChange={(v) =>
-                  setCurrentEmployee({ ...currentEmployee, employee_id: v })
-                }
-              />
+            <Field
+              label="Basic Salary:"
+              type="number"
+              step="0.01"
+              value={currentEmployee?.basic_salary}
+              onChange={(v) => updateCurrentField("basic_salary", v)}
+            />
 
-              <Field
-                label="Basic Salary:"
-                type="number"
-                step="0.01"
-                value={currentEmployee.basic_salary}
-                onChange={(v) => updateCurrentField("basic_salary", v)}
-              />
+            <Field
+              label="Incentive:"
+              type="number"
+              step="0.01"
+              value={currentEmployee?.incentive}
+              onChange={(v) => updateCurrentField("incentive", v)}
+            />
 
-              <Field
-                label="Incentive:"
-                type="number"
-                step="0.01"
-                value={currentEmployee.incentive}
-                onChange={(v) => updateCurrentField("incentive", v)}
-              />
+            <Field
+              label="Holiday Days:"
+              type="number"
+              value={currentEmployee?.holiday_payment}
+              onChange={(v) => updateCurrentField("holiday_payment", v)}
+            />
 
-              <Field
-                label="Holiday Days:"
-                type="number"
-                value={currentEmployee.holiday_payment}
-                onChange={(v) => updateCurrentField("holiday_payment", v)}
-              />
+            <Field
+              label="Advance:"
+              type="number"
+              step="0.01"
+              value={currentEmployee?.advance}
+              onChange={(v) => updateCurrentField("advance", v)}
+            />
 
-              <Field
-                label="Advance:"
-                type="number"
-                step="0.01"
-                value={currentEmployee.advance}
-                onChange={(v) => updateCurrentField("advance", v)}
-              />
+            <Field
+              label="Late (days):"
+              type="number"
+              value={currentEmployee?.late}
+              onChange={(v) => updateCurrentField("late", v)}
+            />
 
-              <Field
-                label="Late (days):"
-                type="number"
-                value={currentEmployee.late}
-                onChange={(v) => updateCurrentField("late", v)}
-              />
+            <Field
+              label="Early Leave (days):"
+              type="number"
+              value={currentEmployee?.early_leave}
+              onChange={(v) => updateCurrentField("early_leave", v)}
+            />
 
-              <Field
-                label="Early Leave (days):"
-                type="number"
-                value={currentEmployee.early_leave}
-                onChange={(v) => updateCurrentField("early_leave", v)}
-              />
+            <Field
+              label="Absent (days):"
+              type="number"
+              value={currentEmployee?.absent}
+              onChange={(v) => updateCurrentField("absent", v)}
+            />
 
-              <Field
-                label="Absent (days):"
-                type="number"
-                value={currentEmployee.absent}
-                onChange={(v) => updateCurrentField("absent", v)}
-              />
+            <Field
+              label="Friday Absent (days):"
+              type="number"
+              value={currentEmployee?.friday_absent}
+              onChange={(v) => updateCurrentField("friday_absent", v)}
+            />
 
-              <Field
-                label="Friday Absent (days):"
-                type="number"
-                value={currentEmployee.friday_absent}
-                onChange={(v) => updateCurrentField("friday_absent", v)}
-              />
+            <Field
+              label="Unapproval Absent (days):"
+              type="number"
+              value={currentEmployee?.unapproval_absent}
+              onChange={(v) => updateCurrentField("unapproval_absent", v)}
+            />
 
-              <Field
-                label="Unapproval Absent (days):"
-                type="number"
-                value={currentEmployee.unapproval_absent}
-                onChange={(v) => updateCurrentField("unapproval_absent", v)}
-              />
+            <Field
+              label="Total Salary:"
+              type="number"
+              step="0.01"
+              value={currentEmployee?.total_salary}
+              readOnly
+            />
 
-              <Field
-                label="Total Salary:"
-                type="number"
-                step="0.01"
-                value={currentEmployee.total_salary}
-                readOnly
-              />
+            <Field
+              label="Net Salary:"
+              type="number"
+              step="0.01"
+              value={currentEmployee?.net_salary}
+              readOnly
+            />
+          </div>
 
-              <Field
-                label="Net Salary:"
-                type="number"
-                step="0.01"
-                value={currentEmployee.net_salary}
-                readOnly
-              />
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Remarks</label>
+            <textarea
+              value={currentEmployee?.remarks || ""}
+              onChange={(e) =>
+                setCurrentEmployee({
+                  ...currentEmployee,
+                  remarks: e.target.value,
+                })
+              }
+              className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              rows={3}
+              placeholder="Enter any additional remarks..."
+            />
+          </div>
 
-              <div className="md:col-span-3">
-                <label className="block text-sm text-slate-700">Remarks:</label>
-                <textarea
-                  value={currentEmployee.remarks}
+          <div className="flex flex-col sm:flex-row gap-4">
+            {role === "superAdmin" ? (
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+                <select
+                  value={currentEmployee?.status || ""}
                   onChange={(e) =>
                     setCurrentEmployee({
                       ...currentEmployee,
-                      remarks: e.target.value,
+                      status: e.target.value,
                     })
                   }
-                  className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  rows={3}
+                  className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  <option value="Active">Active</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Note</label>
+                <textarea
+                  value={currentEmployee?.note || ""}
+                  onChange={(e) =>
+                    setCurrentEmployee({
+                      ...currentEmployee,
+                      note: e.target.value,
+                    })
+                  }
+                  className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                  placeholder="Internal notes..."
+                  rows={2}
                 />
               </div>
+            )}
+          </div>
 
-              {role === "superAdmin" ? (
-                <div className="mt-2 md:col-span-3">
-                  <label className="block text-sm text-slate-700">Status</label>
-                  <select
-                    value={currentEmployee.status || ""}
-                    onChange={(e) =>
-                      setCurrentEmployee({
-                        ...currentEmployee,
-                        status: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    required
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Active">Active</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Pending">Pending</option>
-                  </select>
-                </div>
-              ) : (
-                <div className="mt-2 md:col-span-3">
-                  <label className="block text-sm text-slate-700">Note:</label>
-                  <textarea
-                    value={currentEmployee?.note || ""}
-                    onChange={(e) =>
-                      setCurrentEmployee({
-                        ...currentEmployee,
-                        note: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                onClick={handleUpdateEmployee}
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                onClick={closeEditModal}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={closeEditModal}
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleUpdateEmployee}
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Save Changes
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       {/* -------------------- "Delete" Modal (note/status update) -------------------- */}
-      {isEditModalOpen1 && currentEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-3/4 lg:w-2/3 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Delete Employee
-              </h2>
-              <button
-                type="button"
-                onClick={closeEditModal1}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
+      <Modal
+        isOpen={isEditModalOpen1 && !!currentEmployee}
+        onClose={closeEditModal1}
+        title="Update Employee Status"
+      >
+        <div className="space-y-6">
+          {role === "superAdmin" ? (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+              <select
+                value={currentEmployee?.status || ""}
+                onChange={(e) =>
+                  setCurrentEmployee({
+                    ...currentEmployee,
+                    status: e.target.value,
+                  })
+                }
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                required
               >
-                <X size={18} className="text-slate-600" />
-              </button>
+                <option value="">Select Status</option>
+                <option value="Approved">Approved</option>
+                <option value="Pending">Pending</option>
+              </select>
             </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Internal Note</label>
+              <textarea
+                value={currentEmployee?.note || ""}
+                onChange={(e) =>
+                  setCurrentEmployee({
+                    ...currentEmployee,
+                    note: e.target.value,
+                  })
+                }
+                className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                placeholder="Brief reason for status change or deletion request..."
+                rows={4}
+              />
+            </div>
+          )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-              {role === "superAdmin" ? (
-                <div className="md:col-span-3">
-                  <label className="block text-sm text-slate-700">Status</label>
-                  <select
-                    value={currentEmployee.status || ""}
-                    onChange={(e) =>
-                      setCurrentEmployee({
-                        ...currentEmployee,
-                        status: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    required
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Pending">Pending</option>
-                  </select>
-                </div>
-              ) : (
-                <div className="md:col-span-3">
-                  <label className="block text-sm text-slate-700">Note:</label>
-                  <textarea
-                    value={currentEmployee?.note || ""}
-                    onChange={(e) =>
-                      setCurrentEmployee({
-                        ...currentEmployee,
-                        note: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                onClick={handleUpdateEmployee1}
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                onClick={closeEditModal1}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={closeEditModal1}
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleUpdateEmployee1}
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Confirm Update
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       {/* -------------------- Add Modal -------------------- */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 top-48 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-3/4 lg:w-3/4 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Employee Salary Calculation
-              </h2>
-              <button
-                type="button"
-                onClick={closeAddModal}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={closeAddModal}
+        title="Employee Salary Calculation"
+        maxWidth="max-w-4xl"
+      >
+        <form onSubmit={handleCreateEmployee} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Field
+              label="Employee Name:"
+              value={createEmployee.name}
+              onChange={(v) =>
+                setCreateEmployee({ ...createEmployee, name: v })
+              }
+              required
+            />
 
-            <form
-              onSubmit={handleCreateEmployee}
-              className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4"
+            <Field
+              label="Employee Id:"
+              type="number"
+              value={createEmployee.employee_id}
+              onChange={(v) =>
+                setCreateEmployee({ ...createEmployee, employee_id: v })
+              }
+              required
+            />
+
+            <Field
+              label="Basic Salary:"
+              type="number"
+              step="0.01"
+              value={createEmployee.basic_salary}
+              onChange={(v) => updateCreateField("basic_salary", v)}
+            />
+
+            <Field
+              label="Incentive:"
+              type="number"
+              step="0.01"
+              value={createEmployee.incentive}
+              onChange={(v) => updateCreateField("incentive", v)}
+            />
+
+            <Field
+              label="Holiday Days:"
+              type="number"
+              value={createEmployee.holiday_payment}
+              onChange={(v) => updateCreateField("holiday_payment", v)}
+            />
+
+            <Field
+              label="Advance:"
+              type="number"
+              step="0.01"
+              value={createEmployee.advance}
+              onChange={(v) => updateCreateField("advance", v)}
+            />
+
+            <Field
+              label="Late (days):"
+              type="number"
+              value={createEmployee.late}
+              onChange={(v) => updateCreateField("late", v)}
+            />
+
+            <Field
+              label="Early Leave (days):"
+              type="number"
+              value={createEmployee.early_leave}
+              onChange={(v) => updateCreateField("early_leave", v)}
+            />
+
+            <Field
+              label="Absent (days):"
+              type="number"
+              value={createEmployee.absent}
+              onChange={(v) => updateCreateField("absent", v)}
+            />
+
+            <Field
+              label="Friday Absent (days):"
+              type="number"
+              value={createEmployee.friday_absent}
+              onChange={(v) => updateCreateField("friday_absent", v)}
+            />
+
+            <Field
+              label="Unapproval Absent (days):"
+              type="number"
+              value={createEmployee.unapproval_absent}
+              onChange={(v) => updateCreateField("unapproval_absent", v)}
+            />
+
+            <Field
+              label="Total Salary:"
+              type="number"
+              step="0.01"
+              value={createEmployee.total_salary}
+              readOnly
+            />
+
+            <Field
+              label="Net Salary:"
+              type="number"
+              step="0.01"
+              value={createEmployee.net_salary}
+              readOnly
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Remarks</label>
+            <textarea
+              value={createEmployee.remarks}
+              onChange={(e) =>
+                setCreateEmployee({
+                  ...createEmployee,
+                  remarks: e.target.value,
+                })
+              }
+              className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              rows={3}
+              placeholder="Any additional notes about this entry..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={closeAddModal}
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
             >
-              <Field
-                label="Employee Name:"
-                value={createEmployee.name}
-                onChange={(v) =>
-                  setCreateEmployee({ ...createEmployee, name: v })
-                }
-                required
-              />
-
-              <Field
-                label="Employee Id:"
-                type="number"
-                value={createEmployee.employee_id}
-                onChange={(v) =>
-                  setCreateEmployee({ ...createEmployee, employee_id: v })
-                }
-                required
-              />
-
-              <Field
-                label="Basic Salary:"
-                type="number"
-                step="0.01"
-                value={createEmployee.basic_salary}
-                onChange={(v) => updateCreateField("basic_salary", v)}
-              />
-
-              <Field
-                label="Incentive:"
-                type="number"
-                step="0.01"
-                value={createEmployee.incentive}
-                onChange={(v) => updateCreateField("incentive", v)}
-              />
-
-              <Field
-                label="Holiday Days:"
-                type="number"
-                value={createEmployee.holiday_payment}
-                onChange={(v) => updateCreateField("holiday_payment", v)}
-              />
-
-              <Field
-                label="Advance:"
-                type="number"
-                step="0.01"
-                value={createEmployee.advance}
-                onChange={(v) => updateCreateField("advance", v)}
-              />
-
-              <Field
-                label="Late (days):"
-                type="number"
-                value={createEmployee.late}
-                onChange={(v) => updateCreateField("late", v)}
-              />
-
-              <Field
-                label="Early Leave (days):"
-                type="number"
-                value={createEmployee.early_leave}
-                onChange={(v) => updateCreateField("early_leave", v)}
-              />
-
-              <Field
-                label="Absent (days):"
-                type="number"
-                value={createEmployee.absent}
-                onChange={(v) => updateCreateField("absent", v)}
-              />
-
-              <Field
-                label="Friday Absent (days):"
-                type="number"
-                value={createEmployee.friday_absent}
-                onChange={(v) => updateCreateField("friday_absent", v)}
-              />
-
-              <Field
-                label="Unapproval Absent (days):"
-                type="number"
-                value={createEmployee.unapproval_absent}
-                onChange={(v) => updateCreateField("unapproval_absent", v)}
-              />
-
-              <Field
-                label="Total Salary:"
-                type="number"
-                step="0.01"
-                value={createEmployee.total_salary}
-                readOnly
-              />
-
-              <Field
-                label="Net Salary:"
-                type="number"
-                step="0.01"
-                value={createEmployee.net_salary}
-                readOnly
-              />
-
-              <div className="md:col-span-3">
-                <label className="block text-sm text-slate-700">Remarks:</label>
-                <textarea
-                  value={createEmployee.remarks}
-                  onChange={(e) =>
-                    setCreateEmployee({
-                      ...createEmployee,
-                      remarks: e.target.value,
-                    })
-                  }
-                  className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  rows={3}
-                />
-              </div>
-
-              <div className="md:col-span-3 mt-2 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                  onClick={closeAddModal}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Confirm Entry
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* -------------------- Single Invoice Modal -------------------- */}
-      {isInvoiceOpen && invoiceEmployee && (
-        <div className="fixed inset-0 top-32 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-4 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full max-w-3xl border border-slate-200"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-slate-900 font-semibold text-lg">
-                Salary Invoice
-              </h2>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={downloadInvoicePDF}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl shadow-sm"
-                >
-                  Download PDF
-                </button>
-
-                <button
-                  onClick={closeInvoice}
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-xl border border-slate-200"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-
-            <div
-              id="invoiceCapture"
-              ref={invoiceRef}
-              className="bg-white text-slate-900 rounded-xl p-6 border border-slate-200"
+      <Modal
+        isOpen={isInvoiceOpen && !!invoiceEmployee}
+        onClose={closeInvoice}
+        title="Salary Invoice"
+        maxWidth="max-w-3xl"
+      >
+        <div className="space-y-6">
+          <div className="flex justify-end gap-3 pb-2">
+            <button
+              onClick={downloadInvoicePDF}
+              className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-100 flex items-center gap-2"
             >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-xl font-bold">Holy Gift</h3>
-                  <p className="text-sm text-slate-600">Address line</p>
-                  <p className="text-sm text-slate-600">
-                    Phone: +880 9647-555333
-                  </p>
-                </div>
+              <Download size={16} /> Download PDF
+            </button>
+            <button
+              onClick={closeInvoice}
+              className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-500 text-sm font-bold hover:bg-slate-50 transition"
+            >
+              Close
+            </button>
+          </div>
 
-                <div className="text-right">
-                  <h3 className="text-xl font-bold">INVOICE</h3>
-                  <p className="text-sm text-slate-600">
-                    Date: {new Date().toLocaleDateString()}
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    Invoice No: {invoiceEmployee.employee_id}-
-                    {String(Date.now()).slice(-6)}
-                  </p>
-                </div>
+          <div
+            id="invoiceCapture"
+            ref={invoiceRef}
+            className="bg-white text-slate-900 rounded-3xl p-8 border border-slate-100 shadow-sm"
+          >
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <h3 className="text-2xl font-black text-indigo-600 mb-1">Kafela Mart</h3>
+                <p className="text-sm font-bold text-slate-500">Official Salary Statement</p>
+                <p className="text-xs text-slate-400 mt-2">Phone: +880 9647-555333</p>
               </div>
 
-              <hr className="my-4 border-slate-200" />
+              {/* <div>
+                <img
+                  src={logo}
+                  alt="Kafela Mart Logo"
+                  className="w-36 h-auto mb-3 object-contain"
+                />
+                <p className="text-sm font-bold text-slate-500">Official Salary Statement</p>
+                <p className="text-xs text-slate-400 mt-2">Phone: +880 9647-555333</p>
+              </div> */}
 
-              <div className="flex justify-between gap-3 text-sm">
-                <p>
-                  <b>Employee:</b> {invoiceEmployee.name}
+              <div className="text-right">
+                <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">INVOICE</h3>
+                <p className="text-xs font-bold text-slate-500">Date: {new Date().toLocaleDateString()}</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
+                  ID: {invoiceEmployee?.employee_id}-{String(Date.now()).slice(-6)}
                 </p>
-                <p>
-                  <b>Employee ID:</b> {invoiceEmployee.employee_id}
-                </p>
-              </div>
-
-              <hr className="my-4 border-slate-200" />
-
-              <table className="w-full text-sm border border-slate-200">
-                <tbody>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 font-semibold">Basic Salary</td>
-                    <td className="p-2 text-right">
-                      {Number(invoiceEmployee.basic_salary || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 font-semibold">Incentive</td>
-                    <td className="p-2 text-right">
-                      {Number(invoiceEmployee.incentive || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 font-semibold">Holiday Days</td>
-                    <td className="p-2 text-right">
-                      {Number(invoiceEmployee.holiday_payment || 0)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 font-semibold">Advance</td>
-                    <td className="p-2 text-right">
-                      -{Number(invoiceEmployee.advance || 0).toFixed(2)}
-                    </td>
-                  </tr>
-
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 font-semibold">Late (days)</td>
-                    <td className="p-2 text-right">
-                      {Number(invoiceEmployee.late || 0)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 font-semibold">Early Leave (days)</td>
-                    <td className="p-2 text-right">
-                      {Number(invoiceEmployee.early_leave || 0)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 font-semibold">Absent (days)</td>
-                    <td className="p-2 text-right">
-                      {Number(invoiceEmployee.absent || 0)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 font-semibold">Friday Absent (days)</td>
-                    <td className="p-2 text-right">
-                      {Number(invoiceEmployee.friday_absent || 0)}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 font-semibold">
-                      Unapproval Absent (days)
-                    </td>
-                    <td className="p-2 text-right">
-                      {Number(invoiceEmployee.unapproval_absent || 0)}
-                    </td>
-                  </tr>
-
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2 font-semibold">Total Salary</td>
-                    <td className="p-2 text-right">
-                      {Number(invoiceEmployee.total_salary || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="p-2 font-bold text-lg">Net Salary</td>
-                    <td className="p-2 text-right font-bold text-lg">
-                      {Number(invoiceEmployee.net_salary || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <p className="text-xs mt-4 text-slate-600">
-                <span className="font-bold">Note: </span>
-                {invoiceEmployee.note}
-              </p>
-
-              <div className="mt-10 grid grid-cols-2 gap-10 text-sm">
-                <div className="border-t border-slate-300 pt-2 text-center">
-                  Employee Signature
-                </div>
-                <div className="border-t border-slate-300 pt-2 text-center">
-                  Authorized Signature
-                </div>
               </div>
             </div>
-          </motion.div>
+
+            <div className="grid grid-cols-2 gap-8 mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Employee Name</p>
+                <p className="text-sm font-bold text-slate-900">{invoiceEmployee?.name}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Employee ID</p>
+                <p className="text-sm font-bold text-slate-900">{invoiceEmployee?.employee_id}</p>
+              </div>
+            </div>
+
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left py-3 text-xs font-black text-slate-500 uppercase tracking-widest">Description</th>
+                  <th className="text-right py-3 text-xs font-black text-slate-500 uppercase tracking-widest">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                <tr>
+                  <td className="py-4 font-bold text-slate-700">Basic Salary</td>
+                  <td className="py-4 text-right font-black text-slate-900">{Number(invoiceEmployee?.basic_salary || 0).toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td className="py-4 font-bold text-slate-700">Incentive</td>
+                  <td className="py-4 text-right font-black text-slate-900">{Number(invoiceEmployee?.incentive || 0).toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td className="py-4 font-bold text-slate-700">Holiday Days</td>
+                  <td className="py-4 text-right font-black text-slate-900">{Number(invoiceEmployee?.holiday_payment || 0)}</td>
+                </tr>
+                <tr>
+                  <td className="py-4 font-bold text-slate-500">Advance (Deduction)</td>
+                  <td className="py-4 text-right font-black text-red-600">-{Number(invoiceEmployee?.advance || 0).toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td className="py-4 font-bold text-slate-700">Attendance Penalty</td>
+                  <td className="py-4 text-right font-medium text-slate-400">
+                    L:{invoiceEmployee?.late} | E:{invoiceEmployee?.early_leave} | A:{invoiceEmployee?.absent}
+                  </td>
+                </tr>
+                <tr className="bg-slate-50/50">
+                  <td className="py-4 font-black text-slate-900">Total Calculation</td>
+                  <td className="py-4 text-right font-black text-slate-900 border-t-2 border-slate-900">{Number(invoiceEmployee?.total_salary || 0).toLocaleString()}</td>
+                </tr>
+                <tr className="bg-indigo-600">
+                  <td className="py-5 px-4 font-black text-white rounded-l-2xl">NET SALARY PAYABLE</td>
+                  <td className="py-5 px-4 text-right font-black text-white rounded-r-2xl text-xl">
+                    ৳ {Number(invoiceEmployee?.net_salary || 0).toLocaleString()}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            {invoiceEmployee?.note && (
+              <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Important Note</p>
+                <p className="text-xs font-bold text-amber-800 leading-relaxed">{invoiceEmployee.note}</p>
+              </div>
+            )}
+
+            <div className="mt-16 grid grid-cols-2 gap-20">
+              <div className="text-center pt-4 border-t border-slate-200">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Received By</p>
+                <p className="text-sm font-bold text-slate-900">{invoiceEmployee?.name}</p>
+              </div>
+              <div className="text-center pt-4 border-t border-slate-200">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Authorized By</p>
+                <p className="text-sm font-bold text-slate-900">Kafela Mart Management</p>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+      </Modal>
 
       {/* -------------------- Bulk Invoice Modal -------------------- */}
-      {isBulkInvoiceOpen && (
-        <div className="fixed inset-0 top-40 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-4 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full max-w-5xl border border-slate-200"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-slate-900 font-semibold text-lg">
-                Selected Invoices ({selectedEmployees.length})
-              </h2>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={printBulkInvoices}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl disabled:opacity-60 shadow-sm"
-                  disabled={selectedEmployees.length === 0}
-                >
-                  Print
-                </button>
-
-                <button
-                  onClick={downloadBulkInvoicePDF}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl disabled:opacity-60 shadow-sm"
-                  disabled={selectedEmployees.length === 0}
-                >
-                  Download PDF
-                </button>
-
-                <button
-                  onClick={() => setIsBulkInvoiceOpen(false)}
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-xl border border-slate-200"
-                >
-                  Close
-                </button>
-              </div>
+      <Modal
+        isOpen={isBulkInvoiceOpen}
+        onClose={() => setIsBulkInvoiceOpen(false)}
+        title="Batch Invoice Generator"
+        maxWidth="max-w-5xl"
+      >
+        <div className="space-y-6">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <p className="text-sm font-bold text-slate-500">
+              Generating <span className="text-indigo-600">{selectedEmployees.length}</span> invoices in current batch
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={printBulkInvoices}
+                className="px-8 py-3 rounded-2xl bg-indigo-600 text-white font-black text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100 disabled:opacity-50 disabled:shadow-none"
+                disabled={selectedEmployees.length === 0}
+              >
+                Print All Invoices
+              </button>
+              <button
+                onClick={() => setIsBulkInvoiceOpen(false)}
+                className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+              >
+                Close
+              </button>
             </div>
+          </div>
 
-            <div className="bg-slate-50 p-4 rounded-xl max-h-[75vh] overflow-auto border border-slate-200">
-              <div ref={bulkInvoiceRef}>
-                {selectedEmployees.map((emp) => (
-                  <div
-                    key={emp.Id}
-                    className="invoice-page bg-white text-slate-900 rounded-xl p-6 mb-6 border border-slate-200"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-xl font-bold">Holy Gift</h3>
-                        <p className="text-sm text-slate-600">Address line</p>
-                        <p className="text-sm text-slate-600">
-                          Phone: +880 9647-555333
-                        </p>
-                      </div>
-
-                      <div className="text-right">
-                        <h3 className="text-xl font-bold">INVOICE</h3>
-                        <p className="text-sm text-slate-600">
-                          Date: {new Date().toLocaleDateString()}
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          Invoice No: {emp.employee_id}-
-                          {String(Date.now()).slice(-6)}
-                        </p>
-                      </div>
+          {/* <div className="bg-slate-50/50 p-6 rounded-3xl max-h-[60vh] overflow-y-auto custom-scrollbar space-y-8">
+            <div ref={bulkInvoiceRef}>
+              {selectedEmployees.map((emp, idx) => (
+                <div
+                  key={emp.Id}
+                  className={`bg-white text-slate-900 rounded-2xl p-8 border border-slate-200 shadow-sm ${idx !== selectedEmployees.length - 1 ? 'mb-8' : ''}`}
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h3 className="text-xl font-black text-indigo-600">Kafela Mart</h3>
+                      <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Statement of Earnings</p>
                     </div>
 
-                    <hr className="my-4 border-slate-200" />
-
-                    <div className="flex justify-between gap-3 text-sm">
-                      <p>
-                        <b>Employee:</b> {emp.name}
-                      </p>
-                      <p>
-                        <b>Employee ID:</b> {emp.employee_id}
-                      </p>
-                    </div>
-
-                    <hr className="my-4 border-slate-200" />
-
-                    <table className="w-full text-sm border border-slate-200">
-                      <tbody>
-                        <tr className="border-b border-slate-200">
-                          <td className="p-2 font-semibold">Basic Salary</td>
-                          <td className="p-2 text-right">
-                            {Number(emp.basic_salary || 0).toFixed(2)}
-                          </td>
-                        </tr>
-                        <tr className="border-b border-slate-200">
-                          <td className="p-2 font-semibold">Incentive</td>
-                          <td className="p-2 text-right">
-                            {Number(emp.incentive || 0).toFixed(2)}
-                          </td>
-                        </tr>
-                        <tr className="border-b border-slate-200">
-                          <td className="p-2 font-semibold">Holiday Days</td>
-                          <td className="p-2 text-right">
-                            {Number(emp.holiday_payment || 0)}
-                          </td>
-                        </tr>
-                        <tr className="border-b border-slate-200">
-                          <td className="p-2 font-semibold">Advance</td>
-                          <td className="p-2 text-right">
-                            -{Number(emp.advance || 0).toFixed(2)}
-                          </td>
-                        </tr>
-
-                        <tr className="border-b border-slate-200">
-                          <td className="p-2 font-semibold">Late (days)</td>
-                          <td className="p-2 text-right">
-                            {Number(emp.late || 0)}
-                          </td>
-                        </tr>
-                        <tr className="border-b border-slate-200">
-                          <td className="p-2 font-semibold">
-                            Early Leave (days)
-                          </td>
-                          <td className="p-2 text-right">
-                            {Number(emp.early_leave || 0)}
-                          </td>
-                        </tr>
-                        <tr className="border-b border-slate-200">
-                          <td className="p-2 font-semibold">Absent (days)</td>
-                          <td className="p-2 text-right">
-                            {Number(emp.absent || 0)}
-                          </td>
-                        </tr>
-                        <tr className="border-b border-slate-200">
-                          <td className="p-2 font-semibold">
-                            Friday Absent (days)
-                          </td>
-                          <td className="p-2 text-right">
-                            {Number(emp.friday_absent || 0)}
-                          </td>
-                        </tr>
-                        <tr className="border-b border-slate-200">
-                          <td className="p-2 font-semibold">
-                            Unapproval Absent (days)
-                          </td>
-                          <td className="p-2 text-right">
-                            {Number(emp.unapproval_absent || 0)}
-                          </td>
-                        </tr>
-
-                        <tr className="border-b border-slate-200">
-                          <td className="p-2 font-semibold">Total Salary</td>
-                          <td className="p-2 text-right">
-                            {Number(emp.total_salary || 0).toFixed(2)}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 font-bold text-lg">Net Salary</td>
-                          <td className="p-2 text-right font-bold text-lg">
-                            {Number(emp.net_salary || 0).toFixed(2)}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-
-                    <p className="text-xs mt-4 text-slate-600">
-                      <span className="font-bold">Note: </span>
-                      {emp.note || ""}
-                    </p>
-
-                    <div className="mt-10 grid grid-cols-2 gap-10 text-sm">
-                      <div className="border-t border-slate-300 pt-2 text-center">
-                        Employee Signature
-                      </div>
-                      <div className="border-t border-slate-300 pt-2 text-center">
-                        Authorized Signature
-                      </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Invoice Date</p>
+                      <p className="text-xs font-bold text-slate-900">{new Date().toLocaleDateString()}</p>
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-6 border-y border-slate-100 py-4">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</p>
+                      <p className="text-sm font-bold text-slate-900">{emp.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee ID</p>
+                      <p className="text-sm font-bold text-slate-900">{emp.employee_id}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500 font-bold">Base Earnings</span>
+                      <span className="text-slate-900 font-black">{Number(emp.basic_salary || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500 font-bold">Incentives</span>
+                      <span className="text-slate-900 font-black">+{Number(emp.incentive || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500 font-bold text-red-400">Deductions (Adv/Fine)</span>
+                      <span className="text-red-500 font-black">-{Number(emp.advance || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-base pt-3 border-t border-dashed border-slate-200">
+                      <span className="text-slate-900 font-black uppercase tracking-tight">Net Payable Amount</span>
+                      <span className="text-indigo-600 font-black">৳ {Number(emp.net_salary || 0).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </motion.div>
+          </div> */}
+          <div className="bg-slate-50/50 p-6 rounded-3xl max-h-[60vh] overflow-y-auto custom-scrollbar space-y-8">
+            <div ref={bulkInvoiceRef}>
+              {selectedEmployees.map((emp, idx) => (
+                <div
+                  key={emp.Id}
+                  className={`invoice-page bg-white text-slate-900 rounded-3xl p-8 border border-slate-100 shadow-sm ${idx !== selectedEmployees.length - 1 ? "mb-8" : ""
+                    }`}
+                >
+                  <div className="flex justify-between items-start mb-8">
+                    <div>
+                      <h3 className="text-2xl font-black text-indigo-600 mb-1">
+                        Kafela Mart
+                      </h3>
+                      <p className="text-sm font-bold text-slate-500">
+                        Official Salary Statement
+                      </p>
+                      <p className="text-xs text-slate-400 mt-2">
+                        Phone: +880 9647-555333
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">
+                        INVOICE
+                      </h3>
+                      <p className="text-xs font-bold text-slate-500">
+                        Date: {new Date().toLocaleDateString()}
+                      </p>
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
+                        ID: {emp?.employee_id}-{String(Date.now()).slice(-6)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-8 mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                        Employee Name
+                      </p>
+                      <p className="text-sm font-bold text-slate-900">{emp?.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                        Employee ID
+                      </p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {emp?.employee_id}
+                      </p>
+                    </div>
+                  </div>
+
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200">
+                        <th className="text-left py-3 text-xs font-black text-slate-500 uppercase tracking-widest">
+                          Description
+                        </th>
+                        <th className="text-right py-3 text-xs font-black text-slate-500 uppercase tracking-widest">
+                          Amount
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-slate-100">
+                      <tr>
+                        <td className="py-4 font-bold text-slate-700">Basic Salary</td>
+                        <td className="py-4 text-right font-black text-slate-900">
+                          {Number(emp?.basic_salary || 0).toLocaleString()}
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td className="py-4 font-bold text-slate-700">Incentive</td>
+                        <td className="py-4 text-right font-black text-slate-900">
+                          {Number(emp?.incentive || 0).toLocaleString()}
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td className="py-4 font-bold text-slate-700">Holiday Days</td>
+                        <td className="py-4 text-right font-black text-slate-900">
+                          {Number(emp?.holiday_payment || 0)}
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td className="py-4 font-bold text-slate-500">
+                          Advance (Deduction)
+                        </td>
+                        <td className="py-4 text-right font-black text-red-600">
+                          -{Number(emp?.advance || 0).toLocaleString()}
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td className="py-4 font-bold text-slate-700">
+                          Attendance Penalty
+                        </td>
+                        <td className="py-4 text-right font-medium text-slate-400">
+                          L:{emp?.late || 0} | E:{emp?.early_leave || 0} | A:
+                          {emp?.absent || 0} | F:{emp?.friday_absent || 0} | U:
+                          {emp?.unapproval_absent || 0}
+                        </td>
+                      </tr>
+
+                      <tr className="bg-slate-50/50">
+                        <td className="py-4 font-black text-slate-900">
+                          Total Calculation
+                        </td>
+                        <td className="py-4 text-right font-black text-slate-900 border-t-2 border-slate-900">
+                          {Number(emp?.total_salary || 0).toLocaleString()}
+                        </td>
+                      </tr>
+
+                      <tr className="bg-indigo-600">
+                        <td className="py-5 px-4 font-black text-white rounded-l-2xl">
+                          NET SALARY PAYABLE
+                        </td>
+                        <td className="py-5 px-4 text-right font-black text-white rounded-r-2xl text-xl">
+                          ৳ {Number(emp?.net_salary || 0).toLocaleString()}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  {emp?.note && (
+                    <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">
+                        Important Note
+                      </p>
+                      <p className="text-xs font-bold text-amber-800 leading-relaxed">
+                        {emp.note}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="mt-16 grid grid-cols-2 gap-20">
+                    <div className="text-center pt-4 border-t border-slate-200">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                        Received By
+                      </p>
+                      <p className="text-sm font-bold text-slate-900">{emp?.name}</p>
+                    </div>
+
+                    <div className="text-center pt-4 border-t border-slate-200">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                        Authorized By
+                      </p>
+                      <p className="text-sm font-bold text-slate-900">
+                        Kafela Mart Management
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      )}
+      </Modal>
+
+      {/* ✅ Note Modal */}
+      <Modal
+        isOpen={isNoteModalOpen}
+        onClose={handleModalClose}
+        title="Employee Note"
+      >
+        <div className="space-y-6">
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+            <p className="text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {noteContent}
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              onClick={handleModalClose}
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </Modal>
     </motion.div>
   );
 };
@@ -1881,9 +2449,8 @@ const Field = ({
       onChange={(e) => onChange(e.target.value)}
       readOnly={readOnly}
       required={required}
-      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${
-        readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
-      }`}
+      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
+        }`}
     />
   </div>
 );

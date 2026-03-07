@@ -33,7 +33,6 @@ import SupplierPage from "./pages/SupplierPage";
 import DamageProductPage from "./pages/DamageProductPage";
 import EmployeePage from "./pages/EmployeePage";
 import POSPage from "./pages/POSPage";
-import WarehousePage from "./pages/WarehousePage";
 import NotificationPage from "./pages/NotificationPage";
 import SalaryPage from "./pages/SalaryPage";
 import LogoPage from "./pages/LogoPage";
@@ -47,6 +46,8 @@ import InventoryOverviewPage from "./pages/InventoryOverviewPage";
 import MarketingBookPage from "./pages/MarketingBookPage";
 import MarketingExpensePage from "./pages/MarketingExpensePage";
 import InventoryDashboardPage from "./pages/InventoryDashboardPage";
+import DamageStockPage from "./pages/DamageStockPage";
+import WarehousePage from "./pages/WarehousePage";
 
 function App() {
   return (
@@ -179,6 +180,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <PurchaseReturnProductPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/damage-stock"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <DamageStockPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

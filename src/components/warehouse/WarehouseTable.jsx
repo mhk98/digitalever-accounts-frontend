@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Pencil, Plus, Search, Trash2, Warehouse } from "lucide-react";
+import { Pencil, Plus, Search, Trash2, Warehouse, ChevronLeft, ChevronRight, X } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   useDeleteWirehouseMutation,
@@ -8,6 +8,7 @@ import {
   useInsertWirehouseMutation,
   useUpdateWirehouseMutation,
 } from "../../features/wirehouse/wirehouse";
+import Modal from "../common/Modal";
 
 const WarehouseTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
@@ -16,19 +17,16 @@ const WarehouseTable = () => {
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
 
-  const [currentProduct, setCurrentProduct] = useState(null);
-  const [createProduct, setCreateProduct] = useState({ name: "" });
-
+  const [currentWarehouse, setCurrentWarehouse] = useState(null);
+  const [createWarehouse, setCreateWarehouse] = useState({ name: "" });
   const [name, setName] = useState(""); // search term
 
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
-
   const itemsPerPage = 10;
 
-  // ✅ Responsive pagination window
   useEffect(() => {
     const updatePagesPerSet = () => {
       if (window.innerWidth < 640) setPagesPerSet(5);
@@ -40,7 +38,7 @@ const WarehouseTable = () => {
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
 
-  const { data, isLoading, isError, error, refetch } = useGetAllWirehouseQuery({
+  const { data, isLoading, refetch } = useGetAllWirehouseQuery({
     page: currentPage,
     limit: itemsPerPage,
     searchTerm: name || undefined,
@@ -49,337 +47,243 @@ const WarehouseTable = () => {
   const warehouses = data?.data ?? [];
 
   useEffect(() => {
-    if (isError) {
-      console.error("Error fetching warehouse data", error);
-      return;
-    }
     if (!isLoading && data?.meta?.count != null) {
       setTotalPages(Math.max(1, Math.ceil(data.meta.count / itemsPerPage)));
     }
-  }, [data, isLoading, isError, error]);
-
-  // ✅ Modals
-  const handleModalClose = () => setIsModalOpen(false);
-  const handleModalClose1 = () => setIsModalOpen1(false);
+  }, [data, isLoading]);
 
   const handleEditWarehouse = (item) => {
-    setCurrentProduct(item);
+    setCurrentWarehouse(item);
     setIsModalOpen(true);
   };
 
-  const handleAddWarehouse = () => {
-    setCreateProduct({ name: "" });
-    setIsModalOpen1(true);
-  };
-
-  // ✅ Create
   const [insertWirehouse] = useInsertWirehouseMutation();
   const handleCreateWarehouse = async (e) => {
     e.preventDefault();
-    if (!createProduct.name?.trim()) return toast.error("Name is required!");
-
     try {
-      const payload = { name: createProduct.name.trim() };
-      const res = await insertWirehouse(payload).unwrap();
-
+      const res = await insertWirehouse({ name: createWarehouse.name.trim() }).unwrap();
       if (res?.success) {
         toast.success("Warehouse created successfully!");
         setIsModalOpen1(false);
-        setCreateProduct({ name: "" });
+        setCreateWarehouse({ name: "" });
         refetch?.();
-      } else toast.error(res?.message || "Create failed!");
+      }
     } catch (err) {
       toast.error(err?.data?.message || "Create failed!");
     }
   };
 
-  // ✅ Update
   const [updateWirehouse] = useUpdateWirehouseMutation();
-  const handleUpdateWarehouse = async () => {
-    if (!currentProduct?.Id) return toast.error("Invalid warehouse selected!");
-    if (!currentProduct?.name?.trim()) return toast.error("Name is required!");
-
+  const handleUpdateWarehouseAction = async (e) => {
+    e.preventDefault();
     try {
-      const updated = {
-        name: currentProduct.name.trim(),
-        userId: userId,
-        actorRole: role,
-      };
       const res = await updateWirehouse({
-        id: currentProduct.Id,
-        data: updated,
+        id: currentWarehouse.Id,
+        data: { name: currentWarehouse.name.trim(), userId, actorRole: role },
       }).unwrap();
-
       if (res?.success) {
         toast.success("Warehouse updated successfully!");
         setIsModalOpen(false);
-        setCurrentProduct(null);
         refetch?.();
-      } else toast.error(res?.message || "Update failed!");
+      }
     } catch (err) {
       toast.error(err?.data?.message || "Update failed!");
     }
   };
 
-  // ✅ Delete
   const [deleteWirehouse] = useDeleteWirehouseMutation();
   const handleDeleteWarehouse = async (id) => {
-    const confirmDelete = window.confirm(
-      "Do you want to delete this warehouse?",
-    );
-    if (!confirmDelete) return toast.info("Delete action was cancelled.");
-
-    try {
-      const res = await deleteWirehouse(id).unwrap();
-      if (res?.success) {
-        toast.success("Warehouse deleted successfully!");
-        refetch?.();
-      } else toast.error(res?.message || "Delete failed!");
-    } catch (err) {
-      toast.error(err?.data?.message || "Delete failed!");
+    if (window.confirm("Do you want to delete this warehouse?")) {
+      try {
+        const res = await deleteWirehouse(id).unwrap();
+        if (res?.success) {
+          toast.success("Warehouse deleted successfully!");
+          refetch?.();
+        }
+      } catch (err) {
+        toast.error(err?.data?.message || "Delete failed!");
+      }
     }
   };
 
-  // ✅ Pagination
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
-
-  const handlePageChange = (pageNumber) => {
-    const p = Number(pageNumber);
+  const handlePageChange = (p) => {
     setCurrentPage(p);
-
     if (p < startPage) setStartPage(p);
     else if (p > endPage) setStartPage(p - pagesPerSet + 1);
   };
 
-  const handlePreviousSet = () =>
-    setStartPage((p) => Math.max(p - pagesPerSet, 1));
-
-  const handleNextSet = () =>
-    setStartPage((p) =>
-      Math.min(p + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)),
-    );
+  const handlePreviousSet = () => setStartPage((p) => Math.max(p - pagesPerSet, 1));
+  const handleNextSet = () => setStartPage((p) => Math.min(p + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)));
 
   return (
     <motion.div
-      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
-      initial={{ opacity: 0, y: 16 }}
+      className="bg-white/90 backdrop-blur-md shadow-sm rounded-3xl p-4 sm:p-8 border border-slate-100 mb-8"
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: 0.3 }}
     >
-      {/* Top bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Search */}
-        <div className="relative w-full sm:max-w-[520px]">
-          <input
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              setCurrentPage(1);
-              setStartPage(1);
-            }}
-            placeholder="Search warehouse..."
-            className="w-full h-11 rounded-xl border border-slate-200 bg-white px-4 pr-11 text-sm text-slate-700 outline-none
-                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-          />
-          <Search
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
-            size={18}
-          />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Warehouse Management</h2>
+          <p className="text-slate-500 text-sm font-medium">Coordinate your storage locations and inventory</p>
         </div>
-
-        {/* Add button */}
         <button
-          onClick={handleAddWarehouse}
-          type="button"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 transition"
+          onClick={() => setIsModalOpen1(true)}
+          className="group relative inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition-all px-6 py-3 rounded-2xl text-sm font-bold shadow-xl shadow-indigo-100 active:scale-95 overflow-hidden"
         >
-          <Plus size={18} />
-          Add New Warehouse
+          <Plus size={18} /> Add New Warehouse
         </button>
       </div>
 
-      {/* List */}
-      <div className="mt-6 rounded-2xl border border-slate-200 overflow-hidden">
-        {warehouses.map((item) => (
-          <div
-            key={item.Id}
-            className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-white hover:bg-slate-50 transition"
-          >
-            {/* Left */}
-            <div className="flex items-center gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50">
-                <Warehouse className="text-indigo-600" size={18} />
-              </div>
-
-              <div className="text-[15px] font-semibold text-slate-900">
-                {item.name}
-              </div>
-            </div>
-
-            {/* Right */}
-            {(role === "superAdmin" || role === "admin") && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleEditWarehouse(item)}
-                  type="button"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-white border border-transparent hover:border-slate-200 transition"
-                  title="Edit"
-                >
-                  <Pencil className="text-indigo-600" size={18} />
-                </button>
-
-                <button
-                  onClick={() => handleDeleteWarehouse(item.Id)}
-                  type="button"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-white border border-transparent hover:border-slate-200 transition"
-                  title="Delete"
-                >
-                  <Trash2 className="text-red-600" size={18} />
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-
-        {!isLoading && warehouses.length === 0 && (
-          <div className="px-6 py-10 text-sm text-slate-500">No data found</div>
+      <div className="relative mb-8">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <Search className="text-slate-400" size={18} />
+        </div>
+        <input
+          value={name}
+          onChange={(e) => { setName(e.target.value); setCurrentPage(1); setStartPage(1); }}
+          placeholder="Search by warehouse name..."
+          className="w-full h-12 rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-medium"
+        />
+        {name && (
+          <button onClick={() => setName("")} className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600">
+            <X size={16} />
+          </button>
         )}
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-center gap-2 mt-6 flex-wrap">
-        <button
-          onClick={handlePreviousSet}
-          disabled={startPage === 1}
-          className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
-        >
-          Prev
-        </button>
+      <div className="rounded-3xl border border-slate-100 overflow-hidden bg-white shadow-sm">
+        {isLoading ? (
+          <div className="py-20 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600/20 border-t-indigo-600"></div>
+          </div>
+        ) : warehouses.length > 0 ? (
+          <div className="divide-y divide-slate-50">
+            {warehouses.map((item) => (
+              <motion.div
+                key={item.Id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center justify-between px-6 py-5 hover:bg-indigo-50/30 transition-colors group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shadow-sm border border-indigo-100 group-hover:scale-110 transition-transform">
+                    <Warehouse size={20} />
+                  </div>
+                  <div>
+                    <div className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
+                      {item.name}
+                    </div>
+                    <div className="text-xs text-slate-400 font-medium">Storage Unit ID: #{String(item.Id).padStart(4, "0")}</div>
+                  </div>
+                </div>
 
-        {[...Array(endPage - startPage + 1)].map((_, index) => {
-          const pageNum = startPage + index;
-          const active = pageNum === currentPage;
-
-          return (
-            <button
-              key={pageNum}
-              onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              {pageNum}
-            </button>
-          );
-        })}
-
-        <button
-          onClick={handleNextSet}
-          disabled={endPage === totalPages}
-          className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
-        >
-          Next
-        </button>
+                {(role === "superAdmin" || role === "admin") && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleEditWarehouse(item)}
+                      className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm active:scale-90"
+                      title="Edit"
+                    >
+                      <Pencil className="text-indigo-600" size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteWarehouse(item.Id)}
+                      className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition shadow-sm active:scale-90"
+                      title="Delete"
+                    >
+                      <Trash2 className="text-red-600" size={18} />
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-24 text-center">
+            <div className="text-4xl mb-4 opacity-20">🏢</div>
+            <p className="text-slate-400 font-bold text-sm italic">No storage locations found matching your search</p>
+          </div>
+        )}
       </div>
 
-      {/* Edit Modal */}
-      {isModalOpen && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
+      <div className="flex flex-col sm:flex-row items-center justify-between mt-10 gap-6 px-2">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+          Results: <span className="text-indigo-600">{warehouses.length}</span> / Page <span className="text-slate-900">{currentPage}</span>
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePreviousSet}
+            disabled={startPage === 1}
+            className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
           >
-            <h2 className="text-lg font-semibold text-slate-900">
-              Rename Warehouse
-            </h2>
-
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">
-                Warehouse Name
-              </label>
-              <input
-                type="text"
-                value={currentProduct?.name || ""}
-                onChange={(e) =>
-                  setCurrentProduct((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              />
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
-                onClick={handleUpdateWarehouse}
-              >
-                Save
-              </button>
-              <button
-                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                onClick={handleModalClose}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Add Modal */}
-      {isModalOpen1 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
+            <ChevronLeft size={16} /> Prev
+          </button>
+          <div className="flex items-center gap-1.5">
+            {[...Array(endPage - startPage + 1)].map((_, index) => {
+              const pageNum = startPage + index;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${pageNum === currentPage ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100" : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
+                    }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            onClick={handleNextSet}
+            disabled={endPage === totalPages}
+            className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
           >
-            <h2 className="text-lg font-semibold text-slate-900">
-              Add Warehouse
-            </h2>
-
-            <form onSubmit={handleCreateWarehouse}>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">
-                  Warehouse Name
-                </label>
-                <input
-                  type="text"
-                  value={createProduct.name}
-                  onChange={(e) => setCreateProduct({ name: e.target.value })}
-                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                />
-              </div>
-
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                  onClick={handleModalClose1}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
+            Next <ChevronRight size={16} />
+          </button>
         </div>
-      )}
+      </div>
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Update Warehouse Details">
+        <form onSubmit={handleUpdateWarehouseAction} className="space-y-6">
+          <div>
+            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Location Name</label>
+            <input
+              type="text"
+              required
+              value={currentWarehouse?.name || ""}
+              onChange={(e) => setCurrentWarehouse((prev) => ({ ...prev, name: e.target.value }))}
+              className="h-12 border border-slate-200 rounded-2xl px-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+              placeholder="e.g. Dhaka Central Warehouse"
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition">Cancel</button>
+            <button type="submit" className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100">Save Changes</button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={isModalOpen1} onClose={() => setIsModalOpen1(false)} title="Add New Storage Location">
+        <form onSubmit={handleCreateWarehouse} className="space-y-6">
+          <div>
+            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Warehouse Name</label>
+            <input
+              type="text"
+              required
+              value={createWarehouse.name}
+              onChange={(e) => setCreateWarehouse({ name: e.target.value })}
+              className="h-12 border border-slate-200 rounded-2xl px-4 w-full bg-white text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+              placeholder="e.g. Chittagong Port Unit"
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button type="button" onClick={() => setIsModalOpen1(false)} className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition">Cancel</button>
+            <button type="submit" className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100">Register Warehouse</button>
+          </div>
+        </form>
+      </Modal>
     </motion.div>
   );
 };

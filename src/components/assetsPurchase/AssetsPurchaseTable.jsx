@@ -10,6 +10,7 @@ import {
   useInsertAssetsPurchaseMutation,
   useUpdateAssetsPurchaseMutation,
 } from "../../features/assetsPurchase/assetsPurchase";
+import Modal from "../common/Modal";
 
 const AssetsPurchaseTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -239,13 +240,14 @@ const AssetsPurchaseTable = () => {
         quantity: Number(createProduct.quantity),
         price: Number(createProduct.price),
         date: createProduct.date,
+        note: createProduct.note,
       };
 
       const res = await insertAssetsPurchase(payload).unwrap();
       if (res?.success) {
         toast.success("Successfully created product");
         setIsModalOpen1(false);
-        setCreateProduct({ name: "", price: "", quantity: "" });
+        setCreateProduct({ name: "", price: "", quantity: "", note: "", date: new Date().toISOString().slice(0, 10) });
         refetch?.();
       } else {
         toast.error(res?.message || "Create failed!");
@@ -348,11 +350,11 @@ const AssetsPurchaseTable = () => {
 
   const handleNoteClick = (note) => {
     setNoteContent(note);
-    setIsNoteModalOpen(true); // Open the modal
+    setIsNoteModalOpen(true);
   };
 
   const handleNoteModalClose = () => {
-    setIsNoteModalOpen(false); // Close the modal
+    setIsNoteModalOpen(false);
   };
 
   return (
@@ -367,7 +369,7 @@ const AssetsPurchaseTable = () => {
         <button
           type="button"
           onClick={handleAddProduct}
-          className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition px-4 py-2 rounded-xl shadow-sm"
+          className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition px-4 py-2 rounded-xl shadow-sm font-semibold"
         >
           Add <Plus size={18} />
         </button>
@@ -496,13 +498,12 @@ const AssetsPurchaseTable = () => {
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
-                      product.status === "Approved"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : product.status === "Active"
-                          ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                          : "bg-amber-50 text-amber-700 border-amber-200"
-                    }`}
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${product.status === "Approved"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : product.status === "Active"
+                        ? "bg-blue-50 text-blue-700 border-blue-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
                   >
                     {product.status}
                   </span>
@@ -510,28 +511,40 @@ const AssetsPurchaseTable = () => {
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center gap-3">
+                    {/* <button
+                      className={`relative h-10 w-10 rounded-md flex items-center justify-center hover:bg-slate-100 transition ${product.note ? 'text-indigo-600' : 'text-slate-400'}`}
+                      title={product.note || "No note"}
+                      type="button"
+                      onClick={() => product.note && handleNoteClick(product.note)}
+                    >
+                      <Notebook size={18} />
+                      {product.note && (
+                        <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-indigo-500" />
+                      )}
+                    </button> */}
+
                     {product.note ? (
                       <div className="relative">
                         <button
                           className="relative h-10 w-10 rounded-md flex items-center justify-center"
                           title={product.note}
                           type="button"
-                          onClick={() => handleNoteClick(product.note)} // Open modal on click
+                          onClick={() => handleNoteClick(product.note)}
                         >
                           <Notebook size={18} className="text-slate-700" />
                         </button>
 
                         <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
-                          {product.note ? 1 : null}
+                          1
                         </span>
                       </div>
                     ) : (
                       <button
-                        className="h-10 w-10 rounded-md flex items-center justify-center"
-                        title={product.note}
+                        className="h-10 w-10 rounded-md flex items-center justify-center cursor-default"
+                        title="No note available"
                         type="button"
                       >
-                        <Notebook size={18} className="text-slate-700" />
+                        <Notebook size={18} className="text-slate-300" />
                       </button>
                     )}
 
@@ -542,32 +555,6 @@ const AssetsPurchaseTable = () => {
                     >
                       <Edit size={18} className="text-indigo-600" />
                     </button>
-
-                    {/* {role === "superAdmin" || role === "admin" ? (
-                      <button
-                        onClick={() => handleDeleteProduct(product.Id)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
-                        title="Delete"
-                      >
-                        <Trash2 size={18} className="text-rose-600" />
-                      </button>
-                    ) : role === "inventor" && product.status === "Approved" ? (
-                      <button
-                        onClick={() => handleDeleteProduct(product.Id)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
-                        title="Delete"
-                      >
-                        <Trash2 size={18} className="text-rose-600" />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleEditClick1(product)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
-                        title="Delete Request / Note"
-                      >
-                        <Trash2 size={18} className="text-rose-600" />
-                      </button>
-                    )} */}
 
                     {role === "superAdmin" || role === "admin" ? (
                       <button
@@ -588,29 +575,6 @@ const AssetsPurchaseTable = () => {
                     )}
                   </div>
                 </td>
-
-                {/* ✅ Note Modal (Popup) */}
-                {isNoteModalOpen && (
-                  <div className="fixed inset-0 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
-                      <h2 className="text-xl font-semibold text-slate-900">
-                        Note
-                      </h2>
-                      <p className="mt-4 text-sm text-slate-700">
-                        {noteContent}
-                      </p>
-
-                      <div className="mt-6 flex justify-end gap-2">
-                        <button
-                          onClick={handleNoteModalClose}
-                          className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </motion.tr>
             ))}
 
@@ -633,7 +597,7 @@ const AssetsPurchaseTable = () => {
         <button
           onClick={handlePreviousSet}
           disabled={startPage === 1}
-          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition font-semibold"
         >
           Prev
         </button>
@@ -645,11 +609,10 @@ const AssetsPurchaseTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
+              className={`px-4 py-2 rounded-xl border transition font-bold ${active
+                ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                }`}
             >
               {pageNum}
             </button>
@@ -659,305 +622,179 @@ const AssetsPurchaseTable = () => {
         <button
           onClick={handleNextSet}
           disabled={endPage === totalPages}
-          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition font-semibold"
         >
           Next
         </button>
       </div>
 
-      {/* -------------------- Edit Modal -------------------- */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-2/3 lg:w-1/2 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Edit Purchase Asset
-              </h2>
-              <button
-                type="button"
-                onClick={handleModalClose}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
+      {/* Note Modal */}
+      <Modal isOpen={isNoteModalOpen} onClose={handleNoteModalClose} title="Asset Purchase Note">
+        <div className="p-2">
+          <p className="text-slate-600 leading-relaxed font-medium capitalize prose-slate">{noteContent}</p>
+        </div>
+      </Modal>
 
-            <div className="mt-4 flex flex-col gap-3">
-              <Field
-                label="Date:"
-                type="date"
-                value={currentProduct.date}
-                onChange={(v) =>
-                  setCurrentProduct({ ...currentProduct, date: v })
-                }
+      {/* Edit Modal */}
+      <Modal isOpen={isModalOpen} onClose={handleModalClose} title="Edit Purchase Asset">
+        <div className="grid grid-cols-1 gap-5">
+          <Field
+            label="Date"
+            type="date"
+            value={currentProduct?.date}
+            onChange={(v) => setCurrentProduct({ ...currentProduct, date: v })}
+            required
+          />
+          <Field
+            label="Asset Name"
+            value={currentProduct?.name || ""}
+            onChange={(v) => setCurrentProduct({ ...currentProduct, name: v })}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field
+              label="Quantity"
+              type="number"
+              step="0.01"
+              value={currentProduct?.quantity || ""}
+              onChange={(v) => setCurrentProduct({ ...currentProduct, quantity: v })}
+            />
+            <Field
+              label="Unit Price"
+              type="number"
+              step="0.01"
+              value={currentProduct?.price || ""}
+              onChange={(v) => setCurrentProduct({ ...currentProduct, price: v })}
+            />
+          </div>
+
+          {role === "superAdmin" ? (
+            <div>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Approval Status</label>
+              <select
+                value={currentProduct?.status || ""}
+                onChange={(e) => setCurrentProduct({ ...currentProduct, status: e.target.value })}
+                className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
-              />
-              <Field
-                label="Name:"
-                value={currentProduct?.name || ""}
-                onChange={(v) =>
-                  setCurrentProduct({ ...currentProduct, name: v })
-                }
-              />
-
-              <Field
-                label="Quantity:"
-                type="number"
-                step="0.01"
-                value={currentProduct?.quantity || ""}
-                onChange={(v) =>
-                  setCurrentProduct({ ...currentProduct, quantity: v })
-                }
-              />
-
-              <Field
-                label="Price:"
-                type="number"
-                step="0.01"
-                value={currentProduct?.price || ""}
-                onChange={(v) =>
-                  setCurrentProduct({ ...currentProduct, price: v })
-                }
-              />
-
-              {role === "superAdmin" ? (
-                <div className="md:col-span-3">
-                  <label className="block text-sm text-slate-700">Status</label>
-                  <select
-                    value={currentProduct?.status || ""}
-                    onChange={(e) =>
-                      setCurrentProduct({
-                        ...currentProduct,
-                        status: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    required
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Pending">Pending</option>
-                  </select>
-                </div>
-              ) : (
-                <div className="md:col-span-3">
-                  <label className="block text-sm text-slate-700">Note:</label>
-                  <textarea
-                    value={currentProduct?.note || ""}
-                    onChange={(e) =>
-                      setCurrentProduct({
-                        ...currentProduct,
-                        note: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    rows={3}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                onClick={handleUpdateProduct}
               >
-                Save
-              </button>
-              <button
-                type="button"
-                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                onClick={handleModalClose}
-              >
-                Cancel
-              </button>
+                <option value="">Select Status</option>
+                <option value="Approved">Approved</option>
+                <option value="Pending">Pending</option>
+              </select>
             </div>
-          </motion.div>
+          ) : (
+            <div>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Internal Note</label>
+              <textarea
+                value={currentProduct?.note || ""}
+                onChange={(e) => setCurrentProduct({ ...currentProduct, note: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                rows={4}
+              />
+            </div>
+          )}
         </div>
-      )}
 
-      {/* -------------------- "Delete" Modal (note/status update) -------------------- */}
-      {isModalOpen2 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-2/3 lg:w-1/2 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Delete Request / Note
-              </h2>
-              <button
-                type="button"
-                onClick={handleModalClose2}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 mt-4">
-              {role === "superAdmin" ? (
-                <div>
-                  <label className="block text-sm text-slate-700">Status</label>
-                  <select
-                    value={currentProduct?.status || ""}
-                    onChange={(e) =>
-                      setCurrentProduct({
-                        ...currentProduct,
-                        status: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    required
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Pending">Pending</option>
-                  </select>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-sm text-slate-700">Note:</label>
-                  <textarea
-                    value={currentProduct?.note || ""}
-                    onChange={(e) =>
-                      setCurrentProduct({
-                        ...currentProduct,
-                        note: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    rows={3}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                onClick={handleUpdateProduct1}
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                onClick={handleModalClose2}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
+        <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
+          <button type="button" onClick={handleModalClose} className="px-6 py-2.5 border border-slate-200 text-slate-500 font-bold text-sm rounded-xl hover:bg-slate-50 transition">Cancel</button>
+          <button onClick={handleUpdateProduct} className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-100">Apply Changes</button>
         </div>
-      )}
+      </Modal>
 
-      {/* -------------------- Add Modal -------------------- */}
-      {isModalOpen1 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-2/3 lg:w-1/2 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Add Purchase Asset
-              </h2>
-              <button
-                type="button"
-                onClick={handleModalClose1}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
+      {/* Delete/Status Request Modal */}
+      <Modal isOpen={isModalOpen2} onClose={handleModalClose2} title="Action Request / Note Update">
+        <div className="space-y-5">
+          {role === "superAdmin" ? (
+            <div>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Status Overwrite</label>
+              <select
+                value={currentProduct?.status || ""}
+                onChange={(e) => setCurrentProduct({ ...currentProduct, status: e.target.value })}
+                className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                required
               >
-                <X size={18} className="text-slate-600" />
-              </button>
+                <option value="">Select Status</option>
+                <option value="Approved">Approved</option>
+                <option value="Pending">Pending</option>
+              </select>
             </div>
-
-            <form onSubmit={handleCreateProduct}>
-              <div className="grid grid-cols-1 gap-3 mt-4">
-                <Field
-                  label="Date:"
-                  type="date"
-                  value={createProduct.date}
-                  onChange={(v) =>
-                    setCreateProduct({ ...createProduct, date: v })
-                  }
-                  required
-                />
-
-                <Field
-                  label="Name:"
-                  value={createProduct.name}
-                  onChange={(v) =>
-                    setCreateProduct({ ...createProduct, name: v })
-                  }
-                  required
-                />
-
-                <Field
-                  label="Quantity:"
-                  type="number"
-                  step="0.01"
-                  value={createProduct.quantity}
-                  onChange={(v) =>
-                    setCreateProduct({ ...createProduct, quantity: v })
-                  }
-                  required
-                />
-
-                <Field
-                  label="Price:"
-                  type="number"
-                  step="0.01"
-                  value={createProduct.price}
-                  onChange={(v) =>
-                    setCreateProduct({ ...createProduct, price: v })
-                  }
-                  required
-                />
-                <Field
-                  label="Note:"
-                  type="text"
-                  value={createProduct.note}
-                  onChange={(v) =>
-                    setCreateProduct({ ...createProduct, note: v })
-                  }
-                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-
-              <div className="md:col-span-3 mt-2 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                  onClick={handleModalClose1}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
+          ) : (
+            <div>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Request Justification / Note</label>
+              <textarea
+                value={currentProduct?.note || ""}
+                onChange={(e) => setCurrentProduct({ ...currentProduct, note: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                rows={4}
+                placeholder="Reason for deletion request or updated notes..."
+              />
+            </div>
+          )}
         </div>
-      )}
+
+        <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
+          <button type="button" onClick={handleModalClose2} className="px-6 py-2.5 border border-slate-200 text-slate-500 font-bold text-sm rounded-xl hover:bg-slate-50 transition">Cancel</button>
+          <button onClick={handleUpdateProduct1} className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-100">Submit Request</button>
+        </div>
+      </Modal>
+
+      {/* Add Modal */}
+      <Modal isOpen={isModalOpen1} onClose={handleModalClose1} title="Record New Asset Purchase">
+        <form onSubmit={handleCreateProduct} className="grid grid-cols-1 gap-5">
+          <Field
+            label="Purchase Date"
+            type="date"
+            value={createProduct.date}
+            onChange={(v) => setCreateProduct({ ...createProduct, date: v })}
+            required
+          />
+
+          <Field
+            label="Asset Description"
+            value={createProduct.name}
+            onChange={(v) => setCreateProduct({ ...createProduct, name: v })}
+            required
+            placeholder="e.g. Office Chair, Laptop Battery"
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field
+              label="Quantity"
+              type="number"
+              step="0.01"
+              value={createProduct.quantity}
+              onChange={(v) => setCreateProduct({ ...createProduct, quantity: v })}
+              required
+              placeholder=""
+            />
+            <Field
+              label="Unit Price"
+              type="number"
+              step="0.01"
+              value={createProduct.price}
+              onChange={(v) => setCreateProduct({ ...createProduct, price: v })}
+              required
+              placeholder="0.00"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Additional Note</label>
+            <textarea
+              value={createProduct.note}
+              onChange={(v) => setCreateProduct({ ...createProduct, note: v.target.value })}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              rows={3}
+              placeholder="Vendor details or serial numbers..."
+            />
+          </div>
+
+          <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button type="button" onClick={handleModalClose1} className="px-6 py-2.5 border border-slate-200 text-slate-500 font-bold text-sm rounded-xl hover:bg-slate-50 transition">Cancel</button>
+            <button type="submit" className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-100">Create Record</button>
+          </div>
+        </form>
+      </Modal>
     </motion.div>
   );
 };
@@ -970,19 +807,20 @@ const Field = ({
   step,
   readOnly,
   required,
+  placeholder
 }) => (
   <div>
-    <label className="block text-sm text-slate-700">{label}</label>
+    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">{label}</label>
     <input
       type={type}
       step={step}
       value={value ?? ""}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={onChange ? (e) => onChange(e.target.value) : undefined}
       readOnly={readOnly}
       required={required}
-      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${
-        readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
-      }`}
+      placeholder={placeholder}
+      className={`h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition ${readOnly ? "opacity-70 cursor-not-allowed" : ""
+        }`}
     />
   </div>
 );

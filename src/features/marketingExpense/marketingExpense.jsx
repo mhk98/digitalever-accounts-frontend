@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const marketingExpenseApi = createApi({
   reducerPath: "marketingExpenseApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -26,7 +26,7 @@ export const marketingExpenseApi = createApi({
     updateMarketingExpense: build.mutation({
       query: ({ id, data }) => ({
         url: `/marketing-expense/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: ["marketingExpense"],

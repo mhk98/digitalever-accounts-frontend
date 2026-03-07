@@ -1,10 +1,9 @@
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Edit, Plus, Trash2, X, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
-// import axios from "axios";
 import {
   useDeleteSupplierMutation,
   useGetAllSupplierQuery,
@@ -12,6 +11,7 @@ import {
   useInsertSupplierMutation,
   useUpdateSupplierMutation,
 } from "../../features/supplier/supplier";
+import Modal from "../common/Modal";
 
 const SuppliersTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,465 +24,429 @@ const SuppliersTable = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [supplierId, setSupplierId] = useState("");
+  const [supplierIdFilter, setSupplierIdFilter] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1); // initial value as 1
+  const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
-  // eslint-disable-next-line no-unused-vars
-  const [itemsPerPage, setItemsPerPage] = useState(10); // 2 items per page
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const [suppliersData, setSuppliersData] = useState([]);
-
-  const {
-    data: data1,
-    isLoading: isLoading1,
-    isError: isError1,
-    error: error1,
-  } = useGetAllSupplierWithoutQueryQuery();
-
-  useEffect(() => {
-    if (isError1) {
-      console.error("Error fetching purchase data", error1);
-    } else if (!isLoading1 && data1) {
-      setSuppliersData(data1.data);
-    }
-  }, [data1, isLoading1, isError1, error1]);
-
-  console.log("suppliers", suppliers);
+  const { data: allSupplierRes } = useGetAllSupplierWithoutQueryQuery();
+  const suppliersData = allSupplierRes?.data || [];
 
   useEffect(() => {
     const updatePagesPerSet = () => {
-      if (window.innerWidth < 640) {
-        setPagesPerSet(5);
-      } else if (window.innerWidth < 1024) {
-        setPagesPerSet(7);
-      } else {
-        setPagesPerSet(10);
-      }
+      if (window.innerWidth < 640) setPagesPerSet(5);
+      else if (window.innerWidth < 1024) setPagesPerSet(7);
+      else setPagesPerSet(10);
     };
-
     updatePagesPerSet();
     window.addEventListener("resize", updatePagesPerSet);
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
 
-  const { data, isLoading, isError, error } = useGetAllSupplierQuery({
+  const { data, isLoading, isError, error, refetch } = useGetAllSupplierQuery({
     startDate,
     endDate,
-    supplierId,
+    supplierId: supplierIdFilter,
     page: currentPage,
     limit: itemsPerPage,
   });
 
   useEffect(() => {
-    if (isError) {
-      console.error("Error fetching product data", error);
-    } else if (!isLoading && data) {
+    if (!isLoading && data?.data) {
       setSuppliers(data.data);
-      setTotalPages(Math.ceil(data.meta.count / itemsPerPage)); // totalPages is calculated dynamically from API response
+      setTotalPages(Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)));
     }
-  }, [
-    data,
-    isLoading,
-    isError,
-    error,
-    currentPage,
-    itemsPerPage,
-    startDate,
-    endDate,
-    supplierId,
-  ]);
+  }, [data, isLoading, itemsPerPage]);
 
-  // useEffect(() => {
-  //     const fetchData = async () => {
-  //         try {
-  //             const response = await axios.get(` http://localhost:5000/api/v1/supplier`, {
-  //                 params: { startDate, endDate, supplierId }
-  //             });
-  //             setFilterData(response.data.data);
-  //         } catch (err) {
-  //             console.log(err.message);
-  //         }
-  //     };
-  //     // Only fetch data if both dates are defined
-  //     if (startDate && endDate || supplierId) {
-  //         fetchData();
-  //     }
-  // }, [startDate, endDate, supplierId]);
-
-  const handleEditClick = (product) => {
-    setCurrentSupplier(product);
+  const handleEditClick = (supplier) => {
+    setCurrentSupplier(supplier);
     setIsModalOpen(true);
-  };
-
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-  };
-
-  const handleAddProduct = () => setIsModalOpen1(true);
-  const handleModalClose1 = () => {
-    setIsModalOpen1(false);
   };
 
   const [insertSupplier] = useInsertSupplierMutation();
   const handlecreateSupplier = async (e) => {
     e.preventDefault();
-    const res = await insertSupplier(createSupplier).unwrap();
-    if (res.success) {
-      toast.success("Successfully created supplier");
+    try {
+      const res = await insertSupplier(createSupplier).unwrap();
+      if (res.success) {
+        toast.success("Successfully created supplier");
+        setIsModalOpen1(false);
+        setCreateSupplier({ name: "", remarks: "" });
+        refetch();
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Create failed!");
     }
-    setIsModalOpen1(false);
   };
 
   const [updateSupplier] = useUpdateSupplierMutation();
-  const handleUpdateProduct = async () => {
-    const updatedProduct = {
-      name: currentSupplier.name,
-      remarks: currentSupplier.remarks,
-    };
-
+  const handleUpdateSupplier = async (e) => {
+    e.preventDefault();
     try {
       const res = await updateSupplier({
         id: currentSupplier.Id,
-        data: updatedProduct,
+        data: {
+          name: currentSupplier.name,
+          remarks: currentSupplier.remarks,
+        },
       }).unwrap();
       if (res.success) {
         toast.success("Successfully updated supplier!");
         setIsModalOpen(false);
-      } else {
-        toast.error("Update failed!");
+        refetch();
       }
-    } catch (error) {
-      console.log(error);
-      toast.error(error.data.message);
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed!");
     }
   };
 
-  const [deleteProduct] = useDeleteSupplierMutation();
-  const handleDeleteProduct = async (id) => {
-    const confirmDelete = window.confirm(
-      "Do you want to delete this supplier?",
-    );
-
-    if (confirmDelete) {
+  const [deleteSupplier] = useDeleteSupplierMutation();
+  const handleDeleteSupplier = async (id) => {
+    if (window.confirm("Do you want to delete this supplier?")) {
       try {
-        const res = await deleteProduct(id).unwrap();
+        const res = await deleteSupplier(id).unwrap();
         if (res.success) {
           toast.success("Successfully deleted supplier!");
-        } else {
-          toast.error("Delete failed!");
+          refetch();
         }
-      } catch (error) {
-        console.log(error);
-        toast.error(error.data.message);
+      } catch (err) {
+        toast.error(err?.data?.message || "Delete failed!");
       }
-    } else {
-      toast.info("Delete action was cancelled.");
     }
   };
 
-  // New function to clear filters
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
-    setSupplierId("");
+    setSupplierIdFilter("");
   };
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
-    if (pageNumber < startPage) {
-      setStartPage(pageNumber);
-    } else if (pageNumber > endPage) {
-      setStartPage(pageNumber - pagesPerSet + 1);
-    }
+    if (pageNumber < startPage) setStartPage(pageNumber);
+    else if (pageNumber > Math.min(startPage + pagesPerSet - 1, totalPages)) setStartPage(pageNumber - pagesPerSet + 1);
   };
 
-  const handlePreviousSet = () =>
-    setStartPage((prevStart) => Math.max(prevStart - pagesPerSet, 1));
-  const handleNextSet = () =>
-    setStartPage((prevStart) =>
-      Math.min(prevStart + pagesPerSet, totalPages - pagesPerSet + 1),
-    );
+  const handlePreviousSet = () => setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
+  const handleNextSet = () => setStartPage((prev) => Math.min(prev + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)));
 
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
 
-  const supplierOptions = suppliersData.map((supplier) => ({
-    value: supplier.Id,
-    label: supplier.name,
-  }));
+  const supplierOptions = useMemo(() => suppliersData.map((s) => ({
+    value: s.Id,
+    label: s.name,
+  })), [suppliersData]);
+
+  const selectStyles = {
+    control: (base, state) => ({
+      ...base,
+      minHeight: 44,
+      borderRadius: 12,
+      borderColor: state.isFocused ? "#6366f1" : "#e2e8f0",
+      boxShadow: state.isFocused ? "0 0 0 4px rgba(99, 102, 241, 0.1)" : "none",
+      "&:hover": { borderColor: "#cbd5e1" },
+      backgroundColor: "white",
+    }),
+    placeholder: (base) => ({ ...base, color: "#94a3b8", fontSize: "14px" }),
+    singleValue: (base) => ({ ...base, color: "#1e293b", fontSize: "14px", fontWeight: "500" }),
+    menu: (base) => ({
+      ...base,
+      borderRadius: 14,
+      overflow: "hidden",
+      border: "1px solid #f1f5f9",
+      boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+      zIndex: 50
+    }),
+  };
 
   return (
     <motion.div
-      className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-sm rounded-3xl p-4 sm:p-8 border border-slate-100 mb-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
+      transition={{ duration: 0.3 }}
     >
-      <div className="my-6 flex justify-start">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Suppliers Directory</h2>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Manage and track your business suppliers</p>
+        </div>
         <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-20 justify-center"
-          onClick={handleAddProduct}
+          className="group relative inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition-all px-6 py-3 rounded-2xl text-sm font-bold shadow-xl shadow-indigo-100 active:scale-95 overflow-hidden"
+          onClick={() => setIsModalOpen1(true)}
+          type="button"
         >
-          Add <Plus size={18} className="ms-2" />
+          <UserPlus size={18} /> Add New Supplier
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mb-6 w-full justify-center mx-auto">
-        <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">Start Date:</label>
+      {/* Filters */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Joined From</label>
           <input
             type="date"
+            value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="border border-gray-300 rounded p-1 text-black bg-white"
-          />
-        </div>
-        <div className="flex items-center justify-center">
-          <label className="mr-2 text-sm text-white">End Date:</label>
-          <input
-            type="date"
-            onChange={(e) => setEndDate(e.target.value)}
-            className="border border-gray-300 rounded p-1 text-black bg-white"
+            className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-medium text-sm"
           />
         </div>
 
-        <div className="flex items-center justify-center">
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Joined To</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-medium text-sm"
+          />
+        </div>
+
+        <div className="flex flex-col lg:col-span-1">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Search Supplier</label>
           <Select
             options={supplierOptions}
-            value={supplierOptions.find(
-              (option) => option.value === currentSupplier?.supplierId,
-            )} // Optional chaining ব্যবহার করা হলো
-            onChange={(selectedOption) => setSupplierId(selectedOption?.value)}
-            placeholder="Select Supplier"
+            value={supplierOptions.find(o => String(o.value) === String(supplierIdFilter)) || null}
+            onChange={(s) => setSupplierIdFilter(s?.value || "")}
+            placeholder="Search name..."
             isClearable
-            className="text-black"
+            styles={selectStyles}
           />
         </div>
 
         <button
-          className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white transition duration-200 p-2 rounded w-36 justify-center mx-auto"
+          className="h-11 bg-slate-100 hover:bg-slate-200 text-slate-600 transition rounded-xl px-4 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 border border-slate-200"
           onClick={clearFilters}
+          type="button"
         >
-          Clear Filters
+          <X size={16} /> Clear Filters
         </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead>
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Due Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Remarks
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-700">
-            {suppliers.map((product) => (
-              <motion.tr
-                key={product.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
-                  {product.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {Number(product.due_amount || 0).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {product.remarks}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  <button
-                    className="text-indigo-400 hover:text-indigo-300 mr-2"
-                    onClick={() => handleEditClick(product)}
-                  >
-                    <Edit size={18} />
-                  </button>
-                  <button
-                    className="text-red-400 hover:text-red-300"
-                    onClick={() => handleDeleteProduct(product.Id)}
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Table */}
+      <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-100">
+            <thead className="bg-slate-50/50">
+              <tr>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Supplier Name
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Due Amount
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Remarks
+                </th>
+                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-slate-100">
+              {suppliers.map((supplier) => (
+                <motion.tr
+                  key={supplier.Id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="hover:bg-indigo-50/30 transition-colors group"
+                >
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
+                      {supplier.name}
+                    </div>
+                  </td>
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black border tracking-tighter shadow-sm ${Number(supplier.due_amount || 0) > 0
+                        ? "bg-rose-50 text-rose-700 border-rose-100 shadow-rose-50"
+                        : "bg-emerald-50 text-emerald-700 border-emerald-100 shadow-emerald-50"
+                      }`}>
+                      ৳ {Number(supplier.due_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="text-xs text-slate-500 font-medium line-clamp-1 max-w-[200px]" title={supplier.remarks}>
+                      {supplier.remarks || "—"}
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-5 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => handleEditClick(supplier)}
+                        className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm active:scale-90"
+                        title="Edit"
+                        type="button"
+                      >
+                        <Edit size={16} />
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteSupplier(supplier.Id)}
+                        className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition shadow-sm active:scale-90"
+                        title="Delete"
+                        type="button"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+
+          {isLoading && (
+            <div className="py-20 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600/20 border-t-indigo-600"></div>
+              <p className="text-slate-500 text-sm mt-4 font-bold tracking-tight">Loading Suppliers...</p>
+            </div>
+          )}
+
+          {!isLoading && suppliers.length === 0 && (
+            <div className="py-20 text-center text-slate-400">
+              <div className="text-4xl mb-4 opacity-20">👥</div>
+              <p className="font-bold text-sm italic">No suppliers found</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center justify-center space-x-2 mt-6">
-        <button
-          onClick={handlePreviousSet}
-          disabled={startPage === 1}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
-        >
-          Prev
-        </button>
+      {/* Pagination */}
+      <div className="flex flex-col sm:flex-row items-center justify-between mt-10 gap-6 px-2">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+          Showing Page <span className="text-indigo-600">{currentPage}</span> of <span className="text-slate-900">{totalPages}</span>
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePreviousSet}
+            disabled={startPage === 1}
+            className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
+          >
+            <ChevronLeft size={16} /> Prev
+          </button>
+          <div className="flex items-center gap-1.5">
+            {[...Array(endPage - startPage + 1)].map((_, index) => {
+              const pageNum = startPage + index;
+              const active = pageNum === currentPage;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${active ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100" : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
+                    }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            onClick={handleNextSet}
+            disabled={endPage === totalPages}
+            className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
+          >
+            Next <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
 
-        {[...Array(endPage - startPage + 1)].map((_, index) => {
-          const pageNum = startPage + index;
-          return (
+      {/* Modals */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Edit Supplier info"
+      >
+        <form onSubmit={handleUpdateSupplier} className="space-y-5">
+          <div>
+            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Supplier Name</label>
+            <input
+              type="text"
+              required
+              value={currentSupplier?.name || ""}
+              onChange={(e) => setCurrentSupplier({ ...currentSupplier, name: e.target.value })}
+              className="h-12 border border-slate-200 rounded-2xl px-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+              placeholder="e.g. Acme Corp"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Remarks</label>
+            <textarea
+              value={currentSupplier?.remarks || ""}
+              onChange={(e) => setCurrentSupplier({ ...currentSupplier, remarks: e.target.value })}
+              className="border border-slate-200 rounded-2xl p-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-medium min-h-[120px]"
+              placeholder="Add any internal notes..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
             <button
-              key={pageNum}
-              onClick={() => handlePageChange(pageNum)}
-              className={`px-3 py-2 text-white rounded-md ${
-                pageNum === currentPage
-                  ? "bg-indigo-600"
-                  : "bg-indigo-500 hover:bg-indigo-400"
-              }`}
+              type="button"
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition active:scale-95"
+              onClick={() => setIsModalOpen(false)}
             >
-              {pageNum}
+              Cancel
             </button>
-          );
-        })}
+            <button
+              type="submit"
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100 active:scale-95"
+            >
+              Update Supplier
+            </button>
+          </div>
+        </form>
+      </Modal>
 
-        <button
-          onClick={handleNextSet}
-          disabled={endPage === totalPages}
-          className="px-3 py-2 text-white bg-indigo-600 rounded-md disabled:bg-gray-400"
-        >
-          Next
-        </button>
-      </div>
+      <Modal
+        isOpen={isModalOpen1}
+        onClose={() => setIsModalOpen1(false)}
+        title="Register New Supplier"
+      >
+        <form onSubmit={handlecreateSupplier} className="space-y-5">
+          <div>
+            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Supplier Name</label>
+            <input
+              type="text"
+              required
+              value={createSupplier.name}
+              onChange={(e) => setCreateSupplier({ ...createSupplier, name: e.target.value })}
+              className="h-12 border border-slate-200 rounded-2xl px-4 w-full bg-white text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+              placeholder="e.g. Global Supplies Ltd"
+            />
+          </div>
 
-      {/* Modal for editing product */}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h2 className="text-lg font-semibold text-white">Edit Supplier</h2>
-            <div className="mt-4">
-              <label className="block text-sm text-white">Name:</label>
-              <input
-                type="text"
-                value={currentSupplier?.name}
-                onChange={(e) =>
-                  setCurrentSupplier({
-                    ...currentSupplier,
-                    name: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Remarks (Optional)</label>
+            <textarea
+              value={createSupplier.remarks}
+              onChange={(e) => setCreateSupplier({ ...createSupplier, remarks: e.target.value })}
+              className="border border-slate-200 rounded-2xl p-4 w-full bg-white text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-medium min-h-[120px]"
+              placeholder="Internal notes about this supplier..."
+            />
+          </div>
 
-            {/* <div className='mt-4'>
-                            <label className='block text-sm text-white'>Due Amount:</label>
-                            <input type='number' value={currentSupplier?.due_amount} onChange={(e) => setCurrentSupplier({ ...currentSupplier, due_amount: e.target.value })} className='border border-gray-300 rounded p-2 w-full mt-1 text-black' />
-                        </div> */}
-
-            <div className="mt-4">
-              <label className="block text-sm text-white">Remarks:</label>
-              <textarea
-                value={currentSupplier?.remarks}
-                onChange={(e) =>
-                  setCurrentSupplier({
-                    ...currentSupplier,
-                    remarks: e.target.value,
-                  })
-                }
-                className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-                rows={4} // You can adjust the number of rows as needed
-              />
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
-                onClick={handleUpdateProduct}
-              >
-                Save
-              </button>
-              <button
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
-                onClick={handleModalClose}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Modal for adding product */}
-      {isModalOpen1 && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <motion.div
-            className="bg-gray-800 rounded-lg p-6 shadow-lg w-full md:w-1/3 lg:w-1/3"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h2 className="text-lg font-semibold text-white">Add Supplier</h2>
-            <form onSubmit={handlecreateSupplier}>
-              <div className="mt-4">
-                <label className="block text-sm text-white">Name:</label>
-                <input
-                  type="text"
-                  value={createSupplier.name}
-                  onChange={(e) =>
-                    setCreateSupplier({
-                      ...createSupplier,
-                      name: e.target.value,
-                    })
-                  }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-                  required
-                />
-              </div>
-              {/* <div className='mt-4'>
-                                <label className='block text-sm text-white'>Due Amount:</label>
-                                <input type='number' value={createSupplier.due_amount} onChange={(e) => setCreateSupplier({ ...createSupplier, due_amount: parseInt(e.target.value) })} className='border border-gray-300 rounded p-2 w-full mt-1 text-black' required />
-                            </div> */}
-              <div className="mt-4">
-                <label className="block text-sm text-white">Remarks:</label>
-                <textarea
-                  value={createSupplier?.remarks}
-                  onChange={(e) =>
-                    setCreateSupplier({
-                      ...createSupplier,
-                      remarks: e.target.value,
-                    })
-                  }
-                  className="border border-gray-300 rounded p-2 w-full mt-1 text-black"
-                  rows={4} // You can adjust the number of rows as needed
-                />
-              </div>
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded mr-2"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
-                  onClick={handleModalClose1}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition active:scale-95"
+              onClick={() => setIsModalOpen1(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100 active:scale-95"
+            >
+              Add Supplier
+            </button>
+          </div>
+        </form>
+      </Modal>
     </motion.div>
   );
 };

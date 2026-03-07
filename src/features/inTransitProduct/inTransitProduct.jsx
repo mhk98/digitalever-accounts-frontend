@@ -32,7 +32,7 @@ export const inTransitProductApi = baseApi.injectEndpoints({
     updateInTransitProduct: build.mutation({
       query: ({ id, data }) => ({
         url: `/intransit-product/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [
@@ -59,12 +59,12 @@ export const inTransitProductApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-              { type: "InTransitProduct", id: "LIST" },
-              ...result.data.map((r) => ({
-                type: "InTransitProduct",
-                id: r.Id,
-              })),
-            ]
+            { type: "InTransitProduct", id: "LIST" },
+            ...result.data.map((r) => ({
+              type: "InTransitProduct",
+              id: r.Id,
+            })),
+          ]
           : [{ type: "InTransitProduct", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),

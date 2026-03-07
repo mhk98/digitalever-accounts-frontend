@@ -9,6 +9,7 @@ import {
   useInsertAssetsRequisitionMutation,
   useUpdateAssetsRequisitionMutation,
 } from "../../features/assetsRequisition/assetsRequisition";
+import Modal from "../common/Modal";
 
 const AssetsRequisitionTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -509,13 +510,12 @@ const AssetsRequisitionTable = () => {
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
-                      product.status === "Approved"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : product.status === "Active"
-                          ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                          : "bg-amber-50 text-amber-700 border-amber-200"
-                    }`}
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${product.status === "Approved"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : product.status === "Active"
+                        ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
                   >
                     {product.status}
                   </span>
@@ -529,22 +529,22 @@ const AssetsRequisitionTable = () => {
                           className="relative h-10 w-10 rounded-md flex items-center justify-center"
                           title={product.note}
                           type="button"
-                          onClick={() => handleNoteClick(product.note)} // Open modal on click
+                          onClick={() => handleNoteClick(product.note)}
                         >
                           <Notebook size={18} className="text-slate-700" />
                         </button>
 
                         <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
-                          {product.note ? 1 : null}
+                          1
                         </span>
                       </div>
                     ) : (
                       <button
-                        className="h-10 w-10 rounded-md flex items-center justify-center"
-                        title={product.note}
+                        className="h-10 w-10 rounded-md flex items-center justify-center cursor-default"
+                        title="No note available"
                         type="button"
                       >
-                        <Notebook size={18} className="text-slate-700" />
+                        <Notebook size={18} className="text-slate-300" />
                       </button>
                     )}
 
@@ -575,29 +575,6 @@ const AssetsRequisitionTable = () => {
                     )}
                   </div>
                 </td>
-
-                {/* ✅ Note Modal (Popup) */}
-                {isNoteModalOpen && (
-                  <div className="fixed inset-0 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
-                      <h2 className="text-xl font-semibold text-slate-900">
-                        Note
-                      </h2>
-                      <p className="mt-4 text-sm text-slate-700">
-                        {noteContent}
-                      </p>
-
-                      <div className="mt-6 flex justify-end gap-2">
-                        <button
-                          onClick={handleNoteModalClose}
-                          className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </motion.tr>
             ))}
 
@@ -632,11 +609,10 @@ const AssetsRequisitionTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
+              className={`px-4 py-2 rounded-xl border transition ${active
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                }`}
             >
               {pageNum}
             </button>
@@ -652,299 +628,276 @@ const AssetsRequisitionTable = () => {
         </button>
       </div>
 
-      {/* -------------------- Edit Modal -------------------- */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-2/3 lg:w-1/2 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Edit Purchase Requisition
-              </h2>
-              <button
-                type="button"
-                onClick={handleModalClose}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
-
-            <div className="mt-4 flex flex-col gap-3">
-              <Field
-                label="Date:"
-                type="date"
-                value={currentProduct.date}
-                onChange={(v) =>
-                  setCurrentProduct({ ...currentProduct, date: v })
-                }
-                required
-              />
-              <Field
-                label="Name:"
-                value={currentProduct?.name || ""}
-                onChange={(v) =>
-                  setCurrentProduct({ ...currentProduct, name: v })
-                }
-              />
-
-              <Field
-                label="Quantity:"
-                type="number"
-                step="0.01"
-                value={currentProduct?.quantity || ""}
-                onChange={(v) =>
-                  setCurrentProduct({ ...currentProduct, quantity: v })
-                }
-              />
-
-              <Field
-                label="Price:"
-                type="number"
-                step="0.01"
-                value={currentProduct?.price || ""}
-                onChange={(v) =>
-                  setCurrentProduct({ ...currentProduct, price: v })
-                }
-              />
-
-              {role === "superAdmin" ? (
-                <div className="md:col-span-3">
-                  <label className="block text-sm text-slate-700">Status</label>
-                  <select
-                    value={currentProduct?.status || ""}
-                    onChange={(e) =>
-                      setCurrentProduct({
-                        ...currentProduct,
-                        status: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    required
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Pending">Pending</option>
-                  </select>
-                </div>
-              ) : (
-                <div className="md:col-span-3">
-                  <label className="block text-sm text-slate-700">Note:</label>
-                  <textarea
-                    value={currentProduct?.note || ""}
-                    onChange={(e) =>
-                      setCurrentProduct({
-                        ...currentProduct,
-                        note: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    rows={3}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                onClick={handleUpdateProduct}
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                onClick={handleModalClose}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
+      {/* ✅ Note View Modal */}
+      <Modal
+        isOpen={isNoteModalOpen}
+        onClose={handleNoteModalClose}
+        title="Note Content"
+      >
+        <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-6">
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+            {noteContent || "No note available."}
+          </p>
         </div>
-      )}
-
-      {/* -------------------- "Delete" Modal (note/status update) -------------------- */}
-      {isModalOpen2 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-2/3 lg:w-1/2 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
+        <div className="flex justify-end">
+          <button
+            onClick={handleNoteModalClose}
+            className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Delete Request / Note
-              </h2>
-              <button
-                type="button"
-                onClick={handleModalClose2}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 mt-4">
-              {role === "superAdmin" ? (
-                <div>
-                  <label className="block text-sm text-slate-700">Status</label>
-                  <select
-                    value={currentProduct?.status || ""}
-                    onChange={(e) =>
-                      setCurrentProduct({
-                        ...currentProduct,
-                        status: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Pending">Pending</option>
-                  </select>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-sm text-slate-700">Note:</label>
-                  <textarea
-                    value={currentProduct?.note || ""}
-                    onChange={(e) =>
-                      setCurrentProduct({
-                        ...currentProduct,
-                        note: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    rows={3}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                onClick={handleUpdateProduct1}
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                onClick={handleModalClose2}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
+            Close
+          </button>
         </div>
-      )}
+      </Modal>
 
-      {/* -------------------- Add Modal -------------------- */}
-      {isModalOpen1 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-2/3 lg:w-1/2 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Add Purchase Requisition
-              </h2>
-              <button
-                type="button"
-                onClick={handleModalClose1}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
+      {/* ✅ Edit Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        title="Edit Purchase Requisition"
+        maxWidth="max-w-2xl"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field
+              label="Date"
+              type="date"
+              value={currentProduct?.date}
+              onChange={(v) =>
+                setCurrentProduct({ ...currentProduct, date: v })
+              }
+              required
+            />
+            <Field
+              label="Name"
+              value={currentProduct?.name || ""}
+              onChange={(v) =>
+                setCurrentProduct({ ...currentProduct, name: v })
+              }
+              required
+            />
+          </div>
 
-            <form onSubmit={handleCreateProduct}>
-              <div className="grid grid-cols-1 gap-3 mt-4">
-                <Field
-                  label="Date:"
-                  type="date"
-                  value={createProduct.date}
-                  onChange={(v) =>
-                    setCreateProduct({ ...createProduct, date: v })
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field
+              label="Quantity"
+              type="number"
+              step="0.01"
+              value={currentProduct?.quantity || ""}
+              onChange={(v) =>
+                setCurrentProduct({ ...currentProduct, quantity: v })
+              }
+              required
+            />
+            <Field
+              label="Price"
+              type="number"
+              step="0.01"
+              value={currentProduct?.price || ""}
+              onChange={(v) =>
+                setCurrentProduct({ ...currentProduct, price: v })
+              }
+              required
+            />
+          </div>
+
+          <div className="space-y-4 pt-2">
+            {role === "superAdmin" ? (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                <select
+                  value={currentProduct?.status || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
                   }
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
-                />
-
-                <Field
-                  label="Name:"
-                  value={createProduct.name}
-                  onChange={(v) =>
-                    setCreateProduct({ ...createProduct, name: v })
+                >
+                  <option value="">Select Status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
+                <textarea
+                  value={currentProduct?.note || ""}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
                   }
-                  required
-                />
-
-                <Field
-                  label="Quantity:"
-                  type="number"
-                  step="0.01"
-                  value={createProduct.quantity}
-                  onChange={(v) =>
-                    setCreateProduct({ ...createProduct, quantity: v })
-                  }
-                  required
-                />
-
-                <Field
-                  label="Price:"
-                  type="number"
-                  step="0.01"
-                  value={createProduct.price}
-                  onChange={(v) =>
-                    setCreateProduct({ ...createProduct, price: v })
-                  }
-                  required
-                />
-                <Field
-                  label="Note:"
-                  type="text"
-                  value={createProduct.note}
-                  onChange={(v) =>
-                    setCreateProduct({ ...createProduct, note: v })
-                  }
-                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  className="min-h-[100px] border border-slate-200 rounded-xl p-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  rows={3}
                 />
               </div>
+            )}
+          </div>
 
-              <div className="md:col-span-3 mt-2 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                  onClick={handleModalClose1}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
+          <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+              onClick={handleModalClose}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
+              onClick={handleUpdateProduct}
+            >
+              Save Changes
+            </button>
+          </div>
         </div>
-      )}
-    </motion.div>
+      </Modal>
+
+      {/* ✅ Delete Request / Status Modal */}
+      <Modal
+        isOpen={isModalOpen2}
+        onClose={handleModalClose2}
+        title="Update Request / Note"
+        maxWidth="max-w-xl"
+      >
+        <div className="space-y-6">
+          {role === "superAdmin" ? (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+              <select
+                value={currentProduct?.status || ""}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    status: e.target.value,
+                  })
+                }
+                className="h-12 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              >
+                <option value="">Select Status</option>
+                <option value="Approved">Approved</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
+              <textarea
+                value={currentProduct?.note || ""}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    note: e.target.value,
+                  })
+                }
+                className="min-h-[120px] border border-slate-200 rounded-xl p-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                rows={4}
+                placeholder="Enter note for delete request..."
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+              onClick={handleModalClose2}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
+              onClick={handleUpdateProduct1}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ✅ Add Modal */}
+      <Modal
+        isOpen={isModalOpen1}
+        onClose={handleModalClose1}
+        title="Add Purchase Requisition"
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={handleCreateProduct} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field
+              label="Date"
+              type="date"
+              value={createProduct.date}
+              onChange={(v) =>
+                setCreateProduct({ ...createProduct, date: v })
+              }
+              required
+            />
+            <Field
+              label="Name"
+              value={createProduct.name}
+              onChange={(v) =>
+                setCreateProduct({ ...createProduct, name: v })
+              }
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field
+              label="Quantity"
+              type="number"
+              step="0.01"
+              value={createProduct.quantity}
+              onChange={(v) =>
+                setCreateProduct({ ...createProduct, quantity: v })
+              }
+              required
+            />
+            <Field
+              label="Price"
+              type="number"
+              step="0.01"
+              value={createProduct.price}
+              onChange={(v) =>
+                setCreateProduct({ ...createProduct, price: v })
+              }
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Additional Note</label>
+            <textarea
+              value={createProduct.note}
+              onChange={(v) => setCreateProduct({ ...createProduct, note: v.target.value })}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              rows={3}
+              placeholder="Vendor details or serial numbers..."
+            />
+          </div>
+
+          <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+              onClick={handleModalClose1}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
+            >
+              Create Requisition
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </motion.div >
   );
 };
 
@@ -966,9 +919,8 @@ const Field = ({
       onChange={(e) => onChange(e.target.value)}
       readOnly={readOnly}
       required={required}
-      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${
-        readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
-      }`}
+      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
+        }`}
     />
   </div>
 );

@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Edit, Minus, Notebook, Plus, Search, Trash2 } from "lucide-react";
+import { Edit, Minus, Notebook, Plus, Search, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import Modal from "../common/Modal";
 import { useParams } from "react-router-dom";
 
 import ReportMenu from "./ReportMenu";
@@ -876,7 +877,7 @@ const MarketingExpenseTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `http://localhost:5000/${safePath}`
+                ? `https://apikafela.digitalever.com.bd/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -954,13 +955,12 @@ const MarketingExpenseTable = () => {
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
-                        rp.status === "Approved"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : rp.status === "Active"
-                            ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                            : "bg-amber-50 text-amber-700 border-amber-200"
-                      }`}
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${rp.status === "Approved"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : rp.status === "Active"
+                          ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                        }`}
                     >
                       {rp.status}
                     </span>
@@ -1134,11 +1134,10 @@ const MarketingExpenseTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
+              className={`px-4 py-2 rounded-xl border transition ${active
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                }`}
             >
               {pageNum}
             </button>
@@ -1154,680 +1153,441 @@ const MarketingExpenseTable = () => {
         </button>
       </div>
 
-      {/* ✅ Edit Modal (Light) */}
-      {isModalOpen && currentProduct && (
-        <div className="fixed inset-0 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">Edit</h2>
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Date</label>
-              <input
-                type="date"
-                value={currentProduct?.date || ""}
+      {/* Edit Modal */}
+      <Modal
+        isOpen={isModalOpen && !!currentProduct}
+        onClose={() => {
+          setIsModalOpen(false);
+          setCurrentProduct(null);
+        }}
+        title="Edit Marketing Expense"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date</label>
+            <input
+              type="date"
+              value={currentProduct?.date || ""}
+              onChange={(e) =>
+                setCurrentProduct((p) => ({ ...p, date: e.target.value }))
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Payment Status</label>
+            <select
+              value={currentProduct?.paymentStatus || ""}
+              onChange={(e) =>
+                setCurrentProduct((p) => ({ ...p, paymentStatus: e.target.value }))
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              required
+            >
+              <option value="">Select Payment Status</option>
+              <option value="CashIn">CashIn</option>
+              <option value="CashOut">CashOut</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Category</label>
+            <select
+              value={currentProduct?.category || ""}
+              onChange={(e) =>
+                setCurrentProduct((p) => ({ ...p, category: e.target.value }))
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              required
+            >
+              <option value="">Select Category</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Google">Google</option>
+              <option value="Tiktok">Tiktok</option>
+              <option value="SEO">SEO</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Remarks</label>
+            <input
+              type="text"
+              value={currentProduct?.remarks || ""}
+              onChange={(e) =>
+                setCurrentProduct((p) => ({ ...p, remarks: e.target.value }))
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Amount</label>
+            <input
+              type="number"
+              step="0.01"
+              value={currentProduct?.amount || ""}
+              onChange={(e) =>
+                setCurrentProduct((p) => ({ ...p, amount: e.target.value }))
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              required
+            />
+          </div>
+
+          {role === "superAdmin" || role === "admin" ? (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+              <select
+                value={currentProduct?.status || ""}
                 onChange={(e) =>
-                  setCurrentProduct((p) => ({ ...p, date: e.target.value }))
+                  setCurrentProduct((p) => ({ ...p, status: e.target.value }))
                 }
-                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                required
+              >
+                <option value="">Select Status</option>
+                <option value="Active">Active</option>
+                <option value="Approved">Approved</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Note</label>
+              <textarea
+                value={currentProduct?.note || ""}
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({ ...p, note: e.target.value }))
+                }
+                className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                rows={3}
               />
             </div>
+          )}
 
-            {/* <div className="mt-4">
-              <label className="block text-sm text-slate-600 mb-1">
-                Payment Mode
-              </label>
-              <select
-                value={currentProduct.paymentMode || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    paymentMode: e.target.value,
-                  })
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                required
-              >
-                <option value="">Select Payment Mode</option>
-                <option value="Cash">Cash</option>
-                <option value="Bkash">Bkash</option>
-                <option value="Nagad">Nagad</option>
-                <option value="Rocket">Rocket</option>
-                <option value="Bank">Bank</option>
-                <option value="Card">Card</option>
-              </select>
-            </div>
-
-            {currentProduct.paymentMode === "Bank" && (
-              <>
-                <div className="mt-4">
-                  <label className="block text-sm text-slate-600 mb-1">
-                    Bank Name
-                  </label>
-                  <select
-                    value={currentProduct.bankName || ""}
-                    onChange={(e) =>
-                      setCurrentProduct({
-                        ...currentProduct,
-                        bankName: e.target.value,
-                      })
-                    }
-                    className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    required
-                  >
-                    <option value="">Select Bank</option>
-                    {BANKS.map((b) => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="mt-4">
-                  <label className="block text-sm text-slate-600 mb-1">
-                    Bank Account
-                  </label>
-                  <input
-                    type="text"
-                    value={currentProduct.bankAccount || ""}
-                    onChange={(e) =>
-                      setCurrentProduct({
-                        ...currentProduct,
-                        bankAccount: e.target.value,
-                      })
-                    }
-                    className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    required
-                  />
-                </div>
-              </>
-            )} */}
-
-            {/* <div className="mt-4">
-              <label className="block text-sm text-slate-600 mb-1">
-                Category
-              </label>
-              <select
-                value={
-                  isNewCategoryEdit ? "__new__" : currentProduct.category || ""
-                }
-                onChange={(e) => {
-                  const v = e.target.value;
-
-                  if (v === "__new__") {
-                    setIsNewCategoryEdit(true);
-                    setCurrentProduct((p) => ({ ...p, category: "" }));
-                    return;
-                  }
-
-                  setIsNewCategoryEdit(false);
-                  setNewCategoryNameEdit("");
-                  setCurrentProduct((p) => ({ ...p, category: v }));
-                }}
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                required
-              >
-                <option value="">Select Category</option>
-
-                {categoryOptions.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-
-                <option value="__new__">+ New Category</option>
-              </select>
-
-              {isNewCategoryEdit && (
-                <div className="mt-3 flex gap-2">
-                  <input
-                    type="text"
-                    value={newCategoryNameEdit}
-                    onChange={(e) => setNewCategoryNameEdit(e.target.value)}
-                    placeholder="Write new category name"
-                    className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                   focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  />
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const createdCategoryName =
-                        await addCategoryByName(newCategoryNameEdit);
-                      if (!createdCategoryName) return;
-
-                      setCurrentProduct((p) => ({
-                        ...p,
-                        category: createdCategoryName, // Update category instead of category
-                      }));
-
-                      setIsNewCategoryEdit(false);
-                      setNewCategoryNameEdit("");
-                    }}
-                    disabled={isAddingCategory}
-                    className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold disabled:bg-slate-400"
-                  >
-                    {isAddingCategory ? "Adding..." : "Add"}
-                  </button>
-                </div>
-              )}
-            </div> */}
-
-            <div className="mt-4">
-              <label className="block text-sm text-slate-600 mb-1">
-                Payment Status
-              </label>
-              <select
-                value={currentProduct.paymentStatus || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    paymentStatus: e.target.value,
-                  })
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                required
-              >
-                <option value="">Select Payment Status</option>
-                <option value="CashIn">CashIn</option>
-                <option value="CashOut">CashOut</option>
-              </select>
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-slate-600 mb-1">
-                Category
-              </label>
-              <select
-                value={currentProduct.category || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    category: e.target.value,
-                  })
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                required
-              >
-                <option value="">Select Add Category</option>
-                <option value="Facebook">Facebook</option>
-                <option value="Google">Google</option>
-                <option value="Tiktok">Tiktok</option>
-                <option value="SEO">SEO</option>
-              </select>
-            </div>
-            <div className="mt-4">
-              <label className="block text-sm text-slate-600 mb-1">
-                Remarks
-              </label>
-              <input
-                type="text"
-                value={currentProduct.remarks || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    remarks: e.target.value,
-                  })
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              />
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-slate-600 mb-1">
-                Amount
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={currentProduct?.amount ?? ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    amount: e.target.value,
-                  })
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                required
-              />
-            </div>
-
-            {role === "superAdmin" || role === "admin" ? (
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Status
-                </label>
-                <select
-                  value={currentProduct.status || ""}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      status: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Status</option>
-                  <option value="Active">Active</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Pending">Pending</option>
-                </select>
-              </div>
-            ) : (
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Note
-                </label>
-                <textarea
-                  value={currentProduct?.note || ""}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      note: e.target.value,
-                    })
-                  }
-                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Upload Document</label>
+            <input
+              type="file"
+              accept=".jpg,.jpeg,.png,.pdf"
+              onChange={(e) =>
+                setCurrentProduct((p) => ({
+                  ...p,
+                  file: e.target.files?.[0] || null,
+                }))
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 py-2 text-sm font-medium text-slate-900 bg-white"
+            />
+            {currentProduct?.file && (
+              <p className="mt-2 text-xs text-slate-600">
+                Selected: {currentProduct.file.name}
+              </p>
             )}
+          </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-slate-600 mb-1">
-                Upload Document
-              </label>
-              <input
-                type="file"
-                accept=".jpg,.jpeg,.png,.pdf"
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              onClick={() => {
+                setIsModalOpen(false);
+                setCurrentProduct(null);
+              }}
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleUpdateProduct}
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Note/Status Modal (Secondary Request Delete/Add Note) */}
+      <Modal
+        isOpen={isModalOpen2 && !!currentProduct}
+        onClose={() => {
+          setIsModalOpen2(false);
+          setCurrentProduct(null);
+        }}
+        title="Update Status / Note"
+      >
+        <div className="space-y-4">
+          {role === "superAdmin" || role === "admin" ? (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+              <select
+                value={currentProduct?.status || ""}
                 onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    file: e.target.files?.[0] || null,
-                  })
+                  setCurrentProduct((p) => ({ ...p, status: e.target.value }))
                 }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white"
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                required
+              >
+                <option value="">Select Status</option>
+                <option value="Active">Active</option>
+                <option value="Approved">Approved</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Note / Reason</label>
+              <textarea
+                value={currentProduct?.note || ""}
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({ ...p, note: e.target.value }))
+                }
+                className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                rows={4}
               />
-              {currentProduct.file && (
-                <p className="mt-2 text-xs text-slate-600">
-                  Selected: {currentProduct.file.name}
-                </p>
-              )}
             </div>
+          )}
 
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                onClick={handleUpdateProduct}
-                type="button"
-              >
-                Save
-              </button>
-              <button
-                className="h-11 px-4 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-semibold"
-                onClick={() => {
-                  setIsModalOpen(false);
-                  setCurrentProduct(null);
-                }}
-                type="button"
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              onClick={() => {
+                setIsModalOpen2(false);
+                setCurrentProduct(null);
+              }}
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleUpdateProduct1}
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Save changes
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
 
-      {/* ✅ Note/Status Modal (Light) */}
-      {isModalOpen2 && currentProduct && (
-        <div className="fixed inset-0 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">Edit</h2>
+      {/* Add Cash In Modal */}
+      <Modal
+        isOpen={isModalOpen1}
+        onClose={handleModalClose1}
+        title="Add Cash In Entry"
+      >
+        <form onSubmit={handleCreateProduct} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date</label>
+            <input
+              type="date"
+              value={createProduct?.date || ""}
+              onChange={(e) =>
+                setCreateProduct((p) => ({ ...p, date: e.target.value }))
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+            />
+          </div>
 
-            {role === "superAdmin" || role === "admin" ? (
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Status
-                </label>
-                <select
-                  value={currentProduct.status || ""}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      status: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Status</option>
-                  <option value="Active">Active</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Pending">Pending</option>
-                </select>
-              </div>
-            ) : (
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Note
-                </label>
-                <textarea
-                  value={currentProduct?.note || ""}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      note: e.target.value,
-                    })
-                  }
-                  className="min-h-[110px] border border-slate-200 rounded-xl p-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Category</label>
+            <select
+              value={createProduct.category || ""}
+              onChange={(e) =>
+                setCreateProduct({
+                  ...createProduct,
+                  category: e.target.value,
+                })
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              required
+            >
+              <option value="">Select Category</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Google">Google</option>
+              <option value="Tiktok">Tiktok</option>
+              <option value="SEO">SEO</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Remarks</label>
+            <input
+              type="text"
+              value={createProduct.remarks}
+              onChange={(e) =>
+                setCreateProduct({
+                  ...createProduct,
+                  remarks: e.target.value,
+                })
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              placeholder="Internal notes..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Amount</label>
+            <input
+              type="number"
+              step="0.01"
+              value={createProduct.amount}
+              onChange={(e) =>
+                setCreateProduct({
+                  ...createProduct,
+                  amount: e.target.value,
+                })
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Upload Document</label>
+            <input
+              type="file"
+              accept=".jpg,.jpeg,.png,.pdf"
+              onChange={(e) =>
+                setCreateProduct({
+                  ...createProduct,
+                  file: e.target.files?.[0] || null,
+                })
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 py-2 text-sm font-medium text-slate-900 bg-white"
+            />
+            {createProduct.file && (
+              <p className="mt-2 text-xs text-slate-600">
+                Selected: {createProduct.file.name}
+              </p>
             )}
+          </div>
 
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                onClick={handleUpdateProduct1}
-                type="button"
-              >
-                Save
-              </button>
-              <button
-                className="h-11 px-4 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-semibold"
-                onClick={() => {
-                  setIsModalOpen2(false);
-                  setCurrentProduct(null);
-                }}
-                type="button"
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={handleModalClose1}
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Save Entry
+            </button>
+          </div>
+        </form>
+      </Modal>
 
-      {/* ✅ Add Cash In Modal (Light) */}
-      {isModalOpen1 && (
-        <div className="fixed inset-0 top-24 z-10 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">
-              Add Cash In
-            </h2>
+      {/* Add Cash Out Modal */}
+      <Modal
+        isOpen={isModalOpen3}
+        onClose={handleModalClose3}
+        title="Add Cash Out Entry"
+      >
+        <form onSubmit={handleCreateProduct1} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date</label>
+            <input
+              type="date"
+              value={createProduct?.date || ""}
+              onChange={(e) =>
+                setCreateProduct((p) => ({ ...p, date: e.target.value }))
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+            />
+          </div>
 
-            <form onSubmit={handleCreateProduct}>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Date</label>
-                <input
-                  type="date"
-                  value={createProduct?.date || ""}
-                  onChange={(e) =>
-                    setCreateProduct((p) => ({ ...p, date: e.target.value }))
-                  }
-                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Category</label>
+            <select
+              value={createProduct.category || ""}
+              onChange={(e) =>
+                setCreateProduct({
+                  ...createProduct,
+                  category: e.target.value,
+                })
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              required
+            >
+              <option value="">Select Category</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Google">Google</option>
+              <option value="Tiktok">Tiktok</option>
+              <option value="SEO">SEO</option>
+            </select>
+          </div>
 
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Category
-                </label>
-                <select
-                  value={createProduct.category || ""}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      category: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Add Category</option>
-                  <option value="Facebook">Facebook</option>
-                  <option value="Google">Google</option>
-                  <option value="Tiktok">Tiktok</option>
-                  <option value="SEO">SEO</option>
-                </select>
-              </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Remarks</label>
+            <input
+              type="text"
+              value={createProduct.remarks}
+              onChange={(e) =>
+                setCreateProduct({
+                  ...createProduct,
+                  remarks: e.target.value,
+                })
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              placeholder="Internal notes..."
+            />
+          </div>
 
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Remarks
-                </label>
-                <input
-                  type="text"
-                  value={createProduct.remarks}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      remarks: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Amount</label>
+            <input
+              type="number"
+              step="0.01"
+              value={createProduct.amount}
+              onChange={(e) =>
+                setCreateProduct({
+                  ...createProduct,
+                  amount: e.target.value,
+                })
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              required
+            />
+          </div>
 
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Amount
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={createProduct.amount}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      amount: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                />
-              </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Upload Document</label>
+            <input
+              type="file"
+              accept=".jpg,.jpeg,.png,.pdf"
+              onChange={(e) =>
+                setCreateProduct({
+                  ...createProduct,
+                  file: e.target.files?.[0] || null,
+                })
+              }
+              className="w-full h-12 border border-slate-200 rounded-2xl px-4 py-2 text-sm font-medium text-slate-900 bg-white"
+            />
+            {createProduct.file && (
+              <p className="mt-2 text-xs text-slate-600">
+                Selected: {createProduct.file.name}
+              </p>
+            )}
+          </div>
 
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Upload Document
-                </label>
-                <input
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.pdf"
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      file: e.target.files?.[0] || null,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white"
-                />
-                {createProduct.file && (
-                  <p className="mt-2 text-xs text-slate-600">
-                    Selected: {createProduct.file.name}
-                  </p>
-                )}
-              </div>
-
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="h-11 px-4 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-semibold"
-                  onClick={handleModalClose1}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
-
-      {/* ✅ Add Cash Out Modal (Light) */}
-      {isModalOpen3 && (
-        <div className="fixed inset-0 top-24 z-10 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 lg:w-1/3 border border-slate-200"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">
-              Add Cash Out
-            </h2>
-
-            <form onSubmit={handleCreateProduct1}>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Date</label>
-                <input
-                  type="date"
-                  value={createProduct?.date || ""}
-                  onChange={(e) =>
-                    setCreateProduct((p) => ({ ...p, date: e.target.value }))
-                  }
-                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Category
-                </label>
-                <select
-                  value={createProduct.category || ""}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      category: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Add Category</option>
-                  <option value="Facebook">Facebook</option>
-                  <option value="Google">Google</option>
-                  <option value="Tiktok">Tiktok</option>
-                  <option value="SEO">SEO</option>
-                </select>
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Remarks
-                </label>
-                <input
-                  type="text"
-                  value={createProduct.remarks}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      remarks: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Amount
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={createProduct.amount}
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      amount: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Upload Document
-                </label>
-                <input
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.pdf"
-                  onChange={(e) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      file: e.target.files?.[0] || null,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white"
-                />
-                {createProduct.file && (
-                  <p className="mt-2 text-xs text-slate-600">
-                    Selected: {createProduct.file.name}
-                  </p>
-                )}
-              </div>
-
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="h-11 px-4 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-semibold"
-                  onClick={handleModalClose3}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={handleModalClose3}
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
+            >
+              Save Entry
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       <ReportPreviewModal
         open={isReportPreviewOpen}

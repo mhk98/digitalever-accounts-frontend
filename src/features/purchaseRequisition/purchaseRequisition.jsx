@@ -19,12 +19,12 @@ export const purchaseRequisitionApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-              { type: "PurchaseRequisition", id: "LIST" },
-              ...result.data.map((r) => ({
-                type: "PurchaseRequisition",
-                id: r.Id,
-              })),
-            ]
+            { type: "PurchaseRequisition", id: "LIST" },
+            ...result.data.map((r) => ({
+              type: "PurchaseRequisition",
+              id: r.Id,
+            })),
+          ]
           : [{ type: "PurchaseRequisition", id: "LIST" }],
 
       refetchOnMountOrArgChange: true,
@@ -48,7 +48,7 @@ export const purchaseRequisitionApi = baseApi.injectEndpoints({
     updatePurchaseRequisition: build.mutation({
       query: ({ id, data }) => ({
         url: `/purchase-requisition/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (res, err, arg) => [

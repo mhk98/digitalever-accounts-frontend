@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const expenseApi = createApi({
   reducerPath: "expenseApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken(); // Fetch the token
       if (token) {
@@ -41,7 +41,7 @@ export const expenseApi = createApi({
     updateExpense: build.mutation({
       query: ({ id, data }) => ({
         url: `/expense/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: ["expense"], // Invalidate the Expense tag after this mutation

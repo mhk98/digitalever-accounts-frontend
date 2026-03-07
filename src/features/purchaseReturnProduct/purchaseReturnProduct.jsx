@@ -10,7 +10,7 @@ import { baseApi } from "../baseApi/api";
 // export const purchaseReturnProductApi = createApi({
 //   reducerPath: "purchaseReturnProductApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " http://localhost:5000/api/v1/",
+//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 //     prepareHeaders: (headers) => {
 //       const token = getAuthToken(); // Fetch the token
 //       if (token) {
@@ -43,7 +43,7 @@ import { baseApi } from "../baseApi/api";
 //     updatePurchaseReturnProduct: build.mutation({
 //       query: ({ id, data }) => ({
 //         url: `/purchase-return-product/${id}`,
-//         method: "PATCH",
+//         method: "PUT",
 //         body: data,
 //       }),
 //       invalidatesTags: ["purchase-return-product"], // Invalidate the purchase-return-product tag after this mutation
@@ -96,9 +96,9 @@ export const purchaseReturnProductApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-              { type: "PurchaseReturn", id: "LIST" },
-              ...result.data.map((r) => ({ type: "PurchaseReturn", id: r.Id })),
-            ]
+            { type: "PurchaseReturn", id: "LIST" },
+            ...result.data.map((r) => ({ type: "PurchaseReturn", id: r.Id })),
+          ]
           : [{ type: "PurchaseReturn", id: "LIST" }],
 
       refetchOnMountOrArgChange: true,
@@ -127,7 +127,7 @@ export const purchaseReturnProductApi = baseApi.injectEndpoints({
     updatePurchaseReturnProduct: build.mutation({
       query: ({ id, data }) => ({
         url: `/purchase-return-product/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
 

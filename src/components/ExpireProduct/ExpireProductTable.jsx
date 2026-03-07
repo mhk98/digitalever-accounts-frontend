@@ -235,19 +235,17 @@ const ExpireProductTable = () => {
         <button
           type="button"
           onClick={() => setView("soon")}
-          className={`h-10 px-4 rounded-xl border text-sm font-semibold transition ${
-            view === "soon"
-              ? "bg-indigo-600 text-white border-indigo-600"
-              : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-          }`}
+          className={`h-10 px-4 rounded-xl border text-sm font-semibold transition ${view === "soon"
+            ? "bg-indigo-600 text-white border-indigo-600"
+            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+            }`}
         >
           Soon Expire
           <span
-            className={`ml-2 inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-full text-xs font-bold ${
-              view === "soon"
-                ? "bg-white/20 text-white"
-                : "bg-indigo-50 text-indigo-700"
-            }`}
+            className={`ml-2 inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-full text-xs font-bold ${view === "soon"
+              ? "bg-white/20 text-white"
+              : "bg-indigo-50 text-indigo-700"
+              }`}
           >
             {counts.soon}
           </span>
@@ -256,19 +254,17 @@ const ExpireProductTable = () => {
         <button
           type="button"
           onClick={() => setView("expired")}
-          className={`h-10 px-4 rounded-xl border text-sm font-semibold transition ${
-            view === "expired"
-              ? "bg-rose-600 text-white border-rose-600"
-              : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-          }`}
+          className={`h-10 px-4 rounded-xl border text-sm font-semibold transition ${view === "expired"
+            ? "bg-rose-600 text-white border-rose-600"
+            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+            }`}
         >
           Expired
           <span
-            className={`ml-2 inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-full text-xs font-bold ${
-              view === "expired"
-                ? "bg-white/20 text-white"
-                : "bg-rose-50 text-rose-700"
-            }`}
+            className={`ml-2 inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-full text-xs font-bold ${view === "expired"
+              ? "bg-white/20 text-white"
+              : "bg-rose-50 text-rose-700"
+              }`}
           >
             {counts.expired}
           </span>
@@ -370,7 +366,7 @@ const ExpireProductTable = () => {
                 Quantity
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Price
+                Unit Price
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Warranty
@@ -402,7 +398,7 @@ const ExpireProductTable = () => {
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
-                  {Number(rp.quantity || 0).toFixed(2)}
+                  {Number(rp.quantity || 0)}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
@@ -479,11 +475,10 @@ const ExpireProductTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
+              className={`px-4 py-2 rounded-xl border transition ${active
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                }`}
               type="button"
             >
               {pageNum}
