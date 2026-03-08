@@ -5,8 +5,12 @@ import { ShoppingBasket, ChevronLeft, ChevronRight, X, Calendar } from "lucide-r
 
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
 import { useGetAllInventoryOverviewQuery } from "../../features/inventoryOverview/inventoryOverview";
+import { useLayout } from "../../context/LayoutContext";
+import { translations } from "../../utils/translations";
 
 const InventoryOverviewTable = () => {
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
   const [rows, setRows] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -118,8 +122,8 @@ const InventoryOverviewTable = () => {
     >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Inventory Overview</h2>
-          <p className="text-slate-500 text-sm mt-1 font-medium">Real-time stock levels across all categories</p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t.inventory_overview_title}</h2>
+          <p className="text-slate-500 text-sm mt-1 font-medium">{t.real_time_stock_levels}</p>
         </div>
 
         <div className="inline-flex items-center gap-4 bg-indigo-50 border border-indigo-100 px-6 py-3 rounded-2xl shadow-sm shadow-indigo-50">
@@ -127,9 +131,9 @@ const InventoryOverviewTable = () => {
             <ShoppingBasket size={20} />
           </div>
           <div>
-            <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">Total Stock</div>
+            <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">{t.total_stock}</div>
             <div className="text-xl font-black text-indigo-900 tabular-nums">
-              {isLoading ? "Syncing..." : (data?.meta?.totalQuantity ?? 0).toLocaleString()}
+              {isLoading ? t.syncing : (data?.meta?.totalQuantity ?? 0).toLocaleString()}
             </div>
           </div>
         </div>
@@ -137,7 +141,7 @@ const InventoryOverviewTable = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
         <div className="flex flex-col">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Per Page</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{t.per_page_label}</label>
           <select
             value={itemsPerPage}
             onChange={(e) => setItemsPerPage(Number(e.target.value))}
@@ -148,12 +152,12 @@ const InventoryOverviewTable = () => {
         </div>
 
         <div className="flex flex-col sm:col-span-2">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Search Product</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{t.search_product}</label>
           <Select
             options={productDropdownOptions}
             value={productDropdownOptions.find((o) => o.label === productName) || null}
             onChange={(selected) => setProductName(selected?.label || "")}
-            placeholder={isLoadingAllProducts ? "Syncing..." : "Select product name..."}
+            placeholder={isLoadingAllProducts ? t.syncing : t.select_assets}
             isClearable
             isDisabled={isLoadingAllProducts}
             styles={selectStyles}
@@ -165,7 +169,7 @@ const InventoryOverviewTable = () => {
           onClick={() => { setProductName(""); setStartDate(""); setEndDate(""); }}
           type="button"
         >
-          <X size={16} /> Reset
+          <X size={16} /> {t.clear_filters}
         </button>
       </div>
 
@@ -174,9 +178,9 @@ const InventoryOverviewTable = () => {
           <table className="min-w-full divide-y divide-slate-100">
             <thead className="bg-slate-50/50">
               <tr>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Last Updated</th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Item Detail</th>
-                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">In-Hand Qty</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.last_updated}</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.item_detail}</th>
+                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.in_hand_qty}</th>
               </tr>
             </thead>
 

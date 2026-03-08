@@ -12,11 +12,15 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import Select from "react-select";
+import { useLayout } from "../../context/LayoutContext";
+import { translations } from "../../utils/translations";
 import { useGetAllBuyerWithoutQueryQuery } from "../../features/buyer/buyer";
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
 import Modal from "../common/Modal";
 
 const SaleTable = () => {
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentSale, setCurrentSale] = useState(null);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
@@ -187,21 +191,21 @@ const SaleTable = () => {
     >
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Sales Records</h2>
-          <p className="text-slate-500 text-sm mt-1">Manage and monitor all sales transactions</p>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{t.sales_records}</h2>
+          <p className="text-slate-500 text-sm mt-1">{t.manage_monitor_sales}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
           <button
             onClick={() => setIsModalOpen1(true)}
             className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition shadow-md shadow-indigo-100 active:scale-95"
           >
-            <Plus size={18} /> Add Sale
+            <Plus size={18} /> {t.add_sale}
           </button>
           <button
             onClick={exportToExcel}
             className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-50 transition active:scale-95"
           >
-            <FileDown size={18} /> Export
+            <FileDown size={18} /> {t.export}
           </button>
         </div>
       </div>
@@ -209,7 +213,7 @@ const SaleTable = () => {
       {/* Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
         <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Start Date</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.start_date}</label>
           <div className="relative">
             <input
               type="date"
@@ -220,7 +224,7 @@ const SaleTable = () => {
           </div>
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">End Date</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.end_date}</label>
           <div className="relative">
             <input
               type="date"
@@ -231,12 +235,12 @@ const SaleTable = () => {
           </div>
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Buyer</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.buyer}</label>
           <Select
             options={buyerOptions}
             value={buyerOptions.find(o => o.value === buyerId)}
             onChange={(opt) => setBuyerId(opt?.value || "")}
-            placeholder="Select Buyer..."
+            placeholder={t.select_buyer || "Select Buyer..."}
             isClearable
             styles={selectStyles}
           />
@@ -246,7 +250,7 @@ const SaleTable = () => {
             onClick={clearFilters}
             className="w-full h-11 flex items-center justify-center gap-2 text-slate-500 hover:text-slate-700 font-bold text-sm bg-slate-100 hover:bg-slate-200 rounded-xl transition active:scale-95"
           >
-            <X size={16} /> Clear Filters
+            <X size={16} /> {t.clear_filters}
           </button>
         </div>
       </div>
@@ -256,15 +260,15 @@ const SaleTable = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50">
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Product</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Buyer</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Qty</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Price</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right text-indigo-600">Total</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right text-emerald-600">Paid</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right text-rose-600">Due</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Actions</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t.date}</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t.product}</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t.buyer}</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">{t.qty}</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">{t.price}</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right text-indigo-600">{t.total}</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right text-emerald-600">{t.paid}</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right text-rose-600">{t.due}</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">{t.actions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -321,12 +325,12 @@ const SaleTable = () => {
           {isLoading && (
             <div className="py-20 text-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600/20 border-t-indigo-600"></div>
-              <p className="text-slate-500 text-sm mt-4 font-medium italic">Loading transactions...</p>
+              <p className="text-slate-500 text-sm mt-4 font-medium italic">{t.loading_transactions}</p>
             </div>
           )}
           {!isLoading && sales.length === 0 && (
             <div className="py-20 text-center text-slate-400">
-              <p>No sales records found matching your filters.</p>
+              <p>{t.no_sales_found}</p>
             </div>
           )}
         </div>
@@ -335,7 +339,7 @@ const SaleTable = () => {
       {/* Pagination */}
       <div className="flex flex-col sm:flex-row items-center justify-between mt-8 gap-4 px-2">
         <p className="text-sm font-bold text-slate-500">
-          Showing <span className="text-slate-900">1</span> to <span className="text-slate-900">{sales.length}</span> of <span className="text-slate-900">{data?.meta?.count || 0}</span> entries
+          {t.showing} <span className="text-slate-900">1</span> {t.to} <span className="text-slate-900">{sales.length}</span> {t.of} <span className="text-slate-900">{data?.meta?.count || 0}</span> {t.entries}
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -343,7 +347,7 @@ const SaleTable = () => {
             disabled={startPage === 1}
             className="h-10 px-4 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-50 hover:bg-slate-50 transition font-bold text-sm"
           >
-            Prev
+            {t.prev}
           </button>
           <div className="flex items-center gap-1.5">
             {[...Array(endPage - startPage + 1)].map((_, idx) => {
@@ -364,7 +368,7 @@ const SaleTable = () => {
             disabled={endPage === totalPages}
             className="h-10 px-4 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-50 hover:bg-slate-50 transition font-bold text-sm"
           >
-            Next
+            {t.next}
           </button>
         </div>
       </div>
@@ -373,12 +377,12 @@ const SaleTable = () => {
       <Modal
         isOpen={isModalOpen1}
         onClose={() => setIsModalOpen1(false)}
-        title="Create New Sale"
+        title={t.create_new_sale}
       >
         <form onSubmit={handleCreateSale} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Date</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.date}</label>
               <input
                 type="date"
                 required
@@ -388,11 +392,11 @@ const SaleTable = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Buyer</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.buyer}</label>
               <Select
                 options={buyerOptions}
                 onChange={(opt) => setCreateSale({ ...createSale, buyerId: opt?.value || "" })}
-                placeholder="Select Buyer..."
+                placeholder={t.select_buyer || "Select Buyer..."}
                 isClearable
                 styles={selectStyles}
                 required
@@ -401,11 +405,11 @@ const SaleTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Product</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.product}</label>
             <Select
               options={productOptions}
               onChange={(opt) => setCreateSale({ ...createSale, productId: opt?.value || "" })}
-              placeholder="Select Product..."
+              placeholder={t.select_product || "Select Product..."}
               isClearable
               styles={selectStyles}
               required
@@ -414,7 +418,7 @@ const SaleTable = () => {
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Qty</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.qty}</label>
               <input
                 type="number"
                 step="0.001"
@@ -426,7 +430,7 @@ const SaleTable = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Rate</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.rate}</label>
               <input
                 type="number"
                 step="0.01"
@@ -438,7 +442,7 @@ const SaleTable = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Paid</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.paid}</label>
               <input
                 type="number"
                 step="0.01"
@@ -451,12 +455,12 @@ const SaleTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Remarks</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.remarks}</label>
             <textarea
               value={createSale.remarks}
               onChange={(e) => setCreateSale({ ...createSale, remarks: e.target.value })}
               className="w-full min-h-[100px] border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
-              placeholder="Add notes..."
+              placeholder={t.add_notes || "Add notes..."}
             />
           </div>
 
@@ -466,13 +470,13 @@ const SaleTable = () => {
               onClick={() => setIsModalOpen1(false)}
               className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition active:scale-95"
             >
-              Cancel
+              {t.cancel}
             </button>
             <button
               type="submit"
               className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-100 active:scale-95"
             >
-              Confirm Sale
+              {t.confirm_sale}
             </button>
           </div>
         </form>
@@ -482,12 +486,12 @@ const SaleTable = () => {
       <Modal
         isOpen={isModalOpen && !!currentSale}
         onClose={() => setIsModalOpen(false)}
-        title="Edit Sale Record"
+        title={t.edit_sale_record}
       >
         <form onSubmit={handleUpdateSale} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Date</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.date}</label>
               <input
                 type="date"
                 required
@@ -497,12 +501,12 @@ const SaleTable = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Buyer</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.buyer}</label>
               <Select
                 options={buyerOptions}
                 value={buyerOptions.find(o => o.value === currentSale?.buyerId)}
                 onChange={(opt) => setCurrentSale({ ...currentSale, buyerId: opt?.value || "" })}
-                placeholder="Select Buyer..."
+                placeholder={t.select_buyer || "Select Buyer..."}
                 isClearable
                 styles={selectStyles}
               />
@@ -510,12 +514,12 @@ const SaleTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Product</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.product}</label>
             <Select
               options={productOptions}
               value={productOptions.find(o => o.value === currentSale?.productId)}
               onChange={(opt) => setCurrentSale({ ...currentSale, productId: opt?.value || "" })}
-              placeholder="Select Product..."
+              placeholder={t.select_product || "Select Product..."}
               isClearable
               styles={selectStyles}
             />
@@ -523,7 +527,7 @@ const SaleTable = () => {
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Qty</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.qty}</label>
               <input
                 type="number"
                 step="0.001"
@@ -534,7 +538,7 @@ const SaleTable = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Rate</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.rate}</label>
               <input
                 type="number"
                 step="0.01"
@@ -545,7 +549,7 @@ const SaleTable = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Paid</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.paid}</label>
               <input
                 type="number"
                 step="0.01"
@@ -557,12 +561,12 @@ const SaleTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Remarks</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t.remarks}</label>
             <textarea
               value={currentSale?.remarks || ""}
               onChange={(e) => setCurrentSale({ ...currentSale, remarks: e.target.value })}
               className="w-full min-h-[100px] border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
-              placeholder="Add notes..."
+              placeholder={t.add_notes || "Add notes..."}
             />
           </div>
 
@@ -572,13 +576,13 @@ const SaleTable = () => {
               onClick={() => setIsModalOpen(false)}
               className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition active:scale-95"
             >
-              Cancel
+              {t.cancel}
             </button>
             <button
               type="submit"
               className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-100 active:scale-95"
             >
-              Update Sale
+              {t.update_sale_record}
             </button>
           </div>
         </form>

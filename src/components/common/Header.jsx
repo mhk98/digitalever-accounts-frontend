@@ -50,7 +50,7 @@
 
 //   const avatarSrc =
 //     user?.image && user?.image !== "null"
-//       ? `https://apikafela.digitalever.com.bd/${user.image}`
+//       ? `http://localhost:5000/${user.image}`
 //       : "https://i.pravatar.cc/300";
 
 //   return (
@@ -138,15 +138,26 @@
 // export default Header;
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, ChevronDown, Menu } from "lucide-react";
+import { Bell, ChevronDown, Menu, Languages } from "lucide-react";
 import NotificationDropdown from "./NotificationDropdown";
 import { useGetDataByIdQuery } from "../../features/notification/notification";
 import { Link, useNavigate } from "react-router-dom";
 import { useSingleUserQuery } from "../../features/auth/auth";
 import { useLayout } from "../../context/LayoutContext";
+import { translations } from "../../utils/translations";
 
 const Header = ({ title }) => {
-  const { toggleMobileMenu } = useLayout();
+  const { toggleMobileMenu, language, toggleLanguage } = useLayout();
+  const t = translations[language] || translations.EN;
+
+  // Auto-translate titles if possible
+  const translatedTitle = useMemo(() => {
+    if (!title) return language === "BN" ? "ওভারভিউ" : "Overview";
+
+    // Convert string like "Purchase Assets" to "purchase_assets"
+    const key = title.toLowerCase().replace(/\s+/g, "_");
+    return t[key] || title;
+  }, [title, t, language]);
   const [open, setOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState(0);
@@ -190,7 +201,7 @@ const Header = ({ title }) => {
 
   const avatarSrc =
     user?.image && user?.image !== "null"
-      ? `https://apikafela.digitalever.com.bd/${user.image}`
+      ? `http://localhost:5000/${user.image}`
       : "https://i.pravatar.cc/300";
 
   // ✅ outside click close (dropdown + notif)
@@ -222,11 +233,11 @@ const Header = ({ title }) => {
         {/* Page Title / Left spacer */}
         <div className="flex-1 lg:flex-none min-w-0">
           <h1 className="text-lg font-bold text-slate-900 truncate lg:hidden">
-            {title || "Dashboard"}
+            {translatedTitle}
           </h1>
           <div className="hidden lg:block min-w-[120px]">
             <h1 className="text-xl font-bold text-slate-800">
-              {title || "Overview"}
+              {translatedTitle}
             </h1>
           </div>
         </div>
@@ -236,6 +247,19 @@ const Header = ({ title }) => {
           ref={rightAreaRef}
           className="relative flex items-center justify-end gap-2 sm:gap-4"
         >
+          {/* Language Toggle */}
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            className="flex h-10 px-3 items-center justify-center gap-2 rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all font-semibold"
+            title={language === "EN" ? "বাংলা করুন" : "Switch to English"}
+          >
+            <Languages size={18} className="text-emerald-600" />
+            <span className="text-xs sm:text-sm uppercase tracking-wider">
+              {language === "EN" ? "BN" : "EN"}
+            </span>
+          </button>
+
           {/* Notifications */}
           <button
             type="button"

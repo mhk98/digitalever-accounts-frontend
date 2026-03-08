@@ -6,6 +6,7 @@ const LayoutContext = createContext();
 export const LayoutProvider = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Desktop collapse
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile drawer
+    const [language, setLanguage] = useState(localStorage.getItem("lang") || "EN");
     const { pathname } = useLocation();
 
     // Close mobile menu on route change
@@ -13,8 +14,13 @@ export const LayoutProvider = ({ children }) => {
         setIsMobileMenuOpen(false);
     }, [pathname]);
 
+    useEffect(() => {
+        localStorage.setItem("lang", language);
+    }, [language]);
+
     const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
     const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);
+    const toggleLanguage = () => setLanguage((prev) => (prev === "EN" ? "BN" : "EN"));
 
     return (
         <LayoutContext.Provider
@@ -25,6 +31,8 @@ export const LayoutProvider = ({ children }) => {
                 isMobileMenuOpen,
                 setIsMobileMenuOpen,
                 toggleMobileMenu,
+                language,
+                toggleLanguage,
             }}
         >
             {children}

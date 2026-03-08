@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search, UserCheck, UserX, Edit, Trash2, X } from "lucide-react";
+import { useLayout } from "../../context/LayoutContext";
+import { translations } from "../../utils/translations";
 
 const userData = [
 	{ id: 1, name: "John Doe", email: "john@example.com", role: "Customer", status: "Active" },
@@ -11,6 +13,8 @@ const userData = [
 ];
 
 const UsersTable = () => {
+	const { language } = useLayout();
+	const t = translations[language] || translations.EN;
 	const [searchTerm, setSearchTerm] = useState("");
 	const [users, setUsers] = useState(userData);
 
@@ -32,8 +36,8 @@ const UsersTable = () => {
 		>
 			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
 				<div>
-					<h2 className="text-2xl font-black text-slate-900 tracking-tight">Active Users</h2>
-					<p className="text-slate-500 text-sm mt-1 font-medium">Manage platform access and member privileges</p>
+					<h2 className="text-2xl font-black text-slate-900 tracking-tight">{t.active_users}</h2>
+					<p className="text-slate-500 text-sm mt-1 font-medium">{t.manage_platform_access}</p>
 				</div>
 
 				<div className="relative w-full lg:max-w-md">
@@ -42,7 +46,7 @@ const UsersTable = () => {
 					</div>
 					<input
 						type="text"
-						placeholder="Search by name or email..."
+						placeholder={t.search_by_name_email}
 						className="w-full h-12 rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-medium"
 						value={searchTerm}
 						onChange={handleSearch}
@@ -63,11 +67,11 @@ const UsersTable = () => {
 					<table className="min-w-full divide-y divide-slate-100">
 						<thead className="bg-slate-50/50">
 							<tr>
-								<th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">User Identity</th>
-								<th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Contact Email</th>
-								<th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Account Role</th>
-								<th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Status</th>
-								<th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Actions</th>
+								<th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.user_identity}</th>
+								<th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.contact_email}</th>
+								<th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.account_role}</th>
+								<th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.status}</th>
+								<th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.actions}</th>
 							</tr>
 						</thead>
 
@@ -103,12 +107,12 @@ const UsersTable = () => {
 									<td className="px-6 py-5 whitespace-nowrap">
 										<span
 											className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-black tracking-tighter shadow-sm border ${user.status === "Active"
-													? "bg-emerald-50 text-emerald-700 border-emerald-100 shadow-emerald-50"
-													: "bg-rose-50 text-rose-700 border-rose-100 shadow-rose-50"
+												? "bg-emerald-50 text-emerald-700 border-emerald-100 shadow-emerald-50"
+												: "bg-rose-50 text-rose-700 border-rose-100 shadow-rose-50"
 												}`}
 										>
 											{user.status === "Active" ? <UserCheck size={12} /> : <UserX size={12} />}
-											{user.status}
+											{user.status === "Active" ? t.active : t.inactive}
 										</span>
 									</td>
 
@@ -130,7 +134,7 @@ const UsersTable = () => {
 					{users.length === 0 && (
 						<div className="py-20 text-center text-slate-400">
 							<div className="text-4xl mb-4 opacity-20">🔍</div>
-							<p className="font-bold text-sm italic">No users matching "{searchTerm}"</p>
+							<p className="font-bold text-sm italic">{t.no_users_matching} "{searchTerm}"</p>
 						</div>
 					)}
 				</div>

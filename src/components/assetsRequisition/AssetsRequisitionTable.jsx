@@ -10,8 +10,12 @@ import {
   useUpdateAssetsRequisitionMutation,
 } from "../../features/assetsRequisition/assetsRequisition";
 import Modal from "../common/Modal";
+import { useLayout } from "../../context/LayoutContext";
+import { translations } from "../../utils/translations";
 
 const AssetsRequisitionTable = () => {
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
 
@@ -379,17 +383,17 @@ const AssetsRequisitionTable = () => {
           onClick={handleAddProduct}
           className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition px-4 py-2 rounded-xl shadow-sm"
         >
-          Add <Plus size={18} />
+          {t.add} <Plus size={18} />
         </button>
 
         <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2">
           <div className="flex items-center gap-2 text-slate-700">
             <ShoppingBasket size={18} className="text-amber-500" />
-            <span className="text-sm">Total Purchase</span>
+            <span className="text-sm">{t.total_purchase}</span>
           </div>
 
           <span className="text-slate-900 font-semibold tabular-nums">
-            {isLoading ? "Loading..." : data?.meta?.totalQuantity}
+            {isLoading ? "..." : data?.meta?.totalQuantity}
           </span>
         </div>
       </div>
@@ -397,7 +401,7 @@ const AssetsRequisitionTable = () => {
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6 w-full justify-center mx-auto">
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">From</label>
+          <label className="text-sm text-slate-600 mb-1">{t.from}</label>
           <input
             type="date"
             value={startDate}
@@ -407,7 +411,7 @@ const AssetsRequisitionTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">To</label>
+          <label className="text-sm text-slate-600 mb-1">{t.to}</label>
           <input
             type="date"
             value={endDate}
@@ -423,7 +427,7 @@ const AssetsRequisitionTable = () => {
             onChange={(selected) =>
               setName(selected?.value ? String(selected.value) : "")
             }
-            placeholder="Select Assets"
+            placeholder={t.select_assets}
             isClearable
             styles={selectStyles}
             className="w-full"
@@ -431,7 +435,7 @@ const AssetsRequisitionTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Per Page</label>
+          <label className="text-sm text-slate-600 mb-1">{t.per_page}</label>
           <select
             value={itemsPerPage}
             onChange={(e) => {
@@ -452,7 +456,7 @@ const AssetsRequisitionTable = () => {
           className="inline-flex items-center justify-center bg-white hover:bg-slate-50 text-slate-700 transition px-4 py-[10px] rounded-xl border border-slate-200"
           onClick={clearFilters}
         >
-          Clear Filters
+          {t.clear_filters}
         </button>
       </div>
 
@@ -462,13 +466,13 @@ const AssetsRequisitionTable = () => {
           <thead className="bg-slate-50">
             <tr>
               {[
-                "Date",
-                "Name",
-                "Quantity",
-                "Price",
-                "Total Price",
-                "Status",
-                "Actions",
+                t.date,
+                t.name,
+                t.quantity,
+                t.price,
+                t.total_price,
+                t.status,
+                t.actions,
               ].map((h) => (
                 <th
                   key={h}
@@ -517,7 +521,7 @@ const AssetsRequisitionTable = () => {
                         : "bg-amber-50 text-amber-700 border-amber-200"
                       }`}
                   >
-                    {product.status}
+                    {t[product.status.toLowerCase()] || product.status}
                   </span>
                 </td>
 
@@ -584,7 +588,7 @@ const AssetsRequisitionTable = () => {
                   colSpan={6}
                   className="px-6 py-6 text-center text-sm text-slate-600"
                 >
-                  No data found
+                  {t.no_data_found}
                 </td>
               </tr>
             )}
@@ -599,7 +603,7 @@ const AssetsRequisitionTable = () => {
           disabled={startPage === 1}
           className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
-          Prev
+          {t.prev}
         </button>
 
         {[...Array(endPage - startPage + 1)].map((_, index) => {
@@ -624,7 +628,7 @@ const AssetsRequisitionTable = () => {
           disabled={endPage === totalPages}
           className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
-          Next
+          {t.next}
         </button>
       </div>
 
@@ -632,11 +636,11 @@ const AssetsRequisitionTable = () => {
       <Modal
         isOpen={isNoteModalOpen}
         onClose={handleNoteModalClose}
-        title="Note Content"
+        title={t.note_content}
       >
         <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-6">
           <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-            {noteContent || "No note available."}
+            {noteContent || t.no_data_found}
           </p>
         </div>
         <div className="flex justify-end">
@@ -644,7 +648,7 @@ const AssetsRequisitionTable = () => {
             onClick={handleNoteModalClose}
             className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
           >
-            Close
+            {t.close}
           </button>
         </div>
       </Modal>
@@ -653,13 +657,13 @@ const AssetsRequisitionTable = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={handleModalClose}
-        title="Edit Purchase Requisition"
+        title={t.edit_purchase_requisition}
         maxWidth="max-w-2xl"
       >
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field
-              label="Date"
+              label={t.date}
               type="date"
               value={currentProduct?.date}
               onChange={(v) =>
@@ -668,7 +672,7 @@ const AssetsRequisitionTable = () => {
               required
             />
             <Field
-              label="Name"
+              label={t.name}
               value={currentProduct?.name || ""}
               onChange={(v) =>
                 setCurrentProduct({ ...currentProduct, name: v })
@@ -679,7 +683,7 @@ const AssetsRequisitionTable = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field
-              label="Quantity"
+              label={t.quantity}
               type="number"
               step="0.01"
               value={currentProduct?.quantity || ""}
@@ -689,7 +693,7 @@ const AssetsRequisitionTable = () => {
               required
             />
             <Field
-              label="Price"
+              label={t.price}
               type="number"
               step="0.01"
               value={currentProduct?.price || ""}
@@ -703,7 +707,7 @@ const AssetsRequisitionTable = () => {
           <div className="space-y-4 pt-2">
             {role === "superAdmin" ? (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t.status}</label>
                 <select
                   value={currentProduct?.status || ""}
                   onChange={(e) =>
@@ -715,14 +719,14 @@ const AssetsRequisitionTable = () => {
                   className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 >
-                  <option value="">Select Status</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Pending">Pending</option>
+                  <option value="">{t.select_status || "Select Status"}</option>
+                  <option value="Approved">{t.approved}</option>
+                  <option value="Pending">{t.pending}</option>
                 </select>
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t.note}</label>
                 <textarea
                   value={currentProduct?.note || ""}
                   onChange={(e) =>
@@ -744,13 +748,13 @@ const AssetsRequisitionTable = () => {
               className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
               onClick={handleModalClose}
             >
-              Cancel
+              {t.cancel}
             </button>
             <button
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
               onClick={handleUpdateProduct}
             >
-              Save Changes
+              {t.save_changes}
             </button>
           </div>
         </div>
@@ -760,13 +764,13 @@ const AssetsRequisitionTable = () => {
       <Modal
         isOpen={isModalOpen2}
         onClose={handleModalClose2}
-        title="Update Request / Note"
+        title={t.update_request_note}
         maxWidth="max-w-xl"
       >
         <div className="space-y-6">
           {role === "superAdmin" ? (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t.status}</label>
               <select
                 value={currentProduct?.status || ""}
                 onChange={(e) =>
@@ -777,14 +781,14 @@ const AssetsRequisitionTable = () => {
                 }
                 className="h-12 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               >
-                <option value="">Select Status</option>
-                <option value="Approved">Approved</option>
-                <option value="Pending">Pending</option>
+                <option value="">{t.select_status || "Select Status"}</option>
+                <option value="Approved">{t.approved}</option>
+                <option value="Pending">{t.pending}</option>
               </select>
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t.note}</label>
               <textarea
                 value={currentProduct?.note || ""}
                 onChange={(e) =>
@@ -806,13 +810,13 @@ const AssetsRequisitionTable = () => {
               className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
               onClick={handleModalClose2}
             >
-              Cancel
+              {t.cancel}
             </button>
             <button
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
               onClick={handleUpdateProduct1}
             >
-              Save
+              {t.save_changes}
             </button>
           </div>
         </div>
@@ -822,13 +826,13 @@ const AssetsRequisitionTable = () => {
       <Modal
         isOpen={isModalOpen1}
         onClose={handleModalClose1}
-        title="Add Purchase Requisition"
+        title={t.add_purchase_requisition}
         maxWidth="max-w-2xl"
       >
         <form onSubmit={handleCreateProduct} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field
-              label="Date"
+              label={t.date}
               type="date"
               value={createProduct.date}
               onChange={(v) =>
@@ -837,7 +841,7 @@ const AssetsRequisitionTable = () => {
               required
             />
             <Field
-              label="Name"
+              label={t.name}
               value={createProduct.name}
               onChange={(v) =>
                 setCreateProduct({ ...createProduct, name: v })
@@ -848,7 +852,7 @@ const AssetsRequisitionTable = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field
-              label="Quantity"
+              label={t.quantity}
               type="number"
               step="0.01"
               value={createProduct.quantity}
@@ -858,7 +862,7 @@ const AssetsRequisitionTable = () => {
               required
             />
             <Field
-              label="Price"
+              label={t.price}
               type="number"
               step="0.01"
               value={createProduct.price}
@@ -870,13 +874,13 @@ const AssetsRequisitionTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Additional Note</label>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">{t.additional_note}</label>
             <textarea
               value={createProduct.note}
               onChange={(v) => setCreateProduct({ ...createProduct, note: v.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               rows={3}
-              placeholder="Vendor details or serial numbers..."
+              placeholder={t.vendor_details}
             />
           </div>
 
@@ -886,13 +890,13 @@ const AssetsRequisitionTable = () => {
               className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
               onClick={handleModalClose1}
             >
-              Cancel
+              {t.cancel}
             </button>
             <button
               type="submit"
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
             >
-              Create Requisition
+              {t.create_requisition}
             </button>
           </div>
         </form>

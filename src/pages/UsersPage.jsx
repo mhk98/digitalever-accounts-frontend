@@ -7,6 +7,8 @@ import UsersTable from "../components/users/UsersTable";
 import UserGrowthChart from "../components/users/UserGrowthChart";
 import UserActivityHeatmap from "../components/users/UserActivityHeatmap";
 import UserDemographicsChart from "../components/users/UserDemographicsChart";
+import { useLayout } from "../context/LayoutContext";
+import { translations } from "../utils/translations";
 
 const userStats = {
   totalUsers: 152845,
@@ -16,6 +18,9 @@ const userStats = {
 };
 
 const UsersPage = () => {
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
+
   return (
     <div className="flex-1 overflow-auto bg-slate-50/50">
       <Header title="User Analytics" />
@@ -23,9 +28,9 @@ const UsersPage = () => {
       <main className="max-w-8xl mx-auto py-8 px-4 lg:px-8">
         {/* Page Title Section */}
         <div className="mb-10">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Community Insights</h1>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t.community_insights}</h1>
           <p className="text-slate-500 text-base mt-2 font-medium max-w-2xl">
-            Real-time demographic data, growth metrics, and platform engagement overview.
+            {t.registry_data_view}
           </p>
         </div>
 
@@ -37,28 +42,28 @@ const UsersPage = () => {
           transition={{ duration: 0.5 }}
         >
           <StatCard
-            name="Total Registry"
+            name={t.total_registry}
             icon={UsersIcon}
             value={userStats.totalUsers.toLocaleString()}
             iconBg="#EEF2FF"
             iconColor="#4F46E5"
           />
           <StatCard
-            name="Daily Growth"
+            name={t.daily_growth}
             icon={UserPlus}
             value={`+${userStats.newUsersToday}`}
             iconBg="#ECFDF5"
             iconColor="#10B981"
           />
           <StatCard
-            name="Current Actives"
+            name={t.current_actives}
             icon={UserCheck}
             value={userStats.activeUsers.toLocaleString()}
             iconBg="#FFF7ED"
             iconColor="#F59E0B"
           />
           <StatCard
-            name="Attrition Rate"
+            name={t.attrition_rate}
             icon={UserX}
             value={userStats.churnRate}
             iconBg="#FEF2F2"
@@ -74,8 +79,8 @@ const UsersPage = () => {
         {/* USER CHARTS SECTION */}
         <div className="space-y-8 mt-12">
           <div className="border-t border-slate-200 pt-12 pb-6">
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">Engagement Visualization</h2>
-            <p className="text-slate-500 text-sm mt-1 font-medium italic">Advanced metrics and heatmaps of platform usage</p>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">{t.engagement_visualization}</h2>
+            <p className="text-slate-500 text-sm mt-1 font-medium italic">{t.advanced_usage_metrics}</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-20">

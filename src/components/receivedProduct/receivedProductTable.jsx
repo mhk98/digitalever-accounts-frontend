@@ -1199,13 +1199,13 @@
 //               value={createProduct?.note || ""}
 //               onChange={(e) => setCreateProduct({ ...createProduct, note: e.target.value })}
 //               className="w-full min-h-[80px] border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
-//               placeholder="Add any extra info..."
+//               placeholder={t.add_extra_info || "Add any extra info..."}
 //             />
 //           </div>
 
 //           <div>
 //             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-//               Document
+//               {t.document || "Document"}
 //             </label>
 //             <div className="relative group/file">
 //               <input
@@ -1219,7 +1219,7 @@
 //                   <Plus size={16} />
 //                 </div>
 //                 <span className="text-sm font-medium text-slate-500 group-hover/file:text-indigo-600">
-//                   {createProduct.file ? createProduct.file.name : "Select or drop file..."}
+//                   {createProduct.file ? createProduct.file.name : t.select_drop_file || "Select or drop file..."}
 //                 </span>
 //               </div>
 //             </div>
@@ -1231,13 +1231,13 @@
 //               onClick={handleModalClose1}
 //               className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition active:scale-95"
 //             >
-//               Cancel
+//               {t.cancel || "Cancel"}
 //             </button>
 //             <button
 //               type="submit"
 //               className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-100 active:scale-95"
 //             >
-//               Confirm Purchase
+//               {t.confirm_purchase || "Confirm Purchase"}
 //             </button>
 //           </div>
 //         </form>
@@ -1247,13 +1247,13 @@
 //       <Modal
 //         isOpen={isModalOpen2 && !!currentProduct}
 //         onClose={handleModalClose2}
-//         title="Action Confirmation"
+//         title={t.action_confirmation || "Action Confirmation"}
 //       >
 //         <div className="space-y-4">
 //           {role === "superAdmin" ? (
 //             <div>
 //               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-//                 Update Status
+//                 {t.update_status || "Update Status"}
 //               </label>
 //               <select
 //                 value={currentProduct?.status || ""}
@@ -1268,13 +1268,13 @@
 //           ) : (
 //             <div>
 //               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-//                 Reason for Removal
+//                 {t.reason_for_removal || "Reason for Removal"}
 //               </label>
 //               <textarea
 //                 value={currentProduct?.note || ""}
 //                 onChange={(e) => setCurrentProduct({ ...currentProduct, note: e.target.value })}
 //                 className="w-full min-h-[120px] border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
-//                 placeholder="Please explain why you want to remove this record..."
+//                 placeholder={t.explain_why_remove_record || "Please explain why you want to remove this record..."}
 //               />
 //             </div>
 //           )}
@@ -1284,13 +1284,13 @@
 //               onClick={handleModalClose2}
 //               className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition active:scale-95"
 //             >
-//               Cancel
+//               {t.cancel || "Cancel"}
 //             </button>
 //             <button
 //               onClick={handleUpdateProduct1}
 //               className="px-8 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition shadow-md shadow-amber-100 active:scale-95"
 //             >
-//               Submit Request
+//               {t.submit_request || "Submit Request"}
 //             </button>
 //           </div>
 //         </div>
@@ -1329,17 +1329,18 @@ import {
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 import Modal from "../common/Modal";
+import { useGetAllBookWithoutQueryQuery } from "../../features/book/book";
+import { useLayout } from "../../context/LayoutContext";
+import { translations } from "../../utils/translations";
 
 const initialCreateProduct = {
   warehouseId: "",
+  bookId: "",
   supplierId: "",
   productId: "",
   quantity: "",
   purchase_price: "",
   sale_price: "",
-  duePayment: "",
-  paidAmount: "",
-  dueAmount: "",
   note: "",
   date: new Date().toISOString().slice(0, 10),
   file: null,
@@ -1351,6 +1352,8 @@ const initialCreateProduct = {
 };
 
 const ReceivedProductTable = () => {
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
 
@@ -1535,6 +1538,7 @@ const ReceivedProductTable = () => {
       supplierId: rp.supplierId ?? "",
       warehouseId: rp.warehouseId ?? "",
       quantity: rp.quantity ?? "",
+      bookId: rp.bookId ?? "",
       purchase_price: rp.purchase_price ?? "",
       sale_price: rp.sale_price ?? "",
       duePayment: rp.duePayment ?? "",
@@ -1561,6 +1565,7 @@ const ReceivedProductTable = () => {
       supplierId: rp.supplierId ?? "",
       warehouseId: rp.warehouseId ?? "",
       quantity: rp.quantity ?? "",
+      bookId: rp.bookId ?? "",
       purchase_price: rp.purchase_price ?? "",
       sale_price: rp.sale_price ?? "",
       supplier: rp.supplier ?? "",
@@ -1582,12 +1587,12 @@ const ReceivedProductTable = () => {
     try {
       const fd = new FormData();
       fd.append("productId", Number(currentProduct.productId) || "");
+      fd.append("bookId", Number(currentProduct.bookId) || "");
       fd.append("supplierId", Number(currentProduct.supplierId) || "");
       fd.append("warehouseId", Number(currentProduct.warehouseId) || "");
       fd.append("quantity", Number(currentProduct.quantity) || 0);
       fd.append("purchase_price", Number(currentProduct.purchase_price) || 0);
       fd.append("sale_price", Number(currentProduct.sale_price) || 0);
-      fd.append("duePayment", Number(currentProduct.duePayment) || 0);
       fd.append("date", currentProduct.date || "");
       fd.append("note", currentProduct.note || "");
       fd.append("status", currentProduct.status || "");
@@ -1635,12 +1640,12 @@ const ReceivedProductTable = () => {
     try {
       const fd = new FormData();
       fd.append("productId", Number(currentProduct.productId) || "");
+      fd.append("bookId", Number(currentProduct.bookId) || "");
       fd.append("supplierId", Number(currentProduct.supplierId) || "");
       fd.append("warehouseId", Number(currentProduct.warehouseId) || "");
       fd.append("quantity", Number(currentProduct.quantity) || 0);
       fd.append("purchase_price", Number(currentProduct.purchase_price) || 0);
       fd.append("sale_price", Number(currentProduct.sale_price) || 0);
-      fd.append("duePayment", Number(currentProduct.duePayment) || 0);
       fd.append("date", currentProduct.date || "");
       fd.append("note", currentProduct.note || "");
       fd.append("status", currentProduct.status || "");
@@ -1693,13 +1698,11 @@ const ReceivedProductTable = () => {
     const fd = new FormData();
     fd.append("productId", Number(createProduct.productId) || "");
     fd.append("supplierId", Number(createProduct.supplierId) || "");
+    fd.append("bookId", Number(createProduct.bookId) || "");
     fd.append("warehouseId", Number(createProduct.warehouseId) || "");
     fd.append("quantity", Number(createProduct.quantity) || 0);
     fd.append("purchase_price", Number(createProduct.purchase_price) || 0);
     fd.append("sale_price", Number(createProduct.sale_price) || 0);
-    fd.append("duePayment", Number(createProduct.duePayment) || 0);
-    fd.append("paidAmount", Number(createProduct.paidAmount) || 0);
-    fd.append("dueAmount", Number(createProduct.dueAmount) || 0);
     fd.append("date", createProduct.date || "");
     fd.append("note", createProduct.note || "");
 
@@ -1774,6 +1777,27 @@ const ReceivedProductTable = () => {
     menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
   };
 
+  // ✅ Books
+  const {
+    data: allBookRes,
+    isError: isErrorBook,
+    error: errorBook,
+  } = useGetAllBookWithoutQueryQuery();
+  const books = allBookRes?.data || [];
+
+  useEffect(() => {
+    if (isErrorBook) console.error("Error fetching Books", errorBook);
+  }, [isErrorBook, errorBook]);
+
+  // const bookOptions = useMemo(
+  //   () =>
+  //     (books || []).map((s) => ({
+  //       value: s.Id,
+  //       label: s.name,
+  //     })),
+  //   [books],
+  // );
+
   // ✅ suppliers
   const {
     data: allSupplierRes,
@@ -1839,10 +1863,10 @@ const ReceivedProductTable = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            Purchase History
+            {t.purchase_history || "Purchase History"}
           </h2>
           <p className="text-slate-500 text-sm mt-1 font-medium">
-            Track and analyze all incoming product acquisitions
+            {t.incoming_product_acquisitions || "Track and analyze all incoming product acquisitions"}
           </p>
         </div>
 
@@ -1866,7 +1890,7 @@ const ReceivedProductTable = () => {
             onClick={handleAddProduct}
             className="group relative inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition-all px-6 py-3 rounded-2xl text-sm font-bold shadow-xl shadow-indigo-100 active:scale-95 overflow-hidden w-full sm:w-auto"
           >
-            <Plus size={18} /> Add New Purchase
+            <Plus size={18} /> {t.add_new_purchase || "Add New Purchase"}
           </button>
         </div>
       </div>
@@ -1874,7 +1898,7 @@ const ReceivedProductTable = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-10 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
         <div className="flex flex-col">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
-            From
+            {t.from}
           </label>
           <input
             type="date"
@@ -1886,7 +1910,7 @@ const ReceivedProductTable = () => {
 
         <div className="flex flex-col">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
-            To
+            {t.to}
           </label>
           <input
             type="date"
@@ -1898,7 +1922,7 @@ const ReceivedProductTable = () => {
 
         <div className="flex flex-col">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
-            Per Page
+            {t.per_page_label}
           </label>
           <select
             value={itemsPerPage}
@@ -1915,13 +1939,13 @@ const ReceivedProductTable = () => {
 
         <div className="flex flex-col">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
-            Product
+            {t.product}
           </label>
           <Select
             options={productDropdownOptions}
             value={productDropdownOptions.find((o) => o.label === productName) || null}
             onChange={(selected) => setProductName(selected?.label || "")}
-            placeholder="Search..."
+            placeholder={t.search}
             isClearable
             isDisabled={isLoadingAllProducts}
             styles={selectStyles}
@@ -1930,13 +1954,13 @@ const ReceivedProductTable = () => {
 
         <div className="flex flex-col">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
-            Warehouse
+            {t.warehouse}
           </label>
           <Select
             options={warehouseOptions}
             value={warehouseOptions.find((o) => String(o.value) === String(warehouse)) || null}
             onChange={(selected) => setWarehouse(selected?.value || "")}
-            placeholder="Search..."
+            placeholder={t.search}
             isClearable
             styles={selectStyles}
           />
@@ -1944,13 +1968,13 @@ const ReceivedProductTable = () => {
 
         <div className="flex flex-col">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
-            Supplier
+            {t.supplier}
           </label>
           <Select
             options={supplierOptions}
             value={supplierOptions.find((o) => String(o.value) === String(supplier)) || null}
             onChange={(selected) => setSupplier(selected?.value || "")}
-            placeholder="Search..."
+            placeholder={t.search}
             isClearable
             styles={selectStyles}
           />
@@ -1961,7 +1985,7 @@ const ReceivedProductTable = () => {
           className="h-11 bg-slate-100 hover:bg-slate-200 text-slate-600 transition rounded-xl px-4 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 border border-slate-200"
           onClick={clearFilters}
         >
-          <X size={16} /> Reset
+          <X size={16} /> {t.clear_filters}
         </button>
       </div>
 
@@ -1971,25 +1995,25 @@ const ReceivedProductTable = () => {
             <thead className="bg-slate-50/50">
               <tr>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  Date
+                  {t.date}
                 </th>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  Warehouse
+                  {t.warehouse}
                 </th>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  Supplier
+                  {t.supplier}
                 </th>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  Product Details
+                  {t.product_details || "Product Details"}
                 </th>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  Financials
+                  {t.financials}
                 </th>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  Status
+                  {t.status}
                 </th>
                 <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  Actions
+                  {t.actions}
                 </th>
               </tr>
             </thead>
@@ -2009,13 +2033,13 @@ const ReceivedProductTable = () => {
 
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase tracking-tighter">
-                      {rp?.warehouse?.name || "No Warehouse"}
+                      {rp?.warehouse?.name || t.no_warehouse || "No Warehouse"}
                     </span>
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-tighter">
-                      {rp?.supplier?.name || "No Supplier"}
+                      {rp?.supplier?.name || t.no_supplier || "No Supplier"}
                     </span>
                   </td>
 
@@ -2025,7 +2049,7 @@ const ReceivedProductTable = () => {
                         {resolveProductName(rp)}
                       </div>
                       <div className="text-xs text-slate-500">
-                        Qty: {Number(rp.quantity || 0).toFixed(0)}
+                        {t.qty_label || "Qty"}: {Number(rp.quantity || 0).toFixed(0)}
                       </div>
                     </div>
                   </td>
@@ -2033,13 +2057,13 @@ const ReceivedProductTable = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-col gap-1">
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                        Total Buy:{" "}
+                        {t.total_buy_label || "Total Buy"}:{" "}
                         <span className="text-slate-900 border-b border-dotted border-slate-300">
                           ৳{Number((rp.purchase_price || 0) * (rp.quantity || 0)).toLocaleString()}
                         </span>
                       </div>
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                        Total Sell:{" "}
+                        {t.total_sell_label || "Total Sell"}:{" "}
                         <span className="text-emerald-600">
                           ৳{Number((rp.sale_price || 0) * (rp.quantity || 0)).toLocaleString()}
                         </span>
@@ -2095,7 +2119,7 @@ const ReceivedProductTable = () => {
                       ) : (
                         <button
                           className="h-10 w-10 rounded-md flex items-center justify-center cursor-default"
-                          title="No note available"
+                          title={t.no_note_available || "No note available"}
                           type="button"
                         >
                           <Notebook size={18} className="text-slate-300" />
@@ -2105,7 +2129,7 @@ const ReceivedProductTable = () => {
                         type="button"
                         onClick={() => handleEditClick(rp)}
                         className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm"
-                        title="Edit"
+                        title={t.edit_record || "Edit"}
                       >
                         <Edit size={16} />
                       </button>
@@ -2115,7 +2139,7 @@ const ReceivedProductTable = () => {
                           type="button"
                           onClick={() => handleDeleteProduct(rp.Id)}
                           className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition shadow-sm"
-                          title="Delete"
+                          title={t.delete_record || "Delete"}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -2124,7 +2148,7 @@ const ReceivedProductTable = () => {
                           type="button"
                           onClick={() => handleEditClick1(rp)}
                           className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-amber-600 hover:border-amber-200 hover:bg-amber-50 transition shadow-sm"
-                          title="Request Delete"
+                          title={t.request_delete || "Request Delete"}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -2137,7 +2161,7 @@ const ReceivedProductTable = () => {
               {!isLoading && rows.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-6 py-20 text-center text-sm text-slate-400 italic">
-                    No purchase records found
+                    {t.no_purchase_records}
                   </td>
                 </tr>
               )}
@@ -2148,7 +2172,7 @@ const ReceivedProductTable = () => {
 
       <div className="flex flex-col sm:flex-row items-center justify-between mt-10 gap-6 px-2">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-          Showing Page <span className="text-indigo-600">{currentPage}</span> of{" "}
+          {t.showing_page || "Showing Page"} <span className="text-indigo-600">{currentPage}</span> {t.of || "of"}{" "}
           <span className="text-slate-900">{totalPages}</span>
         </p>
 
@@ -2158,7 +2182,7 @@ const ReceivedProductTable = () => {
             disabled={startPage === 1}
             className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
           >
-            <ChevronLeft size={16} /> Prev
+            <ChevronLeft size={16} /> {t.prev}
           </button>
 
           <div className="flex items-center gap-1.5">
@@ -2185,17 +2209,17 @@ const ReceivedProductTable = () => {
             disabled={endPage === totalPages}
             className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
           >
-            Next <ChevronRight size={16} />
+            {t.next} <ChevronRight size={16} />
           </button>
         </div>
       </div>
 
       {/* Note Preview Modal */}
-      <Modal isOpen={isNoteModalOpen} onClose={handleNoteModalClose} title="Note Preview">
+      <Modal isOpen={isNoteModalOpen} onClose={handleNoteModalClose} title={t.note_preview || "Note Preview"}>
         <div className="space-y-4">
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 min-h-[120px]">
             <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
-              {noteContent || "No note available."}
+              {noteContent || t.no_note_available || "No note available."}
             </p>
           </div>
 
@@ -2204,18 +2228,18 @@ const ReceivedProductTable = () => {
               onClick={handleNoteModalClose}
               className="px-6 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition shadow-sm active:scale-95"
             >
-              Done
+              {t.done || "Done"}
             </button>
           </div>
         </div>
       </Modal>
 
       {/* Edit Purchase Modal */}
-      <Modal isOpen={isModalOpen && !!currentProduct} onClose={handleModalClose} title="Edit Purchase">
+      <Modal isOpen={isModalOpen && !!currentProduct} onClose={handleModalClose} title={t.edit_purchase || "Edit Purchase"}>
         <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-              Select Product
+              {t.select_product || "Select Product"}
             </label>
             <Select
               options={productDropdownOptions}
@@ -2230,7 +2254,7 @@ const ReceivedProductTable = () => {
                   productId: selected?.value || "",
                 })
               }
-              placeholder="Search product..."
+              placeholder={t.search_product || "Search product..."}
               isClearable
               styles={selectStyles}
               className="text-sm font-medium"
@@ -2241,7 +2265,7 @@ const ReceivedProductTable = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Purchase Date
+                {t.purchase_date || "Purchase Date"}
               </label>
               <input
                 type="date"
@@ -2255,7 +2279,7 @@ const ReceivedProductTable = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Warehouse
+                {t.warehouse || "Warehouse"}
               </label>
               <select
                 value={currentProduct?.warehouseId || ""}
@@ -2264,7 +2288,7 @@ const ReceivedProductTable = () => {
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
-                <option value="">Select Warehouse</option>
+                <option value="">{t.select_warehouse || "Select Warehouse"}</option>
                 {warehouses?.map((w) => (
                   <option key={w.Id} value={w.Id}>
                     {w.name}
@@ -2274,30 +2298,53 @@ const ReceivedProductTable = () => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-              Supplier
-            </label>
-            <select
-              value={currentProduct?.supplierId || ""}
-              onChange={(e) =>
-                setCurrentProduct({ ...currentProduct, supplierId: e.target.value })
-              }
-              className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-            >
-              <option value="">Select Supplier</option>
-              {suppliers?.map((s) => (
-                <option key={s.Id} value={s.Id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                {t.book || "Book"}
+              </label>
+              <select
+                value={currentProduct?.bookId || ""}
+                onChange={(e) =>
+                  setCurrentProduct({ ...currentProduct, bookId: e.target.value })
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              >
+                <option value="">{t.select_book || "Select Book"}</option>
+                {books?.map((s) => (
+                  <option key={s.Id} value={s.Id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                {t.supplier || "Supplier"}
+              </label>
+              <select
+                value={currentProduct?.supplierId || ""}
+                onChange={(e) =>
+                  setCurrentProduct({ ...currentProduct, supplierId: e.target.value })
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              >
+                <option value="">{t.select_supplier || "Select Supplier"}</option>
+                {suppliers?.map((s) => (
+                  <option key={s.Id} value={s.Id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Quantity
+                {t.quantity || "Quantity"}
               </label>
               <input
                 type="number"
@@ -2309,27 +2356,12 @@ const ReceivedProductTable = () => {
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
             </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Due Payment
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={currentProduct?.duePayment || ""}
-                onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, duePayment: e.target.value })
-                }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              />
-            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Purchase Price
+                {t.purchase_price || "Purchase Price"}
               </label>
               <input
                 type="number"
@@ -2347,7 +2379,7 @@ const ReceivedProductTable = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Sale Price
+                {t.sale_price || "Sale Price"}
               </label>
               <input
                 type="number"
@@ -2366,10 +2398,10 @@ const ReceivedProductTable = () => {
             <div className="flex items-center justify-between px-4 py-3">
               <div>
                 <span className="text-sm font-black text-slate-700 uppercase tracking-tight">
-                  Warranty Coverage
+                  {t.warranty_coverage || "Warranty Coverage"}
                 </span>
                 <p className="text-[10px] font-bold text-slate-400">
-                  Enable if product has warranty
+                  {t.enable_warranty_if_product_has_warranty || "Enable if product has warranty"}
                 </p>
               </div>
 
@@ -2388,7 +2420,7 @@ const ReceivedProductTable = () => {
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${currentProduct?.hasWarranty ? "bg-indigo-600" : "bg-slate-300"
                   }`}
               >
-                <span className="sr-only">Toggle Warranty</span>
+                <span className="sr-only">{t.toggle_warranty || "Toggle Warranty"}</span>
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${currentProduct?.hasWarranty ? "translate-x-6" : "translate-x-1"
                     }`}
@@ -2399,7 +2431,7 @@ const ReceivedProductTable = () => {
             {currentProduct?.hasWarranty && (
               <div className="bg-white rounded-xl border border-slate-100 m-1 p-4 space-y-3 shadow-sm">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Duration
+                  {t.duration || "Duration"}
                 </label>
 
                 <div className="flex gap-2">
@@ -2429,9 +2461,9 @@ const ReceivedProductTable = () => {
                     className="h-11 w-32 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none
                     focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition appearance-none cursor-pointer"
                   >
-                    <option value="Day">Days</option>
-                    <option value="Month">Months</option>
-                    <option value="Year">Years</option>
+                    <option value="Day">{t.days}</option>
+                    <option value="Month">{t.months || "Months"}</option>
+                    <option value="Year">{t.years || "Years"}</option>
                   </select>
                 </div>
               </div>
@@ -2441,7 +2473,7 @@ const ReceivedProductTable = () => {
           {(role === "superAdmin" || role === "admin") ? (
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Status
+                {t.status || "Status"}
               </label>
               <select
                 value={currentProduct?.status || ""}
@@ -2450,15 +2482,15 @@ const ReceivedProductTable = () => {
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
-                <option value="Pending">Pending</option>
-                <option value="Active">Active</option>
-                <option value="Approved">Approved</option>
+                <option value="Pending">{t.pending}</option>
+                <option value="Active">{t.active}</option>
+                <option value="Approved">{t.approved}</option>
               </select>
             </div>
           ) : (
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Note
+                {t.note || "Note"}
               </label>
               <textarea
                 value={currentProduct?.note || ""}
@@ -2466,7 +2498,7 @@ const ReceivedProductTable = () => {
                   setCurrentProduct({ ...currentProduct, note: e.target.value })
                 }
                 className="w-full min-h-[90px] border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
-                placeholder="Extra details..."
+                placeholder={t.extra_details || "Extra details..."}
               />
             </div>
           )}
@@ -2477,23 +2509,23 @@ const ReceivedProductTable = () => {
             onClick={handleModalClose}
             className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition active:scale-95"
           >
-            Cancel
+            {t.cancel || "Cancel"}
           </button>
           <button
             onClick={handleUpdateProduct}
             className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-100 active:scale-95"
           >
-            Update Changes
+            {t.update_changes || "Update Changes"}
           </button>
         </div>
       </Modal>
 
       {/* Add Purchase Modal */}
-      <Modal isOpen={isModalOpen1} onClose={handleModalClose1} title="Add New Purchase">
+      <Modal isOpen={isModalOpen1} onClose={handleModalClose1} title={t.add_new_purchase || "Add New Purchase"}>
         <form onSubmit={handleCreateProduct} className="space-y-4 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-              Select Product
+              {t.select_product || "Select Product"}
             </label>
             <Select
               options={productDropdownOptions}
@@ -2505,10 +2537,10 @@ const ReceivedProductTable = () => {
               onChange={(selected) =>
                 setCreateProduct({ ...createProduct, productId: selected?.value || "" })
               }
-              placeholder="Search product..."
+              placeholder={t.search_product || "Search product..."}
               isClearable
               styles={selectStyles}
-              className="text-sm font-medium"
+              className="text-sm text-black font-medium"
               isDisabled={isLoadingAllProducts}
             />
           </div>
@@ -2516,7 +2548,7 @@ const ReceivedProductTable = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Purchase Date
+                {t.purchase_date || "Purchase Date"}
               </label>
               <input
                 type="date"
@@ -2530,7 +2562,7 @@ const ReceivedProductTable = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Warehouse
+                {t.warehouse || "Warehouse"}
               </label>
               <select
                 value={createProduct?.warehouseId || ""}
@@ -2540,7 +2572,7 @@ const ReceivedProductTable = () => {
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               >
-                <option value="">Select Warehouse</option>
+                <option value="">{t.select_warehouse || "Select Warehouse"}</option>
                 {warehouses?.map((w) => (
                   <option key={w.Id} value={w.Id}>
                     {w.name}
@@ -2550,31 +2582,54 @@ const ReceivedProductTable = () => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-              Supplier
-            </label>
-            <select
-              value={createProduct?.supplierId || ""}
-              onChange={(e) =>
-                setCreateProduct({ ...createProduct, supplierId: e.target.value })
-              }
-              className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              required
-            >
-              <option value="">Select Supplier</option>
-              {suppliers?.map((s) => (
-                <option key={s.Id} value={s.Id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                {t.book || "Book"}
+              </label>
+              <select
+                value={createProduct?.bookId || ""}
+                onChange={(e) =>
+                  setCreateProduct({ ...createProduct, bookId: e.target.value })
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              >
+                <option value="">{t.select_book || "Select Book"}</option>
+                {books?.map((s) => (
+                  <option key={s.Id} value={s.Id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                {t.supplier || "Supplier"}
+              </label>
+              <select
+                value={createProduct?.supplierId || ""}
+                onChange={(e) =>
+                  setCreateProduct({ ...createProduct, supplierId: e.target.value })
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                required
+              >
+                <option value="">{t.select_supplier || "Select Supplier"}</option>
+                {suppliers?.map((s) => (
+                  <option key={s.Id} value={s.Id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Purchase Price
+                {t.purchase_price || "Purchase Price"}
               </label>
               <input
                 type="number"
@@ -2589,7 +2644,7 @@ const ReceivedProductTable = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Sale Price
+                {t.sale_price || "Sale Price"}
               </label>
               <input
                 type="number"
@@ -2603,10 +2658,10 @@ const ReceivedProductTable = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Quantity
+                {t.quantity || "Quantity"}
               </label>
               <input
                 type="number"
@@ -2620,35 +2675,9 @@ const ReceivedProductTable = () => {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Paid
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={createProduct.paidAmount || ""}
-                onChange={(e) =>
-                  setCreateProduct({ ...createProduct, paidAmount: e.target.value })
-                }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              />
-            </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Due
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={createProduct.dueAmount || ""}
-                onChange={(e) =>
-                  setCreateProduct({ ...createProduct, dueAmount: e.target.value })
-                }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              />
-            </div>
+
+
           </div>
 
           {/* ✅ Warranty block (Add) */}
@@ -2656,10 +2685,10 @@ const ReceivedProductTable = () => {
             <div className="flex items-center justify-between px-4 py-3">
               <div>
                 <span className="text-sm font-black text-slate-700 uppercase tracking-tight">
-                  Warranty Coverage
+                  {t.warranty_coverage || "Warranty Coverage"}
                 </span>
                 <p className="text-[10px] font-bold text-slate-400">
-                  Enable if product has warranty
+                  {t.enable_warranty_if_product_has_warranty || "Enable if product has warranty"}
                 </p>
               </div>
 
@@ -2678,7 +2707,7 @@ const ReceivedProductTable = () => {
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${createProduct?.hasWarranty ? "bg-indigo-600" : "bg-slate-300"
                   }`}
               >
-                <span className="sr-only">Toggle Warranty</span>
+                <span className="sr-only">{t.toggle_warranty || "Toggle Warranty"}</span>
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${createProduct?.hasWarranty ? "translate-x-6" : "translate-x-1"
                     }`}
@@ -2689,7 +2718,7 @@ const ReceivedProductTable = () => {
             {createProduct?.hasWarranty && (
               <div className="bg-white rounded-xl border border-slate-100 m-1 p-4 space-y-3 shadow-sm">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Duration
+                  {t.duration || "Duration"}
                 </label>
 
                 <div className="flex gap-2">
@@ -2719,9 +2748,9 @@ const ReceivedProductTable = () => {
                     className="h-11 w-32 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none
                     focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition appearance-none cursor-pointer"
                   >
-                    <option value="Day">Days</option>
-                    <option value="Month">Months</option>
-                    <option value="Year">Years</option>
+                    <option value="Day">{t.days}</option>
+                    <option value="Month">{t.months || "Months"}</option>
+                    <option value="Year">{t.years || "Years"}</option>
                   </select>
                 </div>
               </div>
@@ -2730,7 +2759,7 @@ const ReceivedProductTable = () => {
 
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-              Note
+              {t.note || "Note"}
             </label>
             <textarea
               value={createProduct?.note || ""}
@@ -2738,13 +2767,13 @@ const ReceivedProductTable = () => {
                 setCreateProduct({ ...createProduct, note: e.target.value })
               }
               className="w-full min-h-[80px] border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
-              placeholder="Add any extra info..."
+              placeholder={t.add_extra_info || "Add any extra info..."}
             />
           </div>
 
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-              Document
+              {t.document || "Document"}
             </label>
             <div className="relative group/file">
               <input
@@ -2763,7 +2792,7 @@ const ReceivedProductTable = () => {
                   <Plus size={16} />
                 </div>
                 <span className="text-sm font-medium text-slate-500 group-hover/file:text-indigo-600">
-                  {createProduct.file ? createProduct.file.name : "Select or drop file..."}
+                  {createProduct.file ? createProduct.file.name : t.select_drop_file || "Select or drop file..."}
                 </span>
               </div>
             </div>
@@ -2775,14 +2804,14 @@ const ReceivedProductTable = () => {
               onClick={handleModalClose1}
               className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition active:scale-95"
             >
-              Cancel
+              {t.cancel || "Cancel"}
             </button>
 
             <button
               type="submit"
               className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-100 active:scale-95"
             >
-              Confirm Purchase
+              {t.confirm_purchase || "Confirm Purchase"}
             </button>
           </div>
         </form>
@@ -2792,13 +2821,13 @@ const ReceivedProductTable = () => {
       <Modal
         isOpen={isModalOpen2 && !!currentProduct}
         onClose={handleModalClose2}
-        title="Action Confirmation"
+        title={t.action_confirmation || "Action Confirmation"}
       >
         <div className="space-y-4">
           {role === "superAdmin" ? (
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Update Status
+                {t.update_status || "Update Status"}
               </label>
               <select
                 value={currentProduct?.status || ""}
@@ -2807,15 +2836,15 @@ const ReceivedProductTable = () => {
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
-                <option value="Pending">Pending</option>
-                <option value="Active">Active</option>
-                <option value="Approved">Approved</option>
+                <option value="Pending">{t.pending}</option>
+                <option value="Active">{t.active}</option>
+                <option value="Approved">{t.approved}</option>
               </select>
             </div>
           ) : (
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Reason for Removal
+                {t.reason_for_removal || "Reason for Removal"}
               </label>
               <textarea
                 value={currentProduct?.note || ""}
@@ -2823,7 +2852,7 @@ const ReceivedProductTable = () => {
                   setCurrentProduct({ ...currentProduct, note: e.target.value })
                 }
                 className="w-full min-h-[120px] border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
-                placeholder="Please explain why you want to remove this record..."
+                placeholder={t.explain_why_remove_record || "Please explain why you want to remove this record..."}
               />
             </div>
           )}
@@ -2833,14 +2862,14 @@ const ReceivedProductTable = () => {
               onClick={handleModalClose2}
               className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition active:scale-95"
             >
-              Cancel
+              {t.cancel || "Cancel"}
             </button>
 
             <button
               onClick={handleUpdateProduct1}
               className="px-8 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition shadow-md shadow-amber-100 active:scale-95"
             >
-              Submit Request
+              {t.submit_request || "Submit Request"}
             </button>
           </div>
         </div>

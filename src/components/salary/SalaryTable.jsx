@@ -9,8 +9,12 @@ import {
   useUpdateSalaryMutation,
 } from "../../features/salary/salary";
 import Modal from "../common/Modal";
+import { useLayout } from "../../context/LayoutContext";
+import { translations } from "../../utils/translations";
 
 const SalaryTable = () => {
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
@@ -116,8 +120,8 @@ const SalaryTable = () => {
     >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Payroll Fines & Deductions</h2>
-          <p className="text-slate-500 text-sm mt-1 font-medium">Configure global penalty triggers for employee attendance and behavior</p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t.payroll_fines}</h2>
+          <p className="text-slate-500 text-sm mt-1 font-medium">{t.payroll_fines_desc}</p>
         </div>
 
         {!products && (
@@ -125,7 +129,7 @@ const SalaryTable = () => {
             onClick={() => setIsModalOpen1(true)}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition-all px-6 py-3 rounded-2xl text-sm font-bold shadow-xl shadow-indigo-100 active:scale-95"
           >
-            <Plus size={18} /> Initialize Settings
+            <Plus size={18} /> {t.initialize_settings}
           </button>
         )}
       </div>
@@ -135,20 +139,20 @@ const SalaryTable = () => {
           <table className="min-w-full divide-y divide-slate-100">
             <thead className="bg-slate-50/50">
               <tr>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Trigger Type</th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Penalty Metric (Days)</th>
-                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Actions</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.trigger_type}</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.penalty_metric} (Days)</th>
+                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.actions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {products ? (
                 <>
                   {[
-                    { label: "Late Arrival Threshold", value: products.late, icon: Clock, color: "text-amber-500", bg: "bg-amber-50" },
-                    { label: "Early Departure Limit", value: products.early_leave, icon: UserMinus, color: "text-blue-500", bg: "bg-blue-50" },
-                    { label: "Standard Absenteeism", value: products.absent, icon: CalendarX, color: "text-rose-500", bg: "bg-rose-50" },
-                    { label: "Unscheduled Friday Absence", value: products.friday_absent, icon: AlertCircle, color: "text-purple-500", bg: "bg-purple-50" },
-                    { label: "Unauthorized Leave", value: products.unapproval_absent, icon: AlertCircle, color: "text-red-600", bg: "bg-red-50" }
+                    { label: t.late_arrival_threshold, value: products.late, icon: Clock, color: "text-amber-500", bg: "bg-amber-50" },
+                    { label: t.early_departure_limit, value: products.early_leave, icon: UserMinus, color: "text-blue-500", bg: "bg-blue-50" },
+                    { label: t.standard_absenteeism, value: products.absent, icon: CalendarX, color: "text-rose-500", bg: "bg-rose-50" },
+                    { label: t.unscheduled_friday_absence, value: products.friday_absent, icon: AlertCircle, color: "text-purple-500", bg: "bg-purple-50" },
+                    { label: t.unauthorized_leave, value: products.unapproval_absent, icon: AlertCircle, color: "text-red-600", bg: "bg-red-50" }
                   ].map((item, idx) => (
                     <motion.tr key={idx} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-indigo-50/30 transition-colors group">
                       <td className="px-6 py-5 whitespace-nowrap">

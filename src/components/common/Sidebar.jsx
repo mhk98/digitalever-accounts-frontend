@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { useGetAllLogoQuery } from "../../features/logo/logo";
+import { translations } from "../../utils/translations";
 
 import {
   LayoutDashboard,
@@ -49,6 +50,7 @@ import {
 const SIDEBAR_ITEMS = [
   {
     name: "Overview",
+    key: "overview",
     icon: LayoutDashboard,
     color: "#6366f1",
     href: "/",
@@ -65,6 +67,7 @@ const SIDEBAR_ITEMS = [
 
   {
     name: "User Management",
+    key: "user_management",
     icon: Users,
     color: "#22c55e",
     href: "/user-management",
@@ -73,6 +76,7 @@ const SIDEBAR_ITEMS = [
 
   {
     name: "Payroll",
+    key: "payroll",
     icon: UserCog,
     color: "#22c55e",
     href: "/employee",
@@ -81,30 +85,35 @@ const SIDEBAR_ITEMS = [
 
   {
     name: "Assets",
+    key: "assets",
     icon: ShieldCheck,
     color: "#ec4899",
     roles: ["superAdmin", "admin", "inventor"],
     children: [
       {
         name: "Requisition",
+        key: "requisition",
         icon: ClipboardList,
         href: "/assets-requisition",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Purchase",
+        key: "purchase",
         icon: ShoppingBasket,
         href: "/assets-purchase",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Sale",
+        key: "sale",
         icon: BadgeDollarSign,
         href: "/assets-sale",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Damage",
+        key: "damage",
         icon: TriangleAlert,
         href: "/assets-damage",
         roles: ["superAdmin", "admin", "inventor"],
@@ -114,6 +123,7 @@ const SIDEBAR_ITEMS = [
 
   {
     name: "DM Expense",
+    key: "dm_expense",
     icon: Megaphone,
     color: "#f97316",
     href: "/marketing-book",
@@ -122,96 +132,105 @@ const SIDEBAR_ITEMS = [
 
   {
     name: "Inventory",
+    key: "inventory",
     icon: Boxes,
     color: "#8b5cf6",
     roles: ["superAdmin", "admin", "inventor"],
     children: [
       {
         name: "Overview",
+        key: "overview",
         icon: LayoutDashboard,
         href: "/inventory-overview",
         roles: ["superAdmin", "admin"],
       },
       {
         name: "Stock Product",
+        key: "stock_product",
         icon: Boxes,
         href: "/stock-product",
         roles: ["superAdmin", "admin"],
       },
       {
         name: "Warehouse",
+        key: "warehouse",
         icon: Warehouse,
         href: "/warehouse",
         roles: ["superAdmin", "admin"],
       },
       {
         name: "Supplier",
+        key: "supplier",
         icon: Truck,
         href: "/supplier",
         roles: ["superAdmin", "admin"],
       },
       {
         name: "Product",
+        key: "product",
         icon: Package,
         href: "/products",
         roles: ["superAdmin", "admin"],
       },
       {
         name: "Purchase Requisition",
+        key: "purchase_requisition",
         icon: ClipboardList,
         href: "/purchase-requisition",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Received Product",
+        key: "received_product",
         icon: PackageCheck,
         href: "/purchase-product",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Received Return Product",
+        key: "received_return",
         icon: RotateCcw,
         href: "/purchase-return",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Intransit Product",
+        key: "intransit_product",
         icon: Truck,
         href: "/intransit-product",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Sales Return",
+        key: "sales_return",
         icon: RotateCcw,
         href: "/sales-return",
         roles: ["superAdmin", "admin", "inventor"],
       },
-      // {
-      //   name: "Confirm Order",
-      //   icon: ClipboardCheck,
-      //   href: "/confirm-order",
-      //   roles: ["superAdmin", "admin", "inventor"],
-      // },
       {
         name: "Damage stock",
+        key: "damage_stock",
         icon: TriangleAlert,
         href: "/damage-stock",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Damage Product",
+        key: "damage_product",
         icon: TriangleAlert,
         href: "/damage-product",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Damage Repairing",
+        key: "damage_repairing",
         icon: Wrench,
         href: "/damage-repair",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Damage Repaired",
+        key: "damage_repaired",
         icon: Wrench,
         href: "/damage-repaired",
         roles: ["superAdmin", "admin", "inventor"],
@@ -220,18 +239,21 @@ const SIDEBAR_ITEMS = [
   },
   {
     name: "Pos",
+    key: "pos_panel",
     icon: Store,
     color: "#f97316",
     roles: ["superAdmin", "admin", "inventor"],
     children: [
       {
         name: "Sell",
+        key: "sell",
         icon: ShoppingBag,
         href: "/pos-sell",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Pos Report",
+        key: "pos_report",
         icon: BarChart3,
         href: "/pos-report",
         roles: ["superAdmin", "admin", "inventor"],
@@ -240,18 +262,21 @@ const SIDEBAR_ITEMS = [
   },
   {
     name: "Accounting",
+    key: "accounting",
     icon: Wallet,
     color: "#3b82f6",
     roles: ["superAdmin", "admin", "accountant"],
     children: [
       {
         name: "Book",
+        key: "book",
         icon: BookOpen,
         href: "/book",
         roles: ["superAdmin", "admin", "accountant"],
       },
       {
         name: "Petty Cash",
+        key: "petty_cash",
         icon: HandCoins,
         href: "/petty-cash",
         roles: ["superAdmin", "admin", "accountant"],
@@ -282,6 +307,7 @@ const SIDEBAR_ITEMS = [
 
   {
     name: "Notifications",
+    key: "notifications",
     icon: Bell,
     color: "#60a5fa",
     href: "/notifications",
@@ -299,18 +325,21 @@ const SIDEBAR_ITEMS = [
 
   {
     name: "Settings",
+    key: "settings",
     icon: Settings,
     color: "#60a5fa",
     roles: ["superAdmin", "admin"],
     children: [
       {
         name: "Payroll Fine",
+        key: "payroll_fine",
         icon: DollarSign,
         href: "/salary",
         roles: ["superAdmin", "admin"],
       },
       {
         name: "Logo",
+        key: "logo",
         icon: Image,
         href: "/logo",
         roles: ["superAdmin", "admin"],
@@ -320,6 +349,7 @@ const SIDEBAR_ITEMS = [
 
   {
     name: "Expire Product",
+    key: "expired_product",
     icon: TriangleAlert,
     color: "#ef4444",
     href: "/expired-product",
@@ -328,6 +358,7 @@ const SIDEBAR_ITEMS = [
 
   {
     name: "Profile",
+    key: "profile",
     icon: User,
     color: "#60a5fa",
     href: "/profile",
@@ -367,8 +398,10 @@ const Sidebar = () => {
     isSidebarOpen,
     toggleSidebar,
     isMobileMenuOpen,
-    toggleMobileMenu
+    toggleMobileMenu,
+    language
   } = useLayout();
+  const t = translations[language] || translations.EN;
   const [openMenu, setOpenMenu] = useState(null);
   const [hovered, setHovered] = useState(null);
 
@@ -397,18 +430,22 @@ const Sidebar = () => {
 
         const childMatches = item.children
           .filter((c) => c.roles.includes(userRole))
-          .filter((c) => c.name.toLowerCase().includes(q));
+          .filter((c) => {
+            const translatedChild = (t[c.key] || c.name).toLowerCase();
+            return c.name.toLowerCase().includes(q) || translatedChild.includes(q);
+          });
 
         return { ...item, children: childMatches };
       })
       .filter((item) => {
-        const parentMatch = item.name.toLowerCase().includes(q);
+        const translatedParent = (t[item.key] || item.name).toLowerCase();
+        const parentMatch = item.name.toLowerCase().includes(q) || translatedParent.includes(q);
 
         if (!item.children) return parentMatch;
         if (parentMatch) return true;
         return item.children.length > 0;
       });
-  }, [roleFiltered, menuQuery, userRole]);
+  }, [roleFiltered, menuQuery, userRole, t]);
 
   // ✅ auto open first matched parent when searching (no stale state)
   useEffect(() => {
@@ -419,7 +456,7 @@ const Sidebar = () => {
       (x) => x.children && x.children.length,
     );
 
-    if (firstWithChildren) setOpenMenu(firstWithChildren.name);
+    if (firstWithChildren) setOpenMenu(firstWithChildren.key);
   }, [menuQuery, filteredItems]);
 
   // ✅ logo
@@ -463,7 +500,7 @@ const Sidebar = () => {
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
                   <img
-                    src={logo ? ` https://apikafela.digitalever.com.bd/${logo}` : ""}
+                    src={logo ? ` http://localhost:5000/${logo}` : ""}
                     alt="Logo"
                     className="h-full w-full object-cover"
                   />
@@ -480,7 +517,7 @@ const Sidebar = () => {
                       <div className="text-slate-900 font-semibold leading-tight">
                         Accounting
                       </div>
-                      <div className="text-xs text-slate-500">Control panel</div>
+                      <div className="text-xs text-slate-500">{t.control_panel}</div>
                     </motion.div>
                   ) : null}
                 </AnimatePresence>
@@ -563,7 +600,7 @@ const Sidebar = () => {
               {filteredItems.map((item) => {
                 const Icon = item.icon;
                 const hasChildren = !!item.children?.length;
-                const menuOpen = openMenu === item.name;
+                const menuOpen = openMenu === item.key;
 
                 const childActive = hasChildren
                   ? item.children.some((c) => isActive(c.href))
@@ -581,13 +618,13 @@ const Sidebar = () => {
                   : "hover:bg-slate-50 border border-transparent";
 
                 return (
-                  <div key={item.name} className="mb-2">
+                  <div key={item.key} className="mb-2">
                     {/* Menu Item */}
                     <div className="relative">
                       {hasChildren ? (
                         <motion.button
-                          onClick={() => toggleMenu(item.name)}
-                          onMouseEnter={() => setHovered(item.name)}
+                          onClick={() => toggleMenu(item.key)}
+                          onMouseEnter={() => setHovered(item.key)}
                           onMouseLeave={() => setHovered(null)}
                           className={`${parentBase} ${parentState}`}
                           type="button"
@@ -616,7 +653,7 @@ const Sidebar = () => {
                           {isSidebarOpen ? (
                             <>
                               <span className="text-sm font-medium text-slate-800 flex-1 text-left">
-                                {item.name}
+                                {t[item.key] || item.name}
                               </span>
                               <ChevronDown
                                 size={16}
@@ -627,14 +664,14 @@ const Sidebar = () => {
                           ) : null}
 
                           <Tooltip
-                            show={!isSidebarOpen && hovered === item.name}
-                            text={item.name}
+                            show={!isSidebarOpen && hovered === item.key}
+                            text={t[item.key] || item.name}
                           />
                         </motion.button>
                       ) : (
                         <Link to={item.href}>
                           <motion.div
-                            onMouseEnter={() => setHovered(item.name)}
+                            onMouseEnter={() => setHovered(item.key)}
                             onMouseLeave={() => setHovered(null)}
                             className={`${parentBase} ${parentState}`}
                           >
@@ -661,13 +698,13 @@ const Sidebar = () => {
 
                             {isSidebarOpen ? (
                               <span className="text-sm font-medium text-slate-800">
-                                {item.name}
+                                {t[item.key] || item.name}
                               </span>
                             ) : null}
 
                             <Tooltip
-                              show={!isSidebarOpen && hovered === item.name}
-                              text={item.name}
+                              show={!isSidebarOpen && hovered === item.key}
+                              text={t[item.key] || item.name}
                             />
                           </motion.div>
                         </Link>
@@ -723,7 +760,7 @@ const Sidebar = () => {
                                           : "text-slate-700"
                                           }`}
                                       >
-                                        {sub.name}
+                                        {t[sub.key] || sub.name}
                                       </span>
 
                                       {activeSub ? (
@@ -745,7 +782,7 @@ const Sidebar = () => {
             {/* Footer */}
             <div className="p-4 border-t border-slate-200">
               <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
-                <div className="text-xs text-slate-500">Signed in as</div>
+                <div className="text-xs text-slate-500">{t.signed_in_as}</div>
                 <div className="text-sm font-medium text-slate-900 truncate">
                   {userRole}
                 </div>

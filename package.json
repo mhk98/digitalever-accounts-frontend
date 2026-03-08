@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
+    "@fontsource/hind-siliguri": "^5.2.7",
+    "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@reduxjs/toolkit": "^2.3.0",
     "axios": "^1.7.7",
     "docx": "^9.5.1",

@@ -12,29 +12,29 @@ import {
   useUpdateProductMutation,
 } from "../../features/product/product";
 
-import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
-import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
+
 import Modal from "../common/Modal";
+import { useLayout } from "../../context/LayoutContext";
+import { translations } from "../../utils/translations";
 
 const ProductsTable = () => {
   const role = localStorage.getItem("role");
-
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
   const [isModalOpen1, setIsModalOpen1] = useState(false); // Add modal
   const [currentProduct, setCurrentProduct] = useState(null);
 
   const [createProduct, setCreateProduct] = useState({
     name: "",
-    warehouseId: "",
-    supplierId: "",
+
   });
 
   const [products, setProducts] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [name, setName] = useState("");
-  const [warehouse, setWarehouse] = useState("");
-  const [supplier, setSupplier] = useState("");
+
 
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -56,7 +56,7 @@ const ProductsTable = () => {
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate, name, warehouse, supplier, itemsPerPage]);
+  }, [startDate, endDate, name, itemsPerPage]);
 
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
 
@@ -71,12 +71,6 @@ const ProductsTable = () => {
 
   const { data: allProductsRes } = useGetAllProductWithoutQueryQuery();
   const productsData = allProductsRes?.data || [];
-
-  const { data: allSupplierRes } = useGetAllSupplierWithoutQueryQuery();
-  const suppliers = allSupplierRes?.data || [];
-
-  const { data: allWarehousesRes } = useGetAllWirehouseWithoutQueryQuery();
-  const warehouses = allWarehousesRes?.data || [];
 
   const selectStyles = {
     control: (base, state) => ({
@@ -100,8 +94,7 @@ const ProductsTable = () => {
     }),
   };
 
-  const supplierOptions = useMemo(() => suppliers.map((w) => ({ value: w.Id, label: w.name })), [suppliers]);
-  const warehouseOptions = useMemo(() => warehouses.map((w) => ({ value: w.Id, label: w.name })), [warehouses]);
+
   const productOptions = useMemo(() => productsData.map((p) => ({ value: p.name, label: p.name })), [productsData]);
 
   const queryArgs = useMemo(() => {
@@ -111,14 +104,13 @@ const ProductsTable = () => {
       startDate: startDate || undefined,
       endDate: endDate || undefined,
       name: name?.trim() ? name.trim() : undefined,
-      warehouseId: warehouse || undefined,
-      supplierId: supplier || undefined,
+
     };
     Object.keys(args).forEach((k) => {
       if (!args[k]) delete args[k];
     });
     return args;
-  }, [currentPage, itemsPerPage, startDate, endDate, name, warehouse, supplier]);
+  }, [currentPage, itemsPerPage, startDate, endDate, name]);
 
   const { data, isLoading, isError, error, refetch } = useGetAllProductQuery(queryArgs);
 
@@ -132,8 +124,6 @@ const ProductsTable = () => {
   const handleEditClick = (product) => {
     setCurrentProduct({
       ...product,
-      warehouseId: product.warehouseId ?? product?.warehouse?.Id ?? "",
-      supplierId: product.supplierId ?? product?.supplier?.Id ?? "",
     });
     setIsModalOpen(true);
   };
@@ -146,7 +136,7 @@ const ProductsTable = () => {
       if (res?.success) {
         toast.success("Successfully created product");
         setIsModalOpen1(false);
-        setCreateProduct({ name: "", warehouseId: "", supplierId: "" });
+        setCreateProduct({ name: "", });
         refetch();
       }
     } catch (err) {
@@ -162,8 +152,7 @@ const ProductsTable = () => {
         id: currentProduct.Id,
         data: {
           name: currentProduct.name,
-          supplierId: currentProduct.supplierId,
-          warehouseId: Number(currentProduct.warehouseId),
+
         },
       }).unwrap();
       if (res?.success) {
@@ -195,8 +184,7 @@ const ProductsTable = () => {
     setStartDate("");
     setEndDate("");
     setName("");
-    setWarehouse("");
-    setSupplier("");
+
   };
 
   return (
@@ -208,22 +196,22 @@ const ProductsTable = () => {
     >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Products Inventory</h2>
-          <p className="text-slate-500 text-sm mt-1 font-medium">Manage and monitor all warehouse products</p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t.products_inventory}</h2>
+          <p className="text-slate-500 text-sm mt-1 font-medium">{t.manage_monitor_warehouse}</p>
         </div>
         <button
           className="group relative inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition-all px-6 py-3 rounded-2xl text-sm font-bold shadow-xl shadow-indigo-100 active:scale-95 overflow-hidden"
           onClick={() => setIsModalOpen1(true)}
           type="button"
         >
-          <Plus size={18} /> Add New Product
+          <Plus size={18} /> {t.add_product}
         </button>
       </div>
 
       {/* Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-10 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
         <div className="flex flex-col">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">From</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{t.from}</label>
           <input
             type="date"
             value={startDate}
@@ -233,7 +221,7 @@ const ProductsTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">To</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{t.to}</label>
           <input
             type="date"
             value={endDate}
@@ -243,7 +231,7 @@ const ProductsTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Per Page</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{t.per_page}</label>
           <select
             value={itemsPerPage}
             onChange={(e) => setItemsPerPage(Number(e.target.value))}
@@ -253,39 +241,17 @@ const ProductsTable = () => {
           </select>
         </div>
 
-        <div className="flex flex-col lg:col-span-1">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Warehouse</label>
-          <Select
-            options={warehouseOptions}
-            value={warehouseOptions.find(o => String(o.value) === String(warehouse)) || null}
-            onChange={(s) => setWarehouse(s?.value || "")}
-            placeholder="Warehouse..."
-            isClearable
-            styles={selectStyles}
-          />
-        </div>
 
         <div className="flex flex-col lg:col-span-1">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Supplier</label>
-          <Select
-            options={supplierOptions}
-            value={supplierOptions.find(o => String(o.value) === String(supplier)) || null}
-            onChange={(s) => setSupplier(s?.value || "")}
-            placeholder="Supplier..."
-            isClearable
-            styles={selectStyles}
-          />
-        </div>
-
-        <div className="flex flex-col lg:col-span-1">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Product</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{t.product}</label>
           <Select
             options={productOptions}
             value={productOptions.find(o => o.value === name) || null}
             onChange={(s) => setName(s?.value || "")}
-            placeholder="Search..."
+            placeholder={t.search}
             isClearable
             styles={selectStyles}
+            className="text-black"
           />
         </div>
 
@@ -294,7 +260,7 @@ const ProductsTable = () => {
           onClick={clearFilters}
           type="button"
         >
-          <X size={16} /> Clear
+          <X size={16} /> {t.clear}
         </button>
       </div>
 
@@ -305,16 +271,9 @@ const ProductsTable = () => {
             <thead className="bg-slate-50/50">
               <tr>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  Product Details
-                </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  Warehouse
-                </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  Supplier
-                </th>
+                  {t.product_details}</th>
                 <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  Actions
+                  {t.actions}
                 </th>
               </tr>
             </thead>
@@ -332,24 +291,13 @@ const ProductsTable = () => {
                       {product.name}
                     </div>
                   </td>
-                  <td className="px-6 py-5 whitespace-nowrap">
-                    <span className="inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-bold bg-white text-slate-600 border border-slate-200 shadow-sm">
-                      {product.warehouse?.name || "-"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5 whitespace-nowrap">
-                    <span className="inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm shadow-indigo-50">
-                      {product.supplier?.name || "-"}
-                    </span>
-                  </td>
-
                   <td className="px-6 py-5 whitespace-nowrap text-center">
                     {(role === "superAdmin" || role === "admin") && (
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleEditClick(product)}
                           className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm active:scale-90"
-                          title="Edit"
+                          title={t.edit}
                           type="button"
                         >
                           <Edit className="text-indigo-600" size={16} />
@@ -358,7 +306,7 @@ const ProductsTable = () => {
                         <button
                           onClick={() => handleDeleteProduct(product.Id)}
                           className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition shadow-sm active:scale-90"
-                          title="Delete"
+                          title={t.delete}
                           type="button"
                         >
                           <Trash2 className="text-red-600" size={16} />
@@ -374,14 +322,14 @@ const ProductsTable = () => {
           {isLoading && (
             <div className="py-20 text-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600/20 border-t-indigo-600"></div>
-              <p className="text-slate-500 text-sm mt-4 font-bold tracking-tight">Syncing Inventory...</p>
+              <p className="text-slate-500 text-sm mt-4 font-bold tracking-tight">{t.syncing_inventory}</p>
             </div>
           )}
 
           {!isLoading && products.length === 0 && (
             <div className="py-20 text-center text-slate-400">
               <div className="text-4xl mb-4 opacity-20">📦</div>
-              <p className="font-bold text-sm italic">No matching products found</p>
+              <p className="font-bold text-sm italic">{t.no_products_found}</p>
             </div>
           )}
         </div>
@@ -390,7 +338,7 @@ const ProductsTable = () => {
       {/* Pagination */}
       <div className="flex flex-col sm:flex-row items-center justify-between mt-10 gap-6 px-2">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-          Showing Page <span className="text-indigo-600">{currentPage}</span> of <span className="text-slate-900">{totalPages}</span>
+          {t.showing_page} <span className="text-indigo-600">{currentPage}</span> {t.of} <span className="text-slate-900">{totalPages}</span>
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -398,7 +346,7 @@ const ProductsTable = () => {
             disabled={startPage === 1}
             className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
           >
-            <ChevronLeft size={16} /> Prev
+            <ChevronLeft size={16} /> {t.prev}
           </button>
           <div className="flex items-center gap-1.5">
             {[...Array(endPage - startPage + 1)].map((_, index) => {
@@ -421,7 +369,7 @@ const ProductsTable = () => {
             disabled={endPage === totalPages}
             className="h-11 px-5 border border-slate-200 rounded-2xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 disabled:opacity-50 transition active:scale-95 flex items-center gap-2 shadow-sm"
           >
-            Next <ChevronRight size={16} />
+            {t.next} <ChevronRight size={16} />
           </button>
         </div>
       </div>
@@ -430,7 +378,7 @@ const ProductsTable = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Edit Product Info"
+        title={t.edit_product_info}
       >
         <form onSubmit={handleUpdateProduct} className="space-y-5">
           <div>
@@ -441,36 +389,8 @@ const ProductsTable = () => {
               value={currentProduct?.name || ""}
               onChange={(e) => setCurrentProduct({ ...currentProduct, name: e.target.value })}
               className="h-12 border border-slate-200 rounded-2xl px-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
-              placeholder="Enter product name..."
+              placeholder={t.enter_product_name}
             />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Warehouse</label>
-              <select
-                required
-                value={currentProduct?.warehouseId || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, warehouseId: e.target.value })}
-                className="h-12 border border-slate-200 rounded-2xl px-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold appearance-none cursor-pointer"
-              >
-                <option value="">Select...</option>
-                {warehouses.map((w) => <option key={w.Id} value={w.Id}>{w.name}</option>)}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Supplier</label>
-              <select
-                required
-                value={currentProduct?.supplierId || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, supplierId: e.target.value })}
-                className="h-12 border border-slate-200 rounded-2xl px-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold appearance-none cursor-pointer"
-              >
-                <option value="">Select...</option>
-                {suppliers.map((s) => <option key={s.Id} value={s.Id}>{s.name}</option>)}
-              </select>
-            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
@@ -485,7 +405,7 @@ const ProductsTable = () => {
               type="submit"
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100 active:scale-95"
             >
-              Update Product
+              {t.update_product}
             </button>
           </div>
         </form>
@@ -494,7 +414,7 @@ const ProductsTable = () => {
       <Modal
         isOpen={isModalOpen1}
         onClose={() => setIsModalOpen1(false)}
-        title="Register New Product"
+        title={t.register_new_product}
       >
         <form onSubmit={handleCreateProduct} className="space-y-5">
           <div>
@@ -509,34 +429,6 @@ const ProductsTable = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Warehouse</label>
-              <select
-                required
-                value={createProduct.warehouseId}
-                onChange={(e) => setCreateProduct({ ...createProduct, warehouseId: e.target.value })}
-                className="h-12 border border-slate-200 rounded-2xl px-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold appearance-none cursor-pointer"
-              >
-                <option value="">Select...</option>
-                {warehouses.map((w) => <option key={w.Id} value={w.Id}>{w.name}</option>)}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Supplier</label>
-              <select
-                required
-                value={createProduct.supplierId}
-                onChange={(e) => setCreateProduct({ ...createProduct, supplierId: e.target.value })}
-                className="h-12 border border-slate-200 rounded-2xl px-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold appearance-none cursor-pointer"
-              >
-                <option value="">Select...</option>
-                {suppliers.map((s) => <option key={s.Id} value={s.Id}>{s.name}</option>)}
-              </select>
-            </div>
-          </div>
-
           <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
             <button
               type="button"
@@ -549,7 +441,7 @@ const ProductsTable = () => {
               type="submit"
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100 active:scale-95"
             >
-              Add Product
+              {t.add_product}
             </button>
           </div>
         </form>

@@ -11,7 +11,7 @@ import {
 } from "../../features/auth/auth";
 import Modal from "../common/Modal";
 
-const API_BASE = " https://apikafela.digitalever.com.bd";
+const API_BASE = " http://localhost:5000";
 
 const UserManagementTable = () => {
   // Modals

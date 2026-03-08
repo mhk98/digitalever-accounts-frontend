@@ -97,6 +97,7 @@
 // export default store;
 
 import { configureStore } from "@reduxjs/toolkit";
+import { errorMiddleware } from "./errorMiddleware";
 
 import { authApi } from "../features/auth/auth";
 import { inTransitProductApi } from "../features/inTransitProduct/inTransitProduct";
@@ -185,7 +186,7 @@ const apiMiddlewares = [...new Set(apis.map((api) => api.middleware))];
 const store = configureStore({
   reducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(apiMiddlewares),
+    getDefaultMiddleware().concat(apiMiddlewares, errorMiddleware),
 });
 
 export default store;

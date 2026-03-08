@@ -48,6 +48,7 @@ import MarketingExpensePage from "./pages/MarketingExpensePage";
 import InventoryDashboardPage from "./pages/InventoryDashboardPage";
 import DamageStockPage from "./pages/DamageStockPage";
 import WarehousePage from "./pages/WarehousePage";
+import SupplierHistory from "./components/supplierHistory/supplierHistory";
 
 function App() {
   return (
@@ -361,6 +362,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <SupplierPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/supplier-history/:id"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <SupplierHistory />
                   </SidebarLayout>
                 </RequireAuth>
               }

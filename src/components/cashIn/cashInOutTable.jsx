@@ -770,7 +770,7 @@
 
 //               const safePath = String(rp.file || "").replace(/\\/g, "/");
 //               const fileUrl = safePath
-//                 ? ` https://apikafela.digitalever.com.bd/${safePath}`
+//                 ? ` http://localhost:5000/${safePath}`
 //                 : "";
 //               const ext = safePath.split(".").pop()?.toLowerCase();
 //               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -1563,6 +1563,8 @@ import {
   useInsertCategoryMutation,
 } from "../../features/category/category";
 import Modal from "../common/Modal";
+import { useLayout } from "../../context/LayoutContext";
+import { translations } from "../../utils/translations";
 
 const BANKS = [
   "Al Arafah",
@@ -1595,6 +1597,8 @@ const STATIC_CATEGORIES = [
 ];
 
 const CashInOutTable = () => {
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
   const { id } = useParams(); // bookId
 
   const [isModalOpen, setIsModalOpen] = useState(false); // edit
@@ -2258,7 +2262,7 @@ const CashInOutTable = () => {
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-emerald-50/70 to-transparent" />
           <div className="relative flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-slate-500">Total CashIn</p>
+              <p className="text-xs font-medium text-slate-500">{t.total_cashin || "Total CashIn"}</p>
               <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
                 {isLoading
                   ? "—"
@@ -2287,7 +2291,7 @@ const CashInOutTable = () => {
           <div className="relative flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-slate-500">
-                Total CashOut
+                {t.total_cashout || "Total CashOut"}
               </p>
               <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
                 {isLoading
@@ -2316,7 +2320,7 @@ const CashInOutTable = () => {
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-indigo-50/70 to-transparent" />
           <div className="relative flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-slate-500">Net Balance</p>
+              <p className="text-xs font-medium text-slate-500">{t.net_balance || "Net Balance"}</p>
               <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
                 {isLoading
                   ? "—"
@@ -2353,7 +2357,7 @@ const CashInOutTable = () => {
             className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 active:bg-indigo-800 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/30 sm:w-auto"
           >
             <Plus size={18} />
-            Cash In
+            {t.cash_in || "Cash In"}
           </button>
 
           {/* Cash Out (Secondary / Neutral) */}
@@ -2363,7 +2367,7 @@ const CashInOutTable = () => {
             className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-800 border border-slate-200 shadow-md hover:bg-slate-50 active:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/20 sm:w-auto"
           >
             <Minus size={18} className="text-slate-700" />
-            Cash Out
+            {t.cash_out || "Cash Out"}
           </button>
         </div>
 
@@ -2376,7 +2380,7 @@ const CashInOutTable = () => {
               setCurrentPage(1);
               setStartPage(1);
             }}
-            placeholder="Search..."
+            placeholder={t.search}
             className="w-full rounded-lg border border-gray-200 bg-white px-5 py-3 pr-12 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 shadow-sm"
           />
           <Search
@@ -2402,7 +2406,7 @@ const CashInOutTable = () => {
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mb-6 w-full">
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">From</label>
+          <label className="text-sm text-slate-600 mb-1">{t.from}</label>
           <input
             type="date"
             value={startDate}
@@ -2413,7 +2417,7 @@ const CashInOutTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">To</label>
+          <label className="text-sm text-slate-600 mb-1">{t.to}</label>
           <input
             type="date"
             value={endDate}
@@ -2424,7 +2428,7 @@ const CashInOutTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Payment Mode</label>
+          <label className="text-sm text-slate-600 mb-1">{t.payment_mode}</label>
           <select
             value={filterPaymentMode}
             onChange={(e) => setFilterPaymentMode(e.target.value)}
@@ -2442,7 +2446,7 @@ const CashInOutTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Payment Status</label>
+          <label className="text-sm text-slate-600 mb-1">{t.payment_status}</label>
           <select
             value={filterPaymentStatus}
             onChange={(e) => setFilterPaymentStatus(e.target.value)}
@@ -2456,14 +2460,14 @@ const CashInOutTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Category:</label>
+          <label className="text-sm text-slate-600 mb-1">{t.category || "Category"}:</label>
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
             className="border py-2 border-slate-300 rounded-lg px-3 text-slate-900 bg-white w-full outline-none
                focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
           >
-            <option value="">All</option>
+            <option value="">{t.all || "All"}</option>
             {categoryOptions.map((c) => (
               <option key={c.id} value={c.name}>
                 {c.name}
@@ -2474,7 +2478,7 @@ const CashInOutTable = () => {
 
         {/* ✅ Per Page Dropdown (same position like your screenshot) */}
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Per Page</label>
+          <label className="text-sm text-slate-600 mb-1">{t.per_page_label}</label>
           <select
             value={itemsPerPage}
             onChange={(e) => {
@@ -2496,7 +2500,7 @@ const CashInOutTable = () => {
             onClick={clearFilters}
             type="button"
           >
-            Clear Filters
+            {t.clear_filters}
           </button>
         </div>
       </div>
@@ -2507,31 +2511,34 @@ const CashInOutTable = () => {
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Date
+                {t.date}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Document
+                {t.document || "Document"}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Category
+                {t.category || "Category"}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Payment Mode
+                {t.payment_mode}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Bank
+                {t.bank || "Bank"}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Payment Status
+                {t.payment_status}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Note
+                {t.note}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Amount
+                {t.total_amount || "Total Amount"}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Status
+                {t.paid_amount || "Paid Amount"}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                {t.status}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Actions
@@ -2545,7 +2552,7 @@ const CashInOutTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `https://apikafela.digitalever.com.bd/${safePath}`
+                ? `http://localhost:5000/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -2585,7 +2592,7 @@ const CashInOutTable = () => {
                         rel="noreferrer"
                         className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs hover:bg-indigo-700"
                       >
-                        View PDF
+                        {t.view_pdf || "View PDF"}
                       </a>
                     ) : (
                       <a
@@ -2619,6 +2626,9 @@ const CashInOutTable = () => {
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
                     {Number(rp.amount || 0).toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
+                    {Number(rp.paidAmount || 0).toFixed(2)}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
@@ -2754,7 +2764,7 @@ const CashInOutTable = () => {
                   colSpan={8}
                   className="px-6 py-8 text-center text-sm text-slate-600"
                 >
-                  No data found
+                  {t.no_data_found}
                 </td>
               </tr>
             )}
@@ -2769,7 +2779,7 @@ const CashInOutTable = () => {
           disabled={startPage === 1}
           className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
-          Prev
+          {t.prev}
         </button>
 
         {[...Array(endPage - startPage + 1)].map((_, index) => {
@@ -2808,12 +2818,12 @@ const CashInOutTable = () => {
           setIsNewCategoryEdit(false);
           setNewCategoryNameEdit("");
         }}
-        title="Edit Item"
+        title={t.edit_item || "Edit Item"}
         maxWidth="max-w-2xl"
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-slate-700">Date</label>
+            <label className="block text-sm text-slate-700">{t.date}</label>
             <input
               type="date"
               value={currentProduct?.date || ""}
@@ -2827,7 +2837,7 @@ const CashInOutTable = () => {
 
           <div>
             <label className="block text-sm text-slate-600 mb-1">
-              Payment Mode
+              {t.payment_mode}
             </label>
             <select
               value={currentProduct?.paymentMode}
@@ -2841,7 +2851,7 @@ const CashInOutTable = () => {
                          focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               required
             >
-              <option value="">Select Payment Mode</option>
+              <option value="">{t.select_payment_mode || "Select Payment Mode"}</option>
               <option value="Cash">Cash</option>
               <option value="Bkash">Bkash</option>
               <option value="Nagad">Nagad</option>
@@ -2869,7 +2879,7 @@ const CashInOutTable = () => {
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
                 >
-                  <option value="">Select Bank</option>
+                  <option value="">{t.select_bank || "Select Bank"}</option>
                   {BANKS.map((b) => (
                     <option key={b} value={b}>
                       {b}
@@ -2985,7 +2995,7 @@ const CashInOutTable = () => {
             />
             {currentProduct?.file && (
               <p className="mt-2 text-xs text-slate-600">
-                Selected: {currentProduct.file.name}
+                {t.selected || "Selected"}: {currentProduct.file.name}
               </p>
             )}
           </div>
@@ -3006,7 +3016,7 @@ const CashInOutTable = () => {
               onClick={handleUpdateProduct}
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
             >
-              Save Changes
+              {t.update_changes || "Save Changes"}
             </button>
           </div>
         </div>
@@ -3015,7 +3025,7 @@ const CashInOutTable = () => {
       <Modal
         isOpen={isModalOpen1}
         onClose={handleModalClose1}
-        title="Add Cash In"
+        title={t.add_cash_in || "Add Cash In"}
         maxWidth="max-w-2xl"
       >
         <form onSubmit={handleCreateProduct} className="space-y-4">
@@ -3207,7 +3217,7 @@ const CashInOutTable = () => {
               type="submit"
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl"
             >
-              Save Cash In
+              {t.save_cash_in || "Save Cash In"}
             </button>
           </div>
         </form>
@@ -3216,7 +3226,7 @@ const CashInOutTable = () => {
       <Modal
         isOpen={isModalOpen3}
         onClose={handleModalClose3}
-        title="Add Cash Out"
+        title={t.add_cash_out || "Add Cash Out"}
         maxWidth="max-w-2xl"
       >
         <form onSubmit={handleCreateProduct1} className="space-y-4">
@@ -3408,7 +3418,7 @@ const CashInOutTable = () => {
               type="submit"
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl"
             >
-              Save Cash Out
+              {t.save_cash_out || "Save Cash Out"}
             </button>
           </div>
         </form>
@@ -3418,7 +3428,7 @@ const CashInOutTable = () => {
       <Modal
         isOpen={isNoteModalOpen}
         onClose={handleModalClose}
-        title="Transaction Note"
+        title={t.transaction_note || "Transaction Note"}
       >
         <div className="space-y-6">
           <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
@@ -3432,7 +3442,7 @@ const CashInOutTable = () => {
               onClick={handleModalClose}
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
             >
-              Close
+              {t.close}
             </button>
           </div>
         </div>

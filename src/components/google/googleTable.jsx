@@ -662,8 +662,12 @@ import {
   useInsertMetaMutation,
   useUpdateMetaMutation,
 } from "../../features/marketing/marketing";
+import { useLayout } from "../../context/LayoutContext";
+import { translations } from "../../utils/translations";
 
 const GoogleTable = () => {
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
   const [isModalOpen2, setIsModalOpen2] = useState(false);
@@ -931,13 +935,13 @@ const GoogleTable = () => {
           onClick={handleAddProduct}
           className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
         >
-          Add <Plus size={18} className="ml-2" />
+          {t.add || "Add"} <Plus size={18} className="ml-2" />
         </button>
 
         <div className="flex items-center justify-between sm:justify-end gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2">
           <div className="flex items-center gap-2 text-slate-700">
             <BarChart3 size={18} className="text-indigo-600" />
-            <span className="text-sm font-medium">Total Google Expense</span>
+            <span className="text-sm font-medium">{t.total_google_expense_label || "Total Google Expense"}</span>
           </div>
 
           <span className="text-slate-900 font-semibold tabular-nums">
@@ -996,7 +1000,7 @@ const GoogleTable = () => {
           className="h-11 bg-slate-900 hover:bg-slate-800 text-white transition px-4 rounded-xl w-full"
           onClick={clearFilters}
         >
-          Clear Filters
+          {t.clear_filters || "Clear Filters"}
         </button>
       </div>
 
@@ -1006,16 +1010,16 @@ const GoogleTable = () => {
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Date
+                {t.date || "Date"}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Amount
+                {t.amount_label || "Amount"}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Status
+                {t.status_label || "Status"}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Actions
+                {t.actions || "Actions"}
               </th>
             </tr>
           </thead>
@@ -1040,10 +1044,10 @@ const GoogleTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
                     className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${rp.status === "Approved"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : rp.status === "Active"
-                          ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                          : "bg-amber-50 text-amber-700 border-amber-200"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : rp.status === "Active"
+                        ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                        : "bg-amber-50 text-amber-700 border-amber-200"
                       }`}
                   >
                     {rp.status}
@@ -1121,8 +1125,8 @@ const GoogleTable = () => {
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
               className={`px-4 py-2 rounded-xl border transition ${active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                 }`}
             >
               {pageNum}

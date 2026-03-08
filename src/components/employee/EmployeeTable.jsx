@@ -15,9 +15,13 @@ import {
 } from "../../features/employee/employee";
 import { useGetAllSalaryQuery } from "../../features/salary/salary";
 import Modal from "../common/Modal";
+import { useLayout } from "../../context/LayoutContext";
+import { translations } from "../../utils/translations";
 
 
 const EmployeeTable = () => {
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
 
@@ -1346,7 +1350,7 @@ const EmployeeTable = () => {
           className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition px-4 py-2 rounded-xl shadow-sm"
           onClick={openAddModal}
         >
-          Add <Plus size={18} />
+          {t.add} <Plus size={18} />
         </button>
 
         {/* ✅ Bulk actions */}
@@ -1355,7 +1359,7 @@ const EmployeeTable = () => {
           onClick={() => setIsBulkInvoiceOpen(true)}
           disabled={selectedIds.length === 0}
         >
-          Print Selected ({selectedIds.length})
+          {t.print_selected || "Print Selected"} ({selectedIds.length})
         </button>
 
         <button
@@ -1363,13 +1367,13 @@ const EmployeeTable = () => {
           onClick={() => setSelectedIds([])}
           disabled={selectedIds.length === 0}
         >
-          Clear Selection
+          {t.clear_selection || "Clear Selection"}
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6 w-full justify-center mx-auto">
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">From</label>
+          <label className="text-sm text-slate-600 mb-1">{t.from}</label>
           <input
             type="date"
             value={startDate}
@@ -1379,7 +1383,7 @@ const EmployeeTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">To</label>
+          <label className="text-sm text-slate-600 mb-1">{t.to}</label>
           <input
             type="date"
             value={endDate}
@@ -1393,7 +1397,7 @@ const EmployeeTable = () => {
             options={employeeOptions}
             value={employeeOptions.find((o) => o.value === name) || null}
             onChange={(selected) => setName(selected?.value || "")}
-            placeholder="Select Employee"
+            placeholder={t.select_employee || "Select Employee"}
             isClearable
             styles={selectStyles}
             className="w-full"
@@ -1401,7 +1405,7 @@ const EmployeeTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Per Page</label>
+          <label className="text-sm text-slate-600 mb-1">{t.per_page_label}</label>
           <select
             value={itemsPerPage}
             onChange={(e) => {
@@ -1422,7 +1426,7 @@ const EmployeeTable = () => {
           className="inline-flex items-center justify-center bg-white hover:bg-slate-50 text-slate-700 transition px-4 py-[10px] rounded-xl border border-slate-200"
           onClick={clearFilters}
         >
-          Clear Filters
+          {t.clear_filters}
         </button>
       </div>
 
@@ -1439,28 +1443,23 @@ const EmployeeTable = () => {
               </th>
 
               {[
-                "Date",
-                "Employee",
-                "Employee ID",
-                "Basic Salary",
-                "Incentive",
-                "Holiday Days",
-                "Advance",
-                // "Late (Days)",
-                // "Early (Days)",
-                // "Absent (Days)",
-                // "Friday Absent (Days)",
-                // "Unapproval Absent (Days)",
-                "Total Salary",
-                "Net Salary",
-                "Status",
-                "Action",
+                { key: "Date", label: t.date },
+                { key: "Employee", label: t.employee || "Employee" },
+                { key: "Employee ID", label: t.employee_id_label || "Employee ID" },
+                { key: "Basic Salary", label: t.basic_salary || "Basic Salary" },
+                { key: "Incentive", label: t.incentive || "Incentive" },
+                { key: "Holiday Days", label: t.holiday_days || "Holiday Days" },
+                { key: "Advance", label: t.advance || "Advance" },
+                { key: "Total Salary", label: t.total_salary },
+                { key: "Net Salary", label: t.net_salary },
+                { key: "Status", label: t.status },
+                { key: "Action", label: t.actions },
               ].map((h) => (
                 <th
-                  key={h}
+                  key={h.key}
                   className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
                 >
-                  {h}
+                  {h.label}
                 </th>
               ))}
             </tr>
@@ -1615,7 +1614,7 @@ const EmployeeTable = () => {
           disabled={startPage === 1}
           className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
         >
-          Prev
+          {t.prev}
         </button>
 
         {[...Array(endPage - startPage + 1)].map((_, index) => {
@@ -1648,13 +1647,13 @@ const EmployeeTable = () => {
       <Modal
         isOpen={isEditModalOpen && !!currentEmployee}
         onClose={closeEditModal}
-        title="Edit Employee Salary Calculation"
+        title={t.edit_salary_calculation || "Edit Employee Salary Calculation"}
         maxWidth="max-w-4xl"
       >
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Field
-              label="Employee Name:"
+              label={t.employee_name_label || "Employee Name:"}
               value={currentEmployee?.name}
               onChange={(v) =>
                 setCurrentEmployee({ ...currentEmployee, name: v })
@@ -1662,7 +1661,7 @@ const EmployeeTable = () => {
             />
 
             <Field
-              label="Employee Id:"
+              label={t.employee_id_label + ":" || "Employee Id:"}
               type="number"
               value={currentEmployee?.employee_id}
               onChange={(v) =>
@@ -1687,7 +1686,7 @@ const EmployeeTable = () => {
             />
 
             <Field
-              label="Holiday Days:"
+              label={t.holiday_days + ":" || "Holiday Days:"}
               type="number"
               value={currentEmployee?.holiday_payment}
               onChange={(v) => updateCurrentField("holiday_payment", v)}
@@ -1702,35 +1701,35 @@ const EmployeeTable = () => {
             />
 
             <Field
-              label="Late (days):"
+              label={t.late_days_label || "Late (days):"}
               type="number"
               value={currentEmployee?.late}
               onChange={(v) => updateCurrentField("late", v)}
             />
 
             <Field
-              label="Early Leave (days):"
+              label={t.early_leave_days_label || "Early Leave (days):"}
               type="number"
               value={currentEmployee?.early_leave}
               onChange={(v) => updateCurrentField("early_leave", v)}
             />
 
             <Field
-              label="Absent (days):"
+              label={t.absent_days_label || "Absent (days):"}
               type="number"
               value={currentEmployee?.absent}
               onChange={(v) => updateCurrentField("absent", v)}
             />
 
             <Field
-              label="Friday Absent (days):"
+              label={t.friday_absent_days_label || "Friday Absent (days):"}
               type="number"
               value={currentEmployee?.friday_absent}
               onChange={(v) => updateCurrentField("friday_absent", v)}
             />
 
             <Field
-              label="Unapproval Absent (days):"
+              label={t.unapproval_absent_days_label || "Unapproval Absent (days):"}
               type="number"
               value={currentEmployee?.unapproval_absent}
               onChange={(v) => updateCurrentField("unapproval_absent", v)}
@@ -1754,7 +1753,7 @@ const EmployeeTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Remarks</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.remarks}</label>
             <textarea
               value={currentEmployee?.remarks || ""}
               onChange={(e) =>
@@ -1765,14 +1764,14 @@ const EmployeeTable = () => {
               }
               className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               rows={3}
-              placeholder="Enter any additional remarks..."
+              placeholder={t.enter_additional_remarks || "Enter any additional remarks..."}
             />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
             {role === "superAdmin" ? (
               <div className="flex-1">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.status}</label>
                 <select
                   value={currentEmployee?.status || ""}
                   onChange={(e) =>
@@ -1784,7 +1783,7 @@ const EmployeeTable = () => {
                   className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                   required
                 >
-                  <option value="">Select Status</option>
+                  <option value="">{t.select_status || "Select Status"}</option>
                   <option value="Active">Active</option>
                   <option value="Approved">Approved</option>
                   <option value="Pending">Pending</option>
@@ -1792,7 +1791,7 @@ const EmployeeTable = () => {
               </div>
             ) : (
               <div className="flex-1">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Note</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.note}</label>
                 <textarea
                   value={currentEmployee?.note || ""}
                   onChange={(e) =>
@@ -1802,7 +1801,7 @@ const EmployeeTable = () => {
                     })
                   }
                   className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                  placeholder="Internal notes..."
+                  placeholder={t.internal_notes || "Internal notes..."}
                   rows={2}
                 />
               </div>
@@ -1821,7 +1820,7 @@ const EmployeeTable = () => {
               onClick={handleUpdateEmployee}
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
             >
-              Save Changes
+              {t.update_changes}
             </button>
           </div>
         </div>
@@ -1831,12 +1830,12 @@ const EmployeeTable = () => {
       <Modal
         isOpen={isEditModalOpen1 && !!currentEmployee}
         onClose={closeEditModal1}
-        title="Update Employee Status"
+        title={t.update_employee_status || "Update Employee Status"}
       >
         <div className="space-y-6">
           {role === "superAdmin" ? (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.status}</label>
               <select
                 value={currentEmployee?.status || ""}
                 onChange={(e) =>
@@ -1848,14 +1847,14 @@ const EmployeeTable = () => {
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               >
-                <option value="">Select Status</option>
+                <option value="">{t.select_status || "Select Status"}</option>
                 <option value="Approved">Approved</option>
                 <option value="Pending">Pending</option>
               </select>
             </div>
           ) : (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Internal Note</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.internal_notes || "Internal Note"}</label>
               <textarea
                 value={currentEmployee?.note || ""}
                 onChange={(e) =>
@@ -1865,7 +1864,7 @@ const EmployeeTable = () => {
                   })
                 }
                 className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                placeholder="Brief reason for status change or deletion request..."
+                placeholder={t.explain_why_remove_record || "Brief reason for status change or deletion request..."}
                 rows={4}
               />
             </div>
@@ -1883,7 +1882,7 @@ const EmployeeTable = () => {
               onClick={handleUpdateEmployee1}
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
             >
-              Confirm Update
+              {t.confirm_update || "Confirm Update"}
             </button>
           </div>
         </div>
@@ -1893,13 +1892,13 @@ const EmployeeTable = () => {
       <Modal
         isOpen={isAddModalOpen}
         onClose={closeAddModal}
-        title="Employee Salary Calculation"
+        title={t.employee_salary_calculation_title || "Employee Salary Calculation"}
         maxWidth="max-w-4xl"
       >
         <form onSubmit={handleCreateEmployee} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Field
-              label="Employee Name:"
+              label={t.employee_name_label + ":" || "Employee Name:"}
               value={createEmployee.name}
               onChange={(v) =>
                 setCreateEmployee({ ...createEmployee, name: v })
@@ -1934,7 +1933,7 @@ const EmployeeTable = () => {
             />
 
             <Field
-              label="Holiday Days:"
+              label={t.holiday_days + ":" || "Holiday Days:"}
               type="number"
               value={createEmployee.holiday_payment}
               onChange={(v) => updateCreateField("holiday_payment", v)}
@@ -1949,35 +1948,35 @@ const EmployeeTable = () => {
             />
 
             <Field
-              label="Late (days):"
+              label={t.late_days_label + ":" || "Late (days):"}
               type="number"
               value={createEmployee.late}
               onChange={(v) => updateCreateField("late", v)}
             />
 
             <Field
-              label="Early Leave (days):"
+              label={t.early_leave_days_label + ":" || "Early Leave (days):"}
               type="number"
               value={createEmployee.early_leave}
               onChange={(v) => updateCreateField("early_leave", v)}
             />
 
             <Field
-              label="Absent (days):"
+              label={t.absent_days_label + ":" || "Absent (days):"}
               type="number"
               value={createEmployee.absent}
               onChange={(v) => updateCreateField("absent", v)}
             />
 
             <Field
-              label="Friday Absent (days):"
+              label={t.friday_absent_days_label + ":" || "Friday Absent (days):"}
               type="number"
               value={createEmployee.friday_absent}
               onChange={(v) => updateCreateField("friday_absent", v)}
             />
 
             <Field
-              label="Unapproval Absent (days):"
+              label={t.unapproval_absent_days_label + ":" || "Unapproval Absent (days):"}
               type="number"
               value={createEmployee.unapproval_absent}
               onChange={(v) => updateCreateField("unapproval_absent", v)}
@@ -2001,7 +2000,7 @@ const EmployeeTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Remarks</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.remarks || "Remarks"}</label>
             <textarea
               value={createEmployee.remarks}
               onChange={(e) =>
@@ -2012,7 +2011,7 @@ const EmployeeTable = () => {
               }
               className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               rows={3}
-              placeholder="Any additional notes about this entry..."
+              placeholder={t.any_additional_notes || "Any additional notes about this entry..."}
             />
           </div>
 
@@ -2028,7 +2027,7 @@ const EmployeeTable = () => {
               type="submit"
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
             >
-              Confirm Entry
+              {t.confirm_entry || "Confirm Entry"}
             </button>
           </div>
         </form>
@@ -2038,7 +2037,7 @@ const EmployeeTable = () => {
       <Modal
         isOpen={isInvoiceOpen && !!invoiceEmployee}
         onClose={closeInvoice}
-        title="Salary Invoice"
+        title={t.salary_invoice_title || "Salary Invoice"}
         maxWidth="max-w-3xl"
       >
         <div className="space-y-6">
@@ -2047,13 +2046,13 @@ const EmployeeTable = () => {
               onClick={downloadInvoicePDF}
               className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-100 flex items-center gap-2"
             >
-              <Download size={16} /> Download PDF
+              <Download size={16} /> {t.download_pdf || "Download PDF"}
             </button>
             <button
               onClick={closeInvoice}
               className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-500 text-sm font-bold hover:bg-slate-50 transition"
             >
-              Close
+              {t.close || "Close"}
             </button>
           </div>
 
@@ -2080,7 +2079,7 @@ const EmployeeTable = () => {
               </div> */}
 
               <div className="text-right">
-                <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">INVOICE</h3>
+                <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">{t.salary_statement || "INVOICE"}</h3>
                 <p className="text-xs font-bold text-slate-500">Date: {new Date().toLocaleDateString()}</p>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
                   ID: {invoiceEmployee?.employee_id}-{String(Date.now()).slice(-6)}
@@ -2090,11 +2089,11 @@ const EmployeeTable = () => {
 
             <div className="grid grid-cols-2 gap-8 mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Employee Name</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.employee_name || "Employee Name"}</p>
                 <p className="text-sm font-bold text-slate-900">{invoiceEmployee?.name}</p>
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Employee ID</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.employee_id || "Employee ID"}</p>
                 <p className="text-sm font-bold text-slate-900">{invoiceEmployee?.employee_id}</p>
               </div>
             </div>
@@ -2102,39 +2101,39 @@ const EmployeeTable = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200">
-                  <th className="text-left py-3 text-xs font-black text-slate-500 uppercase tracking-widest">Description</th>
-                  <th className="text-right py-3 text-xs font-black text-slate-500 uppercase tracking-widest">Amount</th>
+                  <th className="text-left py-3 text-xs font-black text-slate-500 uppercase tracking-widest">{t.description || "Description"}</th>
+                  <th className="text-right py-3 text-xs font-black text-slate-500 uppercase tracking-widest">{t.amount || "Amount"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 <tr>
-                  <td className="py-4 font-bold text-slate-700">Basic Salary</td>
+                  <td className="py-4 font-bold text-slate-700">{t.basic_salary || "Basic Salary"}</td>
                   <td className="py-4 text-right font-black text-slate-900">{Number(invoiceEmployee?.basic_salary || 0).toLocaleString()}</td>
                 </tr>
                 <tr>
-                  <td className="py-4 font-bold text-slate-700">Incentive</td>
+                  <td className="py-4 font-bold text-slate-700">{t.incentive || "Incentive"}</td>
                   <td className="py-4 text-right font-black text-slate-900">{Number(invoiceEmployee?.incentive || 0).toLocaleString()}</td>
                 </tr>
                 <tr>
-                  <td className="py-4 font-bold text-slate-700">Holiday Days</td>
+                  <td className="py-4 font-bold text-slate-700">{t.holiday_days || "Holiday Days"}</td>
                   <td className="py-4 text-right font-black text-slate-900">{Number(invoiceEmployee?.holiday_payment || 0)}</td>
                 </tr>
                 <tr>
-                  <td className="py-4 font-bold text-slate-500">Advance (Deduction)</td>
+                  <td className="py-4 font-bold text-slate-500">{t.advance || "Advance (Deduction)"}</td>
                   <td className="py-4 text-right font-black text-red-600">-{Number(invoiceEmployee?.advance || 0).toLocaleString()}</td>
                 </tr>
                 <tr>
-                  <td className="py-4 font-bold text-slate-700">Attendance Penalty</td>
+                  <td className="py-4 font-bold text-slate-700">{t.attendance_penalty || "Attendance Penalty"}</td>
                   <td className="py-4 text-right font-medium text-slate-400">
                     L:{invoiceEmployee?.late} | E:{invoiceEmployee?.early_leave} | A:{invoiceEmployee?.absent}
                   </td>
                 </tr>
                 <tr className="bg-slate-50/50">
-                  <td className="py-4 font-black text-slate-900">Total Calculation</td>
+                  <td className="py-4 font-black text-slate-900">{t.total_calculation || "Total Calculation"}</td>
                   <td className="py-4 text-right font-black text-slate-900 border-t-2 border-slate-900">{Number(invoiceEmployee?.total_salary || 0).toLocaleString()}</td>
                 </tr>
                 <tr className="bg-indigo-600">
-                  <td className="py-5 px-4 font-black text-white rounded-l-2xl">NET SALARY PAYABLE</td>
+                  <td className="py-5 px-4 font-black text-white rounded-l-2xl">{t.net_salary_payable || "NET SALARY PAYABLE"}</td>
                   <td className="py-5 px-4 text-right font-black text-white rounded-r-2xl text-xl">
                     ৳ {Number(invoiceEmployee?.net_salary || 0).toLocaleString()}
                   </td>
@@ -2144,18 +2143,18 @@ const EmployeeTable = () => {
 
             {invoiceEmployee?.note && (
               <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-100">
-                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Important Note</p>
+                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">{t.important_note || "Important Note"}</p>
                 <p className="text-xs font-bold text-amber-800 leading-relaxed">{invoiceEmployee.note}</p>
               </div>
             )}
 
             <div className="mt-16 grid grid-cols-2 gap-20">
               <div className="text-center pt-4 border-t border-slate-200">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Received By</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.received_by || "Received By"}</p>
                 <p className="text-sm font-bold text-slate-900">{invoiceEmployee?.name}</p>
               </div>
               <div className="text-center pt-4 border-t border-slate-200">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Authorized By</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.authorized_by || "Authorized By"}</p>
                 <p className="text-sm font-bold text-slate-900">Kafela Mart Management</p>
               </div>
             </div>
@@ -2167,13 +2166,13 @@ const EmployeeTable = () => {
       <Modal
         isOpen={isBulkInvoiceOpen}
         onClose={() => setIsBulkInvoiceOpen(false)}
-        title="Batch Invoice Generator"
+        title={t.batch_invoice_generator || "Batch Invoice Generator"}
         maxWidth="max-w-5xl"
       >
         <div className="space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
             <p className="text-sm font-bold text-slate-500">
-              Generating <span className="text-indigo-600">{selectedEmployees.length}</span> invoices in current batch
+              {t.generating_invoices_prefix || "Generating"} <span className="text-indigo-600">{selectedEmployees.length}</span> {t.generating_invoices_suffix || "invoices in current batch"}
             </p>
             <div className="flex gap-3">
               <button
@@ -2181,13 +2180,13 @@ const EmployeeTable = () => {
                 className="px-8 py-3 rounded-2xl bg-indigo-600 text-white font-black text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100 disabled:opacity-50 disabled:shadow-none"
                 disabled={selectedEmployees.length === 0}
               >
-                Print All Invoices
+                {t.print_all_invoices || "Print All Invoices"}
               </button>
               <button
                 onClick={() => setIsBulkInvoiceOpen(false)}
                 className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
               >
-                Close
+                {t.close}
               </button>
             </div>
           </div>
@@ -2258,7 +2257,7 @@ const EmployeeTable = () => {
                         Kafela Mart
                       </h3>
                       <p className="text-sm font-bold text-slate-500">
-                        Official Salary Statement
+                        {t.official_salary_statement || "Official Salary Statement"}
                       </p>
                       <p className="text-xs text-slate-400 mt-2">
                         Phone: +880 9647-555333
@@ -2267,10 +2266,10 @@ const EmployeeTable = () => {
 
                     <div className="text-right">
                       <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">
-                        INVOICE
+                        {t.salary_statement || "INVOICE"}
                       </h3>
                       <p className="text-xs font-bold text-slate-500">
-                        Date: {new Date().toLocaleDateString()}
+                        {t.date}: {new Date().toLocaleDateString()}
                       </p>
                       <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
                         ID: {emp?.employee_id}-{String(Date.now()).slice(-6)}
@@ -2281,13 +2280,13 @@ const EmployeeTable = () => {
                   <div className="grid grid-cols-2 gap-8 mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                        Employee Name
+                        {t.employee_name || "Employee Name"}
                       </p>
                       <p className="text-sm font-bold text-slate-900">{emp?.name}</p>
                     </div>
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                        Employee ID
+                        {t.employee_id || "Employee ID"}
                       </p>
                       <p className="text-sm font-bold text-slate-900">
                         {emp?.employee_id}
@@ -2299,31 +2298,31 @@ const EmployeeTable = () => {
                     <thead>
                       <tr className="border-b border-slate-200">
                         <th className="text-left py-3 text-xs font-black text-slate-500 uppercase tracking-widest">
-                          Description
+                          {t.description || "Description"}
                         </th>
                         <th className="text-right py-3 text-xs font-black text-slate-500 uppercase tracking-widest">
-                          Amount
+                          {t.amount || "Amount"}
                         </th>
                       </tr>
                     </thead>
 
                     <tbody className="divide-y divide-slate-100">
                       <tr>
-                        <td className="py-4 font-bold text-slate-700">Basic Salary</td>
+                        <td className="py-4 font-bold text-slate-700">{t.basic_salary || "Basic Salary"}</td>
                         <td className="py-4 text-right font-black text-slate-900">
                           {Number(emp?.basic_salary || 0).toLocaleString()}
                         </td>
                       </tr>
 
                       <tr>
-                        <td className="py-4 font-bold text-slate-700">Incentive</td>
+                        <td className="py-4 font-bold text-slate-700">{t.incentive || "Incentive"}</td>
                         <td className="py-4 text-right font-black text-slate-900">
                           {Number(emp?.incentive || 0).toLocaleString()}
                         </td>
                       </tr>
 
                       <tr>
-                        <td className="py-4 font-bold text-slate-700">Holiday Days</td>
+                        <td className="py-4 font-bold text-slate-700">{t.holiday_days || "Holiday Days"}</td>
                         <td className="py-4 text-right font-black text-slate-900">
                           {Number(emp?.holiday_payment || 0)}
                         </td>
@@ -2331,7 +2330,7 @@ const EmployeeTable = () => {
 
                       <tr>
                         <td className="py-4 font-bold text-slate-500">
-                          Advance (Deduction)
+                          {t.advance || "Advance (Deduction)"}
                         </td>
                         <td className="py-4 text-right font-black text-red-600">
                           -{Number(emp?.advance || 0).toLocaleString()}
@@ -2340,7 +2339,7 @@ const EmployeeTable = () => {
 
                       <tr>
                         <td className="py-4 font-bold text-slate-700">
-                          Attendance Penalty
+                          {t.attendance_penalty || "Attendance Penalty"}
                         </td>
                         <td className="py-4 text-right font-medium text-slate-400">
                           L:{emp?.late || 0} | E:{emp?.early_leave || 0} | A:
@@ -2351,7 +2350,7 @@ const EmployeeTable = () => {
 
                       <tr className="bg-slate-50/50">
                         <td className="py-4 font-black text-slate-900">
-                          Total Calculation
+                          {t.total_calculation || "Total Calculation"}
                         </td>
                         <td className="py-4 text-right font-black text-slate-900 border-t-2 border-slate-900">
                           {Number(emp?.total_salary || 0).toLocaleString()}
@@ -2360,7 +2359,7 @@ const EmployeeTable = () => {
 
                       <tr className="bg-indigo-600">
                         <td className="py-5 px-4 font-black text-white rounded-l-2xl">
-                          NET SALARY PAYABLE
+                          {t.net_salary_payable || "NET SALARY PAYABLE"}
                         </td>
                         <td className="py-5 px-4 text-right font-black text-white rounded-r-2xl text-xl">
                           ৳ {Number(emp?.net_salary || 0).toLocaleString()}
@@ -2372,7 +2371,7 @@ const EmployeeTable = () => {
                   {emp?.note && (
                     <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-100">
                       <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">
-                        Important Note
+                        {t.important_note || "Important Note"}
                       </p>
                       <p className="text-xs font-bold text-amber-800 leading-relaxed">
                         {emp.note}
@@ -2383,17 +2382,17 @@ const EmployeeTable = () => {
                   <div className="mt-16 grid grid-cols-2 gap-20">
                     <div className="text-center pt-4 border-t border-slate-200">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                        Received By
+                        {t.received_by || "Received By"}
                       </p>
                       <p className="text-sm font-bold text-slate-900">{emp?.name}</p>
                     </div>
 
                     <div className="text-center pt-4 border-t border-slate-200">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                        Authorized By
+                        {t.authorized_by || "Authorized By"}
                       </p>
                       <p className="text-sm font-bold text-slate-900">
-                        Kafela Mart Management
+                        {t.kafela_mart_management || "Kafela Mart Management"}
                       </p>
                     </div>
                   </div>
@@ -2408,7 +2407,7 @@ const EmployeeTable = () => {
       <Modal
         isOpen={isNoteModalOpen}
         onClose={handleModalClose}
-        title="Employee Note"
+        title={t.employee_note_title || "Employee Note"}
       >
         <div className="space-y-6">
           <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
@@ -2422,7 +2421,7 @@ const EmployeeTable = () => {
               onClick={handleModalClose}
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
             >
-              Close
+              {t.close}
             </button>
           </div>
         </div>

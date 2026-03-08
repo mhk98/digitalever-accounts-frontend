@@ -6,28 +6,32 @@ const RequireAuth = ({ children }) => {
   const location = useLocation();
   let token;
 
-  // try {
+  try {
     token = localStorage.getItem("token");
 
     if (!token) {
       return <Navigate to="/login" state={{ from: location }} replace />;
-
     }
 
-    // // Decode the token to check if it is valid and not expired
-    const decoded  = jwtDecode(token);
+    // Decode the token to check if it is valid and not expired
+    const decoded = jwtDecode(token);
 
     // Check if the token is expired
-    if (decoded .exp * 1000 < Date.now()) {
+    if (decoded.exp * 1000 < Date.now()) {
       localStorage.removeItem("token");
-
-      // Redirect to the login page
+      localStorage.clear();
       return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
     // Proceed to render the children if token is valid
     return children;
-  
+  } catch (error) {
+    console.error("Token validation error:", error);
+    localStorage.removeItem("token");
+    localStorage.clear();
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
 };
 
 export default RequireAuth;

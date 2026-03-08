@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { useGetOverviewSummaryQuery } from "../features/overview/overview";
 import { useGetTrendingProductsQuery } from "../features/confirmOrder/confirmOrder";
+import { useLayout } from "../context/LayoutContext";
+import { translations } from "../utils/translations";
 
 // ✅ helper: default range (এই মাসের ১ তারিখ → আজ)
 const getDefaultRange = () => {
@@ -26,6 +28,8 @@ const getDefaultRange = () => {
 };
 
 const OverviewPage = () => {
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
   const defaultRange = useMemo(() => getDefaultRange(), []);
 
   // ✅ input values
@@ -87,9 +91,47 @@ const OverviewPage = () => {
 
   if (trendingIsError) console.error("Trending error:", trendingErr);
 
+
+  const trendSummary = useMemo(() => {
+    if (!trending.length) {
+      return {
+        topProductName: "No product data",
+        topSoldQty: 0,
+        totalSoldQty: 0,
+        totalRevenue: 0,
+        avgRevenue: 0,
+        productCount: 0,
+      };
+    }
+
+    const totalSoldQty = trending.reduce(
+      (sum, item) => sum + Number(item?.soldQty || 0),
+      0,
+    );
+
+    const totalRevenue = trending.reduce(
+      (sum, item) => sum + Number(item?.revenue || 0),
+      0,
+    );
+
+    const topProduct = trending[0] || {};
+    const productCount = trending.length;
+    const avgRevenue = productCount > 0 ? totalRevenue / productCount : 0;
+
+    return {
+      topProductName:
+        topProduct?.product?.name || topProduct?.name || "Unknown Product",
+      topSoldQty: Number(topProduct?.soldQty || 0),
+      totalSoldQty,
+      totalRevenue,
+      avgRevenue,
+      productCount,
+    };
+  }, [trending]);
+
   return (
     <div className="flex-1 overflow-auto bg-slate-50/50">
-      <Header title="Management Console" />
+      <Header title={t.management_console} />
 
       {/* ✅ Page background */}
       <main className="min-h-[calc(100vh-64px)] py-8 px-4 lg:px-8">
@@ -97,9 +139,9 @@ const OverviewPage = () => {
 
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-10">
             <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">Executive Dashboard</h1>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t.executive_dashboard}</h1>
               <p className="text-slate-500 text-base mt-2 font-medium max-w-2xl">
-                Real-time consolidated view of your financial health and product performance.
+                {t.real_time_view}
               </p>
             </div>
 
@@ -107,7 +149,7 @@ const OverviewPage = () => {
             <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row items-end gap-3 lg:gap-4 ring-1 ring-slate-100">
               <div className="flex flex-col flex-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 flex items-center gap-1.5">
-                  <CalendarDays size={12} className="text-indigo-500" /> Start Date
+                  <CalendarDays size={12} className="text-indigo-500" /> {t.start_date}
                 </label>
                 <input
                   type="date"
@@ -119,7 +161,7 @@ const OverviewPage = () => {
 
               <div className="flex flex-col flex-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 flex items-center gap-1.5">
-                  <CalendarDays size={12} className="text-indigo-500" /> End Date
+                  <CalendarDays size={12} className="text-indigo-500" /> {t.end_date}
                 </label>
                 <input
                   type="date"
@@ -134,7 +176,7 @@ const OverviewPage = () => {
                   onClick={onApply}
                   className="h-11 px-6 rounded-xl bg-indigo-600 text-white text-sm font-black hover:bg-indigo-700 active:scale-[0.98] transition shadow-lg shadow-indigo-100"
                 >
-                  Apply
+                  {t.apply}
                 </button>
 
                 <button
@@ -153,7 +195,7 @@ const OverviewPage = () => {
             <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 bg-white border border-slate-100 shadow-sm">
               <div className={`h-2 w-2 rounded-full ${isLoading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-500'}`}></div>
               <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.1em]">
-                {isLoading ? "Syncing financial data..." : `Live Summary: ${applied.from} → ${applied.to}`}
+                {isLoading ? t.syncing : `${t.live_summary}: ${applied.from} → ${applied.to}`}
               </span>
             </div>
           </div>
@@ -166,7 +208,7 @@ const OverviewPage = () => {
             transition={{ duration: 0.45 }}
           >
             <StatCard
-              name="Asset Portfolio Value"
+              name={t.asset_portfolio}
               icon={Truck}
               value={isLoading ? "..." : `৳${totalPurchaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
               iconBg="#EEF2FF"
@@ -174,7 +216,7 @@ const OverviewPage = () => {
             />
 
             <StatCard
-              name="Liquid Stock Value"
+              name={t.liquid_stock}
               icon={Receipt}
               value={isLoading ? "..." : `৳${inventoryOverview.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
               iconBg="#ECFDF5"
@@ -182,7 +224,7 @@ const OverviewPage = () => {
             />
 
             <StatCard
-              name="Marketing Investment"
+              name={t.marketing_investment}
               icon={TrendingUp}
               value={isLoading ? "..." : `৳${totalMetaAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
               iconBg="#E0F2FE"
@@ -190,7 +232,7 @@ const OverviewPage = () => {
             />
 
             <StatCard
-              name="Expected Receivables"
+              name={t.expected_receivables}
               icon={Receipt}
               value={isLoading ? "..." : `৳${totalReceiveableAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
               iconBg="#FFF7ED"
@@ -198,7 +240,7 @@ const OverviewPage = () => {
             />
 
             <StatCard
-              name="Outstanding Liabilities"
+              name={t.liabilities}
               icon={Receipt}
               value={isLoading ? "..." : `৳${totalPayableAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
               iconBg="#FFF1F2"
@@ -206,7 +248,7 @@ const OverviewPage = () => {
             />
 
             <StatCard
-              name="Cash Inflow (Net)"
+              name={t.cash_in}
               icon={Landmark}
               value={isLoading ? "..." : `৳${totalCashInAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
               iconBg="#F5F3FF"
@@ -214,7 +256,7 @@ const OverviewPage = () => {
             />
 
             <StatCard
-              name="Cash Outflow (Net)"
+              name={t.cash_out}
               icon={Landmark}
               value={isLoading ? "..." : `৳${totalCashOutAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
               iconBg="#F0FDFA"
@@ -238,10 +280,10 @@ const OverviewPage = () => {
                   </div>
                   <div>
                     <div className="text-base font-black text-slate-900 tracking-tight">
-                      Top Selling Products
+                      {t.top_selling_products}
                     </div>
                     <div className="text-xs font-bold text-slate-400 mt-0.5">
-                      Performance analytics for the last {trendDays} day(s)
+                      {t.performance_analytics_last} {trendDays} {t.day_s}
                     </div>
                   </div>
                 </div>
@@ -253,11 +295,11 @@ const OverviewPage = () => {
                     className="h-11 pl-4 pr-10 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-black outline-none focus:ring-4 focus:ring-indigo-500/10 transition appearance-none cursor-pointer"
                     style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '16px' }}
                   >
-                    <option value={1}> Today</option>
-                    <option value={2}>2 Days</option>
-                    <option value={7}>7 Days</option>
-                    <option value={15}>15 Days</option>
-                    <option value={30}>30 Days</option>
+                    <option value={1}> {t.today}</option>
+                    <option value={2}>2 {t.days}</option>
+                    <option value={7}>7 {t.days}</option>
+                    <option value={15}>15 {t.days}</option>
+                    <option value={30}>30 {t.days}</option>
                   </select>
 
                   <button
@@ -278,19 +320,19 @@ const OverviewPage = () => {
                   </div>
                 ) : trendingIsError ? (
                   <div className="py-20 text-center text-red-500 font-bold italic">
-                    System error encountered while fetching trends.
+                    {t.system_error_trends}
                   </div>
                 ) : trending.length === 0 ? (
                   <div className="py-20 text-center text-slate-300 font-black italic text-sm">
                     <Package size={40} className="mx-auto mb-3 opacity-10" />
-                    No significant performance data recorded.
+                    {t.no_significant_performance}
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {trending.map((row, idx) => {
                       const soldQty = Number(row?.soldQty || 0);
                       const revenue = Number(row?.revenue || 0);
-                      const pName = row?.product?.name || row?.name || "Inventory Item";
+                      const pName = row?.product?.name || row?.name || t.inventory_item;
 
                       return (
                         <motion.div
@@ -327,11 +369,11 @@ const OverviewPage = () => {
 
                           <div className="flex items-center gap-8">
                             <div className="text-right hidden sm:block">
-                              <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Velocity</div>
-                              <div className="text-sm font-black text-slate-700">{soldQty} Units</div>
+                              <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.velocity}</div>
+                              <div className="text-sm font-black text-slate-700">{soldQty} {t.units}</div>
                             </div>
                             <div className="text-right min-w-[100px]">
-                              <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Revenue Impact</div>
+                              <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.revenue_impact}</div>
                               <div className="text-sm font-black text-indigo-600">৳{revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                             </div>
                           </div>
@@ -377,6 +419,89 @@ const OverviewPage = () => {
                   ))}
                 </div>
               </div>
+            </div> */}
+
+            {/* <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-8 text-white shadow-2xl shadow-indigo-100 relative overflow-hidden group">
+              <div className="relative z-10">
+                <h3 className="text-lg font-black tracking-tight mb-2">
+                  {t.performance_summary}
+                </h3>
+
+                {trendingLoading ? (
+                  <p className="text-indigo-100 text-sm font-medium leading-relaxed opacity-80">
+                    {t.loading_product_performance}
+                  </p>
+                ) : trendingIsError ? (
+                  <p className="text-red-100 text-sm font-medium leading-relaxed">
+                    {t.failed_load_summary}
+                  </p>
+                ) : trending.length === 0 ? (
+                  <p className="text-indigo-100 text-sm font-medium leading-relaxed opacity-80">
+                    {t.no_selling_data}
+                  </p>
+                ) : (
+                  <div className="space-y-3 mt-4">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-indigo-200 font-black">
+                        {t.top_selling_product}
+                      </p>
+                      <p className="text-xl font-black text-white">
+                        {trendSummary.topProductName}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div className="bg-white/10 rounded-2xl p-4 border border-white/10">
+                        <p className="text-[10px] uppercase tracking-[0.15em] text-indigo-200 font-black">
+                          {t.top_sold_qty}
+                        </p>
+                        <p className="text-xl font-black text-white">
+                          {trendSummary.topSoldQty}
+                        </p>
+                      </div>
+
+                      <div className="bg-white/10 rounded-2xl p-4 border border-white/10">
+                        <p className="text-[10px] uppercase tracking-[0.15em] text-indigo-200 font-black">
+                          {t.total_sold}
+                        </p>
+                        <p className="text-xl font-black text-white">
+                          {trendSummary.totalSoldQty}
+                        </p>
+                      </div>
+
+                      <div className="bg-white/10 rounded-2xl p-4 border border-white/10">
+                        <p className="text-[10px] uppercase tracking-[0.15em] text-indigo-200 font-black">
+                          {t.total_revenue}
+                        </p>
+                        <p className="text-lg font-black text-white">
+                          ৳
+                          {trendSummary.totalRevenue.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}
+                        </p>
+                      </div>
+
+                      <div className="bg-white/10 rounded-2xl p-4 border border-white/10">
+                        <p className="text-[10px] uppercase tracking-[0.15em] text-indigo-200 font-black">
+                          {t.avg_revenue}
+                        </p>
+                        <p className="text-lg font-black text-white">
+                          ৳
+                          {trendSummary.avgRevenue.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-indigo-100 text-xs font-medium leading-relaxed opacity-80 pt-2">
+                      {t.based_on_performance_last} {trendDays} {trendDays > 1 ? t.days : t.day}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="absolute -bottom-10 -right-10 h-40 w-40 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
             </div> */}
           </div>
         </div>

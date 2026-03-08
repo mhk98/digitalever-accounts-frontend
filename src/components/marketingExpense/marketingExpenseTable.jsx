@@ -18,6 +18,8 @@ import {
   useInsertMarketingExpenseMutation,
   useUpdateMarketingExpenseMutation,
 } from "../../features/marketingExpense/marketingExpense";
+import { useLayout } from "../../context/LayoutContext";
+import { translations } from "../../utils/translations";
 
 // const BANKS = [
 //   "Al Arafah",
@@ -41,6 +43,8 @@ import {
 // ];
 
 const MarketingExpenseTable = () => {
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
   const { id } = useParams(); // bookId
 
   const [isModalOpen, setIsModalOpen] = useState(false); // edit
@@ -591,7 +595,7 @@ const MarketingExpenseTable = () => {
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-emerald-50/70 to-transparent" />
           <div className="relative flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-slate-500">Total CashIn</p>
+              <p className="text-xs font-medium text-slate-500">{t.total_cash_in}</p>
               <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
                 {isLoading
                   ? "—"
@@ -620,7 +624,7 @@ const MarketingExpenseTable = () => {
           <div className="relative flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-slate-500">
-                Total CashOut
+                {t.total_cash_out}
               </p>
               <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
                 {isLoading
@@ -649,7 +653,7 @@ const MarketingExpenseTable = () => {
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-indigo-50/70 to-transparent" />
           <div className="relative flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-slate-500">Net Balance</p>
+              <p className="text-xs font-medium text-slate-500">{t.net_balance}</p>
               <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
                 {isLoading
                   ? "—"
@@ -686,7 +690,7 @@ const MarketingExpenseTable = () => {
             className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 active:bg-indigo-800 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/30 sm:w-auto"
           >
             <Plus size={18} />
-            Cash In
+            {t.cash_in_btn}
           </button>
 
           {/* Cash Out (Secondary / Neutral) */}
@@ -696,7 +700,7 @@ const MarketingExpenseTable = () => {
             className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-800 border border-slate-200 shadow-md hover:bg-slate-50 active:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/20 sm:w-auto"
           >
             <Minus size={18} className="text-slate-700" />
-            Cash Out
+            {t.cash_out_btn}
           </button>
         </div>
 
@@ -709,7 +713,7 @@ const MarketingExpenseTable = () => {
               setCurrentPage(1);
               setStartPage(1);
             }}
-            placeholder="Search..."
+            placeholder={t.search}
             className="w-full rounded-lg border border-gray-200 bg-white px-5 py-3 pr-12 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 shadow-sm"
           />
           <Search
@@ -735,7 +739,7 @@ const MarketingExpenseTable = () => {
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mb-6 w-full">
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">From</label>
+          <label className="text-sm text-slate-600 mb-1">{t.from}</label>
           <input
             type="date"
             value={startDate}
@@ -746,7 +750,7 @@ const MarketingExpenseTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">To</label>
+          <label className="text-sm text-slate-600 mb-1">{t.to}</label>
           <input
             type="date"
             value={endDate}
@@ -757,7 +761,7 @@ const MarketingExpenseTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Payment Mode</label>
+          <label className="text-sm text-slate-600 mb-1">{t.payment_mode}</label>
           <select
             value={filterPaymentMode}
             onChange={(e) => setFilterPaymentMode(e.target.value)}
@@ -775,7 +779,7 @@ const MarketingExpenseTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Payment Status</label>
+          <label className="text-sm text-slate-600 mb-1">{t.payment_status}</label>
           <select
             value={filterPaymentStatus}
             onChange={(e) => setFilterPaymentStatus(e.target.value)}
@@ -877,7 +881,7 @@ const MarketingExpenseTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `https://apikafela.digitalever.com.bd/${safePath}`
+                ? `http://localhost:5000/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
