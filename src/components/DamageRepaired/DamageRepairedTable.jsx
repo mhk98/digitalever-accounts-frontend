@@ -3,7 +3,6 @@ import { Edit, Notebook, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
-import { useGetAllDamageRepairWithoutQueryQuery } from "../../features/damageRepair/damageRepair";
 import {
   useDeleteDamageRepairedMutation,
   useGetAllDamageRepairedQuery,
@@ -13,6 +12,7 @@ import {
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 import Modal from "../common/Modal";
+import { useGetAllDamageStockWithoutQueryQuery } from "../../features/damageStock/damageStock";
 
 const DamageRepairedTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -54,7 +54,7 @@ const DamageRepairedTable = () => {
     isLoading: receivedLoading,
     isError: receivedError,
     error: receivedErrObj,
-  } = useGetAllDamageRepairWithoutQueryQuery();
+  } = useGetAllDamageStockWithoutQueryQuery();
 
   const receivedData = receivedRes?.data || [];
 
@@ -688,8 +688,8 @@ const DamageRepairedTable = () => {
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
               className={`px-4 py-2 rounded-xl border transition ${active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                 }`}
             >
               {pageNum}

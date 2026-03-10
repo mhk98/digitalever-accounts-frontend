@@ -940,6 +940,7 @@ const ReturnProductTable = () => {
                 isClearable
                 isDisabled={receivedLoading}
                 styles={selectStyles}
+                className="text-black"
               />
             </div>
             <div>

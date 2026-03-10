@@ -180,6 +180,9 @@ const PettyCashTable = () => {
     searchTerm,
   ]);
 
+
+  console.log("queryArgs", queryArgs)
+
   const { data, isLoading, isError, error, refetch } =
     useGetAllPettyCashQuery(queryArgs);
 
@@ -1131,8 +1134,6 @@ const PettyCashTable = () => {
                       )}
                     </div>
                   </td>
-
-
                 </motion.tr>
               );
             })}
@@ -1190,36 +1191,57 @@ const PettyCashTable = () => {
       {/* Edit Modal */}
       <Modal
         isOpen={isModalOpen && !!currentProduct}
-        onClose={() => { setIsModalOpen(false); setCurrentProduct(null); }}
+        onClose={() => {
+          setIsModalOpen(false);
+          setCurrentProduct(null);
+        }}
         title="Edit Petty Cash Record"
         maxWidth="max-w-2xl"
       >
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Date
+              </label>
               <input
                 type="date"
                 value={currentProduct?.date || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, date: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({ ...currentProduct, date: e.target.value })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Amount</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Amount
+              </label>
               <input
                 type="number"
                 step="0.01"
                 value={currentProduct?.amount || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, amount: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    amount: e.target.value,
+                  })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Payment Mode</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Payment Mode
+              </label>
               <select
                 value={currentProduct?.paymentMode || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, paymentMode: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    paymentMode: e.target.value,
+                  })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
                 <option value="Cash">Cash</option>
@@ -1232,23 +1254,38 @@ const PettyCashTable = () => {
             </div>
             {currentProduct?.paymentMode === "Bank" && (
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Bank Name</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                  Bank Name
+                </label>
                 <select
                   value={currentProduct?.bankName || ""}
-                  onChange={(e) => setCurrentProduct({ ...currentProduct, bankName: e.target.value })}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      bankName: e.target.value,
+                    })
+                  }
                   className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 >
-                  {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                  {BANKS.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Category</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Category
+            </label>
             <div className="flex gap-2">
               <select
-                value={isNewCategoryEdit ? "__new__" : currentProduct?.category || ""}
+                value={
+                  isNewCategoryEdit ? "__new__" : currentProduct?.category || ""
+                }
                 onChange={(e) => {
                   const v = e.target.value;
                   if (v === "__new__") {
@@ -1261,7 +1298,11 @@ const PettyCashTable = () => {
                 className="flex-1 h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
                 <option value="">Select Category</option>
-                {categoryOptions.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                {categoryOptions.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
                 <option value="__new__">+ New Category</option>
               </select>
             </div>
@@ -1279,7 +1320,10 @@ const PettyCashTable = () => {
                   onClick={async () => {
                     const id = await addCategoryByName(newCategoryNameEdit);
                     if (id) {
-                      setCurrentProduct({ ...currentProduct, category: newCategoryNameEdit });
+                      setCurrentProduct({
+                        ...currentProduct,
+                        category: newCategoryNameEdit,
+                      });
                       setIsNewCategoryEdit(false);
                       setNewCategoryNameEdit("");
                     }
@@ -1293,10 +1337,17 @@ const PettyCashTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Remarks</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Remarks
+            </label>
             <textarea
               value={currentProduct?.remarks || ""}
-              onChange={(e) => setCurrentProduct({ ...currentProduct, remarks: e.target.value })}
+              onChange={(e) =>
+                setCurrentProduct({
+                  ...currentProduct,
+                  remarks: e.target.value,
+                })
+              }
               className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               rows={3}
             />
@@ -1304,10 +1355,17 @@ const PettyCashTable = () => {
 
           {role === "superAdmin" && (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Status
+              </label>
               <select
                 value={currentProduct?.status || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, status: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    status: e.target.value,
+                  })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
                 <option value="Active">Active</option>
@@ -1319,7 +1377,10 @@ const PettyCashTable = () => {
 
           <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
             <button
-              onClick={() => { setIsModalOpen(false); setCurrentProduct(null); }}
+              onClick={() => {
+                setIsModalOpen(false);
+                setCurrentProduct(null);
+              }}
               className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
             >
               Cancel
@@ -1344,31 +1405,46 @@ const PettyCashTable = () => {
         <form onSubmit={handleCreateProduct} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Date
+              </label>
               <input
                 type="date"
                 value={createProduct.date}
-                onChange={(e) => setCreateProduct({ ...createProduct, date: e.target.value })}
+                onChange={(e) =>
+                  setCreateProduct({ ...createProduct, date: e.target.value })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Amount</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Amount
+              </label>
               <input
                 type="number"
                 step="0.01"
                 value={createProduct.amount}
-                onChange={(e) => setCreateProduct({ ...createProduct, amount: e.target.value })}
+                onChange={(e) =>
+                  setCreateProduct({ ...createProduct, amount: e.target.value })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Payment Mode</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Payment Mode
+              </label>
               <select
                 value={createProduct.paymentMode}
-                onChange={(e) => setCreateProduct({ ...createProduct, paymentMode: e.target.value })}
+                onChange={(e) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    paymentMode: e.target.value,
+                  })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               >
@@ -1383,22 +1459,35 @@ const PettyCashTable = () => {
             </div>
             {createProduct.paymentMode === "Bank" && (
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Bank Name</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                  Bank Name
+                </label>
                 <select
                   value={createProduct.bankName}
-                  onChange={(e) => setCreateProduct({ ...createProduct, bankName: e.target.value })}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      bankName: e.target.value,
+                    })
+                  }
                   className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                   required
                 >
                   <option value="">Select Bank</option>
-                  {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                  {BANKS.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Category</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Category
+            </label>
             <div className="flex gap-2">
               <select
                 value={isNewCategoryAdd ? "__new__" : createProduct.category}
@@ -1415,7 +1504,11 @@ const PettyCashTable = () => {
                 required
               >
                 <option value="">Select Category</option>
-                {categoryOptions.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                {categoryOptions.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
                 <option value="__new__">+ New Category</option>
               </select>
             </div>
@@ -1433,7 +1526,10 @@ const PettyCashTable = () => {
                   onClick={async () => {
                     const id = await addCategoryByName(newCategoryNameAdd);
                     if (id) {
-                      setCreateProduct({ ...createProduct, category: newCategoryNameAdd });
+                      setCreateProduct({
+                        ...createProduct,
+                        category: newCategoryNameAdd,
+                      });
                       setIsNewCategoryAdd(false);
                       setNewCategoryNameAdd("");
                     }
@@ -1447,10 +1543,14 @@ const PettyCashTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Remarks</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Remarks
+            </label>
             <textarea
               value={createProduct.remarks}
-              onChange={(e) => setCreateProduct({ ...createProduct, remarks: e.target.value })}
+              onChange={(e) =>
+                setCreateProduct({ ...createProduct, remarks: e.target.value })
+              }
               className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               rows={2}
               required
@@ -1485,31 +1585,46 @@ const PettyCashTable = () => {
         <form onSubmit={handleCreateProduct1} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Date
+              </label>
               <input
                 type="date"
                 value={createProduct.date}
-                onChange={(e) => setCreateProduct({ ...createProduct, date: e.target.value })}
+                onChange={(e) =>
+                  setCreateProduct({ ...createProduct, date: e.target.value })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Amount</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Amount
+              </label>
               <input
                 type="number"
                 step="0.01"
                 value={createProduct.amount}
-                onChange={(e) => setCreateProduct({ ...createProduct, amount: e.target.value })}
+                onChange={(e) =>
+                  setCreateProduct({ ...createProduct, amount: e.target.value })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Payment Mode</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Payment Mode
+              </label>
               <select
                 value={createProduct.paymentMode}
-                onChange={(e) => setCreateProduct({ ...createProduct, paymentMode: e.target.value })}
+                onChange={(e) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    paymentMode: e.target.value,
+                  })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               >
@@ -1524,22 +1639,35 @@ const PettyCashTable = () => {
             </div>
             {createProduct.paymentMode === "Bank" && (
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Bank Name</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                  Bank Name
+                </label>
                 <select
                   value={createProduct.bankName}
-                  onChange={(e) => setCreateProduct({ ...createProduct, bankName: e.target.value })}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      bankName: e.target.value,
+                    })
+                  }
                   className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                   required
                 >
                   <option value="">Select Bank</option>
-                  {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                  {BANKS.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Category</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Category
+            </label>
             <div className="flex gap-2">
               <select
                 value={isNewCategoryAdd ? "__new__" : createProduct.category}
@@ -1556,7 +1684,11 @@ const PettyCashTable = () => {
                 required
               >
                 <option value="">Select Category</option>
-                {categoryOptions.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                {categoryOptions.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
                 <option value="__new__">+ New Category</option>
               </select>
             </div>
@@ -1574,7 +1706,10 @@ const PettyCashTable = () => {
                   onClick={async () => {
                     const id = await addCategoryByName(newCategoryNameAdd);
                     if (id) {
-                      setCreateProduct({ ...createProduct, category: newCategoryNameAdd });
+                      setCreateProduct({
+                        ...createProduct,
+                        category: newCategoryNameAdd,
+                      });
                       setIsNewCategoryAdd(false);
                       setNewCategoryNameAdd("");
                     }
@@ -1588,10 +1723,14 @@ const PettyCashTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Remarks</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Remarks
+            </label>
             <textarea
               value={createProduct.remarks}
-              onChange={(e) => setCreateProduct({ ...createProduct, remarks: e.target.value })}
+              onChange={(e) =>
+                setCreateProduct({ ...createProduct, remarks: e.target.value })
+              }
               className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               rows={2}
               required
@@ -1625,10 +1764,17 @@ const PettyCashTable = () => {
         <div className="space-y-6">
           {role === "superAdmin" ? (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Status
+              </label>
               <select
                 value={currentProduct?.status || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, status: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    status: e.target.value,
+                  })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
                 <option value="Active">Active</option>
@@ -1638,10 +1784,14 @@ const PettyCashTable = () => {
             </div>
           ) : (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Reason for Deletion</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Reason for Deletion
+              </label>
               <textarea
                 value={currentProduct?.note || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, note: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({ ...currentProduct, note: e.target.value })
+                }
                 className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 rows={4}
                 placeholder="Briefly explain why this record should be removed..."

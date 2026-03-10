@@ -48,7 +48,9 @@ import MarketingExpensePage from "./pages/MarketingExpensePage";
 import InventoryDashboardPage from "./pages/InventoryDashboardPage";
 import DamageStockPage from "./pages/DamageStockPage";
 import WarehousePage from "./pages/WarehousePage";
-import SupplierHistory from "./components/supplierHistory/supplierHistory";
+import SupplierHistoryPage from "./pages/SupplierHistoryPage";
+import CreditLedgerPage from "./pages/CreditLedgerPage";
+import ManufacturePage from "./pages/ManufacturePage";
 
 function App() {
   return (
@@ -111,6 +113,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <InventoryDashboardPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/manufacture"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <ManufacturePage />
                   </SidebarLayout>
                 </RequireAuth>
               }
@@ -296,6 +308,16 @@ function App() {
               }
             />
             <Route
+              path="/credit-ledger"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <CreditLedgerPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
               path="/expense"
               element={
                 <RequireAuth>
@@ -371,7 +393,7 @@ function App() {
               element={
                 <RequireAuth>
                   <SidebarLayout>
-                    <SupplierHistory />
+                    <SupplierHistoryPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

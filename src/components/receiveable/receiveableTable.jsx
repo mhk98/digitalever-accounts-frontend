@@ -1,5 +1,18 @@
 import { motion } from "framer-motion";
-import { Edit, Notebook, Plus, Trash2, TrendingUp, X, ChevronLeft, ChevronRight, FileText, Calendar, User, Wallet } from "lucide-react";
+import {
+  Edit,
+  Notebook,
+  Plus,
+  Trash2,
+  TrendingUp,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Calendar,
+  User,
+  Wallet,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -57,20 +70,25 @@ const ReceiveableTable = () => {
     setStartPage(1);
   }, [startDate, endDate, filterName]);
 
-  const queryArgs = useMemo(() => ({
-    page: currentPage,
-    limit: itemsPerPage,
-    startDate: startDate || undefined,
-    endDate: endDate || undefined,
-    searchTerm: filterName?.trim() || undefined,
-  }), [currentPage, startDate, endDate, filterName]);
+  const queryArgs = useMemo(
+    () => ({
+      page: currentPage,
+      limit: itemsPerPage,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+      searchTerm: filterName?.trim() || undefined,
+    }),
+    [currentPage, startDate, endDate, filterName],
+  );
 
   const { data, isLoading, refetch } = useGetAllReceiveableQuery(queryArgs);
 
   useEffect(() => {
     if (!isLoading && data) {
       setProducts(data?.data ?? []);
-      setTotalPages(Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)));
+      setTotalPages(
+        Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)),
+      );
     }
   }, [data, isLoading, itemsPerPage]);
 
@@ -155,8 +173,12 @@ const ReceiveableTable = () => {
     else if (p > endPage) setStartPage(p - pagesPerSet + 1);
   };
 
-  const handlePreviousSet = () => setStartPage((p) => Math.max(p - pagesPerSet, 1));
-  const handleNextSet = () => setStartPage((p) => Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)));
+  const handlePreviousSet = () =>
+    setStartPage((p) => Math.max(p - pagesPerSet, 1));
+  const handleNextSet = () =>
+    setStartPage((p) =>
+      Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
+    );
 
   return (
     <motion.div
@@ -167,8 +189,12 @@ const ReceiveableTable = () => {
     >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Accounts Receivable</h2>
-          <p className="text-slate-500 text-sm mt-1 font-medium">Monitor and manage outstanding payments from customers</p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            Accounts Receivable
+          </h2>
+          <p className="text-slate-500 text-sm mt-1 font-medium">
+            Monitor and manage outstanding payments from customers
+          </p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -177,7 +203,9 @@ const ReceiveableTable = () => {
               <TrendingUp size={18} />
             </div>
             <div>
-              <div className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em]">Expected Income</div>
+              <div className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em]">
+                Expected Income
+              </div>
               <div className="text-base font-black text-emerald-900 tabular-nums leading-none">
                 ৳{(data?.meta?.countAmount || 0).toLocaleString()}
               </div>
@@ -196,7 +224,9 @@ const ReceiveableTable = () => {
       {/* Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
         <div className="flex flex-col">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">From Date</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
+            From Date
+          </label>
           <input
             type="date"
             value={startDate}
@@ -206,7 +236,9 @@ const ReceiveableTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">To Date</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
+            To Date
+          </label>
           <input
             type="date"
             value={endDate}
@@ -216,7 +248,9 @@ const ReceiveableTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Search Customer</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
+            Search Customer
+          </label>
           <input
             type="text"
             value={filterName}
@@ -228,7 +262,11 @@ const ReceiveableTable = () => {
 
         <button
           className="h-11 bg-slate-100 hover:bg-slate-200 text-slate-600 transition rounded-xl px-4 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 border border-slate-200"
-          onClick={() => { setStartDate(""); setEndDate(""); setFilterName(""); }}
+          onClick={() => {
+            setStartDate("");
+            setEndDate("");
+            setFilterName("");
+          }}
         >
           <X size={16} /> Clear Filters
         </button>
@@ -240,18 +278,30 @@ const ReceiveableTable = () => {
           <table className="min-w-full divide-y divide-slate-100">
             <thead className="bg-slate-50/50">
               <tr>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Customer / Source</th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Document</th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Receivable Amount</th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Status</th>
-                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">Actions</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Customer / Source
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Document
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Receivable Amount
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Status
+                </th>
+                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {products.map((rp) => {
                 const rowId = rp.Id || rp.id;
                 const safePath = String(rp.file || "").replace(/\\/g, "/");
-                const fileUrl = safePath ? `http://localhost:5000/${safePath}` : "";
+                const fileUrl = safePath
+                  ? `http://localhost:5000/${safePath}`
+                  : "";
                 const ext = safePath.split(".").pop()?.toLowerCase();
                 const isImage = ["jpg", "jpeg", "png", "webp"].includes(ext);
 
@@ -264,25 +314,45 @@ const ReceiveableTable = () => {
                   >
                     <td className="px-6 py-5 whitespace-nowrap">
                       <div className="flex flex-col">
-                        <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{rp.name}</div>
-                        <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Due Date: {rp.date}</div>
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                          {rp.name}
+                        </div>
+                        <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">
+                          Due Date: {rp.date}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap">
                       {safePath ? (
                         <div className="flex items-center">
                           {isImage ? (
-                            <a href={fileUrl} target="_blank" rel="noreferrer" className="block h-10 w-10 rounded-xl overflow-hidden border border-slate-200 hover:scale-105 transition active:scale-95 shadow-sm">
-                              <img src={fileUrl} alt="doc" className="w-full h-full object-cover" />
+                            <a
+                              href={fileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block h-10 w-10 rounded-xl overflow-hidden border border-slate-200 hover:scale-105 transition active:scale-95 shadow-sm"
+                            >
+                              <img
+                                src={fileUrl}
+                                alt="doc"
+                                className="w-full h-full object-cover"
+                              />
                             </a>
                           ) : (
-                            <a href={fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 text-[10px] font-black uppercase hover:bg-indigo-100 transition shadow-sm active:scale-95">
+                            <a
+                              href={fileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 text-[10px] font-black uppercase hover:bg-indigo-100 transition shadow-sm active:scale-95"
+                            >
                               <FileText size={14} /> View Doc
                             </a>
                           )}
                         </div>
                       ) : (
-                        <span className="text-xs font-bold text-slate-300 italic">No attachment</span>
+                        <span className="text-xs font-bold text-slate-300 italic">
+                          No attachment
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap">
@@ -291,24 +361,34 @@ const ReceiveableTable = () => {
                       </span>
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${rp.status === "Approved" ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
-                        rp.status === "Active" ? "bg-blue-50 text-blue-700 border-blue-100" :
-                          "bg-amber-50 text-amber-700 border-amber-100"
-                        }`}>
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${rp.status === "Approved"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                          : rp.status === "Active"
+                            ? "bg-blue-50 text-blue-700 border-blue-100"
+                            : "bg-amber-50 text-amber-700 border-amber-100"
+                          }`}
+                      >
                         {rp.status || "Pending"}
                       </span>
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => { setNoteContent(rp.note); setIsNoteModalOpen(true); }}
+                          onClick={() => {
+                            setNoteContent(rp.note);
+                            setIsNoteModalOpen(true);
+                          }}
                           className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm active:scale-95"
                           title="Internal Note"
                         >
                           <Notebook size={16} />
                         </button>
                         <button
-                          onClick={() => { setCurrentProduct(rp); setIsModalOpen(true); }}
+                          onClick={() => {
+                            setCurrentProduct(rp);
+                            setIsModalOpen(true);
+                          }}
                           className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm active:scale-95"
                           title="Edit"
                         >
@@ -338,7 +418,9 @@ const ReceiveableTable = () => {
           {!isLoading && products.length === 0 && (
             <div className="py-24 text-center text-slate-400">
               <div className="text-4xl mb-4 opacity-20">💰</div>
-              <p className="font-bold text-sm italic">No receivable entries found</p>
+              <p className="font-bold text-sm italic">
+                No receivable entries found
+              </p>
             </div>
           )}
         </div>
@@ -347,7 +429,8 @@ const ReceiveableTable = () => {
       {/* Pagination */}
       <div className="flex flex-col sm:flex-row items-center justify-between mt-10 gap-6 px-2">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-          Showing Page <span className="text-indigo-600">{currentPage}</span> of <span className="text-slate-900">{totalPages}</span>
+          Showing Page <span className="text-indigo-600">{currentPage}</span> of{" "}
+          <span className="text-slate-900">{totalPages}</span>
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -365,7 +448,9 @@ const ReceiveableTable = () => {
                 <button
                   key={pageNum}
                   onClick={() => handlePageChange(pageNum)}
-                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${active ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100" : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
+                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${active
+                    ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100"
+                    : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
                     }`}
                 >
                   {pageNum}
@@ -384,17 +469,32 @@ const ReceiveableTable = () => {
       </div>
 
       {/* Note View Modal */}
-      <Modal isOpen={isNoteModalOpen} onClose={() => setIsNoteModalOpen(false)} title="Audit Note">
+      <Modal
+        isOpen={isNoteModalOpen}
+        onClose={() => setIsNoteModalOpen(false)}
+        title="Audit Note"
+      >
         <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 min-h-[120px]">
-          <p className="text-slate-600 text-sm italic leading-relaxed whitespace-pre-wrap">{noteContent || "No special notes recorded for this receivable."}</p>
+          <p className="text-slate-600 text-sm italic leading-relaxed whitespace-pre-wrap">
+            {noteContent || "No special notes recorded for this receivable."}
+          </p>
         </div>
         <div className="mt-6 flex justify-end">
-          <button onClick={() => setIsNoteModalOpen(false)} className="px-10 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm transition shadow-lg active:scale-95">Dismiss</button>
+          <button
+            onClick={() => setIsNoteModalOpen(false)}
+            className="px-10 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm transition shadow-lg active:scale-95"
+          >
+            Dismiss
+          </button>
         </div>
       </Modal>
 
       {/* Add Modal */}
-      <Modal isOpen={isModalOpen1} onClose={() => setIsModalOpen1(false)} title="New Receivable Record">
+      <Modal
+        isOpen={isModalOpen1}
+        onClose={() => setIsModalOpen1(false)}
+        title="New Receivable Record"
+      >
         <form onSubmit={handleCreateProduct} className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -405,7 +505,9 @@ const ReceiveableTable = () => {
                 type="text"
                 required
                 value={createProduct.name}
-                onChange={(e) => setCreateProduct({ ...createProduct, name: e.target.value })}
+                onChange={(e) =>
+                  setCreateProduct({ ...createProduct, name: e.target.value })
+                }
                 className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 placeholder="e.g. John Doe"
               />
@@ -418,7 +520,9 @@ const ReceiveableTable = () => {
                 type="date"
                 required
                 value={createProduct.date}
-                onChange={(e) => setCreateProduct({ ...createProduct, date: e.target.value })}
+                onChange={(e) =>
+                  setCreateProduct({ ...createProduct, date: e.target.value })
+                }
                 className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
             </div>
@@ -426,89 +530,146 @@ const ReceiveableTable = () => {
 
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5">
-              <Wallet size={12} className="text-indigo-500" /> Outstanding Amount (৳)
+              <Wallet size={12} className="text-indigo-500" /> Outstanding
+              Amount (৳)
             </label>
             <input
               type="number"
               required
               value={createProduct.amount}
-              onChange={(e) => setCreateProduct({ ...createProduct, amount: e.target.value })}
+              onChange={(e) =>
+                setCreateProduct({ ...createProduct, amount: e.target.value })
+              }
               className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               placeholder="0.00"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">General Remarks</label>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+              General Remarks
+            </label>
             <textarea
               value={createProduct.remarks}
-              onChange={(e) => setCreateProduct({ ...createProduct, remarks: e.target.value })}
+              onChange={(e) =>
+                setCreateProduct({ ...createProduct, remarks: e.target.value })
+              }
               className="w-full min-h-[80px] px-4 py-3 rounded-xl border border-slate-200 bg-white font-medium text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
               placeholder="Briefly describe the source of this receivable..."
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Supporting Image/PDF</label>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+              Supporting Image/PDF
+            </label>
             <input
               type="file"
               accept=".jpg,.jpeg,.png,.pdf"
-              onChange={(e) => setCreateProduct({ ...createProduct, file: e.target.files?.[0] || null })}
+              onChange={(e) =>
+                setCreateProduct({
+                  ...createProduct,
+                  file: e.target.files?.[0] || null,
+                })
+              }
               className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 cursor-pointer"
             />
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-            <button type="button" onClick={() => setIsModalOpen1(false)} className="px-6 py-2.5 border border-slate-200 text-slate-500 font-bold text-sm rounded-xl hover:bg-slate-50 transition">Cancel</button>
-            <button type="submit" className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-100">Save Receivable</button>
+            <button
+              type="button"
+              onClick={() => setIsModalOpen1(false)}
+              className="px-6 py-2.5 border border-slate-200 text-slate-500 font-bold text-sm rounded-xl hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-100"
+            >
+              Save Receivable
+            </button>
           </div>
         </form>
       </Modal>
 
       {/* Edit Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Update Receivable Entry">
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Update Receivable Entry"
+      >
         {currentProduct && (
           <form onSubmit={handleUpdateProduct} className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Update Name</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                  Update Name
+                </label>
                 <input
                   type="text"
                   required
                   value={currentProduct.name}
-                  onChange={(e) => setCurrentProduct({ ...currentProduct, name: e.target.value })}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      name: e.target.value,
+                    })
+                  }
                   className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Change Date</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                  Change Date
+                </label>
                 <input
                   type="date"
                   required
                   value={currentProduct.date}
-                  onChange={(e) => setCurrentProduct({ ...currentProduct, date: e.target.value })}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      date: e.target.value,
+                    })
+                  }
                   className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Receivable Amount (৳)</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                Receivable Amount (৳)
+              </label>
               <input
                 type="number"
                 required
                 value={currentProduct.amount}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, amount: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    amount: e.target.value,
+                  })
+                }
                 className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 text-indigo-600">Administrative Status</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 text-indigo-600">
+                  Administrative Status
+                </label>
                 <select
                   value={currentProduct.status || ""}
-                  onChange={(e) => setCurrentProduct({ ...currentProduct, status: e.target.value })}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: e.target.value,
+                    })
+                  }
                   className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition appearance-none cursor-pointer"
                   disabled={role !== "superAdmin"}
                 >
@@ -518,11 +679,18 @@ const ReceiveableTable = () => {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Audit Note</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                  Audit Note
+                </label>
                 <input
                   type="text"
                   value={currentProduct.note || ""}
-                  onChange={(e) => setCurrentProduct({ ...currentProduct, note: e.target.value })}
+                  onChange={(e) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      note: e.target.value,
+                    })
+                  }
                   className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-medium text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                   placeholder="Internal audit remarks..."
                 />
@@ -530,18 +698,36 @@ const ReceiveableTable = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Replace Document (Optional)</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                Replace Document (Optional)
+              </label>
               <input
                 type="file"
                 accept=".jpg,.jpeg,.png,.pdf"
-                onChange={(e) => setCurrentProduct({ ...currentProduct, file: e.target.files?.[0] || null })}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    file: e.target.files?.[0] || null,
+                  })
+                }
                 className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 cursor-pointer"
               />
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-              <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 border border-slate-200 text-slate-500 font-bold text-sm rounded-xl hover:bg-slate-50 transition">Cancel</button>
-              <button type="submit" className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-100">Update Record</button>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-6 py-2.5 border border-slate-200 text-slate-500 font-bold text-sm rounded-xl hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-100"
+              >
+                Update Record
+              </button>
             </div>
           </form>
         )}

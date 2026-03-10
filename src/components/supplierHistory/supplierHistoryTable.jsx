@@ -4,26 +4,29 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
-import {
-  useDeletePurchaseRequisitionMutation,
-  useGetAllPurchaseRequisitionQuery,
-  useInsertPurchaseRequisitionMutation,
-  useUpdatePurchaseRequisitionMutation,
-} from "../../features/purchaseRequisition/purchaseRequisition";
-
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import Modal from "../common/Modal";
 import { useGetAllBookWithoutQueryQuery } from "../../features/book/book";
+import {
+  useDeleteSupplierHistoryMutation,
+  useGetAllSupplierHistoryQuery,
+  useInsertSupplierHistoryMutation,
+  useUpdateSupplierHistoryMutation,
+} from "../../features/supplierHistory/supplierHistory";
+import { useParams } from "react-router-dom";
+import { translations } from "../../utils/translations";
+import { useLayout } from "../../context/LayoutContext";
 
-const SupplierHistory = () => {
+const SupplierHistoryTable = () => {
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
-
+  const { id } = useParams(); // supplierId
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
   const [isModalOpen1, setIsModalOpen1] = useState(false); // Add modal
   const [isModalOpen2, setIsModalOpen2] = useState(false); // Note / status modal
   const [currentProduct, setCurrentProduct] = useState(null);
-
 
   const [book, setBook] = useState("");
   const [supplier, setSupplier] = useState("");
@@ -92,8 +95,6 @@ const SupplierHistory = () => {
     if (startDate && endDate && startDate > endDate) setEndDate(startDate);
   }, [startDate, endDate]);
 
-
-
   // ✅ productId -> productName map
   // const productNameMap = useMemo(() => {
   //   const m = new Map();
@@ -104,10 +105,6 @@ const SupplierHistory = () => {
   //   return m;
   // }, [productsData]);
 
-
-
-
-
   // ✅ Query args
   const queryArgs = useMemo(() => {
     const args = {
@@ -115,17 +112,20 @@ const SupplierHistory = () => {
       limit: itemsPerPage,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      name: productName || undefined, // ✅ backend filter by name
+      supplierId: id,
+      bookId: book || undefined, // ✅ backend filter by name
     };
     Object.keys(args).forEach((k) => {
       if (args[k] === undefined || args[k] === null || args[k] === "")
         delete args[k];
     });
     return args;
-  }, [currentPage, itemsPerPage, startDate, endDate, productName]);
+  }, [currentPage, itemsPerPage, startDate, endDate, id, book]);
+
+  const shouldSkip = !id;
 
   const { data, isLoading, isError, error, refetch } =
-    useGetAllPurchaseRequisitionQuery(queryArgs);
+    useGetAllSupplierHistoryQuery(queryArgs, { skip: shouldSkip });
 
   useEffect(() => {
     if (isError) {
@@ -140,13 +140,15 @@ const SupplierHistory = () => {
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
 
+  console.log("supplierhistory", rows);
+
   // ✅ Modals
   const handleAddProduct = () => setIsModalOpen1(true);
   const handleModalClose = () => setIsModalOpen(false);
   const handleModalClose1 = () => setIsModalOpen1(false);
   const handleModalClose2 = () => setIsModalOpen2(false);
 
-  const [updatePurchaseRequisition] = useUpdatePurchaseRequisitionMutation();
+  const [updateSupplierHistory] = useUpdateSupplierHistoryMutation();
 
   // const handleEditClick = (rp) => {
   //   setCurrentProduct({
@@ -162,7 +164,6 @@ const SupplierHistory = () => {
   // };
 
   const handleEditClick = (rp) => {
-
     setCurrentProduct({
       ...rp,
       quantity: rp.quantity ?? "",
@@ -189,8 +190,6 @@ const SupplierHistory = () => {
   // };
 
   const handleEditClick1 = (rp) => {
-
-
     setCurrentProduct({
       ...rp,
       quantity: rp.quantity ?? "",
@@ -215,7 +214,7 @@ const SupplierHistory = () => {
         actorRole: role,
       };
 
-      const res = await updatePurchaseRequisition({
+      const res = await updateSupplierHistory({
         id: currentProduct.Id,
         data: updatedProduct,
       }).unwrap();
@@ -237,7 +236,6 @@ const SupplierHistory = () => {
 
     try {
       const payload = {
-
         quantity: Number(currentProduct.quantity),
         status: currentProduct.status,
         note: currentProduct.note,
@@ -245,7 +243,7 @@ const SupplierHistory = () => {
         actorRole: role,
       };
 
-      const res = await updatePurchaseRequisition({
+      const res = await updateSupplierHistory({
         id: currentProduct.Id,
         data: payload,
       }).unwrap();
@@ -261,7 +259,7 @@ const SupplierHistory = () => {
   };
 
   // ✅ Insert
-  const [insertPurchaseRequisition] = useInsertPurchaseRequisitionMutation();
+  const [insertSupplierHistory] = useInsertSupplierHistoryMutation();
 
   const handleCreateProduct = async (e) => {
     e.preventDefault();
@@ -280,7 +278,7 @@ const SupplierHistory = () => {
         userId: userId,
       };
 
-      const res = await insertPurchaseRequisition(payload).unwrap();
+      const res = await insertSupplierHistory(payload).unwrap();
       if (res?.success) {
         toast.success("Successfully created received product");
         setIsModalOpen1(false);
@@ -293,14 +291,14 @@ const SupplierHistory = () => {
   };
 
   // ✅ Delete
-  const [deletePurchaseRequisition] = useDeletePurchaseRequisitionMutation();
+  const [deleteSupplierHistory] = useDeleteSupplierHistoryMutation();
 
   const handleDeleteProduct = async (id) => {
     const confirmDelete = window.confirm("Do you want to delete this product?");
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {
-      const res = await deletePurchaseRequisition(id).unwrap();
+      const res = await deleteSupplierHistory(id).unwrap();
       if (res?.success) {
         toast.success("Product deleted successfully!");
         refetch?.();
@@ -314,7 +312,7 @@ const SupplierHistory = () => {
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
-    setProductName("");
+    setBook("");
   };
 
   // ✅ react-select light styles (so it looks good in light UI)
@@ -332,7 +330,6 @@ const SupplierHistory = () => {
     menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
   };
 
-
   console.log("firstRow", rows?.[0]);
 
   // ✅ suppliers
@@ -345,8 +342,7 @@ const SupplierHistory = () => {
   const books = allBookRes?.data || [];
 
   useEffect(() => {
-    if (isErrorBook)
-      console.error("Error fetching Books", errorBook);
+    if (isErrorBook) console.error("Error fetching Books", errorBook);
   }, [isErrorBook, errorBook]);
 
   // ✅ Dropdown options
@@ -359,7 +355,6 @@ const SupplierHistory = () => {
       })),
     [books],
   );
-
 
   // ✅ suppliers
   const {
@@ -386,7 +381,6 @@ const SupplierHistory = () => {
     [suppliers],
   );
 
-
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [noteContent, setNoteContent] = useState("");
 
@@ -399,6 +393,8 @@ const SupplierHistory = () => {
     setIsNoteModalOpen(false); // Close the modal
   };
 
+  console.log("shistory", data);
+
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
@@ -406,16 +402,111 @@ const SupplierHistory = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+        {/* CashIn */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-emerald-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">
+                {t.total_paid || "Total Paid"}
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {isLoading
+                  ? "—"
+                  : Number(data?.meta?.totalPaid || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-emerald-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 19V5" />
+                <path d="M5 12l7-7 7 7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* CashOut */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-rose-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">
+                {t.total_unpaid || "Total Unpaid"}
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {isLoading
+                  ? "—"
+                  : Number(data?.meta?.totalUnpaid || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-rose-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 5v14" />
+                <path d="M19 12l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Net */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-indigo-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">
+                {t.net_balance || "Net Balance"}
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {isLoading
+                  ? "—"
+                  : Number(data?.meta?.netBalance || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-indigo-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 19V5" />
+                <path d="M8 17V7" />
+                <path d="M12 19V9" />
+                <path d="M16 15V5" />
+                <path d="M20 19V11" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Top Bar */}
       <div className="my-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <button
+        {/* <button
           type="button"
           onClick={handleAddProduct}
           className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
         >
           Add <Plus size={18} className="ml-2" />
-        </button>
+        </button> */}
 
+        <div></div>
         <div className="flex items-center justify-between sm:justify-end gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
           <div className="flex items-center gap-2 text-slate-700">
             <ShoppingBasket size={18} className="text-amber-500" />
@@ -471,15 +562,12 @@ const SupplierHistory = () => {
           </select>
         </div>
 
-
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Book</label>
           <Select
             options={BookOptions}
             value={
-              BookOptions.find(
-                (o) => String(o.value) === String(book),
-              ) || null
+              BookOptions.find((o) => String(o.value) === String(book)) || null
             }
             onChange={(selected) => setBook(selected?.value || "")}
             placeholder="Select Book"
@@ -487,7 +575,7 @@ const SupplierHistory = () => {
             className="text-black"
           />
         </div>
-
+        {/* 
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Supplier</label>
           <Select
@@ -502,7 +590,7 @@ const SupplierHistory = () => {
             isClearable
             className="text-black"
           />
-        </div>
+        </div> */}
 
         <button
           type="button"
@@ -522,18 +610,24 @@ const SupplierHistory = () => {
                 Date
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Supplier
-              </th>{" "}
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Status
+                Document
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Book
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Amount
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Payment Status
+              </th>
+              {/* <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Actions
-              </th>
+              </th> */}
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-200 bg-white">
+          {/* <tbody className="divide-y divide-slate-200 bg-white">
             {rows.map((rp) => (
               <motion.tr
                 key={rp.Id}
@@ -546,21 +640,51 @@ const SupplierHistory = () => {
                   {rp.date}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {!safePath ? (
+                    "---"
+                  ) : isImage ? (
+                    <a href={fileUrl} target="_blank" rel="noreferrer">
+                      <img
+                        src={fileUrl}
+                        alt="document"
+                        className="h-12 w-12 object-cover rounded-xl border border-slate-200 hover:opacity-80"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    </a>
+                  ) : isPdf ? (
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs hover:bg-indigo-700"
+                    >
+                      {t.view_pdf || "View PDF"}
+                    </a>
+                  ) : (
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-indigo-600 underline"
+                    >
+                      Open File
+                    </a>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {rp?.book?.name || "-"}
                 </td>{" "}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp?.supplier?.name || "-"}
-                </td>{" "}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.quantity || 0)}
+                  {Number(rp.amount).toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${rp.status === "Approved"
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${rp.status === "paid"
                       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : rp.status === "Active"
-                        ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                        : "bg-amber-50 text-amber-700 border-amber-200"
+                      : "bg-amber-50 text-amber-700 border-amber-200"
+
                       }`}
                   >
                     {rp.status}
@@ -636,6 +760,159 @@ const SupplierHistory = () => {
                 </td>
               </tr>
             )}
+          </tbody> */}
+
+          <tbody className="divide-y divide-slate-200 bg-white">
+            {rows.map((rp) => {
+              const rowId = rp.Id ?? rp.id;
+
+              const safePath = String(rp.file || "").replace(/\\/g, "/");
+              const fileUrl = safePath
+                ? `http://localhost:5000/${safePath}`
+                : "";
+              const ext = safePath.split(".").pop()?.toLowerCase();
+              const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
+                ext,
+              );
+              const isPdf = ext === "pdf";
+
+              return (
+                <motion.tr
+                  key={rowId}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className="hover:bg-slate-50"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp.date || "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {!safePath ? (
+                      "---"
+                    ) : isImage ? (
+                      <a href={fileUrl} target="_blank" rel="noreferrer">
+                        <img
+                          src={fileUrl}
+                          alt="document"
+                          className="h-12 w-12 object-cover rounded-xl border border-slate-200 hover:opacity-80"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      </a>
+                    ) : isPdf ? (
+                      <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs hover:bg-indigo-700"
+                      >
+                        {t.view_pdf || "View PDF"}
+                      </a>
+                    ) : (
+                      <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-indigo-600 underline"
+                      >
+                        Open File
+                      </a>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-tighter">
+                      {rp?.book?.name || t.no_book || "No Book"}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
+                    {Number(rp.amount || 0).toFixed(2)}
+                  </td>
+
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${rp.status === "Paid"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                        }`}
+                    >
+                      {rp.status}
+                    </span>
+                  </td>
+
+                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      {rp.note ? (
+                        <div className="relative">
+                          <button
+                            className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                            title={rp.note}
+                            type="button"
+                            onClick={() => handleNoteClick(rp.note)} // Open modal on click
+                          >
+                            <Notebook size={18} className="text-slate-700" />
+                          </button>
+
+                          <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                            {rp.note ? 1 : null}
+                          </span>
+                        </div>
+                      ) : (
+                        <button
+                          className="h-10 w-10 rounded-md flex items-center justify-center"
+                          title={rp.note}
+                          type="button"
+                        >
+                          <Notebook size={18} className="text-slate-700" />
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleEditClick(rp)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                        title="Edit"
+                      >
+                        <Edit size={18} className="text-indigo-600" />
+                      </button>
+
+                      {role === "superAdmin" || role === "admin" ? (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProduct(rp.Id)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                          title="Delete"
+                        >
+                          <Trash2 size={18} className="text-red-600" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleEditClick1(rp)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                          title="Request Delete"
+                        >
+                          <Trash2 size={18} className="text-amber-600" />
+                        </button>
+                      )}
+                    </div>
+                  </td> */}
+                </motion.tr>
+              );
+            })}
+
+            {!isLoading && rows.length === 0 && (
+              <tr>
+                <td
+                  colSpan={8}
+                  className="px-6 py-8 text-center text-sm text-slate-600"
+                >
+                  {t.no_data_found}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -684,69 +961,66 @@ const SupplierHistory = () => {
         maxWidth="max-w-2xl"
       >
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Book</label>
-              <select
-                value={currentProduct?.bookId || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, bookId: e.target.value })}
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="">Select Book</option>
-                {books?.map(s => <option key={s.Id} value={s.Id}>{s.name}</option>)}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Supplier</label>
-              <select
-                value={currentProduct?.supplierId || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, supplierId: e.target.value })}
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="">Select Supplier</option>
-                {suppliers?.map(s => <option key={s.Id} value={s.Id}>{s.name}</option>)}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Date
+              </label>
               <input
                 type="date"
                 value={currentProduct?.date || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, date: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({ ...currentProduct, date: e.target.value })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
             </div>
-
-          </div>
-
-          {(role === "superAdmin" || role === "admin") ? (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Book
+              </label>
               <select
-                value={currentProduct?.status || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, status: e.target.value })}
+                value={currentProduct?.bookId || ""}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    bookId: e.target.value,
+                  })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
-                <option value="Active">Active</option>
-                <option value="Approved">Approved</option>
-                <option value="Pending">Pending</option>
+                <option value="">Select Book</option>
+                {books?.map((s) => (
+                  <option key={s.Id} value={s.Id}>
+                    {s.name}
+                  </option>
+                ))}
               </select>
             </div>
-          ) : (
+
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Note</label>
-              <textarea
-                value={currentProduct?.note || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, note: e.target.value })}
-                className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                rows={3}
-              />
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Supplier
+              </label>
+              <select
+                value={currentProduct?.supplierId || ""}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    supplierId: e.target.value,
+                  })
+                }
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              >
+                <option value="">Select Supplier</option>
+                {suppliers?.map((s) => (
+                  <option key={s.Id} value={s.Id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
+          </div>
 
           <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
             <button
@@ -773,12 +1047,15 @@ const SupplierHistory = () => {
         maxWidth="max-w-2xl"
       >
         <form onSubmit={handleCreateProduct} className="space-y-6">
-
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Note</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Note
+            </label>
             <textarea
               value={createProduct.note}
-              onChange={(e) => setCreateProduct({ ...createProduct, note: e.target.value })}
+              onChange={(e) =>
+                setCreateProduct({ ...createProduct, note: e.target.value })
+              }
               className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               rows={3}
             />
@@ -811,10 +1088,17 @@ const SupplierHistory = () => {
         <div className="space-y-6">
           {role === "superAdmin" ? (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Status
+              </label>
               <select
                 value={currentProduct?.status || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, status: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    status: e.target.value,
+                  })
+                }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
                 <option value="Active">Active</option>
@@ -824,10 +1108,14 @@ const SupplierHistory = () => {
             </div>
           ) : (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Reason for Deletion</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Reason for Deletion
+              </label>
               <textarea
                 value={currentProduct?.note || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, note: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({ ...currentProduct, note: e.target.value })
+                }
                 className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 rows={4}
                 placeholder="Briefly explain why this requisition should be deleted..."
@@ -878,4 +1166,4 @@ const SupplierHistory = () => {
   );
 };
 
-export default SupplierHistory;
+export default SupplierHistoryTable;

@@ -595,7 +595,9 @@ const MarketingExpenseTable = () => {
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-emerald-50/70 to-transparent" />
           <div className="relative flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-slate-500">{t.total_cash_in}</p>
+              <p className="text-xs font-medium text-slate-500">
+                {t.total_cash_in}
+              </p>
               <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
                 {isLoading
                   ? "—"
@@ -653,7 +655,9 @@ const MarketingExpenseTable = () => {
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-indigo-50/70 to-transparent" />
           <div className="relative flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-slate-500">{t.net_balance}</p>
+              <p className="text-xs font-medium text-slate-500">
+                {t.net_balance}
+              </p>
               <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
                 {isLoading
                   ? "—"
@@ -761,7 +765,9 @@ const MarketingExpenseTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">{t.payment_mode}</label>
+          <label className="text-sm text-slate-600 mb-1">
+            {t.payment_mode}
+          </label>
           <select
             value={filterPaymentMode}
             onChange={(e) => setFilterPaymentMode(e.target.value)}
@@ -779,7 +785,9 @@ const MarketingExpenseTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">{t.payment_status}</label>
+          <label className="text-sm text-slate-600 mb-1">
+            {t.payment_status}
+          </label>
           <select
             value={filterPaymentStatus}
             onChange={(e) => setFilterPaymentStatus(e.target.value)}
@@ -1168,7 +1176,9 @@ const MarketingExpenseTable = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Date
+            </label>
             <input
               type="date"
               value={currentProduct?.date || ""}
@@ -1180,11 +1190,16 @@ const MarketingExpenseTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Payment Status</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Payment Status
+            </label>
             <select
               value={currentProduct?.paymentStatus || ""}
               onChange={(e) =>
-                setCurrentProduct((p) => ({ ...p, paymentStatus: e.target.value }))
+                setCurrentProduct((p) => ({
+                  ...p,
+                  paymentStatus: e.target.value,
+                }))
               }
               className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               required
@@ -1196,7 +1211,9 @@ const MarketingExpenseTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Category</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Category
+            </label>
             <select
               value={currentProduct?.category || ""}
               onChange={(e) =>
@@ -1214,7 +1231,9 @@ const MarketingExpenseTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Remarks</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Remarks
+            </label>
             <input
               type="text"
               value={currentProduct?.remarks || ""}
@@ -1226,7 +1245,9 @@ const MarketingExpenseTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Amount</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Amount
+            </label>
             <input
               type="number"
               step="0.01"
@@ -1241,7 +1262,9 @@ const MarketingExpenseTable = () => {
 
           {role === "superAdmin" || role === "admin" ? (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Status
+              </label>
               <select
                 value={currentProduct?.status || ""}
                 onChange={(e) =>
@@ -1258,7 +1281,9 @@ const MarketingExpenseTable = () => {
             </div>
           ) : (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Note</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Note
+              </label>
               <textarea
                 value={currentProduct?.note || ""}
                 onChange={(e) =>
@@ -1271,7 +1296,9 @@ const MarketingExpenseTable = () => {
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Upload Document</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Upload Document
+            </label>
             <input
               type="file"
               accept=".jpg,.jpeg,.png,.pdf"
@@ -1322,7 +1349,9 @@ const MarketingExpenseTable = () => {
         <div className="space-y-4">
           {role === "superAdmin" || role === "admin" ? (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Status</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Status
+              </label>
               <select
                 value={currentProduct?.status || ""}
                 onChange={(e) =>
@@ -1339,7 +1368,9 @@ const MarketingExpenseTable = () => {
             </div>
           ) : (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Note / Reason</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Note / Reason
+              </label>
               <textarea
                 value={currentProduct?.note || ""}
                 onChange={(e) =>
@@ -1379,7 +1410,9 @@ const MarketingExpenseTable = () => {
       >
         <form onSubmit={handleCreateProduct} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Date
+            </label>
             <input
               type="date"
               value={createProduct?.date || ""}
@@ -1391,7 +1424,9 @@ const MarketingExpenseTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Category</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Category
+            </label>
             <select
               value={createProduct.category || ""}
               onChange={(e) =>
@@ -1412,7 +1447,9 @@ const MarketingExpenseTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Remarks</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Remarks
+            </label>
             <input
               type="text"
               value={createProduct.remarks}
@@ -1428,7 +1465,9 @@ const MarketingExpenseTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Amount</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Amount
+            </label>
             <input
               type="number"
               step="0.01"
@@ -1445,7 +1484,9 @@ const MarketingExpenseTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Upload Document</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Upload Document
+            </label>
             <input
               type="file"
               accept=".jpg,.jpeg,.png,.pdf"
@@ -1490,7 +1531,9 @@ const MarketingExpenseTable = () => {
       >
         <form onSubmit={handleCreateProduct1} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Date
+            </label>
             <input
               type="date"
               value={createProduct?.date || ""}
@@ -1502,7 +1545,9 @@ const MarketingExpenseTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Category</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Category
+            </label>
             <select
               value={createProduct.category || ""}
               onChange={(e) =>
@@ -1523,7 +1568,9 @@ const MarketingExpenseTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Remarks</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Remarks
+            </label>
             <input
               type="text"
               value={createProduct.remarks}
@@ -1539,7 +1586,9 @@ const MarketingExpenseTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Amount</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Amount
+            </label>
             <input
               type="number"
               step="0.01"
@@ -1556,7 +1605,9 @@ const MarketingExpenseTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Upload Document</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              Upload Document
+            </label>
             <input
               type="file"
               accept=".jpg,.jpeg,.png,.pdf"

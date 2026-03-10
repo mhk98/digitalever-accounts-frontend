@@ -419,9 +419,7 @@ const UserManagementTable = () => {
             <Input
               label="First Name"
               value={currentUser?.FirstName || ""}
-              onChange={(v) =>
-                setCurrentUser((p) => ({ ...p, FirstName: v }))
-              }
+              onChange={(v) => setCurrentUser((p) => ({ ...p, FirstName: v }))}
             />
             <Input
               label="Last Name"
@@ -447,7 +445,9 @@ const UserManagementTable = () => {
             />
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Role
+              </label>
               <select
                 value={currentUser?.role || ""}
                 onChange={(e) =>
@@ -498,7 +498,9 @@ const UserManagementTable = () => {
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-900">Image Preview</p>
+                  <p className="text-sm font-medium text-slate-900">
+                    Image Preview
+                  </p>
                   <p className="text-xs text-slate-500">
                     নতুন ছবি সিলেক্ট করলে পুরোনোটা replace হবে।
                   </p>
@@ -539,16 +541,12 @@ const UserManagementTable = () => {
             <Input
               label="First Name"
               value={createUser.FirstName}
-              onChange={(v) =>
-                setCreateUser((p) => ({ ...p, FirstName: v }))
-              }
+              onChange={(v) => setCreateUser((p) => ({ ...p, FirstName: v }))}
             />
             <Input
               label="Last Name"
               value={createUser.LastName}
-              onChange={(v) =>
-                setCreateUser((p) => ({ ...p, LastName: v }))
-              }
+              onChange={(v) => setCreateUser((p) => ({ ...p, LastName: v }))}
             />
             <Input
               label="Email *"
@@ -559,9 +557,7 @@ const UserManagementTable = () => {
               label="Password *"
               type="password"
               value={createUser.Password}
-              onChange={(v) =>
-                setCreateUser((p) => ({ ...p, Password: v }))
-              }
+              onChange={(v) => setCreateUser((p) => ({ ...p, Password: v }))}
             />
             <Input
               label="Phone"
@@ -570,7 +566,9 @@ const UserManagementTable = () => {
             />
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Role *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Role *
+              </label>
               <select
                 value={createUser.role}
                 onChange={(e) =>
@@ -610,8 +608,12 @@ const UserManagementTable = () => {
                     className="h-16 w-16 rounded-full object-cover border-2 border-white shadow-sm"
                   />
                   <div>
-                    <p className="text-sm font-medium text-slate-900">Image Preview</p>
-                    <p className="text-xs text-slate-500">Selected profile picture</p>
+                    <p className="text-sm font-medium text-slate-900">
+                      Image Preview
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Selected profile picture
+                    </p>
                   </div>
                 </div>
               )}
@@ -642,7 +644,9 @@ const UserManagementTable = () => {
 
 const Input = ({ label, value, onChange, type = "text" }) => (
   <div>
-    <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+    <label className="block text-sm font-medium text-slate-700 mb-1">
+      {label}
+    </label>
     <input
       type={type}
       value={value || ""}

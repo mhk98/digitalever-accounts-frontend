@@ -1,5 +1,6 @@
 import {
   ChevronDown,
+  Factory,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
@@ -137,6 +138,13 @@ const SIDEBAR_ITEMS = [
     color: "#8b5cf6",
     roles: ["superAdmin", "admin", "inventor"],
     children: [
+      {
+        name: "Manufacture",
+        key: "manufacture",
+        icon: Factory,
+        href: "/manufacture",
+        roles: ["superAdmin", "admin"],
+      },
       {
         name: "Overview",
         key: "overview",
@@ -281,6 +289,13 @@ const SIDEBAR_ITEMS = [
         href: "/petty-cash",
         roles: ["superAdmin", "admin", "accountant"],
       },
+      {
+        name: "Credit Ledger",
+        key: "credit_ledger",
+        icon: HandCoins,
+        href: "/credit-ledger",
+        roles: ["superAdmin", "admin", "accountant"],
+      },
     ],
   },
 
@@ -399,7 +414,7 @@ const Sidebar = () => {
     toggleSidebar,
     isMobileMenuOpen,
     toggleMobileMenu,
-    language
+    language,
   } = useLayout();
   const t = translations[language] || translations.EN;
   const [openMenu, setOpenMenu] = useState(null);
@@ -432,14 +447,17 @@ const Sidebar = () => {
           .filter((c) => c.roles.includes(userRole))
           .filter((c) => {
             const translatedChild = (t[c.key] || c.name).toLowerCase();
-            return c.name.toLowerCase().includes(q) || translatedChild.includes(q);
+            return (
+              c.name.toLowerCase().includes(q) || translatedChild.includes(q)
+            );
           });
 
         return { ...item, children: childMatches };
       })
       .filter((item) => {
         const translatedParent = (t[item.key] || item.name).toLowerCase();
-        const parentMatch = item.name.toLowerCase().includes(q) || translatedParent.includes(q);
+        const parentMatch =
+          item.name.toLowerCase().includes(q) || translatedParent.includes(q);
 
         if (!item.children) return parentMatch;
         if (parentMatch) return true;
@@ -486,7 +504,9 @@ const Sidebar = () => {
       </AnimatePresence>
 
       <motion.aside
-        className={`fixed left-0 top-0 bottom-0 z-50 transition-all duration-300 lg:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`fixed left-0 top-0 bottom-0 z-50 transition-all duration-300 lg:translate-x-0 ${isMobileMenuOpen
+          ? "translate-x-0"
+          : "-translate-x-full lg:translate-x-0"
           } bg-slate-50 border-r border-slate-200`}
         animate={{ width: isSidebarOpen ? 280 : 88 }}
         transition={{ type: "spring", stiffness: 260, damping: 24 }}
@@ -500,7 +520,11 @@ const Sidebar = () => {
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
                   <img
-                    src={logo ? ` http://localhost:5000/${logo}` : ""}
+                    src={
+                      logo
+                        ? ` http://localhost:5000/${logo}`
+                        : ""
+                    }
                     alt="Logo"
                     className="h-full w-full object-cover"
                   />
@@ -517,7 +541,9 @@ const Sidebar = () => {
                       <div className="text-slate-900 font-semibold leading-tight">
                         Accounting
                       </div>
-                      <div className="text-xs text-slate-500">{t.control_panel}</div>
+                      <div className="text-xs text-slate-500">
+                        {t.control_panel}
+                      </div>
                     </motion.div>
                   ) : null}
                 </AnimatePresence>
@@ -676,7 +702,9 @@ const Sidebar = () => {
                             className={`${parentBase} ${parentState}`}
                           >
                             <span
-                              className={`absolute left-0 top-2 bottom-2 w-1 rounded-full transition ${parentActive ? "bg-indigo-500" : "bg-transparent"
+                              className={`absolute left-0 top-2 bottom-2 w-1 rounded-full transition ${parentActive
+                                ? "bg-indigo-500"
+                                : "bg-transparent"
                                 }`}
                             />
 

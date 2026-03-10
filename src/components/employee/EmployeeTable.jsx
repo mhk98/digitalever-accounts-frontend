@@ -1200,8 +1200,8 @@ const EmployeeTable = () => {
           }
 
           .net-row td {
-            background: #4f46e5;
-            color: #fff;
+            // background: #4f46e5;
+            color: #333;
             font-weight: 800;
             padding: 18px 14px;
             font-size: 16px;
@@ -2132,9 +2132,9 @@ const EmployeeTable = () => {
                   <td className="py-4 font-black text-slate-900">{t.total_calculation || "Total Calculation"}</td>
                   <td className="py-4 text-right font-black text-slate-900 border-t-2 border-slate-900">{Number(invoiceEmployee?.total_salary || 0).toLocaleString()}</td>
                 </tr>
-                <tr className="bg-indigo-600">
-                  <td className="py-5 px-4 font-black text-white rounded-l-2xl">{t.net_salary_payable || "NET SALARY PAYABLE"}</td>
-                  <td className="py-5 px-4 text-right font-black text-white rounded-r-2xl text-xl">
+                <tr className="bg-white">
+                  <td className="py-5 px-4 font-black text-black rounded-l-2xl">{t.net_salary_payable || "NET SALARY PAYABLE"}</td>
+                  <td className="py-5 px-4 text-right font-black text-black rounded-r-2xl text-xl">
                     ৳ {Number(invoiceEmployee?.net_salary || 0).toLocaleString()}
                   </td>
                 </tr>
@@ -2357,8 +2357,8 @@ const EmployeeTable = () => {
                         </td>
                       </tr>
 
-                      <tr className="bg-indigo-600">
-                        <td className="py-5 px-4 font-black text-white rounded-l-2xl">
+                      <tr className="bg-white">
+                        <td className="py-5 px-4 font-black text-black rounded-l-2xl">
                           {t.net_salary_payable || "NET SALARY PAYABLE"}
                         </td>
                         <td className="py-5 px-4 text-right font-black text-white rounded-r-2xl text-xl">

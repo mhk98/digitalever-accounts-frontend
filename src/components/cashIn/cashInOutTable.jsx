@@ -1551,7 +1551,7 @@ import {
   useUpdateCashInOutMutation,
 } from "../../features/cashInOut/cashInOut";
 import { useParams } from "react-router-dom";
-
+import Select from "react-select";
 import ReportMenu from "./ReportMenu";
 import ReportPreviewModal from "./ReportPreviewModal";
 
@@ -1565,6 +1565,7 @@ import {
 import Modal from "../common/Modal";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
+import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 
 const BANKS = [
   "Al Arafah",
@@ -1615,6 +1616,7 @@ const CashInOutTable = () => {
     paymentStatus: "",
     bankName: "",
     bankAccount: "",
+    supplierId: "",
     note: "",
     status: "",
     category: "",
@@ -1641,6 +1643,9 @@ const CashInOutTable = () => {
   const role = localStorage.getItem("role");
   const [isNewCategoryEdit, setIsNewCategoryEdit] = useState(false);
   const [newCategoryNameEdit, setNewCategoryNameEdit] = useState("");
+  const [supplier, setSupplier] = useState("");
+
+  console.log("supplier", supplier);
 
   //Pagination calculation start
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -1712,16 +1717,51 @@ const CashInOutTable = () => {
     }
   }, [currentProduct?.paymentMode]);
 
+  // const queryArgs = useMemo(() => {
+  //   const args = {
+  //     page: currentPage,
+  //     limit: itemsPerPage,
+  //     bookId: id,
+  //     startDate: startDate || undefined,
+  //     endDate: endDate || undefined,
+  //     paymentMode: filterPaymentMode || undefined,
+  //     paymentStatus: filterPaymentStatus || undefined,
+  //     category: filterCategory || undefined,
+  //     searchTerm: searchTerm || undefined, // ensure it's included in the query
+  //   };
+
+  //   Object.keys(args).forEach((k) => {
+  //     if (args[k] === undefined || args[k] === null || args[k] === "")
+  //       delete args[k]; // Clean empty or undefined values
+  //   });
+
+  //   return args;
+  // }, [
+  //   currentPage,
+  //   itemsPerPage,
+  //   id,
+  //   startDate,
+  //   endDate,
+  //   searchTerm, // searchTerm should be included
+  //   filterPaymentMode,
+  //   filterPaymentStatus,
+  //   filterCategory,
+  // ]);
+
+  // const shouldSkip = !id;
+
+
+
   const queryArgs = useMemo(() => {
     const args = {
       page: currentPage,
       limit: itemsPerPage,
-      bookId: id,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
+      bookId: id,
+      category: filterCategory || undefined,
       paymentMode: filterPaymentMode || undefined,
       paymentStatus: filterPaymentStatus || undefined,
-      category: filterCategory || undefined,
       searchTerm: searchTerm || undefined, // ensure it's included in the query
     };
 
@@ -1734,20 +1774,18 @@ const CashInOutTable = () => {
   }, [
     currentPage,
     itemsPerPage,
-    id,
     startDate,
     endDate,
-    searchTerm, // searchTerm should be included
+    id,
     filterPaymentMode,
     filterPaymentStatus,
     filterCategory,
+    searchTerm,
   ]);
-
-  const shouldSkip = !id;
 
   const { data, isLoading, isError, error, refetch } = useGetAllCashInOutQuery(
     queryArgs,
-    { skip: shouldSkip },
+    // { skip: shouldSkip },
   );
 
   useEffect(() => {
@@ -1854,6 +1892,7 @@ const CashInOutTable = () => {
       amount: rp.amount ?? "",
       bankName: rp.bankName ?? "",
       bankAccount: rp.bankAccount ?? "",
+      supplierId: rp.supplierId ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
       date: rp.date ?? "",
@@ -1873,6 +1912,7 @@ const CashInOutTable = () => {
       paymentStatus: rp.paymentStatus ?? "",
       amount: rp.amount ?? "",
       bankName: rp.bankName ?? "",
+      supplierId: rp.supplierId ?? "",
       bankAccount: rp.bankAccount ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
@@ -1907,6 +1947,7 @@ const CashInOutTable = () => {
       formData.append("paymentMode", currentProduct.paymentMode);
       formData.append("paymentStatus", currentProduct.paymentStatus);
       formData.append("note", currentProduct.note);
+      formData.append("supplierId", currentProduct?.supplierId || "");
       formData.append("status", currentProduct.status);
       formData.append("date", currentProduct.date);
       formData.append("userId", userId);
@@ -1954,7 +1995,7 @@ const CashInOutTable = () => {
       formData.append("status", currentProduct.status);
       formData.append("userId", userId);
       formData.append("bookId", id);
-
+      formData.append("supplierId", currentProduct?.supplierId || "");
       const res = await updateCashInOut({ id: rowId, data: formData }).unwrap();
       if (res?.success) {
         toast.success("Successfully updated!");
@@ -2026,6 +2067,7 @@ const CashInOutTable = () => {
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
       formData.append("bookId", id);
+      formData.append("supplierId", createProduct?.supplierId || "");
       if (createProduct.file) formData.append("file", createProduct.file);
       console.log("cash in data", formData);
 
@@ -2109,6 +2151,7 @@ const CashInOutTable = () => {
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
       formData.append("bookId", id);
+      formData.append("supplierId", createProduct?.supplierId || "");
       if (createProduct.file) formData.append("file", createProduct.file);
 
       const res = await insertCashIn(formData).unwrap();
@@ -2159,6 +2202,7 @@ const CashInOutTable = () => {
     setFilterPaymentMode("");
     setFilterPaymentStatus("");
     setFilterCategory("");
+    setSupplier("");
   };
 
   // report states
@@ -2249,6 +2293,41 @@ const CashInOutTable = () => {
     setIsNoteModalOpen(false); // Close the modal
   };
 
+  // ✅ suppliers
+  const {
+    data: allSupplierRes,
+    isError: isErrorSupplier,
+    error: errorSupplier,
+  } = useGetAllSupplierWithoutQueryQuery();
+  const suppliers = allSupplierRes?.data || [];
+
+  useEffect(() => {
+    if (isErrorSupplier)
+      console.error("Error fetching suppliers", errorSupplier);
+  }, [isErrorSupplier, errorSupplier]);
+
+  const supplierOptions = useMemo(
+    () =>
+      (suppliers || []).map((s) => ({
+        value: s.Id,
+        label: s.name,
+      })),
+    [suppliers],
+  );
+
+  const selectStyles = {
+    control: (base, state) => ({
+      ...base,
+      minHeight: 44,
+      borderRadius: 14,
+      borderColor: state.isFocused ? "#c7d2fe" : "#e2e8f0",
+      boxShadow: state.isFocused ? "0 0 0 4px rgba(99,102,241,0.15)" : "none",
+      "&:hover": { borderColor: "#cbd5e1" },
+    }),
+    valueContainer: (base) => ({ ...base, padding: "0 12px" }),
+    placeholder: (base) => ({ ...base, color: "#64748b" }),
+    menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
+  };
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
@@ -2262,7 +2341,9 @@ const CashInOutTable = () => {
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-emerald-50/70 to-transparent" />
           <div className="relative flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-slate-500">{t.total_cashin || "Total CashIn"}</p>
+              <p className="text-xs font-medium text-slate-500">
+                {t.total_cashin || "Total CashIn"}
+              </p>
               <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
                 {isLoading
                   ? "—"
@@ -2320,7 +2401,9 @@ const CashInOutTable = () => {
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-indigo-50/70 to-transparent" />
           <div className="relative flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-slate-500">{t.net_balance || "Net Balance"}</p>
+              <p className="text-xs font-medium text-slate-500">
+                {t.net_balance || "Net Balance"}
+              </p>
               <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
                 {isLoading
                   ? "—"
@@ -2428,7 +2511,9 @@ const CashInOutTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">{t.payment_mode}</label>
+          <label className="text-sm text-slate-600 mb-1">
+            {t.payment_mode}
+          </label>
           <select
             value={filterPaymentMode}
             onChange={(e) => setFilterPaymentMode(e.target.value)}
@@ -2446,7 +2531,9 @@ const CashInOutTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">{t.payment_status}</label>
+          <label className="text-sm text-slate-600 mb-1">
+            {t.payment_status}
+          </label>
           <select
             value={filterPaymentStatus}
             onChange={(e) => setFilterPaymentStatus(e.target.value)}
@@ -2460,7 +2547,9 @@ const CashInOutTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">{t.category || "Category"}:</label>
+          <label className="text-sm text-slate-600 mb-1">
+            {t.category || "Category"}:
+          </label>
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
@@ -2475,10 +2564,28 @@ const CashInOutTable = () => {
             ))}
           </select>
         </div>
-
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
+            {t.supplier}
+          </label>
+          <Select
+            options={supplierOptions}
+            value={
+              supplierOptions.find(
+                (o) => String(o.value) === String(supplier),
+              ) || null
+            }
+            onChange={(selected) => setSupplier(selected?.value || "")}
+            placeholder={t.search}
+            isClearable
+            styles={selectStyles}
+          />
+        </div>
         {/* ✅ Per Page Dropdown (same position like your screenshot) */}
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">{t.per_page_label}</label>
+          <label className="text-sm text-slate-600 mb-1">
+            {t.per_page_label}
+          </label>
           <select
             value={itemsPerPage}
             onChange={(e) => {
@@ -2808,8 +2915,6 @@ const CashInOutTable = () => {
         </button>
       </div>
 
-
-
       <Modal
         isOpen={isModalOpen && !!currentProduct}
         onClose={() => {
@@ -2851,7 +2956,9 @@ const CashInOutTable = () => {
                          focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               required
             >
-              <option value="">{t.select_payment_mode || "Select Payment Mode"}</option>
+              <option value="">
+                {t.select_payment_mode || "Select Payment Mode"}
+              </option>
               <option value="Cash">Cash</option>
               <option value="Bkash">Bkash</option>
               <option value="Nagad">Nagad</option>
@@ -2910,9 +3017,13 @@ const CashInOutTable = () => {
           )}
 
           <div>
-            <label className="block text-sm text-slate-600 mb-1">Category</label>
+            <label className="block text-sm text-slate-600 mb-1">
+              Category
+            </label>
             <select
-              value={isNewCategoryEdit ? "__new__" : currentProduct?.category || ""}
+              value={
+                isNewCategoryEdit ? "__new__" : currentProduct?.category || ""
+              }
               onChange={(e) => {
                 const v = e.target.value;
                 if (v === "__new__") {
@@ -2948,6 +3059,29 @@ const CashInOutTable = () => {
             )}
           </div>
 
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              {t.supplier || "Supplier"}
+            </label>
+            <select
+              value={currentProduct?.supplierId || ""}
+              onChange={(e) =>
+                setCurrentProduct({
+                  ...currentProduct,
+                  supplierId: e.target.value,
+                })
+              }
+              className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+            >
+              <option value="">{t.select_supplier || "Select Supplier"}</option>
+              {suppliers?.map((s) => (
+                <option key={s.Id} value={s.Id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-slate-600 mb-1">Note</label>
@@ -2964,7 +3098,9 @@ const CashInOutTable = () => {
               />
             </div>
             <div>
-              <label className="block text-sm text-slate-600 mb-1">Amount</label>
+              <label className="block text-sm text-slate-600 mb-1">
+                Amount
+              </label>
               <input
                 type="number"
                 step="0.01"
@@ -2981,7 +3117,9 @@ const CashInOutTable = () => {
           </div>
 
           <div>
-            <label className="block text-sm text-slate-600 mb-1">Upload Document</label>
+            <label className="block text-sm text-slate-600 mb-1">
+              Upload Document
+            </label>
             <input
               type="file"
               accept=".jpg,.jpeg,.png,.pdf"
@@ -3118,9 +3256,13 @@ const CashInOutTable = () => {
           )}
 
           <div>
-            <label className="block text-sm text-slate-600 mb-1">Category</label>
+            <label className="block text-sm text-slate-600 mb-1">
+              Category
+            </label>
             <select
-              value={isNewCategoryAdd ? "__new__" : createProduct.category || ""}
+              value={
+                isNewCategoryAdd ? "__new__" : createProduct.category || ""
+              }
               onChange={(e) => {
                 const v = e.target.value;
                 if (v === "__new__") {
@@ -3157,9 +3299,13 @@ const CashInOutTable = () => {
                 <button
                   type="button"
                   onClick={async () => {
-                    const createdCategoryName = await addCategoryByName(newCategoryNameAdd);
+                    const createdCategoryName =
+                      await addCategoryByName(newCategoryNameAdd);
                     if (!createdCategoryName) return;
-                    setCreateProduct((p) => ({ ...p, category: createdCategoryName }));
+                    setCreateProduct((p) => ({
+                      ...p,
+                      category: createdCategoryName,
+                    }));
                     setIsNewCategoryAdd(false);
                     setNewCategoryNameAdd("");
                   }}
@@ -3174,21 +3320,32 @@ const CashInOutTable = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-slate-600 mb-1">Remarks</label>
+              <label className="block text-sm text-slate-600 mb-1">
+                Remarks
+              </label>
               <input
                 type="text"
                 value={createProduct.remarks}
-                onChange={(e) => setCreateProduct({ ...createProduct, remarks: e.target.value })}
+                onChange={(e) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    remarks: e.target.value,
+                  })
+                }
                 className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white"
               />
             </div>
             <div>
-              <label className="block text-sm text-slate-600 mb-1">Amount</label>
+              <label className="block text-sm text-slate-600 mb-1">
+                Amount
+              </label>
               <input
                 type="number"
                 step="0.01"
                 value={createProduct.amount}
-                onChange={(e) => setCreateProduct({ ...createProduct, amount: e.target.value })}
+                onChange={(e) =>
+                  setCreateProduct({ ...createProduct, amount: e.target.value })
+                }
                 className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white"
                 required
               />
@@ -3196,11 +3353,18 @@ const CashInOutTable = () => {
           </div>
 
           <div>
-            <label className="block text-sm text-slate-600 mb-1">Upload Document</label>
+            <label className="block text-sm text-slate-600 mb-1">
+              Upload Document
+            </label>
             <input
               type="file"
               accept=".jpg,.jpeg,.png,.pdf"
-              onChange={(e) => setCreateProduct({ ...createProduct, file: e.target.files?.[0] || null })}
+              onChange={(e) =>
+                setCreateProduct({
+                  ...createProduct,
+                  file: e.target.files?.[0] || null,
+                })
+              }
               className="h-11 border border-slate-200 rounded-xl px-3 w-full"
             />
           </div>
@@ -3318,59 +3482,93 @@ const CashInOutTable = () => {
             </div>
           )}
 
-          <div>
-            <label className="block text-sm text-slate-600 mb-1">Category</label>
-            <select
-              value={isNewCategoryAdd ? "__new__" : createProduct.category || ""}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === "__new__") {
-                  setIsNewCategoryAdd(true);
-                  setCreateProduct((p) => ({ ...p, category: "" }));
-                  return;
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-slate-600 mb-1">
+                Category
+              </label>
+              <select
+                value={
+                  isNewCategoryAdd ? "__new__" : createProduct.category || ""
                 }
-                setIsNewCategoryAdd(false);
-                setNewCategoryNameAdd("");
-                setCreateProduct((p) => ({ ...p, category: v }));
-              }}
-              className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "__new__") {
+                    setIsNewCategoryAdd(true);
+                    setCreateProduct((p) => ({ ...p, category: "" }));
+                    return;
+                  }
+                  setIsNewCategoryAdd(false);
+                  setNewCategoryNameAdd("");
+                  setCreateProduct((p) => ({ ...p, category: v }));
+                }}
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
                          focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              required
-            >
-              <option value="">Select Category</option>
-              {categoryOptions.map((c) => (
-                <option key={c.id} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-              <option value="__new__">+ New Category</option>
-            </select>
+                required
+              >
+                <option value="">Select Category</option>
+                {categoryOptions.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+                <option value="__new__">+ New Category</option>
+              </select>
 
-            {isNewCategoryAdd && (
-              <div className="mt-3 flex gap-2">
-                <input
-                  type="text"
-                  value={newCategoryNameAdd}
-                  onChange={(e) => setNewCategoryNameAdd(e.target.value)}
-                  placeholder="New category name"
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const createdCategoryName = await addCategoryByName(newCategoryNameAdd);
-                    if (!createdCategoryName) return;
-                    setCreateProduct((p) => ({ ...p, category: createdCategoryName }));
-                    setIsNewCategoryAdd(false);
-                    setNewCategoryNameAdd("");
-                  }}
-                  disabled={isAddingCategory}
-                  className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                >
-                  {isAddingCategory ? "..." : "Add"}
-                </button>
-              </div>
-            )}
+              {isNewCategoryAdd && (
+                <div className="mt-3 flex gap-2">
+                  <input
+                    type="text"
+                    value={newCategoryNameAdd}
+                    onChange={(e) => setNewCategoryNameAdd(e.target.value)}
+                    placeholder="New category name"
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const createdCategoryName =
+                        await addCategoryByName(newCategoryNameAdd);
+                      if (!createdCategoryName) return;
+                      setCreateProduct((p) => ({
+                        ...p,
+                        category: createdCategoryName,
+                      }));
+                      setIsNewCategoryAdd(false);
+                      setNewCategoryNameAdd("");
+                    }}
+                    disabled={isAddingCategory}
+                    className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+                  >
+                    {isAddingCategory ? "..." : "Add"}
+                  </button>
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                {t.supplier || "Supplier"}
+              </label>
+              <select
+                value={createProduct?.supplierId || ""}
+                onChange={(e) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    supplierId: e.target.value,
+                  })
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              >
+                <option value="">
+                  {t.select_supplier || "Select Supplier"}
+                </option>
+                {suppliers?.map((s) => (
+                  <option key={s.Id} value={s.Id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3379,17 +3577,26 @@ const CashInOutTable = () => {
               <input
                 type="text"
                 value={createProduct.remarks}
-                onChange={(e) => setCreateProduct({ ...createProduct, remarks: e.target.value })}
+                onChange={(e) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    remarks: e.target.value,
+                  })
+                }
                 className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white"
               />
             </div>
             <div>
-              <label className="block text-sm text-slate-600 mb-1">Amount</label>
+              <label className="block text-sm text-slate-600 mb-1">
+                Amount
+              </label>
               <input
                 type="number"
                 step="0.01"
                 value={createProduct.amount}
-                onChange={(e) => setCreateProduct({ ...createProduct, amount: e.target.value })}
+                onChange={(e) =>
+                  setCreateProduct({ ...createProduct, amount: e.target.value })
+                }
                 className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white"
                 required
               />
@@ -3397,11 +3604,18 @@ const CashInOutTable = () => {
           </div>
 
           <div>
-            <label className="block text-sm text-slate-600 mb-1">Upload Document</label>
+            <label className="block text-sm text-slate-600 mb-1">
+              Upload Document
+            </label>
             <input
               type="file"
               accept=".jpg,.jpeg,.png,.pdf"
-              onChange={(e) => setCreateProduct({ ...createProduct, file: e.target.files?.[0] || null })}
+              onChange={(e) =>
+                setCreateProduct({
+                  ...createProduct,
+                  file: e.target.files?.[0] || null,
+                })
+              }
               className="h-11 border border-slate-200 rounded-xl px-3 w-full"
             />
           </div>
@@ -3448,8 +3662,6 @@ const CashInOutTable = () => {
         </div>
       </Modal>
 
-
-
       <ReportPreviewModal
         open={isReportPreviewOpen}
         onClose={closeReportPreview}
@@ -3459,7 +3671,7 @@ const CashInOutTable = () => {
         sheetPreview={sheetPreview}
         loading={reportLoading}
       />
-    </motion.div >
+    </motion.div>
   );
 };
 

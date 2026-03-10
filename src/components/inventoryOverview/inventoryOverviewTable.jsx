@@ -161,6 +161,7 @@ const InventoryOverviewTable = () => {
             isClearable
             isDisabled={isLoadingAllProducts}
             styles={selectStyles}
+            className="text-black"
           />
         </div>
 
@@ -178,9 +179,9 @@ const InventoryOverviewTable = () => {
           <table className="min-w-full divide-y divide-slate-100">
             <thead className="bg-slate-50/50">
               <tr>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.last_updated}</th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.item_detail}</th>
-                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.in_hand_qty}</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.last_updated || "Last Updated"}</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.item_detail || "Item Detail"}</th>
+                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.in_hand_qty || "In Hand Quantity"}</th>
               </tr>
             </thead>
 
