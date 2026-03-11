@@ -129,9 +129,9 @@ export const assetsDamageApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data?.length
           ? [
-            { type: "AssetsDamage", id: "LIST" },
-            ...result.data.map((r) => ({ type: "AssetsDamage", id: r.Id })),
-          ]
+              { type: "AssetsDamage", id: "LIST" },
+              ...result.data.map((r) => ({ type: "AssetsDamage", id: r.Id })),
+            ]
           : [{ type: "AssetsDamage", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),

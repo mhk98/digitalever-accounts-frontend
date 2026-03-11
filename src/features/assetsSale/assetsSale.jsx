@@ -129,9 +129,9 @@ export const assetsSaleApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data?.length
           ? [
-            { type: "AssetsSale", id: "LIST" },
-            ...result.data.map((r) => ({ type: "AssetsSale", id: r.Id })),
-          ]
+              { type: "AssetsSale", id: "LIST" },
+              ...result.data.map((r) => ({ type: "AssetsSale", id: r.Id })),
+            ]
           : [{ type: "AssetsSale", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),

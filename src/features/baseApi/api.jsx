@@ -32,7 +32,7 @@ export const baseApi = createApi({
     "ConfirmOrder",
     "PosReport",
     "SupplierHistory",
-    "Manufacture"
+    "Manufacture",
   ],
 
   endpoints: () => ({}),

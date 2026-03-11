@@ -134,12 +134,12 @@ export const returnProductApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-            { type: "ReturnProduct", id: "LIST" },
-            ...result.data.map((r) => ({
-              type: "ReturnProduct",
-              id: r.Id,
-            })),
-          ]
+              { type: "ReturnProduct", id: "LIST" },
+              ...result.data.map((r) => ({
+                type: "ReturnProduct",
+                id: r.Id,
+              })),
+            ]
           : [{ type: "ReturnProduct", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),

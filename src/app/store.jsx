@@ -137,6 +137,7 @@ import { marketingExpenseApi } from "../features/marketingExpense/marketingExpen
 import { damageStockApi } from "../features/damageStock/damageStock";
 import { supplierHistoryApi } from "../features/supplierHistory/supplierHistory";
 import { manufactureApi } from "../features/manufacture/manufacture";
+import { itemApi } from "../features/item/item";
 
 // ✅ 1) Collect all apis once
 const apis = [
@@ -161,6 +162,7 @@ const apis = [
   cashInOutApi,
   marketingBookApi,
   marketingExpenseApi,
+  itemApi,
   supplierApi,
   supplierHistoryApi,
   wirehouseApi,

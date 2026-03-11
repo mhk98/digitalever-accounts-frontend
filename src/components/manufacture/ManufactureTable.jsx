@@ -58,7 +58,7 @@
 //   // ✅ Filters
 //   const [startDate, setStartDate] = useState("");
 //   const [endDate, setEndDate] = useState("");
-//   const [productName, setProductName] = useState("");
+//   const [itemName, setItemName] = useState("");
 
 //   // Pagination
 //   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -82,7 +82,7 @@
 //   useEffect(() => {
 //     setCurrentPage(1);
 //     setStartPage(1);
-//   }, [startDate, endDate, productName, itemsPerPage]);
+//   }, [startDate, endDate, itemName, itemsPerPage]);
 
 //   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
 
@@ -127,7 +127,7 @@
 //     }));
 //   }, [productsData]);
 
-//   const productNameMap = useMemo(() => {
+//   const itemNameMap = useMemo(() => {
 //     const m = new Map();
 //     (productsData || []).forEach((p) => {
 //       const key = String(p.Id ?? p.id ?? p._id);
@@ -136,7 +136,7 @@
 //     return m;
 //   }, [productsData]);
 
-//   const resolveProductName = (rp) => {
+//   const resolveitemName = (rp) => {
 //     const pid =
 //       rp.productId ??
 //       rp.product_id ??
@@ -145,12 +145,12 @@
 //       rp.product?.id ??
 //       rp.product?._id;
 
-//     if (rp.productName) return rp.productName;
+//     if (rp.itemName) return rp.itemName;
 //     if (rp.product?.name) return rp.product?.name;
 
 //     if (pid === null || pid === undefined || pid === "") return "N/A";
 
-//     const byId = productNameMap.get(String(pid));
+//     const byId = itemNameMap.get(String(pid));
 //     if (byId) return byId;
 
 //     const pidText = String(pid);
@@ -166,7 +166,7 @@
 //       limit: itemsPerPage,
 //       startDate: startDate || undefined,
 //       endDate: endDate || undefined,
-//       name: productName || undefined,
+//       name: itemName || undefined,
 //     };
 
 //     Object.keys(args).forEach((k) => {
@@ -176,7 +176,7 @@
 //     });
 
 //     return args;
-//   }, [currentPage, itemsPerPage, startDate, endDate, productName]);
+//   }, [currentPage, itemsPerPage, startDate, endDate, itemName]);
 
 //   const { data, isLoading, isError, error, refetch } =
 //     useGetAllReceivedProductQuery(queryArgs);
@@ -252,7 +252,6 @@
 //   const handleUpdateProduct = async () => {
 //     try {
 
-
 //       const data = {
 //         productId: Number(currentProduct.productId) || "",
 //         unit: Number(currentProduct.unit) || 0,
@@ -263,7 +262,6 @@
 //         userId: Number(currentProduct.userId) || 0,
 //         actorRole: role,
 //       }
-
 
 //       const res = await updateReceivedProduct({
 //         id: currentProduct.Id,
@@ -379,7 +377,7 @@
 //   const clearFilters = () => {
 //     setStartDate("");
 //     setEndDate("");
-//     setProductName("");
+//     setItemName("");
 //   };
 
 //   const selectStyles = {
@@ -395,8 +393,6 @@
 //     placeholder: (base) => ({ ...base, color: "#64748b" }),
 //     menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
 //   };
-
-
 
 //   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
 //   const [noteContent, setNoteContent] = useState("");
@@ -501,8 +497,8 @@
 //           </label>
 //           <Select
 //             options={productDropdownOptions}
-//             value={productDropdownOptions.find((o) => o.label === productName) || null}
-//             onChange={(selected) => setProductName(selected?.label || "")}
+//             value={productDropdownOptions.find((o) => o.label === itemName) || null}
+//             onChange={(selected) => setItemName(selected?.label || "")}
 //             placeholder={t.search}
 //             isClearable
 //             isDisabled={isLoadingAllProducts}
@@ -604,7 +600,7 @@
 //                   <td className="px-6 py-4 whitespace-nowrap">
 //                     <div className="flex flex-col">
 //                       <div className="text-sm font-bold text-slate-900">
-//                         {resolveProductName(rp)}
+//                         {resolveitemName(rp)}
 //                       </div>
 //                       <div className="text-xs text-slate-500">
 //                         {t.qty_label || "Qty"}: {Number(rp.quantity || 0).toFixed(0)}
@@ -898,7 +894,6 @@
 //             </div>
 //           </div>
 
-
 //           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 //             <div>
 //               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
@@ -1183,7 +1178,6 @@
 //             </div>
 //           </div>
 
-
 //           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 //             <div>
 //               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
@@ -1232,9 +1226,6 @@
 //                 required
 //               />
 //             </div>
-
-
-
 
 //           </div>
 
@@ -1438,7 +1429,6 @@
 
 // export default ManufactureTable;
 
-
 import { motion } from "framer-motion";
 import {
   ChevronLeft,
@@ -1454,15 +1444,19 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
-import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
-
 import Modal from "../common/Modal";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
-import { useDeleteManufactureMutation, useGetAllManufactureQuery, useInsertManufactureMutation, useUpdateManufactureMutation } from "../../features/manufacture/manufacture";
+import {
+  useDeleteManufactureMutation,
+  useGetAllManufactureQuery,
+  useInsertManufactureMutation,
+  useUpdateManufactureMutation,
+} from "../../features/manufacture/manufacture";
+import { useGetAllItemWithoutQueryQuery } from "../../features/item/item";
 
 const initialCreateProduct = {
-  productId: "",
+  itemId: "",
   unitValue: "",
   cost: "",
   note: "",
@@ -1489,7 +1483,7 @@ const ManufactureTable = () => {
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [productName, setProductName] = useState("");
+  const [itemName, setItemName] = useState("");
 
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -1515,7 +1509,7 @@ const ManufactureTable = () => {
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate, productName, itemsPerPage]);
+  }, [startDate, endDate, itemName, itemsPerPage]);
 
   useEffect(() => {
     if (startDate && endDate && startDate > endDate) {
@@ -1550,7 +1544,7 @@ const ManufactureTable = () => {
     isLoading: isLoadingAllProducts,
     isError: isErrorAllProducts,
     error: errorAllProducts,
-  } = useGetAllProductWithoutQueryQuery();
+  } = useGetAllItemWithoutQueryQuery();
 
   const productsData = allProductsRes?.data || [];
 
@@ -1567,7 +1561,7 @@ const ManufactureTable = () => {
     }));
   }, [productsData]);
 
-  const productNameMap = useMemo(() => {
+  const itemNameMap = useMemo(() => {
     const m = new Map();
     (productsData || []).forEach((p) => {
       const key = String(p.Id ?? p.id ?? p._id);
@@ -1576,29 +1570,66 @@ const ManufactureTable = () => {
     return m;
   }, [productsData]);
 
-  const resolveProductName = (rp) => {
-    const pid =
-      rp.productId ??
-      rp.product_id ??
-      rp.ProductId ??
-      rp.product?.Id ??
-      rp.product?.id ??
-      rp.product?._id;
+  // const resolveItemName = (rp) => {
+  //   const pid =
+  //     rp.itemId ??
+  //     rp.item_id ??
+  //     rp.ItemId ??
+  //     rp.item?.Id ??
+  //     rp.item?.id ??
+  //     rp.item?._id;
 
-    if (rp.productName) return rp.productName;
-    if (rp.product?.name) return rp.product?.name;
-    if (pid === null || pid === undefined || pid === "") return "N/A";
+  //   if (rp.itemName) return rp.itemName;
+  //   if (rp.item?.name) return rp.item?.name;
+  //   if (pid === null || pid === undefined || pid === "") return "N/A";
 
-    return productNameMap.get(String(pid)) || "N/A";
+  //   return itemNameMap.get(String(pid)) || "N/A";
+  // };
+
+  const resolveItemName = (rp) => {
+    const possibleName =
+      rp?.itemName ||
+      rp?.name ||
+      rp?.item?.name ||
+      rp?.Item?.name ||
+      rp?.product?.name ||
+      rp?.Product?.name ||
+      "";
+
+    if (possibleName) return possibleName;
+
+    const possibleId =
+      rp?.itemId ??
+      rp?.item_id ??
+      rp?.ItemId ??
+      rp?.productId ??
+      rp?.product_id ??
+      rp?.ProductId ??
+      rp?.manufactureItemId ??
+      rp?.item?.Id ??
+      rp?.item?.id ??
+      rp?.item?._id ??
+      rp?.Item?.Id ??
+      rp?.Item?.id ??
+      rp?.product?.Id ??
+      rp?.product?.id ??
+      rp?.product?._id ??
+      "";
+
+    if (possibleId === "" || possibleId === null || possibleId === undefined) {
+      return "N/A";
+    }
+
+    const matchedName = itemNameMap.get(String(possibleId));
+    return matchedName || `Item #${possibleId}`;
   };
-
   const queryArgs = useMemo(() => {
     const args = {
       page: currentPage,
       limit: itemsPerPage,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      name: productName || undefined,
+      name: itemName || undefined,
     };
 
     Object.keys(args).forEach((k) => {
@@ -1608,7 +1639,7 @@ const ManufactureTable = () => {
     });
 
     return args;
-  }, [currentPage, itemsPerPage, startDate, endDate, productName]);
+  }, [currentPage, itemsPerPage, startDate, endDate, itemName]);
 
   const { data, isLoading, isError, error, refetch } =
     useGetAllManufactureQuery(queryArgs);
@@ -1651,7 +1682,7 @@ const ManufactureTable = () => {
   const handleEditClick = (rp) => {
     setCurrentProduct({
       ...rp,
-      productId: rp.productId ? String(rp.productId) : "",
+      itemId: rp.itemId ? String(rp.itemId) : "",
       date: rp.date ?? "",
       note: rp.note ?? "",
       cost: rp.cost ?? "",
@@ -1667,7 +1698,7 @@ const ManufactureTable = () => {
   const handleEditClick1 = (rp) => {
     setCurrentProduct({
       ...rp,
-      productId: rp.productId ? String(rp.productId) : "",
+      itemId: rp.itemId ? String(rp.itemId) : "",
       date: rp.date ?? "",
       note: rp.note ?? "",
       cost: rp.cost ?? "",
@@ -1683,13 +1714,13 @@ const ManufactureTable = () => {
   const handleCreateProduct = async (e) => {
     e.preventDefault();
 
-    if (!createProduct.productId) {
+    if (!createProduct.itemId) {
       return toast.error("Please select a product");
     }
 
     try {
       const payload = {
-        productId: Number(createProduct.productId) || "",
+        itemId: Number(createProduct.itemId) || "",
         unit: createProduct.unit || "Pcs",
         unitValue: createProduct.hasUnit
           ? Number(createProduct.unitValue) || 0
@@ -1719,7 +1750,7 @@ const ManufactureTable = () => {
   const handleUpdateProduct = async () => {
     try {
       const payload = {
-        productId: Number(currentProduct.productId) || "",
+        itemId: Number(currentProduct.itemId) || "",
         unit: currentProduct.unit || "Pcs",
         unitValue: currentProduct.hasUnit
           ? Number(currentProduct.unitValue) || 0
@@ -1757,7 +1788,7 @@ const ManufactureTable = () => {
 
     try {
       const payload = {
-        productId: Number(currentProduct.productId) || "",
+        itemId: Number(currentProduct.itemId) || "",
         unit: currentProduct.unit || "Pcs",
         unitValue: currentProduct.hasUnit
           ? Number(currentProduct.unitValue) || 0
@@ -1808,7 +1839,7 @@ const ManufactureTable = () => {
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
-    setProductName("");
+    setItemName("");
   };
 
   const handleNoteClick = (note) => {
@@ -1848,7 +1879,8 @@ const ManufactureTable = () => {
             {t.manufacture_history || "Manufacture History"}
           </h2>
           <p className="text-slate-500 text-sm mt-1 font-medium">
-            {t.track_manufacture_entries || "Track and manage manufacture entries"}
+            {t.track_manufacture_entries ||
+              "Track and manage manufacture entries"}
           </p>
         </div>
 
@@ -1925,12 +1957,15 @@ const ManufactureTable = () => {
           </label>
           <Select
             options={productDropdownOptions}
-            value={productDropdownOptions.find((o) => o.label === productName) || null}
-            onChange={(selected) => setProductName(selected?.label || "")}
+            value={
+              productDropdownOptions.find((o) => o.label === itemName) || null
+            }
+            onChange={(selected) => setItemName(selected?.label || "")}
             placeholder={t.search || "Search"}
             isClearable
             isDisabled={isLoadingAllProducts}
             styles={selectStyles}
+            className="text-black"
           />
         </div>
 
@@ -1982,12 +2017,14 @@ const ManufactureTable = () => {
                   className="hover:bg-slate-50 group"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-slate-900">{rp.date || "-"}</div>
+                    <div className="text-sm font-medium text-slate-900">
+                      {rp.date || "-"}
+                    </div>
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-bold text-slate-900">
-                      {resolveProductName(rp)}
+                      {resolveItemName(rp)}
                     </div>
                   </td>
 
@@ -2005,12 +2042,13 @@ const ManufactureTable = () => {
 
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${rp.status === "Approved"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm shadow-emerald-100"
-                        : rp.status === "Active"
-                          ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm shadow-blue-100"
-                          : "bg-amber-50 text-amber-700 border-amber-200 shadow-sm shadow-amber-100"
-                        }`}
+                      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${
+                        rp.status === "Approved"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm shadow-emerald-100"
+                          : rp.status === "Active"
+                            ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm shadow-blue-100"
+                            : "bg-amber-50 text-amber-700 border-amber-200 shadow-sm shadow-amber-100"
+                      }`}
                     >
                       {rp.status}
                     </span>
@@ -2078,7 +2116,10 @@ const ManufactureTable = () => {
 
               {!isLoading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-20 text-center text-sm text-slate-400 italic">
+                  <td
+                    colSpan={7}
+                    className="px-6 py-20 text-center text-sm text-slate-400 italic"
+                  >
                     {t.no_data_found || "No data found"}
                   </td>
                 </tr>
@@ -2090,7 +2131,8 @@ const ManufactureTable = () => {
 
       <div className="flex flex-col sm:flex-row items-center justify-between mt-10 gap-6 px-2">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-          {t.showing_page || "Showing Page"} <span className="text-indigo-600">{currentPage}</span> {t.of || "of"}{" "}
+          {t.showing_page || "Showing Page"}{" "}
+          <span className="text-indigo-600">{currentPage}</span> {t.of || "of"}{" "}
           <span className="text-slate-900">{totalPages}</span>
         </p>
 
@@ -2111,10 +2153,11 @@ const ManufactureTable = () => {
                 <button
                   key={pageNum}
                   onClick={() => handlePageChange(pageNum)}
-                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${active
-                    ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100"
-                    : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
-                    }`}
+                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${
+                    active
+                      ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100"
+                      : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
+                  }`}
                 >
                   {pageNum}
                 </button>
@@ -2169,13 +2212,13 @@ const ManufactureTable = () => {
               options={productDropdownOptions}
               value={
                 productDropdownOptions.find(
-                  (o) => o.value === String(currentProduct?.productId),
+                  (o) => o.value === String(currentProduct?.itemId),
                 ) || null
               }
               onChange={(selected) =>
                 setCurrentProduct({
                   ...currentProduct,
-                  productId: selected?.value || "",
+                  itemId: selected?.value || "",
                 })
               }
               placeholder={t.search_product || "Search product..."}
@@ -2221,13 +2264,15 @@ const ManufactureTable = () => {
                     unit: prev?.hasUnit ? "Pcs" : prev?.unit || "Pcs",
                   }))
                 }
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${currentProduct?.hasUnit ? "bg-indigo-600" : "bg-slate-300"
-                  }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
+                  currentProduct?.hasUnit ? "bg-indigo-600" : "bg-slate-300"
+                }`}
               >
                 <span className="sr-only">Toggle Unit</span>
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${currentProduct?.hasUnit ? "translate-x-6" : "translate-x-1"
-                    }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${
+                    currentProduct?.hasUnit ? "translate-x-6" : "translate-x-1"
+                  }`}
                 />
               </button>
             </div>
@@ -2289,7 +2334,7 @@ const ManufactureTable = () => {
             />
           </div>
 
-          {(role === "superAdmin" || role === "admin") ? (
+          {role === "superAdmin" || role === "admin" ? (
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.status || "Status"}
@@ -2297,7 +2342,10 @@ const ManufactureTable = () => {
               <select
                 value={currentProduct?.status || ""}
                 onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, status: e.target.value })
+                  setCurrentProduct({
+                    ...currentProduct,
+                    status: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
@@ -2344,7 +2392,10 @@ const ManufactureTable = () => {
         onClose={handleModalClose1}
         title={t.add_new || "Add New"}
       >
-        <form onSubmit={handleCreateProduct} className="space-y-4 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
+        <form
+          onSubmit={handleCreateProduct}
+          className="space-y-4 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar"
+        >
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               {t.select_product || "Select Product"}
@@ -2353,11 +2404,14 @@ const ManufactureTable = () => {
               options={productDropdownOptions}
               value={
                 productDropdownOptions.find(
-                  (o) => o.value === String(createProduct.productId),
+                  (o) => o.value === String(createProduct.itemId),
                 ) || null
               }
               onChange={(selected) =>
-                setCreateProduct({ ...createProduct, productId: selected?.value || "" })
+                setCreateProduct({
+                  ...createProduct,
+                  itemId: selected?.value || "",
+                })
               }
               placeholder={t.search_product || "Search product..."}
               isClearable
@@ -2402,13 +2456,15 @@ const ManufactureTable = () => {
                     unit: prev?.hasUnit ? "Pcs" : prev?.unit || "Pcs",
                   }))
                 }
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${createProduct?.hasUnit ? "bg-indigo-600" : "bg-slate-300"
-                  }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
+                  createProduct?.hasUnit ? "bg-indigo-600" : "bg-slate-300"
+                }`}
               >
                 <span className="sr-only">Toggle Unit</span>
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${createProduct?.hasUnit ? "translate-x-6" : "translate-x-1"
-                    }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${
+                    createProduct?.hasUnit ? "translate-x-6" : "translate-x-1"
+                  }`}
                 />
               </button>
             </div>
@@ -2517,7 +2573,10 @@ const ManufactureTable = () => {
               <select
                 value={currentProduct?.status || ""}
                 onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, status: e.target.value })
+                  setCurrentProduct({
+                    ...currentProduct,
+                    status: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
@@ -2537,7 +2596,10 @@ const ManufactureTable = () => {
                   setCurrentProduct({ ...currentProduct, note: e.target.value })
                 }
                 className="w-full min-h-[120px] border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
-                placeholder={t.explain_why_remove_record || "Please explain why you want to remove this record..."}
+                placeholder={
+                  t.explain_why_remove_record ||
+                  "Please explain why you want to remove this record..."
+                }
               />
             </div>
           )}

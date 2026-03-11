@@ -96,9 +96,9 @@ export const purchaseReturnProductApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-            { type: "PurchaseReturn", id: "LIST" },
-            ...result.data.map((r) => ({ type: "PurchaseReturn", id: r.Id })),
-          ]
+              { type: "PurchaseReturn", id: "LIST" },
+              ...result.data.map((r) => ({ type: "PurchaseReturn", id: r.Id })),
+            ]
           : [{ type: "PurchaseReturn", id: "LIST" }],
 
       refetchOnMountOrArgChange: true,

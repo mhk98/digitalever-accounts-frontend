@@ -362,12 +362,13 @@ const ReceiveableTable = () => {
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${rp.status === "Approved"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                          : rp.status === "Active"
-                            ? "bg-blue-50 text-blue-700 border-blue-100"
-                            : "bg-amber-50 text-amber-700 border-amber-100"
-                          }`}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                          rp.status === "Approved"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                            : rp.status === "Active"
+                              ? "bg-blue-50 text-blue-700 border-blue-100"
+                              : "bg-amber-50 text-amber-700 border-amber-100"
+                        }`}
                       >
                         {rp.status || "Pending"}
                       </span>
@@ -448,10 +449,11 @@ const ReceiveableTable = () => {
                 <button
                   key={pageNum}
                   onClick={() => handlePageChange(pageNum)}
-                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${active
-                    ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100"
-                    : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
-                    }`}
+                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${
+                    active
+                      ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100"
+                      : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
+                  }`}
                 >
                   {pageNum}
                 </button>

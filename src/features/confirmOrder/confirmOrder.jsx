@@ -134,9 +134,9 @@ export const confirmOrderApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-            { type: "ConfirmOrder", id: "LIST" },
-            ...result.data.map((r) => ({ type: "ConfirmOrder", id: r.Id })),
-          ]
+              { type: "ConfirmOrder", id: "LIST" },
+              ...result.data.map((r) => ({ type: "ConfirmOrder", id: r.Id })),
+            ]
           : [{ type: "ConfirmOrder", id: "LIST" }],
 
       refetchOnMountOrArgChange: true,

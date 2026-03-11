@@ -180,8 +180,7 @@ const PettyCashTable = () => {
     searchTerm,
   ]);
 
-
-  console.log("queryArgs", queryArgs)
+  console.log("queryArgs", queryArgs);
 
   const { data, isLoading, isError, error, refetch } =
     useGetAllPettyCashQuery(queryArgs);
@@ -1169,10 +1168,11 @@ const PettyCashTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${active
-                ? "bg-indigo-600 text-white border-indigo-600"
-                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                }`}
+              className={`px-4 py-2 rounded-xl border transition ${
+                active
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              }`}
             >
               {pageNum}
             </button>

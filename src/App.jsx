@@ -51,6 +51,8 @@ import WarehousePage from "./pages/WarehousePage";
 import SupplierHistoryPage from "./pages/SupplierHistoryPage";
 import CreditLedgerPage from "./pages/CreditLedgerPage";
 import ManufacturePage from "./pages/ManufacturePage";
+import ItemsPage from "./pages/ItemsPage";
+import ManufactureStockPage from "./pages/ManufactureStockPage";
 
 function App() {
   return (
@@ -113,6 +115,26 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <InventoryDashboardPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/item"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <ItemsPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/manufacture-stock"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <ManufactureStockPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

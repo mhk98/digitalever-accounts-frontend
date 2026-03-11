@@ -4,19 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
-import {
-  useDeleteProductMutation,
-  useGetAllProductQuery,
-  useGetAllProductWithoutQueryQuery,
-  useInsertProductMutation,
-  useUpdateProductMutation,
-} from "../../features/product/product";
-
 import Modal from "../common/Modal";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
+import {
+  useDeleteItemMutation,
+  useGetAllItemQuery,
+  useGetAllItemWithoutQueryQuery,
+  useInsertItemMutation,
+  useUpdateItemMutation,
+} from "../../features/item/item";
 
-const ProductsTable = () => {
+const ItemsTable = () => {
   const role = localStorage.getItem("role");
   const { language } = useLayout();
   const t = translations[language] || translations.EN;
@@ -70,7 +69,7 @@ const ProductsTable = () => {
       Math.min(prev + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)),
     );
 
-  const { data: allProductsRes } = useGetAllProductWithoutQueryQuery();
+  const { data: allProductsRes } = useGetAllItemWithoutQueryQuery();
   const productsData = allProductsRes?.data || [];
 
   const selectStyles = {
@@ -119,7 +118,7 @@ const ProductsTable = () => {
     return args;
   }, [currentPage, itemsPerPage, startDate, endDate, name]);
 
-  const { data, isLoading, refetch } = useGetAllProductQuery(queryArgs);
+  const { data, isLoading, refetch } = useGetAllItemQuery(queryArgs);
 
   useEffect(() => {
     if (!isLoading && data?.data) {
@@ -137,11 +136,11 @@ const ProductsTable = () => {
     setIsModalOpen(true);
   };
 
-  const [insertProduct] = useInsertProductMutation();
+  const [insertItem] = useInsertItemMutation();
   const handleCreateProduct = async (e) => {
     e.preventDefault();
     try {
-      const res = await insertProduct(createProduct).unwrap();
+      const res = await insertItem(createProduct).unwrap();
       if (res?.success) {
         toast.success("Successfully created product");
         setIsModalOpen1(false);
@@ -153,11 +152,11 @@ const ProductsTable = () => {
     }
   };
 
-  const [updateProduct] = useUpdateProductMutation();
+  const [updateItem] = useUpdateItemMutation();
   const handleUpdateProduct = async (e) => {
     e.preventDefault();
     try {
-      const res = await updateProduct({
+      const res = await updateItem({
         id: currentProduct.Id,
         data: {
           name: currentProduct.name,
@@ -173,11 +172,11 @@ const ProductsTable = () => {
     }
   };
 
-  const [deleteProduct] = useDeleteProductMutation();
+  const [deleteItem] = useDeleteItemMutation();
   const handleDeleteProduct = async (id) => {
     if (window.confirm("Do you want to delete this product?")) {
       try {
-        const res = await deleteProduct(id).unwrap();
+        const res = await deleteItem(id).unwrap();
         if (res?.success) {
           toast.success("Product deleted successfully!");
           refetch();
@@ -204,7 +203,7 @@ const ProductsTable = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            {t.products_inventory}
+            {t.manufacture_item}
           </h2>
           <p className="text-slate-500 text-sm mt-1 font-medium">
             {t.manage_monitor_warehouse}
@@ -215,12 +214,14 @@ const ProductsTable = () => {
           onClick={() => setIsModalOpen1(true)}
           type="button"
         >
-          <Plus size={18} /> {t.add_product}
+          {" "}
+          Add
+          <Plus size={18} /> {t.add_item}
         </button>
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-10 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-5 gap-4 mb-10 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
         <div className="flex flex-col">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
             {t.from}
@@ -408,12 +409,12 @@ const ProductsTable = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={t.edit_product_info}
+        title={t.edit_item_info}
       >
         <form onSubmit={handleUpdateProduct} className="space-y-5">
           <div>
             <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
-              Product Name
+              Item Name
             </label>
             <input
               type="text"
@@ -448,12 +449,12 @@ const ProductsTable = () => {
       <Modal
         isOpen={isModalOpen1}
         onClose={() => setIsModalOpen1(false)}
-        title={t.register_new_product}
+        title={t.register_new_item}
       >
         <form onSubmit={handleCreateProduct} className="space-y-5">
           <div>
             <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
-              Product Name
+              Item Name
             </label>
             <input
               type="text"
@@ -488,4 +489,4 @@ const ProductsTable = () => {
   );
 };
 
-export default ProductsTable;
+export default ItemsTable;

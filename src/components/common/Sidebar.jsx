@@ -26,7 +26,6 @@ import {
   ShoppingBag,
   RotateCcw,
   Truck,
-  ClipboardCheck,
   ClipboardList,
   TriangleAlert,
   Wrench,
@@ -35,9 +34,6 @@ import {
   Wallet,
   BookOpen,
   HandCoins,
-  CreditCard,
-  ArrowUpRight,
-  ArrowDownLeft,
   Bell,
   Settings,
   Image,
@@ -138,6 +134,20 @@ const SIDEBAR_ITEMS = [
     color: "#8b5cf6",
     roles: ["superAdmin", "admin", "inventor"],
     children: [
+      {
+        name: "Item",
+        key: "item",
+        icon: Package,
+        href: "/item",
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Manufacture Stock",
+        key: "manufacture_stock",
+        icon: Factory,
+        href: "/manufacture-stock",
+        roles: ["superAdmin", "admin"],
+      },
       {
         name: "Manufacture",
         key: "manufacture",
@@ -504,10 +514,11 @@ const Sidebar = () => {
       </AnimatePresence>
 
       <motion.aside
-        className={`fixed left-0 top-0 bottom-0 z-50 transition-all duration-300 lg:translate-x-0 ${isMobileMenuOpen
-          ? "translate-x-0"
-          : "-translate-x-full lg:translate-x-0"
-          } bg-slate-50 border-r border-slate-200`}
+        className={`fixed left-0 top-0 bottom-0 z-50 transition-all duration-300 lg:translate-x-0 ${
+          isMobileMenuOpen
+            ? "translate-x-0"
+            : "-translate-x-full lg:translate-x-0"
+        } bg-slate-50 border-r border-slate-200`}
         animate={{ width: isSidebarOpen ? 280 : 88 }}
         transition={{ type: "spring", stiffness: 260, damping: 24 }}
         style={{ width: isSidebarOpen ? 280 : 88 }}
@@ -520,11 +531,7 @@ const Sidebar = () => {
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
                   <img
-                    src={
-                      logo
-                        ? ` http://localhost:5000/${logo}`
-                        : ""
-                    }
+                    src={logo ? ` http://localhost:5000/${logo}` : ""}
                     alt="Logo"
                     className="h-full w-full object-cover"
                   />
@@ -656,15 +663,17 @@ const Sidebar = () => {
                           type="button"
                         >
                           <span
-                            className={`absolute left-0 top-2 bottom-2 w-1 rounded-full transition ${parentActive ? "bg-indigo-500" : "bg-transparent"
-                              }`}
+                            className={`absolute left-0 top-2 bottom-2 w-1 rounded-full transition ${
+                              parentActive ? "bg-indigo-500" : "bg-transparent"
+                            }`}
                           />
 
                           <span
-                            className={`h-10 w-10 rounded-xl flex items-center justify-center border transition ${parentActive
-                              ? "border-indigo-200 bg-indigo-100"
-                              : "border-slate-200 bg-white group-hover:bg-slate-50"
-                              }`}
+                            className={`h-10 w-10 rounded-xl flex items-center justify-center border transition ${
+                              parentActive
+                                ? "border-indigo-200 bg-indigo-100"
+                                : "border-slate-200 bg-white group-hover:bg-slate-50"
+                            }`}
                           >
                             <Icon
                               size={18}
@@ -683,8 +692,9 @@ const Sidebar = () => {
                               </span>
                               <ChevronDown
                                 size={16}
-                                className={`text-slate-500 transition-transform ${menuOpen ? "rotate-180" : ""
-                                  }`}
+                                className={`text-slate-500 transition-transform ${
+                                  menuOpen ? "rotate-180" : ""
+                                }`}
                               />
                             </>
                           ) : null}
@@ -702,17 +712,19 @@ const Sidebar = () => {
                             className={`${parentBase} ${parentState}`}
                           >
                             <span
-                              className={`absolute left-0 top-2 bottom-2 w-1 rounded-full transition ${parentActive
-                                ? "bg-indigo-500"
-                                : "bg-transparent"
-                                }`}
+                              className={`absolute left-0 top-2 bottom-2 w-1 rounded-full transition ${
+                                parentActive
+                                  ? "bg-indigo-500"
+                                  : "bg-transparent"
+                              }`}
                             />
 
                             <span
-                              className={`h-10 w-10 rounded-xl flex items-center justify-center border transition ${parentActive
-                                ? "border-indigo-200 bg-indigo-100"
-                                : "border-slate-200 bg-white group-hover:bg-slate-50"
-                                }`}
+                              className={`h-10 w-10 rounded-xl flex items-center justify-center border transition ${
+                                parentActive
+                                  ? "border-indigo-200 bg-indigo-100"
+                                  : "border-slate-200 bg-white group-hover:bg-slate-50"
+                              }`}
                             >
                               <Icon
                                 size={18}
@@ -759,16 +771,18 @@ const Sidebar = () => {
                                 return (
                                   <Link key={sub.href} to={sub.href}>
                                     <div
-                                      className={`group flex items-center gap-2 px-3 py-2 rounded-xl transition border ${activeSub
-                                        ? "bg-indigo-50 border-indigo-100"
-                                        : "hover:bg-slate-50 border-transparent"
-                                        }`}
+                                      className={`group flex items-center gap-2 px-3 py-2 rounded-xl transition border ${
+                                        activeSub
+                                          ? "bg-indigo-50 border-indigo-100"
+                                          : "hover:bg-slate-50 border-transparent"
+                                      }`}
                                     >
                                       <span
-                                        className={`h-7 w-7 rounded-lg flex items-center justify-center border transition ${activeSub
-                                          ? "border-indigo-200 bg-indigo-100"
-                                          : "border-slate-200 bg-white group-hover:bg-slate-50"
-                                          }`}
+                                        className={`h-7 w-7 rounded-lg flex items-center justify-center border transition ${
+                                          activeSub
+                                            ? "border-indigo-200 bg-indigo-100"
+                                            : "border-slate-200 bg-white group-hover:bg-slate-50"
+                                        }`}
                                       >
                                         {SubIcon ? (
                                           <SubIcon
@@ -783,10 +797,11 @@ const Sidebar = () => {
                                       </span>
 
                                       <span
-                                        className={`text-sm ${activeSub
-                                          ? "text-indigo-700"
-                                          : "text-slate-700"
-                                          }`}
+                                        className={`text-sm ${
+                                          activeSub
+                                            ? "text-indigo-700"
+                                            : "text-slate-700"
+                                        }`}
                                       >
                                         {t[sub.key] || sub.name}
                                       </span>
