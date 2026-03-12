@@ -10,10 +10,7 @@ export const manufactureApi = baseApi.injectEndpoints({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: [
-        { type: "Manufacture", id: "LIST" },
-
-      ],
+      invalidatesTags: [{ type: "Manufacture", id: "LIST" }],
     }),
 
     deleteManufacture: build.mutation({
@@ -21,10 +18,7 @@ export const manufactureApi = baseApi.injectEndpoints({
         url: `manufacture/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: [
-        { type: "Manufacture", id: "LIST" },
-
-      ],
+      invalidatesTags: [{ type: "Manufacture", id: "LIST" }],
     }),
 
     updateManufacture: build.mutation({
@@ -36,7 +30,6 @@ export const manufactureApi = baseApi.injectEndpoints({
       invalidatesTags: (res, err, arg) => [
         { type: "Manufacture", id: "LIST" },
         { type: "Manufacture", id: arg.id },
-
       ],
     }),
 
@@ -48,9 +41,9 @@ export const manufactureApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data?.length
           ? [
-            { type: "Manufacture", id: "LIST" },
-            ...result.data.map((r) => ({ type: "Manufacture", id: r.Id })),
-          ]
+              { type: "Manufacture", id: "LIST" },
+              ...result.data.map((r) => ({ type: "Manufacture", id: r.Id })),
+            ]
           : [{ type: "Manufacture", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),

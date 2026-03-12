@@ -9,10 +9,10 @@ import {
   Calendar,
 } from "lucide-react";
 
-import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
-import { useGetAllInventoryOverviewQuery } from "../../features/inventoryOverview/inventoryOverview";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
+import { useGetAllItemWithoutQueryQuery } from "../../features/item/item";
+import { useGetAllItemMasterQuery } from "../../features/manufactureStock/manufactureStock";
 
 const ManufactureStockTable = () => {
   const { language } = useLayout();
@@ -60,7 +60,7 @@ const ManufactureStockTable = () => {
     );
 
   const { data: allProductsRes, isLoading: isLoadingAllProducts } =
-    useGetAllProductWithoutQueryQuery();
+    useGetAllItemWithoutQueryQuery();
   const productsData = allProductsRes?.data || [];
 
   const productDropdownOptions = useMemo(() => {
@@ -98,7 +98,7 @@ const ManufactureStockTable = () => {
     return args;
   }, [currentPage, itemsPerPage, startDate, endDate, productName]);
 
-  const { data, isLoading } = useGetAllInventoryOverviewQuery(queryArgs);
+  const { data, isLoading } = useGetAllItemMasterQuery(queryArgs);
 
   useEffect(() => {
     if (!isLoading && data) {

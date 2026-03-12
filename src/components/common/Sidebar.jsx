@@ -156,6 +156,13 @@ const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin"],
       },
       {
+        name: "Mixer",
+        key: "mixer",
+        icon: Factory,
+        href: "/mixer",
+        roles: ["superAdmin", "admin"],
+      },
+      {
         name: "Overview",
         key: "overview",
         icon: LayoutDashboard,

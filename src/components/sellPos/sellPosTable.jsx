@@ -1247,7 +1247,7 @@ import jsPDF from "jspdf";
 
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
 import { useInsertPosReportMutation } from "../../features/posReport/posReport";
-import { useGetAllInventoryOverviewQuery } from "../../features/inventoryOverview/inventoryOverview";
+import { useGetAllReceivedProductQuery } from "../../features/receivedProduct/receivedProduct";
 
 export default function SellPosTable() {
   const [cart, setCart] = useState([]);
@@ -1344,7 +1344,7 @@ export default function SellPosTable() {
   }, [currentPage, itemsPerPage, productName]);
 
   const { data, isLoading, isError, error } =
-    useGetAllInventoryOverviewQuery(queryArgs);
+    useGetAllReceivedProductQuery(queryArgs);
 
   useEffect(() => {
     if (isError) {
@@ -1581,26 +1581,26 @@ export default function SellPosTable() {
       const invoice = res?.data ||
         res?.posReport ||
         res || {
-        invoiceNo: res?.invoiceNo || `INV-${Date.now()}`,
-        date: payload.date,
-        customer: {
-          name: payload.name,
-          mobile: payload.mobile,
-          address: payload.address,
-        },
-        subTotal: payload.subTotal,
-        discount: payload.discount,
-        deliveryCharge: payload.deliveryCharge,
-        total: payload.total,
-        paidAmount: payload.paidAmount,
-        dueAmount: payload.dueAmount,
-        items: payload.items,
-        note: payload.note,
+          invoiceNo: res?.invoiceNo || `INV-${Date.now()}`,
+          date: payload.date,
+          customer: {
+            name: payload.name,
+            mobile: payload.mobile,
+            address: payload.address,
+          },
+          subTotal: payload.subTotal,
+          discount: payload.discount,
+          deliveryCharge: payload.deliveryCharge,
+          total: payload.total,
+          paidAmount: payload.paidAmount,
+          dueAmount: payload.dueAmount,
+          items: payload.items,
+          note: payload.note,
 
-        // ✅ keep warranty in invoice too (optional)
-        warrantyValue: payload.warrantyValue,
-        warrantyUnit: payload.warrantyUnit,
-      };
+          // ✅ keep warranty in invoice too (optional)
+          warrantyValue: payload.warrantyValue,
+          warrantyUnit: payload.warrantyUnit,
+        };
 
       const normalizedInvoice = normalizeInvoice(invoice, payload);
 
@@ -1712,7 +1712,9 @@ export default function SellPosTable() {
                           </div>
 
                           <div className="mt-0.5 flex items-center gap-3 text-xs font-semibold text-slate-500">
-                            <span className="text-emerald-600">৳{Number(price).toLocaleString()}</span>
+                            <span className="text-emerald-600">
+                              ৳{Number(price).toLocaleString()}
+                            </span>
                             <span className="h-1 w-1 rounded-full bg-slate-300" />
                             <span>Stock: {stock}</span>
                           </div>
@@ -1758,10 +1760,11 @@ export default function SellPosTable() {
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`px-4 py-2 rounded-xl border transition ${active
-                      ? "bg-indigo-600 text-white border-indigo-600"
-                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                      }`}
+                    className={`px-4 py-2 rounded-xl border transition ${
+                      active
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                    }`}
                   >
                     {pageNum}
                   </button>
@@ -1807,9 +1810,13 @@ export default function SellPosTable() {
                         <div className="flex items-center justify-between sm:justify-end gap-3">
                           <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden h-9 shadow-sm">
                             <button
-                              onClick={() => updateQty(x.Id, Math.max(1, (x.qty || 1) - 1))}
+                              onClick={() =>
+                                updateQty(x.Id, Math.max(1, (x.qty || 1) - 1))
+                              }
                               className="w-8 h-full flex items-center justify-center hover:bg-slate-50 text-slate-500 transition border-r border-slate-100"
-                            >-</button>
+                            >
+                              -
+                            </button>
                             <input
                               value={x.qty}
                               onChange={(e) => updateQty(x.Id, e.target.value)}
@@ -1820,11 +1827,14 @@ export default function SellPosTable() {
                             <button
                               onClick={() => updateQty(x.Id, (x.qty || 1) + 1)}
                               className="w-8 h-full flex items-center justify-center hover:bg-slate-50 text-slate-500 transition border-l border-slate-100"
-                            >+</button>
+                            >
+                              +
+                            </button>
                           </div>
 
                           <div className="w-20 text-right text-xs font-extrabold text-slate-900">
-                            ৳{(
+                            ৳
+                            {(
                               (Number(x.price) || 0) * (Number(x.qty) || 0)
                             ).toLocaleString()}
                           </div>
@@ -1890,7 +1900,7 @@ export default function SellPosTable() {
                                   onChange={(e) =>
                                     setDiscount(Number(e.target.value) || 0)
                                   }
-                                  className="h-9 w-28 rounded-md border border-gray-200 px-2 text-sm text-right outline-none"
+                                  className="h-9 w-28 bg-white rounded-md border border-gray-200 px-2 text-sm text-right outline-none"
                                   type="number"
                                   min={0}
                                 />
@@ -1909,7 +1919,7 @@ export default function SellPosTable() {
                                 onChange={(e) =>
                                   setDeliveryCharge(Number(e.target.value) || 0)
                                 }
-                                className="h-9 w-44 rounded-md border border-gray-200 px-2 text-sm text-right outline-none"
+                                className="h-9 w-44 rounded-md border bg-white border-gray-200 px-2 text-sm text-right outline-none"
                                 type="number"
                                 min={0}
                               />
@@ -2014,14 +2024,6 @@ function PaymentDrawer({
   setCustomerAddress,
   onConfirm,
   isSaving,
-
-  // ✅ NEW
-  hasWarranty,
-  setHasWarranty,
-  warrantyValue,
-  setWarrantyValue,
-  warrantyUnit,
-  setWarrantyUnit,
 }) {
   return (
     <AnimatePresence>
@@ -2052,7 +2054,9 @@ function PaymentDrawer({
                 <div className="text-xl font-black text-slate-900 tracking-tight uppercase">
                   Checkout
                 </div>
-                <div className="text-xs font-bold text-slate-400 mt-0.5">Finalize transaction & payment</div>
+                <div className="text-xs font-bold text-slate-400 mt-0.5">
+                  Finalize transaction & payment
+                </div>
               </div>
               <button
                 onClick={onClose}
@@ -2078,10 +2082,14 @@ function PaymentDrawer({
 
                 <Field label="Amount Received" required>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">৳</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
+                      ৳
+                    </span>
                     <input
                       value={paidAmount}
-                      onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
+                      onChange={(e) =>
+                        setPaidAmount(Number(e.target.value) || 0)
+                      }
                       type="number"
                       min={0}
                       className="w-full h-12 rounded-xl border border-slate-200 pl-8 pr-4 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition bg-white"
@@ -2203,7 +2211,9 @@ function PaymentDrawer({
             {/* Bottom sticky bar */}
             <div className="border-t border-slate-200 px-8 py-6 bg-slate-50/50 backdrop-blur-md">
               <div className="flex items-center justify-between mb-4">
-                <div className="text-sm font-bold text-slate-500">Total Payable:</div>
+                <div className="text-sm font-bold text-slate-500">
+                  Total Payable:
+                </div>
                 <div className="text-2xl font-black text-indigo-600">
                   ৳{Number(total || 0).toLocaleString()}
                 </div>
@@ -2213,7 +2223,7 @@ function PaymentDrawer({
                 type="button"
                 onClick={onConfirm}
                 disabled={isSaving}
-                className="w-full h-14 rounded-2xl bg-slate-900 text-white font-black text-sm uppercase tracking-widest hover:bg-slate-800 disabled:opacity-50 transition-all shadow-xl shadow-slate-200 active:scale-[0.98] flex items-center justify-center gap-3"
+                className="w-full h-10 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase tracking-widest hover:bg-slate-800 disabled:opacity-50 transition-all shadow-xl shadow-slate-200 active:scale-[0.98] flex items-center justify-center gap-3"
               >
                 {isSaving ? (
                   <>
@@ -2493,17 +2503,17 @@ function normalizeInvoice(raw, payloadFallback) {
     inv.Customer ||
     (inv.name || inv.mobile || inv.address
       ? {
-        name: inv.name || "",
-        mobile: inv.mobile || "",
-        address: inv.address || "",
-      }
+          name: inv.name || "",
+          mobile: inv.mobile || "",
+          address: inv.address || "",
+        }
       : null) ||
     (payloadFallback
       ? {
-        name: payloadFallback.name,
-        mobile: payloadFallback.mobile,
-        address: payloadFallback.address,
-      }
+          name: payloadFallback.name,
+          mobile: payloadFallback.mobile,
+          address: payloadFallback.address,
+        }
       : null);
 
   inv.customer = {
@@ -2518,9 +2528,9 @@ function normalizeInvoice(raw, payloadFallback) {
   inv.discount = Number(inv.discount ?? payloadFallback?.discount ?? 0);
   inv.deliveryCharge = Number(
     inv.deliveryCharge ??
-    inv.delivery_charge ??
-    payloadFallback?.deliveryCharge ??
-    0,
+      inv.delivery_charge ??
+      payloadFallback?.deliveryCharge ??
+      0,
   );
   inv.total = Number(inv.total ?? payloadFallback?.total ?? 0);
   inv.paidAmount = Number(

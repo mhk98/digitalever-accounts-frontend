@@ -53,6 +53,7 @@ import CreditLedgerPage from "./pages/CreditLedgerPage";
 import ManufacturePage from "./pages/ManufacturePage";
 import ItemsPage from "./pages/ItemsPage";
 import ManufactureStockPage from "./pages/ManufactureStockPage";
+import MixerPage from "./pages/MixerPage";
 
 function App() {
   return (
@@ -145,6 +146,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <ManufacturePage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/mixer"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <MixerPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

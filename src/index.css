@@ -87,6 +87,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
+.hide-date-picker-icon::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  display: none;
+}
+
+.hide-date-picker-icon::-webkit-inner-spin-button,
+.hide-date-picker-icon::-webkit-clear-button {
+  display: none;
+}
+
 .date-black-icon::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
