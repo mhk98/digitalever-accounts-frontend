@@ -21,6 +21,14 @@ export const manufactureApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: "Manufacture", id: "LIST" }],
     }),
 
+    getSingleManDataById: build.mutation({
+      query: (id) => ({
+        url: `manufacture/${id}`,
+        method: "GET",
+      }),
+      invalidatesTags: [{ type: "Manufacture", id: "LIST" }],
+    }),
+
     updateManufacture: build.mutation({
       query: ({ id, data }) => ({
         url: `manufacture/${id}`,
@@ -66,4 +74,5 @@ export const {
   useDeleteManufactureMutation,
   useUpdateManufactureMutation,
   useGetAllManufactureWithoutQueryQuery,
+  useGetSingleManDataByIdMutation,
 } = manufactureApi;

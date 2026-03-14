@@ -22,178 +22,73 @@ import {
   useInsertMixerMutation,
   useUpdateMixerMutation,
 } from "../../features/mixer/mixer";
-import { useGetAllItemWithoutQueryQuery } from "../../features/item/item";
-import {
-  useGetAllItemMasterWithoutQueryQuery,
-} from "../../features/manufactureStock/manufactureStock";
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
+import { useGetSingleManDataByIdMutation } from "../../features/manufacture/manufacture";
 
 const initialCreateProduct = {
-  itemId: "",
+  productId: "",
   unitValue: "",
   cost: "",
   note: "",
   date: new Date().toISOString().slice(0, 10),
   hasUnit: false,
   unit: "Pcs",
-  mixerDetails: {
-    attarBottleId: "",
-    attarBottleQty: "",
-    attarAmountId: "",
-    attarAmountQty: "",
-    packetId: "",
-    packetQty: "",
-    datesAmountId: "",
-    datesAmountQty: "",
-  },
+  materialSelections: [],
 };
 
-const getMixerTypeFromName = (name = "") => {
-  const normalizedName = String(name).toLowerCase();
+const normalizeManufactureItems = (response) => {
+  const baseData =
+    response?.data?.items ??
+    response?.items ??
+    response?.data ??
+    response ??
+    [];
 
-  if (normalizedName.includes("attar")) {
-    return "attar";
-  }
+  const list = Array.isArray(baseData) ? baseData : baseData ? [baseData] : [];
 
-  if (
-    normalizedName.includes("dates") ||
-    normalizedName.includes("khajur") ||
-    normalizedName.includes("khejur") ||
-    normalizedName.includes("খেজুর")
-  ) {
-    return "dates";
-  }
-
-  return "";
+  return list.map((item, index) => ({
+    id: String(
+      item?.Id ??
+        item?.id ??
+        item?.manufactureId ??
+        item?.manufactureItemId ??
+        item?.itemId ??
+        index,
+    ),
+    label:
+      item?.name ||
+      item?.itemName ||
+      item?.item?.name ||
+      item?.product?.name ||
+      `Manufacture Item ${index + 1}`,
+  }));
 };
 
-const getMixerDetailFields = (mixerType) => {
-  if (mixerType === "attar") {
-    return [
-      {
-        key: "attarBottleId",
-        qtyKey: "attarBottleQty",
-        label: "Attar Bottle",
-        placeholder: "Select attar bottle",
-        keywords: ["attar", "bottle", "botol"],
-      },
-      {
-        key: "attarAmountId",
-        qtyKey: "attarAmountQty",
-        label: "Liquid Attar",
-        aliases: ["Attar Amount"],
-        placeholder: "Select liquid attar",
-        keywords: ["attar"],
-        excludeKeywords: ["bottle", "botol", "packet", "pack", "pouch"],
-      },
-      {
-        key: "packetId",
-        qtyKey: "packetQty",
-        label: "Packet",
-        placeholder: "Select packet",
-        keywords: ["packet", "pack", "pouch"],
-      },
-    ];
-  }
+const buildMaterialSelections = (items, existingSelections = []) =>
+  items.map((item, index) => ({
+    manufactureId: existingSelections?.[index]?.manufactureId || item.id || "",
+    quantity: existingSelections?.[index]?.quantity || "",
+  }));
 
-  if (mixerType === "dates") {
-    return [
-      {
-        key: "datesAmountId",
-        qtyKey: "datesAmountQty",
-        label: "Dates Amount",
-        placeholder: "Select dates",
-        keywords: ["dates", "khajur", "khejur", "খেজুর", "date"],
-      },
-      {
-        key: "packetId",
-        qtyKey: "packetQty",
-        label: "Packet",
-        placeholder: "Select packet",
-        keywords: ["packet", "pack", "pouch"],
-      },
-    ];
-  }
-
-  return [];
-};
-
-const parseMixerDetailsFromNote = (
-  note = "",
-  mixerType,
-  detailFields,
-  optionMap,
+const buildMixerMaterialNote = (
+  manufactureItems,
+  selections,
+  extraNote = "",
 ) => {
-  if (!note || !mixerType || !detailFields.length) {
-    return initialCreateProduct.mixerDetails;
-  }
-
-  const parsedDetails = { ...initialCreateProduct.mixerDetails };
-  const noteLines = String(note)
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  detailFields.forEach((field) => {
-    const acceptedLabels = [field.label, ...(field.aliases || [])];
-    const matchingLine = noteLines.find((line) =>
-      acceptedLabels.some((label) =>
-        line.toLowerCase().startsWith(`${label.toLowerCase()}:`),
-      ),
-    );
-
-    if (!matchingLine) return;
-
-    const matchedLabelPrefix =
-      acceptedLabels.find((label) =>
-        matchingLine.toLowerCase().startsWith(`${label.toLowerCase()}:`),
-      ) || field.label;
-    const lineContent = matchingLine.slice(matchedLabelPrefix.length + 1).trim();
-    const matchedOption = Array.from(optionMap.entries()).find(([, label]) =>
-      lineContent.startsWith(label),
-    );
-
-    if (!matchedOption) return;
-
-    const [matchedId, matchedLabel] = matchedOption;
-    const quantityText = lineContent.slice(matchedLabel.length).trim();
-    const quantityMatch = quantityText.match(/^x\s*([0-9]+(?:\.[0-9]+)?)$/i);
-
-    parsedDetails[field.key] = matchedId;
-    parsedDetails[field.qtyKey] = quantityMatch?.[1] || "";
-  });
-
-  return parsedDetails;
-};
-
-const buildMixerDetailsNote = (
-  mixerType,
-  mixerDetails,
-  detailFields,
-  optionMap,
-) => {
-  if (!mixerType) return "";
-
-  const lines = detailFields
-    .map((field) => {
-      const selectedId = mixerDetails?.[field.key];
-      const quantity = mixerDetails?.[field.qtyKey];
-
-      if (!selectedId || !quantity) return "";
-
-      const optionLabel = optionMap.get(String(selectedId)) || field.label;
-      return `${field.label}: ${optionLabel} x ${quantity}`;
+  const optionMap = new Map(
+    manufactureItems.map((item) => [item.id, item.label]),
+  );
+  const detailLines = selections
+    .map((selection, index) => {
+      if (!selection?.manufactureId || !selection?.quantity) return "";
+      const label =
+        optionMap.get(String(selection.manufactureId)) ||
+        `Manufacture Item ${index + 1}`;
+      return `${label}: ${selection.quantity}`;
     })
     .filter(Boolean);
 
-  if (!lines.length) return "";
-
-  const sectionTitle =
-    mixerType === "attar"
-      ? "Mixer Details (Attar)"
-      : "Mixer Details (Dates)";
-
-  return [sectionTitle, ...lines].join("\n");
+  return [...detailLines, extraNote || ""].filter(Boolean).join("\n");
 };
 
 const MixerTable = () => {
@@ -224,6 +119,10 @@ const MixerTable = () => {
 
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [noteContent, setNoteContent] = useState("");
+  const [fetchCreateManufactureData, createManufactureState] =
+    useGetSingleManDataByIdMutation();
+  const [fetchCurrentManufactureData, currentManufactureState] =
+    useGetSingleManDataByIdMutation();
 
   useEffect(() => {
     const updatePagesPerSet = () => {
@@ -275,14 +174,9 @@ const MixerTable = () => {
     isLoading: isLoadingAllProducts,
     isError: isErrorAllProducts,
     error: errorAllProducts,
-  } = useGetAllItemWithoutQueryQuery();
-  const { data: allProductsCatalogRes } = useGetAllProductWithoutQueryQuery();
-  const { data: allItemMasterRes, isLoading: isLoadingItemMaster } =
-    useGetAllItemMasterWithoutQueryQuery();
+  } = useGetAllProductWithoutQueryQuery();
 
   const productsData = allProductsRes?.data || [];
-  const productsCatalogData = allProductsCatalogRes?.data || [];
-  const itemMasterData = allItemMasterRes?.data || [];
 
   useEffect(() => {
     if (isErrorAllProducts) {
@@ -306,132 +200,33 @@ const MixerTable = () => {
     return m;
   }, [productsData]);
 
-  const productNameMap = useMemo(() => {
-    const m = new Map();
-    (productsCatalogData || []).forEach((p) => {
-      const key = String(p.Id ?? p.id ?? p._id);
-      m.set(key, p.name);
-    });
-    return m;
-  }, [productsCatalogData]);
-
-  const selectedCreateProductName = useMemo(() => {
-    if (!createProduct?.itemId) return "";
-    return itemNameMap.get(String(createProduct.itemId)) || "";
-  }, [createProduct?.itemId, itemNameMap]);
-
-  const selectedCurrentProductName = useMemo(() => {
-    if (!currentProduct?.itemId) return "";
-    return itemNameMap.get(String(currentProduct.itemId)) || "";
-  }, [currentProduct?.itemId, itemNameMap]);
-
-  const createMixerType = useMemo(
-    () => getMixerTypeFromName(selectedCreateProductName),
-    [selectedCreateProductName],
+  const createManufactureItems = useMemo(
+    () => normalizeManufactureItems(createManufactureState?.data),
+    [createManufactureState?.data],
   );
 
-  const currentMixerType = useMemo(
-    () => getMixerTypeFromName(selectedCurrentProductName),
-    [selectedCurrentProductName],
+  const currentManufactureItems = useMemo(
+    () => normalizeManufactureItems(currentManufactureState?.data),
+    [currentManufactureState?.data],
   );
 
-  const createMixerDetailFields = useMemo(
-    () => getMixerDetailFields(createMixerType),
-    [createMixerType],
+  const createManufactureOptions = useMemo(
+    () =>
+      createManufactureItems.map((item) => ({
+        value: item.id,
+        label: item.label,
+      })),
+    [createManufactureItems],
   );
 
-  const currentMixerDetailFields = useMemo(
-    () => getMixerDetailFields(currentMixerType),
-    [currentMixerType],
+  const currentManufactureOptions = useMemo(
+    () =>
+      currentManufactureItems.map((item) => ({
+        value: item.id,
+        label: item.label,
+      })),
+    [currentManufactureItems],
   );
-
-  const itemMasterOptions = useMemo(() => {
-    return (itemMasterData || []).map((row) => {
-      const itemId = String(
-        row.itemId ??
-          row.item_id ??
-          row.ItemId ??
-          row.productId ??
-          row.product_id ??
-          row.ProductId ??
-          row.item?.Id ??
-          row.item?.id ??
-          row.product?.Id ??
-          row.product?.id ??
-          "",
-      );
-
-      const itemName =
-        row.itemName ||
-        row.name ||
-        row.item?.name ||
-        row.product?.name ||
-        itemNameMap.get(itemId) ||
-        productNameMap.get(itemId) ||
-        `Item #${itemId}`;
-
-      return {
-        value: String(row.Id ?? row.id ?? row._id),
-        label: `${itemName}${row.quantity ? ` (Stock: ${row.quantity})` : ""}`,
-        searchName: String(itemName).toLowerCase(),
-        quantity: Number(row.quantity || 0),
-        row,
-      };
-    });
-  }, [itemMasterData, itemNameMap, productNameMap]);
-
-  const itemMasterOptionMap = useMemo(() => {
-    const m = new Map();
-    itemMasterOptions.forEach((option) =>
-      m.set(String(option.value), option.label),
-    );
-    return m;
-  }, [itemMasterOptions]);
-
-  const itemMasterRowMap = useMemo(() => {
-    const m = new Map();
-    itemMasterOptions.forEach((option) =>
-      m.set(String(option.value), option.row),
-    );
-    return m;
-  }, [itemMasterOptions]);
-
-  const getFilteredDetailOptions = (field) => {
-    const keywords = field.keywords || [];
-    const excludeKeywords = field.excludeKeywords || [];
-
-    const filtered = itemMasterOptions.filter((option) => {
-      const matchesKeyword =
-        !keywords.length ||
-        keywords.some((keyword) =>
-          option.searchName.includes(keyword.toLowerCase()),
-        );
-
-      const excluded = excludeKeywords.some((keyword) =>
-        option.searchName.includes(keyword.toLowerCase()),
-      );
-
-      return matchesKeyword && !excluded;
-    });
-
-    return filtered.map(({ value, label }) => ({ value, label }));
-  };
-
-  // const resolveItemName = (rp) => {
-  //   const pid =
-  //     rp.itemId ??
-  //     rp.item_id ??
-  //     rp.ItemId ??
-  //     rp.item?.Id ??
-  //     rp.item?.id ??
-  //     rp.item?._id;
-
-  //   if (rp.itemName) return rp.itemName;
-  //   if (rp.item?.name) return rp.item?.name;
-  //   if (pid === null || pid === undefined || pid === "") return "N/A";
-
-  //   return itemNameMap.get(String(pid)) || "N/A";
-  // };
 
   const resolveItemName = (rp) => {
     const possibleName =
@@ -470,6 +265,40 @@ const MixerTable = () => {
     const matchedName = itemNameMap.get(String(possibleId));
     return matchedName || `Item #${possibleId}`;
   };
+
+  useEffect(() => {
+    if (isModalOpen1 && createProduct?.productId) {
+      fetchCreateManufactureData(createProduct.productId);
+    }
+  }, [createProduct?.productId, fetchCreateManufactureData, isModalOpen1]);
+
+  useEffect(() => {
+    if (isModalOpen && currentProduct?.productId) {
+      fetchCurrentManufactureData(currentProduct.productId);
+    }
+  }, [currentProduct?.productId, fetchCurrentManufactureData, isModalOpen]);
+
+  useEffect(() => {
+    if (!isModalOpen1) return;
+    setCreateProduct((prev) => ({
+      ...prev,
+      materialSelections: buildMaterialSelections(
+        createManufactureItems,
+        prev.materialSelections,
+      ),
+    }));
+  }, [createManufactureItems, isModalOpen1]);
+
+  useEffect(() => {
+    if (!isModalOpen || !currentProduct) return;
+    setCurrentProduct((prev) => ({
+      ...prev,
+      materialSelections: buildMaterialSelections(
+        currentManufactureItems,
+        prev?.materialSelections,
+      ),
+    }));
+  }, [currentManufactureItems, isModalOpen]);
   const queryArgs = useMemo(() => {
     const args = {
       page: currentPage,
@@ -527,26 +356,19 @@ const MixerTable = () => {
   };
 
   const handleEditClick = (rp) => {
-    const nextItemId = rp.itemId ? String(rp.itemId) : "";
-    const mixerType = getMixerTypeFromName(itemNameMap.get(nextItemId) || "");
-    const detailFields = getMixerDetailFields(mixerType);
-    const parsedMixerDetails = parseMixerDetailsFromNote(
-      rp.note ?? "",
-      mixerType,
-      detailFields,
-      itemMasterOptionMap,
-    );
-
     setCurrentProduct({
       ...rp,
-      itemId: nextItemId,
+      productId:
+        rp.productId || rp.product_id || rp.ProductId
+          ? String(rp.productId || rp.product_id || rp.ProductId)
+          : "",
       date: rp.date ?? "",
       note: rp.note ?? "",
       cost: rp.cost ?? "",
       unitValue: rp.unitValue ?? "",
       unit: rp.unit ?? "Pcs",
       hasUnit: !!rp.unitValue,
-      mixerDetails: parsedMixerDetails,
+      materialSelections: [],
       userId,
     });
 
@@ -554,26 +376,19 @@ const MixerTable = () => {
   };
 
   const handleEditClick1 = (rp) => {
-    const nextItemId = rp.itemId ? String(rp.itemId) : "";
-    const mixerType = getMixerTypeFromName(itemNameMap.get(nextItemId) || "");
-    const detailFields = getMixerDetailFields(mixerType);
-    const parsedMixerDetails = parseMixerDetailsFromNote(
-      rp.note ?? "",
-      mixerType,
-      detailFields,
-      itemMasterOptionMap,
-    );
-
     setCurrentProduct({
       ...rp,
-      itemId: nextItemId,
+      productId:
+        rp.productId || rp.product_id || rp.ProductId
+          ? String(rp.productId || rp.product_id || rp.ProductId)
+          : "",
       date: rp.date ?? "",
       note: rp.note ?? "",
       cost: rp.cost ?? "",
       unitValue: rp.unitValue ?? "",
       unit: rp.unit ?? "Pcs",
       hasUnit: !!rp.unitValue,
-      mixerDetails: parsedMixerDetails,
+      materialSelections: [],
       userId,
     });
 
@@ -583,51 +398,38 @@ const MixerTable = () => {
   const handleCreateProduct = async (e) => {
     e.preventDefault();
 
-    if (!createProduct.itemId) {
+    if (!createProduct.productId) {
       return toast.error("Please select a product");
     }
 
-    if (createMixerDetailFields.length) {
-      for (const field of createMixerDetailFields) {
-        if (!createProduct?.mixerDetails?.[field.key]) {
-          return toast.error(`Please select ${field.label}`);
+    if (createManufactureItems.length) {
+      for (const [index, selection] of (
+        createProduct.materialSelections || []
+      ).entries()) {
+        if (!selection?.manufactureId) {
+          return toast.error(`Please select manufacture item ${index + 1}`);
         }
-
-        if (
-          !createProduct?.mixerDetails?.[field.qtyKey] ||
-          Number(createProduct.mixerDetails[field.qtyKey]) <= 0
-        ) {
-          return toast.error(`Please enter valid quantity for ${field.label}`);
-        }
-
-        const selectedRow = itemMasterRowMap.get(
-          String(createProduct.mixerDetails[field.key]),
-        );
-        const availableQuantity = Number(selectedRow?.quantity || 0);
-        const requestedQuantity = Number(createProduct.mixerDetails[field.qtyKey]);
-
-        if (requestedQuantity > availableQuantity) {
+        if (!selection?.quantity || Number(selection.quantity) <= 0) {
           return toast.error(
-            `${field.label} stock only ${availableQuantity}. Please reduce quantity.`,
+            `Please enter valid quantity for manufacture item ${index + 1}`,
           );
         }
       }
     }
 
     try {
-      const generatedDetailsNote = buildMixerDetailsNote(
-        createMixerType,
-        createProduct.mixerDetails,
-        createMixerDetailFields,
-        itemMasterOptionMap,
+      const finalNote = buildMixerMaterialNote(
+        createManufactureItems,
+        createProduct.materialSelections || [],
+        createProduct.note || "",
       );
 
-      const finalNote = [generatedDetailsNote, createProduct.note || ""]
-        .filter(Boolean)
-        .join("\n\n");
-
       const payload = {
-        itemId: Number(createProduct.itemId) || "",
+        productId: Number(createProduct.productId) || "",
+        mixItems: (createProduct.materialSelections || []).map((selection) => ({
+          manufactureId: Number(selection.manufactureId) || "",
+          quantity: Number(selection.quantity) || 0,
+        })),
         unit: createProduct.unit || "Pcs",
         unitValue: createProduct.hasUnit
           ? Number(createProduct.unitValue) || 0
@@ -656,52 +458,35 @@ const MixerTable = () => {
 
   const handleUpdateProduct = async () => {
     try {
-      if (currentMixerDetailFields.length) {
-        for (const field of currentMixerDetailFields) {
-          if (!currentProduct?.mixerDetails?.[field.key]) {
-            return toast.error(`Please select ${field.label}`);
+      if (currentManufactureItems.length) {
+        for (const [index, selection] of (
+          currentProduct?.materialSelections || []
+        ).entries()) {
+          if (!selection?.manufactureId) {
+            return toast.error(`Please select manufacture item ${index + 1}`);
           }
-
-          if (
-            !currentProduct?.mixerDetails?.[field.qtyKey] ||
-            Number(currentProduct.mixerDetails[field.qtyKey]) <= 0
-          ) {
+          if (!selection?.quantity || Number(selection.quantity) <= 0) {
             return toast.error(
-              `Please enter valid quantity for ${field.label}`,
+              `Please enter valid quantity for manufacture item ${index + 1}`,
             );
           }
         }
       }
 
-      const generatedDetailsNote = buildMixerDetailsNote(
-        currentMixerType,
-        currentProduct?.mixerDetails,
-        currentMixerDetailFields,
-        itemMasterOptionMap,
+      const finalNote = buildMixerMaterialNote(
+        currentManufactureItems,
+        currentProduct?.materialSelections || [],
+        currentProduct?.note || "",
       );
 
-      const existingNoteWithoutMixerDetails = String(currentProduct.note || "")
-        .split("\n")
-        .filter(
-          (line) =>
-            !line.startsWith("Mixer Details (Attar)") &&
-            !line.startsWith("Mixer Details (Attar Combo)") &&
-            !line.startsWith("Mixer Details (Dates)") &&
-            !line.startsWith("Attar Bottle:") &&
-            !line.startsWith("Attar Amount:") &&
-            !line.startsWith("Liquid Attar:") &&
-            !line.startsWith("Dates Amount:") &&
-            !line.startsWith("Packet:"),
-        )
-        .join("\n")
-        .trim();
-
-      const finalNote = [generatedDetailsNote, existingNoteWithoutMixerDetails]
-        .filter(Boolean)
-        .join("\n\n");
-
       const payload = {
-        itemId: Number(currentProduct.itemId) || "",
+        productId: Number(currentProduct.productId) || "",
+        mixItems: (currentProduct?.materialSelections || []).map(
+          (selection) => ({
+            manufactureId: Number(selection.manufactureId) || "",
+            quantity: Number(selection.quantity) || 0,
+          }),
+        ),
         unit: currentProduct.unit || "Pcs",
         unitValue: currentProduct.hasUnit
           ? Number(currentProduct.unitValue) || 0
@@ -817,24 +602,32 @@ const MixerTable = () => {
     menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
   };
 
-  const handleCreateMixerDetailChange = (key, value) => {
-    setCreateProduct((prev) => ({
-      ...prev,
-      mixerDetails: {
-        ...prev.mixerDetails,
+  const handleCreateMaterialSelectionChange = (index, key, value) => {
+    setCreateProduct((prev) => {
+      const nextSelections = [...(prev.materialSelections || [])];
+      nextSelections[index] = {
+        ...nextSelections[index],
         [key]: value,
-      },
-    }));
+      };
+      return {
+        ...prev,
+        materialSelections: nextSelections,
+      };
+    });
   };
 
-  const handleCurrentMixerDetailChange = (key, value) => {
-    setCurrentProduct((prev) => ({
-      ...prev,
-      mixerDetails: {
-        ...prev?.mixerDetails,
+  const handleCurrentMaterialSelectionChange = (index, key, value) => {
+    setCurrentProduct((prev) => {
+      const nextSelections = [...(prev?.materialSelections || [])];
+      nextSelections[index] = {
+        ...nextSelections[index],
         [key]: value,
-      },
-    }));
+      };
+      return {
+        ...prev,
+        materialSelections: nextSelections,
+      };
+    });
   };
 
   return (
@@ -1183,14 +976,14 @@ const MixerTable = () => {
               options={productDropdownOptions}
               value={
                 productDropdownOptions.find(
-                  (o) => o.value === String(currentProduct?.itemId),
+                  (o) => o.value === String(currentProduct?.productId),
                 ) || null
               }
               onChange={(selected) =>
                 setCurrentProduct((prev) => ({
                   ...prev,
-                  itemId: selected?.value || "",
-                  mixerDetails: initialCreateProduct.mixerDetails,
+                  productId: selected?.value || "",
+                  materialSelections: [],
                 }))
               }
               placeholder={t.search_product || "Search product..."}
@@ -1306,86 +1099,89 @@ const MixerTable = () => {
             />
           </div>
 
-          {currentMixerDetailFields.length > 0 && (
+          {currentProduct?.productId && (
             <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 space-y-4">
               <div>
                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">
-                  {currentMixerType === "attar"
-                    ? "Attar Details"
-                    : "Dates Details"}
+                  Manufacture Items
                 </h3>
                 <p className="text-[11px] font-medium text-slate-500 mt-1">
-                  Select each required item and enter its quantity.
+                  Matching manufacture items are shown based on selected
+                  product.
                 </p>
               </div>
 
-              <div className="space-y-4">
-                {currentMixerDetailFields.map((field) => {
-                  const fieldOptions = getFilteredDetailOptions(field);
-
-                  return (
+              {currentManufactureState?.isLoading ? (
+                <p className="text-sm font-medium text-slate-500">
+                  Loading manufacture items...
+                </p>
+              ) : currentManufactureItems.length > 0 ? (
+                <div className="space-y-4">
+                  {currentManufactureItems.map((_, index) => (
                     <div
-                      key={field.key}
+                      key={`current-material-${index}`}
                       className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_140px] gap-3"
                     >
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                          {field.label}
+                          Manufacture Item {index + 1}
                         </label>
                         <Select
-                          options={fieldOptions}
+                          options={currentManufactureOptions}
                           value={
-                            fieldOptions.find(
+                            currentManufactureOptions.find(
                               (option) =>
                                 option.value ===
                                 String(
-                                  currentProduct?.mixerDetails?.[field.key] ||
-                                    "",
+                                  currentProduct?.materialSelections?.[index]
+                                    ?.manufactureId || "",
                                 ),
                             ) || null
                           }
                           onChange={(selected) =>
-                            handleCurrentMixerDetailChange(
-                              field.key,
+                            handleCurrentMaterialSelectionChange(
+                              index,
+                              "manufactureId",
                               selected?.value || "",
                             )
                           }
-                          placeholder={field.placeholder}
+                          placeholder="Select manufacture item..."
                           isClearable
                           styles={selectStyles}
                           className="text-sm text-black font-medium"
-                          isDisabled={isLoadingItemMaster}
-                          noOptionsMessage={() =>
-                            "No matching stock item found"
-                          }
                         />
                       </div>
 
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                          Quantity
+                          Value
                         </label>
                         <input
                           type="number"
                           min="0.01"
                           step="0.01"
                           value={
-                            currentProduct?.mixerDetails?.[field.qtyKey] || ""
+                            currentProduct?.materialSelections?.[index]
+                              ?.quantity || ""
                           }
                           onChange={(e) =>
-                            handleCurrentMixerDetailChange(
-                              field.qtyKey,
+                            handleCurrentMaterialSelectionChange(
+                              index,
+                              "quantity",
                               e.target.value,
                             )
                           }
-                          placeholder="0"
                           className="w-full h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                         />
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm font-medium text-slate-500">
+                  No manufacture items found for this product.
+                </p>
+              )}
             </div>
           )}
 
@@ -1459,14 +1255,14 @@ const MixerTable = () => {
               options={productDropdownOptions}
               value={
                 productDropdownOptions.find(
-                  (o) => o.value === String(createProduct.itemId),
+                  (o) => o.value === String(createProduct.productId),
                 ) || null
               }
               onChange={(selected) =>
                 setCreateProduct((prev) => ({
                   ...prev,
-                  itemId: selected?.value || "",
-                  mixerDetails: initialCreateProduct.mixerDetails,
+                  productId: selected?.value || "",
+                  materialSelections: [],
                 }))
               }
               placeholder={t.search_product || "Search product..."}
@@ -1567,89 +1363,6 @@ const MixerTable = () => {
             )}
           </div>
 
-          {createMixerDetailFields.length > 0 && (
-            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 space-y-4">
-              <div>
-                <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">
-                  {createMixerType === "attar"
-                    ? "Attar Details"
-                    : "Dates Details"}
-                </h3>
-                <p className="text-[11px] font-medium text-slate-500 mt-1">
-                  Select each required item and enter its quantity.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                {createMixerDetailFields.map((field) => {
-                  const fieldOptions = getFilteredDetailOptions(field);
-
-                  return (
-                    <div
-                      key={field.key}
-                      className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_140px] gap-3"
-                    >
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                          {field.label}
-                        </label>
-                        <Select
-                          options={fieldOptions}
-                          value={
-                            fieldOptions.find(
-                              (option) =>
-                                option.value ===
-                                String(
-                                  createProduct?.mixerDetails?.[field.key] ||
-                                    "",
-                                ),
-                            ) || null
-                          }
-                          onChange={(selected) =>
-                            handleCreateMixerDetailChange(
-                              field.key,
-                              selected?.value || "",
-                            )
-                          }
-                          placeholder={field.placeholder}
-                          isClearable
-                          styles={selectStyles}
-                          className="text-sm text-black font-medium"
-                          isDisabled={isLoadingItemMaster}
-                          noOptionsMessage={() =>
-                            "No matching stock item found"
-                          }
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                          Quantity
-                        </label>
-                        <input
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          value={
-                            createProduct?.mixerDetails?.[field.qtyKey] || ""
-                          }
-                          onChange={(e) =>
-                            handleCreateMixerDetailChange(
-                              field.qtyKey,
-                              e.target.value,
-                            )
-                          }
-                          placeholder="0"
-                          className="w-full h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               {t.cost || "Cost"}
@@ -1664,6 +1377,92 @@ const MixerTable = () => {
               className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
             />
           </div>
+
+          {createProduct?.productId && (
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 space-y-4">
+              <div>
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">
+                  Manufacture Items
+                </h3>
+                <p className="text-[11px] font-medium text-slate-500 mt-1">
+                  Matching manufacture items are shown based on selected
+                  product.
+                </p>
+              </div>
+
+              {createManufactureState?.isLoading ? (
+                <p className="text-sm font-medium text-slate-500">
+                  Loading manufacture items...
+                </p>
+              ) : createManufactureItems.length > 0 ? (
+                <div className="space-y-4">
+                  {createManufactureItems.map((_, index) => (
+                    <div
+                      key={`create-material-${index}`}
+                      className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_140px] gap-3"
+                    >
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Manufacture Item {index + 1}
+                        </label>
+                        <Select
+                          options={createManufactureOptions}
+                          value={
+                            createManufactureOptions.find(
+                              (option) =>
+                                option.value ===
+                                String(
+                                  createProduct?.materialSelections?.[index]
+                                    ?.manufactureId || "",
+                                ),
+                            ) || null
+                          }
+                          onChange={(selected) =>
+                            handleCreateMaterialSelectionChange(
+                              index,
+                              "manufactureId",
+                              selected?.value || "",
+                            )
+                          }
+                          placeholder="Select manufacture item..."
+                          isClearable
+                          styles={selectStyles}
+                          className="text-sm text-black font-medium"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Value
+                        </label>
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={
+                            createProduct?.materialSelections?.[index]
+                              ?.quantity || ""
+                          }
+                          onChange={(e) =>
+                            handleCreateMaterialSelectionChange(
+                              index,
+                              "quantity",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm font-medium text-slate-500">
+                  No manufacture items found for this product.
+                </p>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">

@@ -192,7 +192,11 @@ const ManufactureTable = () => {
     }
 
     const matchedName = itemNameMap.get(String(possibleId));
-    return matchedName || productNameMap.get(String(possibleId)) || `Item #${possibleId}`;
+    return (
+      matchedName ||
+      productNameMap.get(String(possibleId)) ||
+      `Item #${possibleId}`
+    );
   };
   const queryArgs = useMemo(() => {
     const args = {
@@ -574,7 +578,7 @@ const ManufactureTable = () => {
             onChange={(selected) => setItemName(selected?.label || "")}
             placeholder={t.search || "Search"}
             isClearable
-            isDisabled={isLoadingAllProducts}
+            isDisabled={isLoadingAllItems}
             styles={selectStyles}
             className="text-black"
           />
@@ -836,7 +840,7 @@ const ManufactureTable = () => {
               isClearable
               styles={selectStyles}
               className="text-sm font-medium"
-              isDisabled={isLoadingAllProducts}
+              isDisabled={isLoadingAllItems}
             />
           </div>
 
@@ -1053,7 +1057,7 @@ const ManufactureTable = () => {
               isClearable
               styles={selectStyles}
               className="text-sm text-black font-medium"
-              isDisabled={isLoadingAllProducts}
+              isDisabled={isLoadingAllItems}
             />
           </div>
 
