@@ -27,12 +27,8 @@ import { useGetSingleManDataByIdMutation } from "../../features/manufacture/manu
 
 const initialCreateProduct = {
   productId: "",
-  unitValue: "",
-  cost: "",
   note: "",
   date: new Date().toISOString().slice(0, 10),
-  hasUnit: false,
-  unit: "Pcs",
   materialSelections: [],
 };
 
@@ -67,7 +63,7 @@ const normalizeManufactureItems = (response) => {
 const buildMaterialSelections = (items, existingSelections = []) =>
   items.map((item, index) => ({
     manufactureId: existingSelections?.[index]?.manufactureId || item.id || "",
-    quantity: existingSelections?.[index]?.quantity || "",
+    unitValue: existingSelections?.[index]?.quantity || "",
   }));
 
 const buildMixerMaterialNote = (
@@ -364,10 +360,10 @@ const MixerTable = () => {
           : "",
       date: rp.date ?? "",
       note: rp.note ?? "",
-      cost: rp.cost ?? "",
-      unitValue: rp.unitValue ?? "",
-      unit: rp.unit ?? "Pcs",
-      hasUnit: !!rp.unitValue,
+      // cost: rp.cost ?? "",
+      // unitValue: rp.unitValue ?? "",
+      // unit: rp.unit ?? "Pcs",
+      // hasUnit: !!rp.unitValue,
       materialSelections: [],
       userId,
     });
@@ -385,9 +381,9 @@ const MixerTable = () => {
       date: rp.date ?? "",
       note: rp.note ?? "",
       cost: rp.cost ?? "",
-      unitValue: rp.unitValue ?? "",
-      unit: rp.unit ?? "Pcs",
-      hasUnit: !!rp.unitValue,
+      // unitValue: rp.unitValue ?? "",
+      // unit: rp.unit ?? "Pcs",
+      // hasUnit: !!rp.unitValue,
       materialSelections: [],
       userId,
     });
@@ -428,13 +424,13 @@ const MixerTable = () => {
         productId: Number(createProduct.productId) || "",
         mixItems: (createProduct.materialSelections || []).map((selection) => ({
           manufactureId: Number(selection.manufactureId) || "",
-          quantity: Number(selection.quantity) || 0,
+          unitValue: Number(selection.quantity) || 0,
         })),
-        unit: createProduct.unit || "Pcs",
-        unitValue: createProduct.hasUnit
-          ? Number(createProduct.unitValue) || 0
-          : 0,
-        cost: Number(createProduct.cost) || 0,
+        // unit: createProduct.unit || "Pcs",
+        // unitValue: createProduct.hasUnit
+        //   ? Number(createProduct.unitValue) || 0
+        //   : 0,
+        // cost: Number(createProduct.cost) || 0,
         date: createProduct.date || "",
         note: finalNote,
         userId: Number(userId) || 0,
@@ -484,14 +480,14 @@ const MixerTable = () => {
         mixItems: (currentProduct?.materialSelections || []).map(
           (selection) => ({
             manufactureId: Number(selection.manufactureId) || "",
-            quantity: Number(selection.quantity) || 0,
+            unitValue: Number(selection.quantity) || 0,
           }),
         ),
-        unit: currentProduct.unit || "Pcs",
-        unitValue: currentProduct.hasUnit
-          ? Number(currentProduct.unitValue) || 0
-          : 0,
-        cost: Number(currentProduct.cost) || 0,
+        // unit: currentProduct.unit || "Pcs",
+        // unitValue: currentProduct.hasUnit
+        //   ? Number(currentProduct.unitValue) || 0
+        //   : 0,
+        // cost: Number(currentProduct.cost) || 0,
         date: currentProduct.date || "",
         note: finalNote,
         userId: Number(currentProduct.userId) || 0,
@@ -525,11 +521,11 @@ const MixerTable = () => {
     try {
       const payload = {
         itemId: Number(currentProduct.itemId) || "",
-        unit: currentProduct.unit || "Pcs",
-        unitValue: currentProduct.hasUnit
-          ? Number(currentProduct.unitValue) || 0
-          : 0,
-        cost: Number(currentProduct.cost) || 0,
+        // unit: currentProduct.unit || "Pcs",
+        // unitValue: currentProduct.hasUnit
+        //   ? Number(currentProduct.unitValue) || 0
+        //   : 0,
+        // cost: Number(currentProduct.cost) || 0,
         date: currentProduct.date || "",
         note: currentProduct.note || "",
         userId: Number(currentProduct.userId) || 0,
@@ -1008,7 +1004,7 @@ const MixerTable = () => {
             />
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-1">
+          {/* <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-1">
             <div className="flex items-center justify-between px-4 py-3">
               <div>
                 <span className="text-sm font-black text-slate-700 uppercase tracking-tight">
@@ -1082,7 +1078,7 @@ const MixerTable = () => {
                 </div>
               </div>
             )}
-          </div>
+          </div> */}
 
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
@@ -1287,7 +1283,7 @@ const MixerTable = () => {
             />
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-1">
+          {/* <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-1">
             <div className="flex items-center justify-between px-4 py-3">
               <div>
                 <span className="text-sm font-black text-slate-700 uppercase tracking-tight">
@@ -1361,7 +1357,7 @@ const MixerTable = () => {
                 </div>
               </div>
             )}
-          </div>
+          </div> */}
 
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">

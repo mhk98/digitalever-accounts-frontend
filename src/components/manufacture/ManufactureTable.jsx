@@ -233,6 +233,9 @@ const ManufactureTable = () => {
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
 
+
+  console.log("Manufacture data:", data);
+
   const [insertManufacture] = useInsertManufactureMutation();
   const [updateManufacture] = useUpdateManufactureMutation();
   const [deleteManufacture] = useDeleteManufactureMutation();
