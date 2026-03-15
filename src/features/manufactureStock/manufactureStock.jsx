@@ -2,7 +2,7 @@
 
 import { baseApi } from "../baseApi/api";
 
-export const ItemMasterApi = baseApi.injectEndpoints({
+export const itemMasterApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     insertItemMaster: build.mutation({
       query: (data) => ({
@@ -48,6 +48,14 @@ export const ItemMasterApi = baseApi.injectEndpoints({
       refetchOnMountOrArgChange: true,
     }),
 
+    getSingleItemMasterDataById: build.mutation({
+      query: (id) => ({
+        url: `item-master/${id}`,
+        method: "GET",
+      }),
+      invalidatesTags: [{ type: "ItemMaster", id: "LIST" }],
+    }),
+
     getAllItemMasterWithoutQuery: build.query({
       query: () => ({
         url: "item-master/all",
@@ -66,4 +74,5 @@ export const {
   useDeleteItemMasterMutation,
   useUpdateItemMasterMutation,
   useGetAllItemMasterWithoutQueryQuery,
-} = ItemMasterApi;
+  useGetSingleItemMasterDataByIdMutation,
+} = itemMasterApi;

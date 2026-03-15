@@ -233,7 +233,6 @@ const ManufactureTable = () => {
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
 
-
   console.log("Manufacture data:", data);
 
   const [insertManufacture] = useInsertManufactureMutation();
@@ -824,31 +823,6 @@ const ManufactureTable = () => {
         <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-              {t.select_item || "Select Item"}
-            </label>
-            <Select
-              options={itemDropdownOptions}
-              value={
-                itemDropdownOptions.find(
-                  (o) => o.value === String(currentProduct?.itemId),
-                ) || null
-              }
-              onChange={(selected) =>
-                setCurrentProduct({
-                  ...currentProduct,
-                  itemId: selected?.value || "",
-                })
-              }
-              placeholder={t.search_item || "Search item..."}
-              isClearable
-              styles={selectStyles}
-              className="text-sm font-medium"
-              isDisabled={isLoadingAllItems}
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               {t.select_product || "Select Product"}
             </label>
             <Select
@@ -869,6 +843,30 @@ const ManufactureTable = () => {
               styles={selectStyles}
               className="text-sm text-black font-medium"
               isDisabled={isLoadingAllProducts}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              {t.select_item || "Select Item"}
+            </label>
+            <Select
+              options={itemDropdownOptions}
+              value={
+                itemDropdownOptions.find(
+                  (o) => o.value === String(currentProduct?.itemId),
+                ) || null
+              }
+              onChange={(selected) =>
+                setCurrentProduct({
+                  ...currentProduct,
+                  itemId: selected?.value || "",
+                })
+              }
+              placeholder={t.search_item || "Search item..."}
+              isClearable
+              styles={selectStyles}
+              className="text-sm font-medium"
+              isDisabled={isLoadingAllItems}
             />
           </div>
 
@@ -1041,31 +1039,6 @@ const ManufactureTable = () => {
         >
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-              {t.select_item || "Select Item"}
-            </label>
-            <Select
-              options={itemDropdownOptions}
-              value={
-                itemDropdownOptions.find(
-                  (o) => o.value === String(createProduct.itemId),
-                ) || null
-              }
-              onChange={(selected) =>
-                setCreateProduct({
-                  ...createProduct,
-                  itemId: selected?.value || "",
-                })
-              }
-              placeholder={t.search_product || "Search item..."}
-              isClearable
-              styles={selectStyles}
-              className="text-sm text-black font-medium"
-              isDisabled={isLoadingAllItems}
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               {t.select_product || "Select Product"}
             </label>
             <Select
@@ -1086,6 +1059,30 @@ const ManufactureTable = () => {
               styles={selectStyles}
               className="text-sm text-black font-medium"
               isDisabled={isLoadingAllProducts}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              {t.select_item || "Select Item"}
+            </label>
+            <Select
+              options={itemDropdownOptions}
+              value={
+                itemDropdownOptions.find(
+                  (o) => o.value === String(createProduct.itemId),
+                ) || null
+              }
+              onChange={(selected) =>
+                setCreateProduct({
+                  ...createProduct,
+                  itemId: selected?.value || "",
+                })
+              }
+              placeholder={t.search_product || "Search item..."}
+              isClearable
+              styles={selectStyles}
+              className="text-sm text-black font-medium"
+              isDisabled={isLoadingAllItems}
             />
           </div>
 

@@ -23,7 +23,8 @@ import {
   useUpdateMixerMutation,
 } from "../../features/mixer/mixer";
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
-import { useGetSingleManDataByIdMutation } from "../../features/manufacture/manufacture";
+import { useGetSingleItemMasterDataByIdMutation } from "../../features/manufactureStock/manufactureStock";
+// import { useGetSingleManDataByIdMutation } from "../../features/manufacture/manufacture";
 
 const initialCreateProduct = {
   productId: "",
@@ -116,9 +117,9 @@ const MixerTable = () => {
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [noteContent, setNoteContent] = useState("");
   const [fetchCreateManufactureData, createManufactureState] =
-    useGetSingleManDataByIdMutation();
+    useGetSingleItemMasterDataByIdMutation();
   const [fetchCurrentManufactureData, currentManufactureState] =
-    useGetSingleManDataByIdMutation();
+    useGetSingleItemMasterDataByIdMutation();
 
   useEffect(() => {
     const updatePagesPerSet = () => {
@@ -295,6 +296,7 @@ const MixerTable = () => {
       ),
     }));
   }, [currentManufactureItems, isModalOpen]);
+
   const queryArgs = useMemo(() => {
     const args = {
       page: currentPage,
@@ -405,11 +407,11 @@ const MixerTable = () => {
         if (!selection?.manufactureId) {
           return toast.error(`Please select manufacture item ${index + 1}`);
         }
-        if (!selection?.quantity || Number(selection.quantity) <= 0) {
-          return toast.error(
-            `Please enter valid quantity for manufacture item ${index + 1}`,
-          );
-        }
+        // if (!selection?.quantity || Number(selection.quantity) <= 0) {
+        //   return toast.error(
+        //     `Please enter valid quantity for manufacture item ${index + 1}`,
+        //   );
+        // }
       }
     }
 
@@ -419,6 +421,8 @@ const MixerTable = () => {
         createProduct.materialSelections || [],
         createProduct.note || "",
       );
+
+      console.log("finalNote", finalNote);
 
       const payload = {
         productId: Number(createProduct.productId) || "",
@@ -752,12 +756,9 @@ const MixerTable = () => {
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.unit || "Unit"}
                 </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                {/* <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.unit_value || "Unit Value"}
-                </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  {t.cost || "Cost"}
-                </th>
+                </th> */}
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.status || "Status"}
                 </th>
@@ -789,28 +790,24 @@ const MixerTable = () => {
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {rp.unit || "Pcs"}
+                    {rp.combo || "Pcs"}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {Number(rp.unitValue || 0)}
-                  </td>
-
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    ৳{Number(rp.cost || 0).toLocaleString()}
-                  </td>
+                  </td> */}
 
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${
                         rp.status === "Approved"
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm shadow-emerald-100"
-                          : rp.status === "Active"
-                            ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm shadow-blue-100"
-                            : "bg-amber-50 text-amber-700 border-amber-200 shadow-sm shadow-amber-100"
+                          : rp.status === "Pending"
+                            ? "bg-amber-50 text-amber-700 border-amber-200 shadow-sm shadow-amber-100"
+                            : "bg-blue-50 text-blue-700 border-blue-200 shadow-sm shadow-blue-100"
                       }`}
                     >
-                      {rp.status}
+                      {rp.status || "Active"}
                     </span>
                   </td>
 
@@ -1080,7 +1077,7 @@ const MixerTable = () => {
             )}
           </div> */}
 
-          <div>
+          {/* <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               {t.cost || "Cost"}
             </label>
@@ -1093,7 +1090,7 @@ const MixerTable = () => {
               }
               className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
             />
-          </div>
+          </div> */}
 
           {currentProduct?.productId && (
             <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 space-y-4">
@@ -1359,7 +1356,7 @@ const MixerTable = () => {
             )}
           </div> */}
 
-          <div>
+          {/* <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               {t.cost || "Cost"}
             </label>
@@ -1372,7 +1369,7 @@ const MixerTable = () => {
               }
               className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
             />
-          </div>
+          </div> */}
 
           {createProduct?.productId && (
             <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 space-y-4">

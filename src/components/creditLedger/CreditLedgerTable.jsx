@@ -10,62 +10,13 @@ import {
   Calendar,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { useInsertLedgerMutation } from "../../features/ledger/ledger";
-
-const walletHistory = [
-  {
-    id: 1,
-    date: "02 March 2026, 03:26 PM",
-    credit: "",
-    debit: "৳8,000",
-    balance: "৳8,000",
-    note: "",
-  },
-  {
-    id: 2,
-    date: "08 March 2026, 03:26 PM",
-    credit: "",
-    debit: "৳8,000",
-    balance: "৳8,000",
-    note: "",
-  },
-  {
-    id: 3,
-    date: "08 March 2026, 03:28 PM",
-    credit: "৳8,000",
-    debit: "",
-    balance: "৳8,000",
-    note: "",
-  },
-  {
-    id: 4,
-    date: "08 March 2026, 03:28 PM",
-    credit: "",
-    debit: "৳8,000",
-    balance: "৳8,000",
-    note: "",
-  },
-  {
-    id: 5,
-    date: "10 March 2026, 02:32 PM",
-    credit: "৳8,000",
-    debit: "",
-    balance: "৳8,000",
-    note: "Simple note: Something",
-  },
-];
-
-const customers = [
-  {
-    id: 1,
-    name: "Sabbir",
-    phone: "+88 01518301098",
-    balance: "৳ 8,000",
-    status: "Pending",
-  },
-];
+import {
+  useGetAllLedgerQuery,
+  useInsertLedgerMutation,
+} from "../../features/ledger/ledger";
+import { useInsertLedgerHistoryMutation } from "../../features/ledgerHistory/ledgerHistory";
 
 const ENTITY_TYPES = {
   customer: {
@@ -303,7 +254,7 @@ const getInitialLedgerForm = () => ({
   type: "employee",
   countryCode: "BD",
   date: new Date().toISOString().slice(0, 10),
-  cashType: "given",
+  cashType: "Unpaid",
   amount: "",
   name: "",
   phone: "",
@@ -312,9 +263,92 @@ const getInitialLedgerForm = () => ({
   sendMessage: false,
 });
 
+const getInitialLedgerHistoryForm = () => ({
+  date: new Date().toISOString().slice(0, 10),
+  amount: "",
+  note: "",
+});
+
+const ENTITY_TABS = [
+  { key: "customer", role: "Customer", label: "Customer" },
+  { key: "supplier", role: "Supplier", label: "Supplier" },
+  { key: "employee", role: "Employee", label: "Employee" },
+];
+
+const getSafeNumber = (value) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : 0;
+};
+
+const formatCurrency = (value) =>
+  `৳${getSafeNumber(value).toLocaleString("en-BD")}`;
+
+const formatLedgerDate = (value) => {
+  if (!value) return "-";
+
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) return value;
+
+  return new Intl.DateTimeFormat("en-BD", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(parsedDate);
+};
+
+const getInitials = (value = "") =>
+  value
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("") || "?";
+
+const normalizePhone = (value = "") => String(value).replace(/\s+/g, "");
+
+const getEntityKey = ({ role, name, phone }) =>
+  [
+    role,
+    String(name || "")
+      .trim()
+      .toLowerCase(),
+    normalizePhone(phone),
+  ].join("|");
+
+const normalizeLedgerEntity = (ledger, type, index) => ({
+  id: String(ledger?.Id ?? ledger?.id ?? `${type}-${index}`),
+  name: ledger?.name || "Unnamed",
+  phone: ledger?.phone || "",
+  extra: ledger?.address || ledger?.remarks || "",
+  role: ENTITY_TYPES[type]?.label || type,
+  type,
+});
+
 const CreditLedgerTable = () => {
+  // const [startDate, setStartDate] = useState("");
+  // const [endDate, setEndDate] = useState("");
+  // const [itemName, setItemName] = useState("");
+
+  const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [activeTab, setActiveTab] = useState("customer");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedEntityId, setSelectedEntityId] = useState("");
+
+  // const [startPage, setStartPage] = useState(1);
+  // const [totalPages, setTotalPages] = useState(1);
+  // const [pagesPerSet, setPagesPerSet] = useState(10);
+
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+  const [historyEntryType, setHistoryEntryType] = useState("Paid");
+  const [ledgerHistoryForm, setLedgerHistoryForm] = useState(
+    getInitialLedgerHistoryForm,
+  );
   const dateInputRef = useRef(null);
+  const historyDateInputRef = useRef(null);
 
   const [createLedger, setCreateLedger] = useState(getInitialLedgerForm);
 
@@ -326,6 +360,12 @@ const CreditLedgerTable = () => {
   const handleAddLedger = () => {
     setCreateLedger(getInitialLedgerForm());
     setIsModalOpen(true);
+  };
+
+  const handleLedgerHistoryDrawerClose = () => {
+    setIsHistoryDrawerOpen(false);
+    setHistoryEntryType("Paid");
+    setLedgerHistoryForm(getInitialLedgerHistoryForm());
   };
 
   const selectedCountry =
@@ -372,11 +412,243 @@ const CreditLedgerTable = () => {
     setCreateLedger((prev) => ({ ...prev, [field]: value }));
   };
 
+  const updateLedgerHistoryField = (field, value) => {
+    setLedgerHistoryForm((prev) => ({ ...prev, [field]: value }));
+  };
+
   const handleDateIconClick = () => {
     if (!dateInputRef.current) return;
     dateInputRef.current.focus();
     if (typeof dateInputRef.current.showPicker === "function") {
       dateInputRef.current.showPicker();
+    }
+  };
+
+  const handleHistoryDateIconClick = () => {
+    if (!historyDateInputRef.current) return;
+    historyDateInputRef.current.focus();
+    if (typeof historyDateInputRef.current.showPicker === "function") {
+      historyDateInputRef.current.showPicker();
+    }
+  };
+
+  const queryArgs = useMemo(() => {
+    const args = {
+      page: currentPage,
+      limit: itemsPerPage,
+      // name: itemName || undefined,
+    };
+
+    Object.keys(args).forEach((k) => {
+      if (args[k] === undefined || args[k] === null || args[k] === "") {
+        delete args[k];
+      }
+    });
+
+    return args;
+  }, [currentPage, itemsPerPage]);
+
+  const { data, isLoading, isError, error } = useGetAllLedgerQuery(queryArgs);
+  const ledgers = data?.data || [];
+
+  const entitiesByType = useMemo(
+    () =>
+      ENTITY_TABS.reduce((acc, tab) => {
+        const seen = new Set();
+
+        acc[tab.key] = ledgers
+          .filter((ledger) => ledger?.role === tab.role)
+          .map((ledger, index) => normalizeLedgerEntity(ledger, tab.key, index))
+          .filter((entity) => {
+            const key = getEntityKey(entity);
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+
+        return acc;
+      }, {}),
+    [ledgers],
+  );
+
+  const activeEntities = useMemo(
+    () => entitiesByType[activeTab] || [],
+    [entitiesByType, activeTab],
+  );
+
+  const filteredEntities = useMemo(() => {
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+
+    if (!normalizedSearchTerm) return activeEntities;
+
+    return activeEntities.filter((entity) =>
+      [entity.name, entity.phone, entity.extra]
+        .filter(Boolean)
+        .some((value) =>
+          String(value).toLowerCase().includes(normalizedSearchTerm),
+        ),
+    );
+  }, [activeEntities, searchTerm]);
+
+  const ledgerSummaryByEntity = useMemo(() => {
+    return ledgers.reduce((acc, ledger, index) => {
+      const key = getEntityKey({
+        role: ledger?.role,
+        name: ledger?.name,
+        phone: ledger?.phone,
+      });
+
+      if (!key) return acc;
+
+      const amount = getSafeNumber(
+        ledger?.amount ?? ledger?.Amount ?? ledger?.balance ?? ledger?.total,
+      );
+      const cashType = String(ledger?.cashType || "").toLowerCase();
+
+      if (!acc[key]) {
+        acc[key] = {
+          totalReceived: 0,
+          totalPaid: 0,
+          history: [],
+        };
+      }
+
+      if (cashType === "paid") {
+        acc[key].totalReceived += amount;
+      } else {
+        acc[key].totalPaid += amount;
+      }
+
+      acc[key].history.push({
+        id: String(ledger?.Id ?? ledger?.id ?? index),
+        date: formatLedgerDate(ledger?.date),
+        credit: cashType === "paid" ? formatCurrency(amount) : "",
+        debit: cashType === "paid" ? "" : formatCurrency(amount),
+        balance: formatCurrency(acc[key].totalPaid - acc[key].totalReceived),
+        note: ledger?.note || "",
+        rawDate: ledger?.date,
+      });
+
+      return acc;
+    }, {});
+  }, [ledgers]);
+
+  useEffect(() => {
+    if (isError) {
+      console.error("Error fetching received product data", error);
+    }
+  }, [isError, error]);
+
+  useEffect(() => {
+    if (!filteredEntities.length) {
+      setSelectedEntityId("");
+      return;
+    }
+
+    setSelectedEntityId((prev) => {
+      if (prev && filteredEntities.some((entity) => entity.id === prev)) {
+        return prev;
+      }
+
+      return filteredEntities[0].id;
+    });
+  }, [filteredEntities]);
+
+  const selectedEntity =
+    filteredEntities.find((entity) => entity.id === selectedEntityId) ||
+    activeEntities.find((entity) => entity.id === selectedEntityId) ||
+    null;
+
+  const selectedEntitySummary = selectedEntity
+    ? ledgerSummaryByEntity[getEntityKey(selectedEntity)]
+    : null;
+
+  const selectedLedgerRecords = useMemo(() => {
+    if (!selectedEntity) return [];
+
+    const entityKey = getEntityKey(selectedEntity);
+
+    return ledgers.filter(
+      (ledger) =>
+        getEntityKey({
+          role: ledger?.role,
+          name: ledger?.name,
+          phone: ledger?.phone,
+        }) === entityKey,
+    );
+  }, [ledgers, selectedEntity]);
+
+  const selectedLedger = selectedLedgerRecords[0] || null;
+
+  const selectedHistory = useMemo(() => {
+    const history = selectedEntitySummary?.history || [];
+
+    return [...history].sort((a, b) => {
+      const aTime = new Date(a.rawDate || 0).getTime();
+      const bTime = new Date(b.rawDate || 0).getTime();
+      return bTime - aTime;
+    });
+  }, [selectedEntitySummary]);
+
+  const selectedTotals = {
+    totalReceived: selectedEntitySummary?.totalReceived || 0,
+    totalPaid: selectedEntitySummary?.totalPaid || 0,
+    balance:
+      (selectedEntitySummary?.totalPaid || 0) -
+      (selectedEntitySummary?.totalReceived || 0),
+  };
+
+  const activeTabMeta = ENTITY_TABS.find((tab) => tab.key === activeTab);
+  const isEntityListLoading = isLoading;
+
+  const [insertLedgerHistory] = useInsertLedgerHistoryMutation();
+
+  const openLedgerHistoryDrawer = (type) => {
+    if (!selectedLedger?.Id && !selectedLedger?.id) {
+      toast.error("No ledger selected.");
+      return;
+    }
+
+    setHistoryEntryType(type);
+    setLedgerHistoryForm(getInitialLedgerHistoryForm());
+    setIsHistoryDrawerOpen(true);
+  };
+
+  const handleInsertLedgerHistory = async (e) => {
+    e.preventDefault();
+
+    const ledgerId = selectedLedger?.Id ?? selectedLedger?.id;
+    if (!ledgerId) {
+      toast.error("Ledger not found.");
+      return;
+    }
+
+    const amount = Number(ledgerHistoryForm.amount) || 0;
+    if (amount <= 0) {
+      toast.error("Amount is required.");
+      return;
+    }
+
+    const payload = {
+      ledgerId,
+      date: ledgerHistoryForm.date,
+      note: ledgerHistoryForm.note,
+      cashType: historyEntryType,
+      paidAmount: historyEntryType === "Paid" ? amount : 0,
+      unpaidAmount: historyEntryType === "Unpaid" ? amount : 0,
+    };
+
+    try {
+      const res = await insertLedgerHistory(payload).unwrap();
+
+      if (res?.success) {
+        toast.success(`${historyEntryType} amount added successfully!`);
+        handleLedgerHistoryDrawerClose();
+      } else {
+        toast.error(res?.message || "Create failed!");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Create failed!");
     }
   };
 
@@ -422,11 +694,27 @@ const CreditLedgerTable = () => {
           <div className="p-3 sm:p-4">
             {/* Tabs */}
             <div className="flex flex-wrap gap-5 border-b border-slate-200 text-sm font-medium text-slate-500">
-              <button className="border-b-2 border-black pb-2 text-slate-900">
-                Customer
-              </button>
-              <button className="pb-2 hover:text-slate-800">Supplier</button>
-              <button className="pb-2 hover:text-slate-800">Employee</button>
+              {ENTITY_TABS.map((tab) => {
+                const isActive = activeTab === tab.key;
+
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => {
+                      setActiveTab(tab.key);
+                      setSearchTerm("");
+                    }}
+                    className={`pb-2 transition ${
+                      isActive
+                        ? "border-b-2 border-black text-slate-900"
+                        : "hover:text-slate-800"
+                    }`}
+                  >
+                    {tab.label} ({entitiesByType[tab.key]?.length || 0})
+                  </button>
+                );
+              })}
             </div>
 
             {/* Search */}
@@ -438,12 +726,18 @@ const CreditLedgerTable = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Search contact"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={`Search ${activeTabMeta?.label?.toLowerCase() || "contact"}`}
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none focus:border-slate-400"
                 />
               </div>
 
-              <button className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50">
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50"
+              >
                 <RefreshCw size={16} className="text-slate-600" />
               </button>
 
@@ -454,35 +748,67 @@ const CreditLedgerTable = () => {
 
             {/* Customer List */}
             <div className="mt-4 space-y-3">
-              {customers.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-start justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm"
-                >
-                  <div className="flex min-w-0 gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
-                      S
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-slate-800">
-                        {item.name}
-                      </p>
-                      <p className="truncate text-sm text-slate-500">
-                        {item.phone}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <p className="font-semibold text-green-500">
-                      {item.balance}
-                    </p>
-                    <span className="mt-1 inline-block rounded-full bg-green-500 px-2 py-0.5 text-xs text-white">
-                      {item.status}
-                    </span>
-                  </div>
+              {isEntityListLoading && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                  Loading {activeTabMeta?.label?.toLowerCase()}s...
                 </div>
-              ))}
+              )}
+
+              {!isEntityListLoading && !filteredEntities.length && (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                  No {activeTabMeta?.label?.toLowerCase()} found.
+                </div>
+              )}
+
+              {!isEntityListLoading &&
+                filteredEntities.map((item) => {
+                  const entitySummary =
+                    ledgerSummaryByEntity[getEntityKey(item)] || {};
+                  const entityBalance =
+                    (entitySummary.totalPaid || 0) -
+                    (entitySummary.totalReceived || 0);
+                  const isSelected = selectedEntityId === item.id;
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSelectedEntityId(item.id)}
+                      className={`flex w-full items-start justify-between rounded-xl border p-3 text-left shadow-sm transition ${
+                        isSelected
+                          ? "border-slate-900 bg-slate-100"
+                          : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex min-w-0 gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
+                          {getInitials(item.name)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-slate-800">
+                            {item.name}
+                          </p>
+                          <p className="truncate text-sm text-slate-500">
+                            {item.phone || item.extra || "-"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="font-semibold text-green-500">
+                          {formatCurrency(entityBalance)}
+                        </p>
+                        <span
+                          className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs text-white ${
+                            entityBalance > 0 ? "bg-green-500" : "bg-slate-500"
+                          }`}
+                        >
+                          {entityBalance > 0 ? "Pending" : "Clear"}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
             </div>
           </div>
         </aside>
@@ -494,18 +820,21 @@ const CreditLedgerTable = () => {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700">
-                  S
+                  {selectedEntity ? getInitials(selectedEntity.name) : "?"}
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg font-semibold text-slate-700">
-                      Sabbir
+                      {selectedEntity?.name ||
+                        `Select ${activeTabMeta?.label || "Contact"}`}
                     </h2>
                     <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-600">
-                      CUSTOMER
+                      {selectedEntity?.role?.toUpperCase() || "NO SELECTION"}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-400">+88 01518301098</p>
+                  <p className="text-sm text-slate-400">
+                    {selectedEntity?.phone || selectedEntity?.extra || "-"}
+                  </p>
                 </div>
               </div>
 
@@ -532,7 +861,9 @@ const CreditLedgerTable = () => {
             <div className="mt-4 flex flex-wrap items-center gap-6">
               <div>
                 <p className="text-xs text-slate-400">Balance</p>
-                <p className="text-3xl font-bold text-green-500">৳ 8,000</p>
+                <p className="text-3xl font-bold text-green-500">
+                  {formatCurrency(selectedTotals.balance)}
+                </p>
               </div>
             </div>
           </div>
@@ -547,10 +878,10 @@ const CreditLedgerTable = () => {
                       Due History
                     </th>
                     <th className="px-4 py-3 text-right font-medium text-green-500">
-                      Received
+                      Paid
                     </th>
                     <th className="px-4 py-3 text-right font-medium text-red-500">
-                      Paid
+                      Unpaid
                     </th>
                     <th className="px-4 py-3 text-right font-medium">
                       Balance
@@ -558,7 +889,7 @@ const CreditLedgerTable = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {walletHistory.map((item) => (
+                  {selectedHistory.map((item) => (
                     <tr key={item.id} className="border-t border-slate-200">
                       <td className="px-4 py-3 text-slate-600">
                         <div>{item.date}</div>
@@ -579,6 +910,16 @@ const CreditLedgerTable = () => {
                       </td>
                     </tr>
                   ))}
+                  {!selectedHistory.length && (
+                    <tr className="border-t border-slate-200">
+                      <td
+                        colSpan={4}
+                        className="px-4 py-8 text-center text-sm text-slate-500"
+                      >
+                        No due history found for this contact.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
                 <tfoot className="border-t bg-slate-50">
                   <tr>
@@ -586,13 +927,13 @@ const CreditLedgerTable = () => {
                       Total
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-green-500">
-                      ৳16,000
+                      {formatCurrency(selectedTotals.totalReceived)}
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-red-500">
-                      ৳16,000
+                      {formatCurrency(selectedTotals.totalPaid)}
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-green-500">
-                      ৳8,000
+                      {formatCurrency(selectedTotals.balance)}
                     </td>
                   </tr>
                 </tfoot>
@@ -602,7 +943,7 @@ const CreditLedgerTable = () => {
 
           {/* Mobile card history */}
           <div className="space-y-3 p-3 md:hidden">
-            {walletHistory.map((item) => (
+            {selectedHistory.map((item) => (
               <div
                 key={item.id}
                 className="rounded-xl border border-slate-200 bg-white p-4"
@@ -635,19 +976,31 @@ const CreditLedgerTable = () => {
               </div>
             ))}
 
+            {!selectedHistory.length && (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                No due history found for this contact.
+              </div>
+            )}
+
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="grid grid-cols-3 gap-2 text-sm">
                 <div>
                   <p className="text-xs text-slate-400">Total Received</p>
-                  <p className="font-semibold text-green-500">৳16,000</p>
+                  <p className="font-semibold text-green-500">
+                    {formatCurrency(selectedTotals.totalReceived)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">Total Paid</p>
-                  <p className="font-semibold text-red-500">৳16,000</p>
+                  <p className="font-semibold text-red-500">
+                    {formatCurrency(selectedTotals.totalPaid)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">Balance</p>
-                  <p className="font-semibold text-slate-700">৳8,000</p>
+                  <p className="font-semibold text-slate-700">
+                    {formatCurrency(selectedTotals.balance)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -655,11 +1008,21 @@ const CreditLedgerTable = () => {
 
           {/* Bottom action buttons */}
           <div className="mt-auto grid grid-cols-1 gap-3 border-t border-slate-200 p-3 sm:grid-cols-2 sm:p-4">
-            <button className="rounded-xl bg-red-500 px-4 py-3 font-semibold text-white hover:bg-red-600">
-              Paid
+            <button
+              type="button"
+              onClick={() => openLedgerHistoryDrawer("Unpaid")}
+              disabled={!selectedLedger}
+              className="rounded-xl bg-red-500 px-4 py-3 font-semibold text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Unpaid
             </button>
-            <button className="rounded-xl bg-green-500 px-4 py-3 font-semibold text-white hover:bg-green-600">
-              Received
+            <button
+              type="button"
+              onClick={() => openLedgerHistoryDrawer("Paid")}
+              disabled={!selectedLedger}
+              className="rounded-xl bg-green-500 px-4 py-3 font-semibold text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Paid
             </button>
           </div>
         </section>
@@ -705,6 +1068,163 @@ const CreditLedgerTable = () => {
       </Modal> */}
 
       <AnimatePresence>
+        {isHistoryDrawerOpen && (
+          <>
+            <motion.div
+              className="fixed inset-0 bg-black/40 z-[80]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleLedgerHistoryDrawerClose}
+            />
+
+            <motion.aside
+              className="fixed top-0 right-0 h-full w-full sm:w-[460px] bg-white z-[90] shadow-[-20px_0_50px_rgba(0,0,0,0.1)] flex flex-col"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-center relative">
+                <h2 className="text-[18px] font-bold text-slate-700">
+                  Add {historyEntryType} Amount
+                </h2>
+
+                <button
+                  onClick={handleLedgerHistoryDrawerClose}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 h-9 w-9 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-500 transition"
+                  type="button"
+                  aria-label="Close"
+                >
+                  <X size={22} />
+                </button>
+              </div>
+
+              <form
+                onSubmit={handleInsertLedgerHistory}
+                className="flex flex-1 flex-col overflow-hidden"
+              >
+                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Selected Ledger
+                    </p>
+                    <p className="mt-2 text-base font-semibold text-slate-800">
+                      {selectedEntity?.name || "-"}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      {selectedEntity?.phone || selectedEntity?.extra || "-"}
+                    </p>
+                    <p className="mt-2 text-xs text-slate-500">
+                      Ledger ID: {selectedLedger?.Id ?? selectedLedger?.id ?? "-"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-800 mb-2">
+                      Entry Type
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setHistoryEntryType("Paid")}
+                        className={`rounded-lg px-3 py-3 text-sm font-semibold transition ${
+                          historyEntryType === "Paid"
+                            ? "border-2 border-green-400 bg-green-50 text-green-600"
+                            : "border border-slate-300 text-slate-600"
+                        }`}
+                      >
+                        Paid
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setHistoryEntryType("Unpaid")}
+                        className={`rounded-lg px-3 py-3 text-sm font-semibold transition ${
+                          historyEntryType === "Unpaid"
+                            ? "border-2 border-red-400 bg-red-50 text-red-600"
+                            : "border border-slate-300 text-slate-600"
+                        }`}
+                      >
+                        Unpaid
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-800 mb-2">
+                      Date
+                    </label>
+                    <div className="relative">
+                      <input
+                        ref={historyDateInputRef}
+                        type="date"
+                        value={ledgerHistoryForm.date}
+                        onChange={(e) =>
+                          updateLedgerHistoryField("date", e.target.value)
+                        }
+                        className="hide-date-picker-icon w-full h-11 appearance-none rounded-lg border border-slate-300 bg-white px-4 pr-11 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-300"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={handleHistoryDateIconClick}
+                        className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100"
+                        aria-label="Open date picker"
+                      >
+                        <Calendar size={18} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-800 mb-2">
+                      {historyEntryType} Amount
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={ledgerHistoryForm.amount}
+                      onChange={(e) =>
+                        updateLedgerHistoryField("amount", e.target.value)
+                      }
+                      placeholder={`Enter ${historyEntryType.toLowerCase()} amount`}
+                      className="w-full h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-300"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-800 mb-2">
+                      Note
+                    </label>
+                    <textarea
+                      value={ledgerHistoryForm.note}
+                      onChange={(e) =>
+                        updateLedgerHistoryField("note", e.target.value)
+                      }
+                      rows={4}
+                      placeholder="Write a note"
+                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-300"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-200 px-4 py-4">
+                  <button
+                    type="submit"
+                    className="w-full h-11 rounded-lg bg-black text-white text-sm font-semibold hover:bg-slate-900 transition"
+                  >
+                    Save {historyEntryType}
+                  </button>
+                </div>
+              </form>
+            </motion.aside>
+          </>
+        )}
+
         {isModalOpen && (
           <>
             {/* Overlay */}
@@ -808,16 +1328,16 @@ const CreditLedgerTable = () => {
                       <button
                         type="button"
                         onClick={() =>
-                          updateCreateLedgerField("cashType", "given")
+                          updateCreateLedgerField("cashType", "Unpaid")
                         }
                         className={`rounded-lg px-3 py-3 text-left ${
-                          createLedger.cashType === "given"
+                          createLedger.cashType === "Unpaid"
                             ? "border-2 border-red-400"
                             : "border border-slate-300"
                         }`}
                       >
                         <div className="flex items-start gap-2">
-                          {createLedger.cashType === "given" ? (
+                          {createLedger.cashType === "Unpaid" ? (
                             <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-black">
                               <div className="h-2.5 w-2.5 rounded-full bg-black" />
                             </div>
@@ -838,16 +1358,16 @@ const CreditLedgerTable = () => {
                       <button
                         type="button"
                         onClick={() =>
-                          updateCreateLedgerField("cashType", "received")
+                          updateCreateLedgerField("cashType", "Paid")
                         }
                         className={`rounded-lg px-3 py-3 text-left ${
-                          createLedger.cashType === "received"
+                          createLedger.cashType === "Paid"
                             ? "border-2 border-green-400"
                             : "border border-slate-300"
                         }`}
                       >
                         <div className="flex items-start gap-2">
-                          {createLedger.cashType === "received" ? (
+                          {createLedger.cashType === "Paid" ? (
                             <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-black">
                               <div className="h-2.5 w-2.5 rounded-full bg-black" />
                             </div>

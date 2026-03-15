@@ -139,7 +139,7 @@ import { supplierHistoryApi } from "../features/supplierHistory/supplierHistory"
 import { manufactureApi } from "../features/manufacture/manufacture";
 import { itemApi } from "../features/item/item";
 import { mixerApi } from "../features/mixer/mixer";
-import { ItemMasterApi } from "../features/manufactureStock/manufactureStock";
+import { itemMasterApi } from "../features/manufactureStock/manufactureStock";
 
 // ✅ 1) Collect all apis once
 const apis = [
@@ -155,7 +155,7 @@ const apis = [
   confirmOrderApi,
   assetsPurchaseApi,
   manufactureApi,
-  ItemMasterApi,
+  itemMasterApi,
   mixerApi,
   assetsRequisitionApi,
   assetsSaleApi,

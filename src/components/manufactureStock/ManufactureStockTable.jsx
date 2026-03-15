@@ -70,19 +70,19 @@ const ManufactureStockTable = () => {
     }));
   }, [productsData]);
 
-  const productNameMap = useMemo(() => {
-    const m = new Map();
-    (productsData || []).forEach((p) => m.set(String(p.Id), p.name));
-    return m;
-  }, [productsData]);
+  // const productNameMap = useMemo(() => {
+  //   const m = new Map();
+  //   (productsData || []).forEach((p) => m.set(String(p.Id), p.name));
+  //   return m;
+  // }, [productsData]);
 
-  const resolveProductName = (rp) => {
-    const pid = rp.productId ?? rp.product_id ?? rp.ProductId ?? rp.product?.Id;
-    if (rp.productName) return rp.productName;
-    if (rp.product?.name) return rp.product?.name;
-    if (!pid) return "N/A";
-    return productNameMap.get(String(pid)) || pid;
-  };
+  // const resolveProductName = (rp) => {
+  //   const pid = rp.productId ?? rp.product_id ?? rp.ProductId ?? rp.product?.Id;
+  //   if (rp.productName) return rp.productName;
+  //   if (rp.product?.name) return rp.product?.name;
+  //   if (!pid) return "N/A";
+  //   return productNameMap.get(String(pid)) || pid;
+  // };
 
   const queryArgs = useMemo(() => {
     const args = {
@@ -99,6 +99,8 @@ const ManufactureStockTable = () => {
   }, [currentPage, itemsPerPage, startDate, endDate, productName]);
 
   const { data, isLoading } = useGetAllItemMasterQuery(queryArgs);
+
+  console.log("manuStock", data);
 
   useEffect(() => {
     if (!isLoading && data) {
@@ -232,7 +234,10 @@ const ManufactureStockTable = () => {
                   {t.item_detail || "Item Detail"}
                 </th>
                 <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  {t.in_hand_qty || "In Hand Quantity"}
+                  {t.in_hand_qty || "In Hand Value"}
+                </th>
+                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  {t.unit_cost || "Unit Cost"}
                 </th>
               </tr>
             </thead>
@@ -248,8 +253,8 @@ const ManufactureStockTable = () => {
                   <td className="px-6 py-5 whitespace-nowrap">
                     <div className="flex items-center gap-2 text-sm font-medium text-slate-500 group-hover:text-indigo-600">
                       <Calendar size={14} className="opacity-40" />
-                      {rp.createdAt
-                        ? new Date(rp.createdAt).toLocaleDateString(undefined, {
+                      {rp.updatedAt
+                        ? new Date(rp.updatedAt).toLocaleDateString(undefined, {
                             day: "numeric",
                             month: "short",
                             year: "numeric",
@@ -259,12 +264,18 @@ const ManufactureStockTable = () => {
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">
                     <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
-                      {resolveProductName(rp)}
+                      {/* {resolveProductName(rp)} */}
+                      {rp.name || "N/A"}
                     </div>
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap text-center">
                     <span className="inline-flex items-center px-4 py-1.5 rounded-2xl text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm shadow-indigo-50 tabular-nums">
-                      {Number(rp.quantity || 0).toLocaleString()}
+                      {Number(rp.unitValue || 0).toLocaleString()}
+                    </span>
+                  </td>
+                  <td className="px-6 py-5 whitespace-nowrap text-center">
+                    <span className="inline-flex items-center px-4 py-1.5 rounded-2xl text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm shadow-indigo-50 tabular-nums">
+                      {Number(rp.unitCost || 0).toLocaleString()}
                     </span>
                   </td>
                 </motion.tr>

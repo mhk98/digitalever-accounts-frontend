@@ -1566,6 +1566,7 @@ import Modal from "../common/Modal";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
+import { useGetAllSupplierHistoryQuery } from "../../features/supplierHistory/supplierHistory";
 
 const BANKS = [
   "Al Arafah",
@@ -2312,6 +2313,46 @@ const CashInOutTable = () => {
       })),
     [suppliers],
   );
+
+  const [suppliersDue, setSuppliersDue] = useState([]);
+  // ✅ Suppliers Due
+  const queryArgs1 = useMemo(() => {
+    const args = {
+      supplierId: currentProduct?.supplierId,
+    };
+    Object.keys(args).forEach((k) => {
+      if (args[k] === undefined || args[k] === null || args[k] === "")
+        delete args[k];
+    });
+    return args;
+  }, [currentProduct?.supplierId]);
+
+  const {
+    data: supplierHistoryData,
+    isLoading: isSupplierHistoryLoading,
+    isError: isSupplierHistoryError,
+    error: supplierHistoryError,
+  } = useGetAllSupplierHistoryQuery(queryArgs1);
+
+  useEffect(() => {
+    if (isSupplierHistoryError) {
+      console.error(
+        "Error fetching received product data",
+        supplierHistoryError,
+      );
+      return;
+    }
+    if (!isSupplierHistoryLoading && supplierHistoryData) {
+      setSuppliersDue(supplierHistoryData || []);
+    }
+  }, [
+    supplierHistoryData,
+    isSupplierHistoryLoading,
+    isSupplierHistoryError,
+    supplierHistoryError,
+  ]);
+
+  console.log("supplierhistory", suppliersDue);
 
   const selectStyles = {
     control: (base, state) => ({
@@ -3545,7 +3586,7 @@ const CashInOutTable = () => {
                 </div>
               )}
             </div>
-            <div>
+            {/* <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.supplier || "Supplier"}
               </label>
@@ -3568,6 +3609,41 @@ const CashInOutTable = () => {
                   </option>
                 ))}
               </select>
+            </div> */}
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                {t.supplier || "Supplier"}
+              </label>
+
+              <select
+                value={createProduct?.supplierId || ""}
+                onChange={(e) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    supplierId: e.target.value,
+                  })
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              >
+                <option value="">
+                  {t.select_supplier || "Select Supplier"}
+                </option>
+                {suppliers?.map((s) => (
+                  <option key={s.Id} value={s.Id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+
+              {createProduct?.supplierId && (
+                <p className="mt-2 text-xs font-semibold text-amber-600">
+                  Total Due: ৳
+                  {Number(
+                    suppliersDue?.meta?.totalUnpaid || 0,
+                  ).toLocaleString()}
+                </p>
+              )}
             </div>
           </div>
 
