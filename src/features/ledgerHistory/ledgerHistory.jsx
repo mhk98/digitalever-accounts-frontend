@@ -34,9 +34,17 @@ export const ledgerHistoryApi = baseApi.injectEndpoints({
     }),
 
     getAllLedgerHistory: build.query({
-      query: ({ page, limit, startDate, endDate, name }) => ({
+      query: ({
+        page,
+        limit,
+        startDate,
+        endDate,
+        name,
+        searchTerm,
+        ledgerId,
+      }) => ({
         url: "ledger-history",
-        params: { page, limit, startDate, endDate, name },
+        params: { page, limit, startDate, endDate, name, searchTerm, ledgerId },
       }),
       providesTags: (result) =>
         result?.data?.length

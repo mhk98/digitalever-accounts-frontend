@@ -340,7 +340,6 @@
 //     fd.append("warrantyValue", payload.warrantyValue)
 //     fd.append("warrantyUnit", payload.warrantyUnit)
 
-
 //     try {
 //       const res = await insertReceivedProduct(fd).unwrap();
 //       if (res?.success) {
@@ -614,7 +613,6 @@
 //                     </div> */}
 //                   </td>
 //                   <td className="px-6 py-4 whitespace-nowrap">
-
 
 //                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-tighter">
 //                       {rp?.warehouse?.name || "No Warehouse"}
@@ -1301,9 +1299,6 @@
 
 // export default ReceivedProductTable;
 
-
-
-
 import { motion } from "framer-motion";
 import {
   ChevronLeft,
@@ -1492,7 +1487,15 @@ const ReceivedProductTable = () => {
     });
 
     return args;
-  }, [currentPage, itemsPerPage, startDate, endDate, productName, warehouse, supplier]);
+  }, [
+    currentPage,
+    itemsPerPage,
+    startDate,
+    endDate,
+    productName,
+    warehouse,
+    supplier,
+  ]);
 
   const { data, isLoading, isError, error, refetch } =
     useGetAllReceivedProductQuery(queryArgs);
@@ -1807,7 +1810,8 @@ const ReceivedProductTable = () => {
   const suppliers = allSupplierRes?.data || [];
 
   useEffect(() => {
-    if (isErrorSupplier) console.error("Error fetching suppliers", errorSupplier);
+    if (isErrorSupplier)
+      console.error("Error fetching suppliers", errorSupplier);
   }, [isErrorSupplier, errorSupplier]);
 
   const supplierOptions = useMemo(
@@ -1828,7 +1832,8 @@ const ReceivedProductTable = () => {
   const warehouses = allWarehousesRes?.data || [];
 
   useEffect(() => {
-    if (isErrorWarehouse) console.error("Error fetching warehouses", errorWarehouse);
+    if (isErrorWarehouse)
+      console.error("Error fetching warehouses", errorWarehouse);
   }, [isErrorWarehouse, errorWarehouse]);
 
   const warehouseOptions = useMemo(
@@ -1866,7 +1871,8 @@ const ReceivedProductTable = () => {
             {t.purchase_history || "Purchase History"}
           </h2>
           <p className="text-slate-500 text-sm mt-1 font-medium">
-            {t.incoming_product_acquisitions || "Track and analyze all incoming product acquisitions"}
+            {t.incoming_product_acquisitions ||
+              "Track and analyze all incoming product acquisitions"}
           </p>
         </div>
 
@@ -1880,7 +1886,9 @@ const ReceivedProductTable = () => {
                 Total Units
               </div>
               <div className="text-base font-black text-indigo-900 tabular-nums leading-none">
-                {isLoading ? "..." : (data?.meta?.totalQuantity ?? 0).toLocaleString()}
+                {isLoading
+                  ? "..."
+                  : (data?.meta?.totalQuantity ?? 0).toLocaleString()}
               </div>
             </div>
           </div>
@@ -1943,7 +1951,10 @@ const ReceivedProductTable = () => {
           </label>
           <Select
             options={productDropdownOptions}
-            value={productDropdownOptions.find((o) => o.label === productName) || null}
+            value={
+              productDropdownOptions.find((o) => o.label === productName) ||
+              null
+            }
             onChange={(selected) => setProductName(selected?.label || "")}
             placeholder={t.search}
             isClearable
@@ -1958,7 +1969,11 @@ const ReceivedProductTable = () => {
           </label>
           <Select
             options={warehouseOptions}
-            value={warehouseOptions.find((o) => String(o.value) === String(warehouse)) || null}
+            value={
+              warehouseOptions.find(
+                (o) => String(o.value) === String(warehouse),
+              ) || null
+            }
             onChange={(selected) => setWarehouse(selected?.value || "")}
             placeholder={t.search}
             isClearable
@@ -1972,7 +1987,11 @@ const ReceivedProductTable = () => {
           </label>
           <Select
             options={supplierOptions}
-            value={supplierOptions.find((o) => String(o.value) === String(supplier)) || null}
+            value={
+              supplierOptions.find(
+                (o) => String(o.value) === String(supplier),
+              ) || null
+            }
             onChange={(selected) => setSupplier(selected?.value || "")}
             placeholder={t.search}
             isClearable
@@ -2028,7 +2047,9 @@ const ReceivedProductTable = () => {
                   className="hover:bg-slate-50 group"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-slate-900">{rp.date}</div>
+                    <div className="text-sm font-medium text-slate-900">
+                      {rp.date}
+                    </div>
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -2049,7 +2070,8 @@ const ReceivedProductTable = () => {
                         {resolveProductName(rp)}
                       </div>
                       <div className="text-xs text-slate-500">
-                        {t.qty_label || "Qty"}: {Number(rp.quantity || 0).toFixed(0)}
+                        {t.qty_label || "Qty"}:{" "}
+                        {Number(rp.quantity || 0).toFixed(0)}
                       </div>
                     </div>
                   </td>
@@ -2059,13 +2081,19 @@ const ReceivedProductTable = () => {
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                         {t.total_buy_label || "Total Buy"}:{" "}
                         <span className="text-slate-900 border-b border-dotted border-slate-300">
-                          ৳{Number((rp.purchase_price || 0) * (rp.quantity || 0)).toLocaleString()}
+                          ৳
+                          {Number(
+                            (rp.purchase_price || 0) * (rp.quantity || 0),
+                          ).toLocaleString()}
                         </span>
                       </div>
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                         {t.total_sell_label || "Total Sell"}:{" "}
                         <span className="text-emerald-600">
-                          ৳{Number((rp.sale_price || 0) * (rp.quantity || 0)).toLocaleString()}
+                          ৳
+                          {Number(
+                            (rp.sale_price || 0) * (rp.quantity || 0),
+                          ).toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -2073,12 +2101,13 @@ const ReceivedProductTable = () => {
 
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${rp.status === "Approved"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm shadow-emerald-100"
-                        : rp.status === "Active"
-                          ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm shadow-blue-100"
-                          : "bg-amber-50 text-amber-700 border-amber-200 shadow-sm shadow-amber-100"
-                        }`}
+                      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${
+                        rp.status === "Approved"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm shadow-emerald-100"
+                          : rp.status === "Active"
+                            ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm shadow-blue-100"
+                            : "bg-amber-50 text-amber-700 border-amber-200 shadow-sm shadow-amber-100"
+                      }`}
                     >
                       {rp.status}
                     </span>
@@ -2160,7 +2189,10 @@ const ReceivedProductTable = () => {
 
               {!isLoading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-20 text-center text-sm text-slate-400 italic">
+                  <td
+                    colSpan={7}
+                    className="px-6 py-20 text-center text-sm text-slate-400 italic"
+                  >
                     {t.no_purchase_records}
                   </td>
                 </tr>
@@ -2172,7 +2204,8 @@ const ReceivedProductTable = () => {
 
       <div className="flex flex-col sm:flex-row items-center justify-between mt-10 gap-6 px-2">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-          {t.showing_page || "Showing Page"} <span className="text-indigo-600">{currentPage}</span> {t.of || "of"}{" "}
+          {t.showing_page || "Showing Page"}{" "}
+          <span className="text-indigo-600">{currentPage}</span> {t.of || "of"}{" "}
           <span className="text-slate-900">{totalPages}</span>
         </p>
 
@@ -2193,10 +2226,11 @@ const ReceivedProductTable = () => {
                 <button
                   key={pageNum}
                   onClick={() => handlePageChange(pageNum)}
-                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${active
-                    ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100"
-                    : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
-                    }`}
+                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${
+                    active
+                      ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100"
+                      : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
+                  }`}
                 >
                   {pageNum}
                 </button>
@@ -2215,7 +2249,11 @@ const ReceivedProductTable = () => {
       </div>
 
       {/* Note Preview Modal */}
-      <Modal isOpen={isNoteModalOpen} onClose={handleNoteModalClose} title={t.note_preview || "Note Preview"}>
+      <Modal
+        isOpen={isNoteModalOpen}
+        onClose={handleNoteModalClose}
+        title={t.note_preview || "Note Preview"}
+      >
         <div className="space-y-4">
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 min-h-[120px]">
             <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
@@ -2235,7 +2273,11 @@ const ReceivedProductTable = () => {
       </Modal>
 
       {/* Edit Purchase Modal */}
-      <Modal isOpen={isModalOpen && !!currentProduct} onClose={handleModalClose} title={t.edit_purchase || "Edit Purchase"}>
+      <Modal
+        isOpen={isModalOpen && !!currentProduct}
+        onClose={handleModalClose}
+        title={t.edit_purchase || "Edit Purchase"}
+      >
         <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
@@ -2284,11 +2326,16 @@ const ReceivedProductTable = () => {
               <select
                 value={currentProduct?.warehouseId || ""}
                 onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, warehouseId: e.target.value })
+                  setCurrentProduct({
+                    ...currentProduct,
+                    warehouseId: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
-                <option value="">{t.select_warehouse || "Select Warehouse"}</option>
+                <option value="">
+                  {t.select_warehouse || "Select Warehouse"}
+                </option>
                 {warehouses?.map((w) => (
                   <option key={w.Id} value={w.Id}>
                     {w.name}
@@ -2306,7 +2353,10 @@ const ReceivedProductTable = () => {
               <select
                 value={currentProduct?.bookId || ""}
                 onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, bookId: e.target.value })
+                  setCurrentProduct({
+                    ...currentProduct,
+                    bookId: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
@@ -2326,11 +2376,16 @@ const ReceivedProductTable = () => {
               <select
                 value={currentProduct?.supplierId || ""}
                 onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, supplierId: e.target.value })
+                  setCurrentProduct({
+                    ...currentProduct,
+                    supplierId: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
-                <option value="">{t.select_supplier || "Select Supplier"}</option>
+                <option value="">
+                  {t.select_supplier || "Select Supplier"}
+                </option>
                 {suppliers?.map((s) => (
                   <option key={s.Id} value={s.Id}>
                     {s.name}
@@ -2339,7 +2394,6 @@ const ReceivedProductTable = () => {
               </select>
             </div>
           </div>
-
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -2351,7 +2405,10 @@ const ReceivedProductTable = () => {
                 step="0.01"
                 value={currentProduct?.quantity || ""}
                 onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, quantity: e.target.value })
+                  setCurrentProduct({
+                    ...currentProduct,
+                    quantity: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
@@ -2386,7 +2443,10 @@ const ReceivedProductTable = () => {
                 step="0.01"
                 value={currentProduct?.sale_price || ""}
                 onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, sale_price: e.target.value })
+                  setCurrentProduct({
+                    ...currentProduct,
+                    sale_price: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
@@ -2401,7 +2461,8 @@ const ReceivedProductTable = () => {
                   {t.warranty_coverage || "Warranty Coverage"}
                 </span>
                 <p className="text-[10px] font-bold text-slate-400">
-                  {t.enable_warranty_if_product_has_warranty || "Enable if product has warranty"}
+                  {t.enable_warranty_if_product_has_warranty ||
+                    "Enable if product has warranty"}
                 </p>
               </div>
 
@@ -2411,19 +2472,27 @@ const ReceivedProductTable = () => {
                   setCurrentProduct((prev) => ({
                     ...prev,
                     hasWarranty: !prev?.hasWarranty,
-                    warrantyValue: prev?.hasWarranty ? "" : prev?.warrantyValue || "",
+                    warrantyValue: prev?.hasWarranty
+                      ? ""
+                      : prev?.warrantyValue || "",
                     warrantyUnit: prev?.hasWarranty
                       ? "Day"
                       : prev?.warrantyUnit || "Day",
                   }))
                 }
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${currentProduct?.hasWarranty ? "bg-indigo-600" : "bg-slate-300"
-                  }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
+                  currentProduct?.hasWarranty ? "bg-indigo-600" : "bg-slate-300"
+                }`}
               >
-                <span className="sr-only">{t.toggle_warranty || "Toggle Warranty"}</span>
+                <span className="sr-only">
+                  {t.toggle_warranty || "Toggle Warranty"}
+                </span>
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${currentProduct?.hasWarranty ? "translate-x-6" : "translate-x-1"
-                    }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${
+                    currentProduct?.hasWarranty
+                      ? "translate-x-6"
+                      : "translate-x-1"
+                  }`}
                 />
               </button>
             </div>
@@ -2470,7 +2539,7 @@ const ReceivedProductTable = () => {
             )}
           </div>
 
-          {(role === "superAdmin" || role === "admin") ? (
+          {role === "superAdmin" || role === "admin" ? (
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.status || "Status"}
@@ -2478,7 +2547,10 @@ const ReceivedProductTable = () => {
               <select
                 value={currentProduct?.status || ""}
                 onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, status: e.target.value })
+                  setCurrentProduct({
+                    ...currentProduct,
+                    status: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
@@ -2521,8 +2593,15 @@ const ReceivedProductTable = () => {
       </Modal>
 
       {/* Add Purchase Modal */}
-      <Modal isOpen={isModalOpen1} onClose={handleModalClose1} title={t.add_new_purchase || "Add New Purchase"}>
-        <form onSubmit={handleCreateProduct} className="space-y-4 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
+      <Modal
+        isOpen={isModalOpen1}
+        onClose={handleModalClose1}
+        title={t.add_new_purchase || "Add New Purchase"}
+      >
+        <form
+          onSubmit={handleCreateProduct}
+          className="space-y-4 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar"
+        >
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               {t.select_product || "Select Product"}
@@ -2535,7 +2614,10 @@ const ReceivedProductTable = () => {
                 ) || null
               }
               onChange={(selected) =>
-                setCreateProduct({ ...createProduct, productId: selected?.value || "" })
+                setCreateProduct({
+                  ...createProduct,
+                  productId: selected?.value || "",
+                })
               }
               placeholder={t.search_product || "Search product..."}
               isClearable
@@ -2567,12 +2649,17 @@ const ReceivedProductTable = () => {
               <select
                 value={createProduct?.warehouseId || ""}
                 onChange={(e) =>
-                  setCreateProduct({ ...createProduct, warehouseId: e.target.value })
+                  setCreateProduct({
+                    ...createProduct,
+                    warehouseId: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               >
-                <option value="">{t.select_warehouse || "Select Warehouse"}</option>
+                <option value="">
+                  {t.select_warehouse || "Select Warehouse"}
+                </option>
                 {warehouses?.map((w) => (
                   <option key={w.Id} value={w.Id}>
                     {w.name}
@@ -2610,12 +2697,17 @@ const ReceivedProductTable = () => {
               <select
                 value={createProduct?.supplierId || ""}
                 onChange={(e) =>
-                  setCreateProduct({ ...createProduct, supplierId: e.target.value })
+                  setCreateProduct({
+                    ...createProduct,
+                    supplierId: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               >
-                <option value="">{t.select_supplier || "Select Supplier"}</option>
+                <option value="">
+                  {t.select_supplier || "Select Supplier"}
+                </option>
                 {suppliers?.map((s) => (
                   <option key={s.Id} value={s.Id}>
                     {s.name}
@@ -2624,7 +2716,6 @@ const ReceivedProductTable = () => {
               </select>
             </div>
           </div>
-
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -2636,7 +2727,10 @@ const ReceivedProductTable = () => {
                 step="0.01"
                 value={createProduct?.purchase_price || ""}
                 onChange={(e) =>
-                  setCreateProduct({ ...createProduct, purchase_price: e.target.value })
+                  setCreateProduct({
+                    ...createProduct,
+                    purchase_price: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
@@ -2651,7 +2745,10 @@ const ReceivedProductTable = () => {
                 step="0.01"
                 value={createProduct?.sale_price || ""}
                 onChange={(e) =>
-                  setCreateProduct({ ...createProduct, sale_price: e.target.value })
+                  setCreateProduct({
+                    ...createProduct,
+                    sale_price: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
@@ -2668,16 +2765,15 @@ const ReceivedProductTable = () => {
                 step="0.01"
                 value={createProduct.quantity}
                 onChange={(e) =>
-                  setCreateProduct({ ...createProduct, quantity: e.target.value })
+                  setCreateProduct({
+                    ...createProduct,
+                    quantity: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               />
             </div>
-
-
-
-
           </div>
 
           {/* ✅ Warranty block (Add) */}
@@ -2688,7 +2784,8 @@ const ReceivedProductTable = () => {
                   {t.warranty_coverage || "Warranty Coverage"}
                 </span>
                 <p className="text-[10px] font-bold text-slate-400">
-                  {t.enable_warranty_if_product_has_warranty || "Enable if product has warranty"}
+                  {t.enable_warranty_if_product_has_warranty ||
+                    "Enable if product has warranty"}
                 </p>
               </div>
 
@@ -2698,19 +2795,27 @@ const ReceivedProductTable = () => {
                   setCreateProduct((prev) => ({
                     ...prev,
                     hasWarranty: !prev?.hasWarranty,
-                    warrantyValue: prev?.hasWarranty ? "" : prev?.warrantyValue || "",
+                    warrantyValue: prev?.hasWarranty
+                      ? ""
+                      : prev?.warrantyValue || "",
                     warrantyUnit: prev?.hasWarranty
                       ? "Day"
                       : prev?.warrantyUnit || "Day",
                   }))
                 }
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${createProduct?.hasWarranty ? "bg-indigo-600" : "bg-slate-300"
-                  }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
+                  createProduct?.hasWarranty ? "bg-indigo-600" : "bg-slate-300"
+                }`}
               >
-                <span className="sr-only">{t.toggle_warranty || "Toggle Warranty"}</span>
+                <span className="sr-only">
+                  {t.toggle_warranty || "Toggle Warranty"}
+                </span>
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${createProduct?.hasWarranty ? "translate-x-6" : "translate-x-1"
-                    }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${
+                    createProduct?.hasWarranty
+                      ? "translate-x-6"
+                      : "translate-x-1"
+                  }`}
                 />
               </button>
             </div>
@@ -2792,7 +2897,9 @@ const ReceivedProductTable = () => {
                   <Plus size={16} />
                 </div>
                 <span className="text-sm font-medium text-slate-500 group-hover/file:text-indigo-600">
-                  {createProduct.file ? createProduct.file.name : t.select_drop_file || "Select or drop file..."}
+                  {createProduct.file
+                    ? createProduct.file.name
+                    : t.select_drop_file || "Select or drop file..."}
                 </span>
               </div>
             </div>
@@ -2832,7 +2939,10 @@ const ReceivedProductTable = () => {
               <select
                 value={currentProduct?.status || ""}
                 onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, status: e.target.value })
+                  setCurrentProduct({
+                    ...currentProduct,
+                    status: e.target.value,
+                  })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               >
@@ -2852,7 +2962,10 @@ const ReceivedProductTable = () => {
                   setCurrentProduct({ ...currentProduct, note: e.target.value })
                 }
                 className="w-full min-h-[120px] border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
-                placeholder={t.explain_why_remove_record || "Please explain why you want to remove this record..."}
+                placeholder={
+                  t.explain_why_remove_record ||
+                  "Please explain why you want to remove this record..."
+                }
               />
             </div>
           )}

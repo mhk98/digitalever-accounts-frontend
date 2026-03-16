@@ -54,6 +54,7 @@ import ManufacturePage from "./pages/ManufacturePage";
 import ItemsPage from "./pages/ItemsPage";
 import ManufactureStockPage from "./pages/ManufactureStockPage";
 import MixerPage from "./pages/MixerPage";
+import StockAdjustmentPage from "./pages/StockAdjustmentPage";
 
 function App() {
   return (
@@ -146,6 +147,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <ManufacturePage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/stock-adjustment"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <StockAdjustmentPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

@@ -156,6 +156,13 @@ const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin"],
       },
       {
+        name: "Stock Adjustment",
+        key: "stock_adjustment",
+        icon: Factory,
+        href: "/stock-adjustment",
+        roles: ["superAdmin", "admin"],
+      },
+      {
         name: "Mixer",
         key: "mixer",
         icon: Factory,

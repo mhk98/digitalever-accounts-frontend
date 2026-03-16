@@ -4,6 +4,8 @@ import {
   FileText,
   Plus,
   RotateCcw,
+  Download,
+  Printer,
   ArrowRight,
   X,
   ChevronDown,
@@ -13,10 +15,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
-  useGetAllLedgerQuery,
+  useGetAllLedgerWithoutQueryQuery,
   useInsertLedgerMutation,
 } from "../../features/ledger/ledger";
-import { useInsertLedgerHistoryMutation } from "../../features/ledgerHistory/ledgerHistory";
+import {
+  useGetAllLedgerHistoryQuery,
+  useInsertLedgerHistoryMutation,
+} from "../../features/ledgerHistory/ledgerHistory";
 
 const ENTITY_TYPES = {
   customer: {
@@ -283,6 +288,41 @@ const getSafeNumber = (value) => {
 const formatCurrency = (value) =>
   `৳${getSafeNumber(value).toLocaleString("en-BD")}`;
 
+const getBalanceValue = (totalReceived = 0, totalPaid = 0) =>
+  getSafeNumber(totalReceived) - getSafeNumber(totalPaid);
+
+const openPrintWindow = ({ title, content }) => {
+  const printWindow = window.open("", "_blank", "width=960,height=720");
+
+  if (!printWindow) return null;
+
+  printWindow.document.open();
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>${title}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 24px; color: #0f172a; }
+          h1 { margin: 0 0 8px; font-size: 24px; }
+          p { margin: 0 0 4px; color: #475569; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #cbd5e1; padding: 10px; font-size: 12px; }
+          th { background: #f8fafc; text-align: left; }
+          tfoot td { font-weight: 700; background: #f8fafc; }
+        </style>
+      </head>
+      <body>${content}</body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.onload = () => {
+    printWindow.print();
+  };
+
+  return printWindow;
+};
+
 const formatLedgerDate = (value) => {
   if (!value) return "-";
 
@@ -331,18 +371,22 @@ const CreditLedgerTable = () => {
   // const [endDate, setEndDate] = useState("");
   // const [itemName, setItemName] = useState("");
 
-  const itemsPerPage = 10;
-  const [currentPage, setCurrentPage] = useState(1);
+  const dueHistoryItemsPerPage = 10;
   const [activeTab, setActiveTab] = useState("customer");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEntityId, setSelectedEntityId] = useState("");
-
+  const [mainHistoryStartDate, setMainHistoryStartDate] = useState("");
+  const [mainHistoryEndDate, setMainHistoryEndDate] = useState("");
+  const [dueHistoryCurrentPage, setDueHistoryCurrentPage] = useState(1);
+  const [dueHistoryStartDate, setDueHistoryStartDate] = useState("");
+  const [dueHistoryEndDate, setDueHistoryEndDate] = useState("");
   // const [startPage, setStartPage] = useState(1);
   // const [totalPages, setTotalPages] = useState(1);
   // const [pagesPerSet, setPagesPerSet] = useState(10);
 
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
   const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+  const [isDueHistoryModalOpen, setIsDueHistoryModalOpen] = useState(false);
   const [historyEntryType, setHistoryEntryType] = useState("Paid");
   const [ledgerHistoryForm, setLedgerHistoryForm] = useState(
     getInitialLedgerHistoryForm,
@@ -366,6 +410,21 @@ const CreditLedgerTable = () => {
     setIsHistoryDrawerOpen(false);
     setHistoryEntryType("Paid");
     setLedgerHistoryForm(getInitialLedgerHistoryForm());
+  };
+
+  const handleDueHistoryModalClose = () => {
+    setIsDueHistoryModalOpen(false);
+  };
+
+  const handleResetDueHistoryFilters = () => {
+    setDueHistoryStartDate("");
+    setDueHistoryEndDate("");
+    setDueHistoryCurrentPage(1);
+  };
+
+  const handleResetMainHistoryFilters = () => {
+    setMainHistoryStartDate("");
+    setMainHistoryEndDate("");
   };
 
   const selectedCountry =
@@ -432,24 +491,9 @@ const CreditLedgerTable = () => {
     }
   };
 
-  const queryArgs = useMemo(() => {
-    const args = {
-      page: currentPage,
-      limit: itemsPerPage,
-      // name: itemName || undefined,
-    };
-
-    Object.keys(args).forEach((k) => {
-      if (args[k] === undefined || args[k] === null || args[k] === "") {
-        delete args[k];
-      }
-    });
-
-    return args;
-  }, [currentPage, itemsPerPage]);
-
-  const { data, isLoading, isError, error } = useGetAllLedgerQuery(queryArgs);
-  const ledgers = data?.data || [];
+  const { data, isLoading, isError, error } =
+    useGetAllLedgerWithoutQueryQuery();
+  const ledgers = useMemo(() => data?.data || [], [data]);
 
   const entitiesByType = useMemo(
     () =>
@@ -524,7 +568,9 @@ const CreditLedgerTable = () => {
         date: formatLedgerDate(ledger?.date),
         credit: cashType === "paid" ? formatCurrency(amount) : "",
         debit: cashType === "paid" ? "" : formatCurrency(amount),
-        balance: formatCurrency(acc[key].totalPaid - acc[key].totalReceived),
+        balance: formatCurrency(
+          getBalanceValue(acc[key].totalReceived, acc[key].totalPaid),
+        ),
         note: ledger?.note || "",
         rawDate: ledger?.date,
       });
@@ -559,10 +605,6 @@ const CreditLedgerTable = () => {
     activeEntities.find((entity) => entity.id === selectedEntityId) ||
     null;
 
-  const selectedEntitySummary = selectedEntity
-    ? ledgerSummaryByEntity[getEntityKey(selectedEntity)]
-    : null;
-
   const selectedLedgerRecords = useMemo(() => {
     if (!selectedEntity) return [];
 
@@ -579,24 +621,174 @@ const CreditLedgerTable = () => {
   }, [ledgers, selectedEntity]);
 
   const selectedLedger = selectedLedgerRecords[0] || null;
+  const selectedLedgerId = String(
+    selectedLedger?.Id ?? selectedLedger?.id ?? "",
+  );
+  const { data: ledgerHistoryData } = useGetAllLedgerHistoryQuery({
+    page: 1,
+    limit: 1000,
+    ledgerId: selectedLedgerId || undefined,
+  });
+  const ledgerHistoryRecords = useMemo(
+    () => ledgerHistoryData?.data || [],
+    [ledgerHistoryData],
+  );
 
   const selectedHistory = useMemo(() => {
-    const history = selectedEntitySummary?.history || [];
+    if (!selectedLedgerId) return [];
 
-    return [...history].sort((a, b) => {
-      const aTime = new Date(a.rawDate || 0).getTime();
-      const bTime = new Date(b.rawDate || 0).getTime();
-      return bTime - aTime;
+    const history = ledgerHistoryRecords
+      .filter(
+        (entry) =>
+          String(
+            entry?.ledgerId ?? entry?.LedgerId ?? entry?.ledgerID ?? "",
+          ) === selectedLedgerId,
+      )
+      .sort((a, b) => {
+        const aTime = new Date(a?.date || 0).getTime();
+        const bTime = new Date(b?.date || 0).getTime();
+        return aTime - bTime;
+      });
+
+    let totalReceived = 0;
+    let totalPaid = 0;
+
+    return history
+      .map((entry, index) => {
+        const paidAmount = getSafeNumber(
+          entry?.paidAmount ?? entry?.PaidAmount,
+        );
+        const unpaidAmount = getSafeNumber(
+          entry?.unpaidAmount ?? entry?.UnpaidAmount,
+        );
+
+        totalReceived += paidAmount;
+        totalPaid += unpaidAmount;
+
+        return {
+          id: String(entry?.Id ?? entry?.id ?? index),
+          date: formatLedgerDate(entry?.date),
+          credit: paidAmount > 0 ? formatCurrency(paidAmount) : "",
+          debit: unpaidAmount > 0 ? formatCurrency(unpaidAmount) : "",
+          entryType: paidAmount > 0 ? "Paid" : "Unpaid",
+          balance: formatCurrency(getBalanceValue(totalReceived, totalPaid)),
+          balanceValue: getBalanceValue(totalReceived, totalPaid),
+          paidAmount,
+          unpaidAmount,
+          note: entry?.note || "",
+          rawDate: entry?.date,
+        };
+      })
+      .reverse();
+  }, [ledgerHistoryRecords, selectedLedgerId]);
+
+  const mainFilteredHistory = useMemo(() => {
+    const startTime = mainHistoryStartDate
+      ? new Date(`${mainHistoryStartDate}T00:00:00`).getTime()
+      : null;
+    const endTime = mainHistoryEndDate
+      ? new Date(`${mainHistoryEndDate}T23:59:59`).getTime()
+      : null;
+
+    return selectedHistory.filter((item) => {
+      const itemTime = new Date(item.rawDate || 0).getTime();
+
+      if (startTime !== null && itemTime < startTime) return false;
+      if (endTime !== null && itemTime > endTime) return false;
+
+      return true;
     });
-  }, [selectedEntitySummary]);
+  }, [mainHistoryEndDate, mainHistoryStartDate, selectedHistory]);
+
+  const mainFilteredTotals = useMemo(
+    () => ({
+      totalReceived: mainFilteredHistory.reduce(
+        (sum, item) => sum + item.paidAmount,
+        0,
+      ),
+      totalPaid: mainFilteredHistory.reduce(
+        (sum, item) => sum + item.unpaidAmount,
+        0,
+      ),
+      balance: mainFilteredHistory.length ? mainFilteredHistory[0].balanceValue : 0,
+    }),
+    [mainFilteredHistory],
+  );
+
+  const filteredDueHistory = useMemo(() => {
+    const startTime = dueHistoryStartDate
+      ? new Date(`${dueHistoryStartDate}T00:00:00`).getTime()
+      : null;
+    const endTime = dueHistoryEndDate
+      ? new Date(`${dueHistoryEndDate}T23:59:59`).getTime()
+      : null;
+
+    return selectedHistory.filter((item) => {
+      const itemTime = new Date(item.rawDate || 0).getTime();
+
+      if (startTime !== null && itemTime < startTime) return false;
+      if (endTime !== null && itemTime > endTime) return false;
+
+      return true;
+    });
+  }, [dueHistoryEndDate, dueHistoryStartDate, selectedHistory]);
+
+  const filteredDueHistoryTotals = useMemo(
+    () => ({
+      totalReceived: filteredDueHistory.reduce(
+        (sum, item) => sum + item.paidAmount,
+        0,
+      ),
+      totalPaid: filteredDueHistory.reduce(
+        (sum, item) => sum + item.unpaidAmount,
+        0,
+      ),
+      balance: filteredDueHistory.length
+        ? filteredDueHistory[0].balanceValue
+        : 0,
+    }),
+    [filteredDueHistory],
+  );
+
+  const dueHistoryTotalPages = Math.max(
+    1,
+    Math.ceil(filteredDueHistory.length / dueHistoryItemsPerPage),
+  );
+
+  const paginatedDueHistory = useMemo(() => {
+    const startIndex = (dueHistoryCurrentPage - 1) * dueHistoryItemsPerPage;
+    return filteredDueHistory.slice(
+      startIndex,
+      startIndex + dueHistoryItemsPerPage,
+    );
+  }, [dueHistoryCurrentPage, filteredDueHistory]);
 
   const selectedTotals = {
-    totalReceived: selectedEntitySummary?.totalReceived || 0,
-    totalPaid: selectedEntitySummary?.totalPaid || 0,
-    balance:
-      (selectedEntitySummary?.totalPaid || 0) -
-      (selectedEntitySummary?.totalReceived || 0),
+    totalReceived: selectedHistory.reduce(
+      (sum, item) => sum + item.paidAmount,
+      0,
+    ),
+    totalPaid: selectedHistory.reduce(
+      (sum, item) => sum + item.unpaidAmount,
+      0,
+    ),
+    balance: selectedHistory.length ? selectedHistory[0].balanceValue : 0,
   };
+
+  useEffect(() => {
+    setDueHistoryCurrentPage(1);
+  }, [selectedLedgerId, dueHistoryStartDate, dueHistoryEndDate]);
+
+  useEffect(() => {
+    setMainHistoryStartDate("");
+    setMainHistoryEndDate("");
+  }, [selectedLedgerId]);
+
+  useEffect(() => {
+    if (dueHistoryCurrentPage > dueHistoryTotalPages) {
+      setDueHistoryCurrentPage(dueHistoryTotalPages);
+    }
+  }, [dueHistoryCurrentPage, dueHistoryTotalPages]);
 
   const activeTabMeta = ENTITY_TABS.find((tab) => tab.key === activeTab);
   const isEntityListLoading = isLoading;
@@ -652,6 +844,244 @@ const CreditLedgerTable = () => {
     }
   };
 
+  const handlePrintDueHistory = () => {
+    if (!selectedEntity || !filteredDueHistory.length) {
+      toast.error("No due history found for printing.");
+      return;
+    }
+
+    const rowsMarkup = filteredDueHistory
+      .map(
+        (item) => `
+          <tr>
+            <td>${item.date}</td>
+            <td>${item.entryType}</td>
+            <td style="text-align:right;">${item.credit || "-"}</td>
+            <td style="text-align:right;">${item.debit || "-"}</td>
+            <td style="text-align:right;">${item.balance}</td>
+            <td>${item.note || "-"}</td>
+          </tr>`,
+      )
+      .join("");
+
+    const printWindow = openPrintWindow({
+      title: "Due History",
+      content: `
+        <h1>Due History</h1>
+        <p><strong>Name:</strong> ${selectedEntity.name}</p>
+        <p><strong>Contact:</strong> ${selectedEntity.phone || selectedEntity.extra || "-"}</p>
+        <p><strong>Role:</strong> ${selectedEntity.role || "-"}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th style="text-align:right;">Paid</th>
+              <th style="text-align:right;">Unpaid</th>
+              <th style="text-align:right;">Balance</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>${rowsMarkup}</tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2">Total</td>
+              <td style="text-align:right;">${formatCurrency(filteredDueHistoryTotals.totalReceived)}</td>
+              <td style="text-align:right;">${formatCurrency(filteredDueHistoryTotals.totalPaid)}</td>
+              <td style="text-align:right;">${formatCurrency(filteredDueHistoryTotals.balance)}</td>
+              <td>-</td>
+            </tr>
+          </tfoot>
+        </table>
+      `,
+    });
+
+    if (!printWindow) {
+      toast.error("Please allow popups to print due history.");
+    }
+  };
+
+  const handlePrintEntityList = () => {
+    if (!filteredEntities.length) {
+      toast.error("No contacts found for printing.");
+      return;
+    }
+
+    const rowsMarkup = filteredEntities
+      .map((item) => {
+        const entitySummary = ledgerSummaryByEntity[getEntityKey(item)] || {};
+        const entityBalance = getBalanceValue(
+          entitySummary.totalReceived || 0,
+          entitySummary.totalPaid || 0,
+        );
+
+        return `
+          <tr>
+            <td>${item.name}</td>
+            <td>${item.phone || item.extra || "-"}</td>
+            <td>${item.role || "-"}</td>
+            <td style="text-align:right;">${formatCurrency(entityBalance)}</td>
+          </tr>`;
+      })
+      .join("");
+
+    const printWindow = openPrintWindow({
+      title: `${activeTabMeta?.label || "Contact"} List`,
+      content: `
+        <h1>${activeTabMeta?.label || "Contact"} List</h1>
+        <p><strong>Search:</strong> ${searchTerm || "All"}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Contact</th>
+              <th>Role</th>
+              <th style="text-align:right;">Balance</th>
+            </tr>
+          </thead>
+          <tbody>${rowsMarkup}</tbody>
+        </table>
+      `,
+    });
+
+    if (!printWindow) {
+      toast.error("Please allow popups to print the contact list.");
+    }
+  };
+
+  const handlePrintSelectedLedger = () => {
+    if (!selectedEntity || !mainFilteredHistory.length) {
+      toast.error("No due history found for printing.");
+      return;
+    }
+
+    const rowsMarkup = mainFilteredHistory
+      .map(
+        (item) => `
+          <tr>
+            <td>${item.date}</td>
+            <td style="text-align:right;">${item.credit || "-"}</td>
+            <td style="text-align:right;">${item.debit || "-"}</td>
+            <td style="text-align:right;">${item.balance}</td>
+            <td>${item.note || "-"}</td>
+          </tr>`,
+      )
+      .join("");
+
+    const filterLabel =
+      mainHistoryStartDate || mainHistoryEndDate
+        ? `${mainHistoryStartDate || "Beginning"} - ${mainHistoryEndDate || "Today"}`
+        : "All Dates";
+
+    const printWindow = openPrintWindow({
+      title: "Credit Ledger",
+      content: `
+        <h1>Credit Ledger</h1>
+        <p><strong>Name:</strong> ${selectedEntity.name}</p>
+        <p><strong>Contact:</strong> ${selectedEntity.phone || selectedEntity.extra || "-"}</p>
+        <p><strong>Range:</strong> ${filterLabel}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th style="text-align:right;">Paid</th>
+              <th style="text-align:right;">Unpaid</th>
+              <th style="text-align:right;">Balance</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>${rowsMarkup}</tbody>
+          <tfoot>
+            <tr>
+              <td>Total</td>
+              <td style="text-align:right;">${formatCurrency(mainFilteredTotals.totalReceived)}</td>
+              <td style="text-align:right;">${formatCurrency(mainFilteredTotals.totalPaid)}</td>
+              <td style="text-align:right;">${formatCurrency(mainFilteredTotals.balance)}</td>
+              <td>-</td>
+            </tr>
+          </tfoot>
+        </table>
+      `,
+    });
+
+    if (!printWindow) {
+      toast.error("Please allow popups to print the ledger.");
+    }
+  };
+
+  const handleDownloadDueHistoryPdf = async () => {
+    if (!selectedEntity || !filteredDueHistory.length) {
+      toast.error("No due history found for PDF download.");
+      return;
+    }
+
+    try {
+      const { jsPDF } = await import("jspdf");
+      const autoTable = (await import("jspdf-autotable")).default;
+
+      const doc = new jsPDF("p", "mm", "a4");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text(`Due History - ${selectedEntity.name}`, 14, 16);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text(
+        `Contact: ${selectedEntity.phone || selectedEntity.extra || "-"}`,
+        14,
+        23,
+      );
+
+      autoTable(doc, {
+        startY: 28,
+        head: [["Date", "Type", "Paid", "Unpaid", "Balance", "Note"]],
+        body: filteredDueHistory.map((item) => [
+          item.date,
+          item.entryType,
+          item.credit || "-",
+          item.debit || "-",
+          item.balance,
+          item.note || "-",
+        ]),
+        foot: [
+          [
+            "Total",
+            "",
+            formatCurrency(filteredDueHistoryTotals.totalReceived),
+            formatCurrency(filteredDueHistoryTotals.totalPaid),
+            formatCurrency(filteredDueHistoryTotals.balance),
+            "-",
+          ],
+        ],
+        theme: "grid",
+        styles: {
+          fontSize: 9,
+          cellPadding: 2.5,
+          overflow: "linebreak",
+        },
+        headStyles: {
+          fillColor: [15, 23, 42],
+          textColor: 255,
+          fontStyle: "bold",
+        },
+        footStyles: {
+          fillColor: [248, 250, 252],
+          textColor: 15,
+          fontStyle: "bold",
+        },
+        columnStyles: {
+          2: { halign: "right" },
+          3: { halign: "right" },
+          4: { halign: "right" },
+        },
+      });
+
+      doc.save(`due-history-${selectedEntity.name}-${Date.now()}.pdf`);
+    } catch (err) {
+      toast.error("PDF download failed.");
+    }
+  };
+
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
@@ -667,12 +1097,17 @@ const CreditLedgerTable = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-500">
-            Total Receivable: ৳8,000
+            Total Receivable: {formatCurrency(selectedTotals.totalReceived)}
           </div>
           <div className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-500">
-            Total Payable: ৳0
+            Total Unpaid: {formatCurrency(selectedTotals.totalPaid)}
           </div>
-          <button className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+          <button
+            type="button"
+            onClick={() => setIsDueHistoryModalOpen(true)}
+            disabled={!selectedLedger}
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
             <RotateCcw size={16} />
             Due History
           </button>
@@ -741,7 +1176,11 @@ const CreditLedgerTable = () => {
                 <RefreshCw size={16} className="text-slate-600" />
               </button>
 
-              <button className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50">
+              <button
+                type="button"
+                onClick={handlePrintEntityList}
+                className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50"
+              >
                 <FileText size={16} className="text-slate-600" />
               </button>
             </div>
@@ -839,15 +1278,35 @@ const CreditLedgerTable = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <button className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50">
+                <button
+                  type="button"
+                  onClick={handlePrintSelectedLedger}
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50"
+                >
                   <FileText size={16} className="text-slate-600" />
                 </button>
 
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
-                  Jan 01, 2000 - Dec 31, 2026
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
+                  <input
+                    type="date"
+                    value={mainHistoryStartDate}
+                    onChange={(e) => setMainHistoryStartDate(e.target.value)}
+                    className="bg-transparent text-sm outline-none"
+                  />
+                  <span>-</span>
+                  <input
+                    type="date"
+                    value={mainHistoryEndDate}
+                    onChange={(e) => setMainHistoryEndDate(e.target.value)}
+                    className="bg-transparent text-sm outline-none"
+                  />
                 </div>
 
-                <button className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50">
+                <button
+                  type="button"
+                  onClick={handleResetMainHistoryFilters}
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50"
+                >
                   <RefreshCw size={16} className="text-slate-600" />
                 </button>
 
@@ -861,8 +1320,14 @@ const CreditLedgerTable = () => {
             <div className="mt-4 flex flex-wrap items-center gap-6">
               <div>
                 <p className="text-xs text-slate-400">Balance</p>
-                <p className="text-3xl font-bold text-green-500">
-                  {formatCurrency(selectedTotals.balance)}
+                <p
+                  className={`text-3xl font-bold ${
+                    mainFilteredTotals.balance < 0
+                      ? "text-red-500"
+                      : "text-green-500"
+                  }`}
+                >
+                  {formatCurrency(mainFilteredTotals.balance)}
                 </p>
               </div>
             </div>
@@ -889,7 +1354,7 @@ const CreditLedgerTable = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedHistory.map((item) => (
+                  {mainFilteredHistory.map((item) => (
                     <tr key={item.id} className="border-t border-slate-200">
                       <td className="px-4 py-3 text-slate-600">
                         <div>{item.date}</div>
@@ -905,12 +1370,18 @@ const CreditLedgerTable = () => {
                       <td className="px-4 py-3 text-right font-medium text-red-500">
                         {item.debit}
                       </td>
-                      <td className="px-4 py-3 text-right font-medium text-slate-700">
+                      <td
+                        className={`px-4 py-3 text-right font-medium ${
+                          item.balanceValue < 0
+                            ? "text-red-500"
+                            : "text-slate-700"
+                        }`}
+                      >
                         {item.balance}
                       </td>
                     </tr>
                   ))}
-                  {!selectedHistory.length && (
+                  {!mainFilteredHistory.length && (
                     <tr className="border-t border-slate-200">
                       <td
                         colSpan={4}
@@ -927,13 +1398,19 @@ const CreditLedgerTable = () => {
                       Total
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-green-500">
-                      {formatCurrency(selectedTotals.totalReceived)}
+                      {formatCurrency(mainFilteredTotals.totalReceived)}
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-red-500">
-                      {formatCurrency(selectedTotals.totalPaid)}
+                      {formatCurrency(mainFilteredTotals.totalPaid)}
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-green-500">
-                      {formatCurrency(selectedTotals.balance)}
+                    <td
+                      className={`px-4 py-3 text-right font-semibold ${
+                        mainFilteredTotals.balance < 0
+                          ? "text-red-500"
+                          : "text-green-500"
+                      }`}
+                    >
+                      {formatCurrency(mainFilteredTotals.balance)}
                     </td>
                   </tr>
                 </tfoot>
@@ -943,7 +1420,7 @@ const CreditLedgerTable = () => {
 
           {/* Mobile card history */}
           <div className="space-y-3 p-3 md:hidden">
-            {selectedHistory.map((item) => (
+            {mainFilteredHistory.map((item) => (
               <div
                 key={item.id}
                 className="rounded-xl border border-slate-200 bg-white p-4"
@@ -968,7 +1445,13 @@ const CreditLedgerTable = () => {
                   </div>
                   <div>
                     <p className="text-xs text-slate-400">Balance</p>
-                    <p className="font-semibold text-slate-700">
+                    <p
+                      className={`font-semibold ${
+                        item.balanceValue < 0
+                          ? "text-red-500"
+                          : "text-slate-700"
+                      }`}
+                    >
                       {item.balance}
                     </p>
                   </div>
@@ -976,7 +1459,7 @@ const CreditLedgerTable = () => {
               </div>
             ))}
 
-            {!selectedHistory.length && (
+            {!mainFilteredHistory.length && (
               <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
                 No due history found for this contact.
               </div>
@@ -985,21 +1468,27 @@ const CreditLedgerTable = () => {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="grid grid-cols-3 gap-2 text-sm">
                 <div>
-                  <p className="text-xs text-slate-400">Total Received</p>
+                  <p className="text-xs text-slate-400">Total Unpaid</p>
                   <p className="font-semibold text-green-500">
-                    {formatCurrency(selectedTotals.totalReceived)}
+                    {formatCurrency(mainFilteredTotals.totalReceived)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">Total Paid</p>
                   <p className="font-semibold text-red-500">
-                    {formatCurrency(selectedTotals.totalPaid)}
+                    {formatCurrency(mainFilteredTotals.totalPaid)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">Balance</p>
-                  <p className="font-semibold text-slate-700">
-                    {formatCurrency(selectedTotals.balance)}
+                  <p
+                    className={`font-semibold ${
+                      mainFilteredTotals.balance < 0
+                        ? "text-red-500"
+                        : "text-slate-700"
+                    }`}
+                  >
+                    {formatCurrency(mainFilteredTotals.balance)}
                   </p>
                 </div>
               </div>
@@ -1068,6 +1557,252 @@ const CreditLedgerTable = () => {
       </Modal> */}
 
       <AnimatePresence>
+        {isDueHistoryModalOpen && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-[80] bg-slate-950/50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleDueHistoryModalClose}
+            />
+
+            <motion.div
+              className="fixed inset-0 z-[90] flex items-center justify-center p-4"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+            >
+              <div className="max-h-[85vh] w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+                <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">
+                      Due History
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {selectedEntity?.name || "-"} •{" "}
+                      {selectedEntity?.phone || selectedEntity?.extra || "-"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handlePrintDueHistory}
+                      disabled={!filteredDueHistory.length}
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Printer size={16} />
+                      Print
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadDueHistoryPdf}
+                      disabled={!filteredDueHistory.length}
+                      className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Download size={16} />
+                      Download PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDueHistoryModalClose}
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 border-b border-slate-200 bg-slate-50 px-6 py-4 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-xs text-slate-400">Total Paid</p>
+                    <p className="mt-1 text-2xl font-bold text-green-500">
+                      {formatCurrency(filteredDueHistoryTotals.totalReceived)}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-xs text-slate-400">Total Unpaid</p>
+                    <p className="mt-1 text-2xl font-bold text-red-500">
+                      {formatCurrency(filteredDueHistoryTotals.totalPaid)}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-xs text-slate-400">Current Balance</p>
+                    <p
+                      className={`mt-1 text-2xl font-bold ${
+                        filteredDueHistoryTotals.balance < 0
+                          ? "text-red-500"
+                          : "text-green-500"
+                      }`}
+                    >
+                      {formatCurrency(filteredDueHistoryTotals.balance)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="max-h-[55vh] overflow-auto px-6 py-5">
+                  <div className="mb-4 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-[1fr_1fr_auto]">
+                    <label className="text-sm">
+                      <span className="mb-1 block text-slate-500">
+                        Start Date
+                      </span>
+                      <input
+                        type="date"
+                        value={dueHistoryStartDate}
+                        onChange={(e) => setDueHistoryStartDate(e.target.value)}
+                        className="h-11 w-full rounded-xl text-black border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-400"
+                      />
+                    </label>
+                    <label className="text-sm">
+                      <span className="mb-1 block text-slate-500">
+                        End Date
+                      </span>
+                      <input
+                        type="date"
+                        value={dueHistoryEndDate}
+                        onChange={(e) => setDueHistoryEndDate(e.target.value)}
+                        className="h-11 w-full rounded-xl text-black border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-400"
+                      />
+                    </label>
+                    <div className="flex items-end">
+                      <button
+                        type="button"
+                        onClick={handleResetDueHistoryFilters}
+                        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-hidden rounded-2xl border border-slate-200">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-slate-50 text-slate-500">
+                        <tr>
+                          <th className="px-4 py-3 text-left font-medium">
+                            Date
+                          </th>
+                          <th className="px-4 py-3 text-left font-medium">
+                            Type
+                          </th>
+                          <th className="px-4 py-3 text-right font-medium text-green-500">
+                            Paid
+                          </th>
+                          <th className="px-4 py-3 text-right font-medium text-red-500">
+                            Unpaid
+                          </th>
+                          <th className="px-4 py-3 text-right font-medium">
+                            Balance
+                          </th>
+                          <th className="px-4 py-3 text-left font-medium">
+                            Note
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedDueHistory.map((item) => (
+                          <tr
+                            key={`due-modal-${item.id}`}
+                            className="border-t border-slate-200"
+                          >
+                            <td className="px-4 py-3 text-slate-600">
+                              {item.date}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                  item.entryType === "Paid"
+                                    ? "bg-green-100 text-green-600"
+                                    : "bg-red-100 text-red-600"
+                                }`}
+                              >
+                                {item.entryType}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium text-green-500">
+                              {item.credit || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium text-red-500">
+                              {item.debit || "-"}
+                            </td>
+                            <td
+                              className={`px-4 py-3 text-right font-medium ${
+                                item.balanceValue < 0
+                                  ? "text-red-500"
+                                  : "text-slate-700"
+                              }`}
+                            >
+                              {item.balance}
+                            </td>
+                            <td className="px-4 py-3 text-slate-500">
+                              {item.note || "-"}
+                            </td>
+                          </tr>
+                        ))}
+                        {!paginatedDueHistory.length && (
+                          <tr className="border-t border-slate-200">
+                            <td
+                              colSpan={6}
+                              className="px-4 py-10 text-center text-sm text-slate-500"
+                            >
+                              No due history found for this contact.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-slate-500">
+                      Showing page{" "}
+                      <span className="font-semibold text-slate-800">
+                        {dueHistoryCurrentPage}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-semibold text-slate-800">
+                        {dueHistoryTotalPages}
+                      </span>
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDueHistoryCurrentPage((prev) =>
+                            Math.max(1, prev - 1),
+                          )
+                        }
+                        disabled={dueHistoryCurrentPage === 1}
+                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Previous
+                      </button>
+                      <span className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
+                        {dueHistoryCurrentPage}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDueHistoryCurrentPage((prev) =>
+                            Math.min(dueHistoryTotalPages, prev + 1),
+                          )
+                        }
+                        disabled={
+                          dueHistoryCurrentPage === dueHistoryTotalPages
+                        }
+                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+
         {isHistoryDrawerOpen && (
           <>
             <motion.div
@@ -1118,7 +1853,8 @@ const CreditLedgerTable = () => {
                       {selectedEntity?.phone || selectedEntity?.extra || "-"}
                     </p>
                     <p className="mt-2 text-xs text-slate-500">
-                      Ledger ID: {selectedLedger?.Id ?? selectedLedger?.id ?? "-"}
+                      Ledger ID:{" "}
+                      {selectedLedger?.Id ?? selectedLedger?.id ?? "-"}
                     </p>
                   </div>
 
