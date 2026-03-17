@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const productApi = createApi({
   reducerPath: "productApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken(); // Fetch the token
       if (token) {
@@ -66,6 +66,13 @@ export const productApi = createApi({
       refetchOnMountOrArgChange: true,
       pollingInterval: 1000,
     }),
+
+    getSingleProductById: build.query({
+      query: (id) => ({
+        url: `/product/${id}`,
+      }),
+      providesTags: ["product"], // Provides the 'product' tag for caching and invalidation
+    }),
   }),
 });
 
@@ -75,4 +82,5 @@ export const {
   useDeleteProductMutation,
   useUpdateProductMutation,
   useGetAllProductWithoutQueryQuery,
+  useGetSingleProductByIdQuery,
 } = productApi;

@@ -16,6 +16,60 @@ import Modal from "../common/Modal";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
 
+const normalizeAttributeInput = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item).trim())
+      .filter(Boolean)
+      .join(", ");
+  }
+  return typeof value === "string" ? value : "";
+};
+
+const parseJsonArrayString = (value) => {
+  if (typeof value !== "string") return null;
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.map((item) => String(item).trim()).filter(Boolean)
+      : null;
+  } catch {
+    return null;
+  }
+};
+
+const parseAttributeValues = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+  if (typeof value === "string") {
+    const parsedJsonArray = parseJsonArrayString(value);
+    if (parsedJsonArray) return parsedJsonArray;
+
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const getVariationAttributeValues = (product, key) => {
+  const directValues = parseAttributeValues(product?.[key]);
+  if (directValues.length > 0) return directValues;
+
+  if (!Array.isArray(product?.variations)) return [];
+
+  return [
+    ...new Set(
+      product.variations.flatMap((variation) =>
+        parseAttributeValues(variation?.[key]),
+      ),
+    ),
+  ];
+};
+
 const ProductsTable = () => {
   const role = localStorage.getItem("role");
   const { language } = useLayout();
@@ -26,6 +80,9 @@ const ProductsTable = () => {
 
   const [createProduct, setCreateProduct] = useState({
     name: "",
+    sku: "",
+    size: "",
+    color: "",
   });
 
   const [products, setProducts] = useState([]);
@@ -133,6 +190,12 @@ const ProductsTable = () => {
   const handleEditClick = (product) => {
     setCurrentProduct({
       ...product,
+      size: normalizeAttributeInput(
+        getVariationAttributeValues(product, "size"),
+      ),
+      color: normalizeAttributeInput(
+        getVariationAttributeValues(product, "color"),
+      ),
     });
     setIsModalOpen(true);
   };
@@ -141,11 +204,15 @@ const ProductsTable = () => {
   const handleCreateProduct = async (e) => {
     e.preventDefault();
     try {
-      const res = await insertProduct(createProduct).unwrap();
+      const res = await insertProduct({
+        ...createProduct,
+        size: parseAttributeValues(createProduct.size),
+        color: parseAttributeValues(createProduct.color),
+      }).unwrap();
       if (res?.success) {
         toast.success("Successfully created product");
         setIsModalOpen1(false);
-        setCreateProduct({ name: "" });
+        setCreateProduct({ name: "", sku: "", size: "", color: "" });
         refetch();
       }
     } catch (err) {
@@ -161,6 +228,9 @@ const ProductsTable = () => {
         id: currentProduct.Id,
         data: {
           name: currentProduct.name,
+          sku: currentProduct.sku,
+          size: parseAttributeValues(currentProduct.size),
+          color: parseAttributeValues(currentProduct.color),
         },
       }).unwrap();
       if (res?.success) {
@@ -220,7 +290,7 @@ const ProductsTable = () => {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-10 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-5 gap-4 mb-10 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
         <div className="flex flex-col">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
             {t.from}
@@ -295,6 +365,15 @@ const ProductsTable = () => {
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.product_details}
                 </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  SKU
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Size
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Color
+                </th>
                 <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.actions}
                 </th>
@@ -302,43 +381,85 @@ const ProductsTable = () => {
             </thead>
 
             <tbody className="divide-y divide-slate-100">
-              {products.map((product) => (
-                <motion.tr
-                  key={product.Id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="hover:bg-indigo-50/30 transition-colors group"
-                >
-                  <td className="px-6 py-5 whitespace-nowrap">
-                    <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                      {product.name}
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 whitespace-nowrap text-center">
-                    {(role === "superAdmin" || role === "admin") && (
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => handleEditClick(product)}
-                          className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm active:scale-90"
-                          title={t.edit}
-                          type="button"
-                        >
-                          <Edit className="text-indigo-600" size={16} />
-                        </button>
+              {products.map((product) => {
+                const sizes = getVariationAttributeValues(product, "size");
+                const colors = getVariationAttributeValues(product, "color");
 
-                        <button
-                          onClick={() => handleDeleteProduct(product.Id)}
-                          className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition shadow-sm active:scale-90"
-                          title={t.delete}
-                          type="button"
-                        >
-                          <Trash2 className="text-red-600" size={16} />
-                        </button>
+                return (
+                  <motion.tr
+                    key={product.Id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="hover:bg-indigo-50/30 transition-colors group"
+                  >
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                        {product.name}
                       </div>
-                    )}
-                  </td>
-                </motion.tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <span className="text-sm font-semibold text-slate-700">
+                        {product.sku || "N/A"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex flex-wrap gap-2 min-w-[160px]">
+                        {sizes.length > 0 ? (
+                          sizes.map((size) => (
+                            <span
+                              key={`size-${product.Id}-${size}`}
+                              className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                            >
+                              {size}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-sm text-slate-400">N/A</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex flex-wrap gap-2 min-w-[160px]">
+                        {colors.length > 0 ? (
+                          colors.map((color) => (
+                            <span
+                              key={`color-${product.Id}-${color}`}
+                              className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-600"
+                            >
+                              {color}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-sm text-slate-400">N/A</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 whitespace-nowrap text-center">
+                      {(role === "superAdmin" || role === "admin") && (
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleEditClick(product)}
+                            className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm active:scale-90"
+                            title={t.edit}
+                            type="button"
+                          >
+                            <Edit className="text-indigo-600" size={16} />
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteProduct(product.Id)}
+                            className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition shadow-sm active:scale-90"
+                            title={t.delete}
+                            type="button"
+                          >
+                            <Trash2 className="text-red-600" size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </motion.tr>
+                );
+              })}
             </tbody>
           </table>
 
@@ -427,6 +548,56 @@ const ProductsTable = () => {
             />
           </div>
 
+          <div>
+            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
+              SKU
+            </label>
+            <input
+              type="text"
+              value={currentProduct?.sku || ""}
+              onChange={(e) =>
+                setCurrentProduct({ ...currentProduct, sku: e.target.value })
+              }
+              className="h-12 border border-slate-200 rounded-2xl px-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+              placeholder="e.g. HD-001"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
+                Sizes
+              </label>
+              <input
+                type="text"
+                value={currentProduct?.size || ""}
+                onChange={(e) =>
+                  setCurrentProduct({ ...currentProduct, size: e.target.value })
+                }
+                className="h-12 border border-slate-200 rounded-2xl px-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+                placeholder="e.g. S, M, L, XL"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
+                Colors
+              </label>
+              <input
+                type="text"
+                value={currentProduct?.color || ""}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    color: e.target.value,
+                  })
+                }
+                className="h-12 border border-slate-200 rounded-2xl px-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+                placeholder="e.g. Black, White, Blue"
+              />
+            </div>
+          </div>
+
           <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
             <button
               type="button"
@@ -465,6 +636,53 @@ const ProductsTable = () => {
               className="h-12 border border-slate-200 rounded-2xl px-4 w-full bg-white text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
               placeholder="e.g. MacBook Pro M3"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
+              SKU
+            </label>
+            <input
+              type="text"
+              value={createProduct.sku}
+              onChange={(e) =>
+                setCreateProduct({ ...createProduct, sku: e.target.value })
+              }
+              className="h-12 border border-slate-200 rounded-2xl px-4 w-full bg-white text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+              placeholder="e.g. HD-001"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
+                Sizes
+              </label>
+              <input
+                type="text"
+                value={createProduct.size}
+                onChange={(e) =>
+                  setCreateProduct({ ...createProduct, size: e.target.value })
+                }
+                className="h-12 border border-slate-200 rounded-2xl px-4 w-full bg-white text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+                placeholder="e.g. S, M, L, XL"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
+                Colors
+              </label>
+              <input
+                type="text"
+                value={createProduct.color}
+                onChange={(e) =>
+                  setCreateProduct({ ...createProduct, color: e.target.value })
+                }
+                className="h-12 border border-slate-200 rounded-2xl px-4 w-full bg-white text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
+                placeholder="e.g. Black, White, Blue"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
