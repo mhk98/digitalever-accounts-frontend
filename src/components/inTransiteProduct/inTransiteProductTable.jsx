@@ -11,7 +11,173 @@ import {
 } from "../../features/inTransitProduct/inTransitProduct";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
-import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
+import {
+  useGetAllProductWithoutQueryQuery,
+  useGetSingleProductByIdQuery,
+} from "../../features/product/product";
+import Modal from "../common/Modal";
+
+const initialCreateForm = {
+  warehouseId: "",
+  supplierId: "",
+  receivedId: "",
+  productId: "",
+  variantRows: [{ size: "", color: "", quantity: "" }],
+  quantity: "",
+  note: "",
+  date: new Date().toISOString().slice(0, 10),
+};
+
+const parseVariationValue = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item) => String(item).trim()).filter(Boolean);
+      }
+    } catch {
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+  }
+
+  return [];
+};
+
+const getVariationOptions = (product, key) => {
+  if (!Array.isArray(product?.variations)) return [];
+
+  return [
+    ...new Set(
+      product.variations.flatMap((variation) =>
+        parseVariationValue(variation?.[key]),
+      ),
+    ),
+  ].map((value) => ({
+    value,
+    label: value,
+  }));
+};
+
+const createEmptyVariantRow = () => ({
+  size: "",
+  color: "",
+  quantity: "",
+});
+
+const normalizeVariantRows = (value) => {
+  if (Array.isArray(value) && value.length > 0) {
+    return value.map((row) => ({
+      size: row?.size ? String(row.size) : "",
+      color: row?.color ? String(row.color) : "",
+      quantity:
+        row?.quantity !== undefined && row?.quantity !== null
+          ? String(row.quantity)
+          : "",
+    }));
+  }
+
+  return [createEmptyVariantRow()];
+};
+
+const getInitialVariantRowsFromRecord = (record) => {
+  if (Array.isArray(record?.variants) && record.variants.length > 0) {
+    return normalizeVariantRows(record.variants);
+  }
+
+  if (typeof record?.variants === "string") {
+    try {
+      const parsed = JSON.parse(record.variants);
+      return normalizeVariantRows(parsed);
+    } catch {
+      // ignore malformed legacy data
+    }
+  }
+
+  if (record?.size || record?.color || record?.variationQuantity) {
+    return normalizeVariantRows([
+      {
+        size: record.size,
+        color: record.color,
+        quantity: record.variationQuantity,
+      },
+    ]);
+  }
+
+  return [createEmptyVariantRow()];
+};
+
+const getVariantDisplayRows = (record) => {
+  if (Array.isArray(record?.variants)) {
+    return record.variants.filter(
+      (item) => item && (item.size || item.color || item.quantity),
+    );
+  }
+
+  if (typeof record?.variants === "string") {
+    try {
+      const parsed = JSON.parse(record.variants);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(
+          (item) => item && (item.size || item.color || item.quantity),
+        );
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
+
+const getVariationColorsForSize = (product, size) => {
+  if (!size || !Array.isArray(product?.variations)) return [];
+
+  return [
+    ...new Set(
+      product.variations.flatMap((variation) => {
+        const sizes = parseVariationValue(variation?.size);
+        if (!sizes.includes(size)) return [];
+        return parseVariationValue(variation?.color);
+      }),
+    ),
+  ].map((value) => ({ value, label: value }));
+};
+
+const getNormalizedVariantsPayload = (rows) =>
+  normalizeVariantRows(rows)
+    .filter((row) => row.size || row.color || row.quantity)
+    .map((row) => ({
+      size: row.size || "",
+      color: row.color || "",
+      quantity: Number(row.quantity) || 0,
+    }))
+    .filter((row) => row.size && row.color);
+
+const getVariantRowsTotalQuantity = (rows) =>
+  normalizeVariantRows(rows).reduce(
+    (total, row) => total + (Number(row.quantity) || 0),
+    0,
+  );
+
+const hasDuplicateVariantCombination = (rows) => {
+  const seen = new Set();
+
+  for (const row of rows) {
+    if (!row.size || !row.color) continue;
+    const key = `${row.size}__${row.color}`;
+    if (seen.has(key)) return true;
+    seen.add(key);
+  }
+
+  return false;
+};
 
 const IntransiteProductTable = () => {
   const role = localStorage.getItem("role");
@@ -27,12 +193,7 @@ const IntransiteProductTable = () => {
 
   // ✅ UI uses receivedId (ReceivedProduct.Id)
   const [createForm, setCreateForm] = useState({
-    warehouseId: "",
-    supplierId: "",
-    receivedId: "",
-    quantity: "",
-    note: "",
-    date: new Date().toISOString().slice(0, 10),
+    ...initialCreateForm,
   });
 
   const [rows, setRows] = useState([]);
@@ -72,6 +233,42 @@ const IntransiteProductTable = () => {
       label: r.name,
     }));
   }, [receivedData]);
+
+  const selectedCreateProductId =
+    createForm?.productId || createForm?.receivedId || undefined;
+  const selectedEditProductId =
+    currentItem?.productId || currentItem?.receivedId || undefined;
+
+  const { data: selectedCreateProductRes } = useGetSingleProductByIdQuery(
+    selectedCreateProductId,
+    { skip: !selectedCreateProductId },
+  );
+  const { data: selectedEditProductRes } = useGetSingleProductByIdQuery(
+    selectedEditProductId,
+    { skip: !selectedEditProductId },
+  );
+
+  const selectedCreateProductData =
+    selectedCreateProductRes?.data || selectedCreateProductRes;
+  const selectedEditProductData =
+    selectedEditProductRes?.data || selectedEditProductRes;
+
+  const createSizeOptions = useMemo(
+    () => getVariationOptions(selectedCreateProductData, "size"),
+    [selectedCreateProductData],
+  );
+  const createColorOptions = useMemo(
+    () => getVariationOptions(selectedCreateProductData, "color"),
+    [selectedCreateProductData],
+  );
+  const editSizeOptions = useMemo(
+    () => getVariationOptions(selectedEditProductData, "size"),
+    [selectedEditProductData],
+  );
+  const editColorOptions = useMemo(
+    () => getVariationOptions(selectedEditProductData, "color"),
+    [selectedEditProductData],
+  );
 
   // ✅ react-select light styles
   const selectStyles = {
@@ -156,14 +353,81 @@ const IntransiteProductTable = () => {
   };
 
   // ✅ add/edit handlers
-  const openAdd = () => setIsAddOpen(true);
-  const closeAdd = () => setIsAddOpen(false);
+  const openAdd = () => {
+    setCreateForm(initialCreateForm);
+    setIsAddOpen(true);
+  };
+  const closeAdd = () => {
+    setIsAddOpen(false);
+    setCreateForm(initialCreateForm);
+  };
+
+  const updateVariantRow = (mode, index, key, value) => {
+    const setter = mode === "edit" ? setCurrentItem : setCreateForm;
+
+    setter((prev) => {
+      const nextRows = normalizeVariantRows(prev?.variantRows).map(
+        (row, rowIndex) =>
+          rowIndex === index
+            ? {
+                ...row,
+                [key]: value,
+                ...(key === "size" ? { color: "" } : {}),
+              }
+            : row,
+      );
+
+      return {
+        ...prev,
+        variantRows: nextRows,
+        quantity: String(getVariantRowsTotalQuantity(nextRows)),
+      };
+    });
+  };
+
+  const addVariantRow = (mode) => {
+    const setter = mode === "edit" ? setCurrentItem : setCreateForm;
+
+    setter((prev) => ({
+      ...prev,
+      variantRows: [
+        ...normalizeVariantRows(prev?.variantRows),
+        createEmptyVariantRow(),
+      ],
+      quantity: String(getVariantRowsTotalQuantity(prev?.variantRows)),
+    }));
+  };
+
+  const removeVariantRow = (mode, index) => {
+    const setter = mode === "edit" ? setCurrentItem : setCreateForm;
+
+    setter((prev) => {
+      const nextRows = normalizeVariantRows(prev?.variantRows).filter(
+        (_, rowIndex) => rowIndex !== index,
+      );
+
+      return {
+        ...prev,
+        variantRows: nextRows.length > 0 ? nextRows : [createEmptyVariantRow()],
+        quantity: String(
+          getVariantRowsTotalQuantity(
+            nextRows.length > 0 ? nextRows : [createEmptyVariantRow()],
+          ),
+        ),
+      };
+    });
+  };
 
   const openEdit = (rp) => {
+    const variantRows = getInitialVariantRowsFromRecord(rp);
     setCurrentItem({
       ...rp,
+      productId: String(rp.productId ?? rp.receivedId ?? ""),
       receivedId: String(rp.receivedId ?? rp.productId ?? ""),
-      quantity: rp.quantity ?? "",
+      variantRows,
+      quantity: String(
+        getVariantRowsTotalQuantity(variantRows) || Number(rp.quantity) || 0,
+      ),
       note: rp.note ?? "",
       status: rp.status ?? "",
       date: rp.date ?? "",
@@ -178,10 +442,15 @@ const IntransiteProductTable = () => {
   };
 
   const openEdit1 = (rp) => {
+    const variantRows = getInitialVariantRowsFromRecord(rp);
     setCurrentItem({
       ...rp,
+      productId: String(rp.productId ?? rp.receivedId ?? ""),
       receivedId: String(rp.receivedId ?? rp.productId ?? ""),
-      quantity: rp.quantity ?? "",
+      variantRows,
+      quantity: String(
+        getVariantRowsTotalQuantity(variantRows) || Number(rp.quantity) || 0,
+      ),
       note: rp.note ?? "",
       status: rp.status ?? "",
       userId,
@@ -203,23 +472,31 @@ const IntransiteProductTable = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
 
-    if (!createForm.receivedId) return toast.error("Please select a product");
+    if (!createForm.receivedId && !createForm.productId)
+      return toast.error("Please select a product");
     if (!createForm.quantity || Number(createForm.quantity) <= 0)
       return toast.error("Please enter valid quantity");
 
+    const variantsPayload = getNormalizedVariantsPayload(createForm.variantRows);
+    if (hasDuplicateVariantCombination(variantsPayload)) {
+      return toast.error("Duplicate size and color combination found");
+    }
+
     try {
       const payload = {
-        receivedId: Number(createForm.receivedId),
+        receivedId: Number(createForm.receivedId || createForm.productId),
+        productId: Number(createForm.productId || createForm.receivedId),
         supplierId: Number(createForm.supplierId),
         warehouseId: Number(createForm.warehouseId),
         quantity: Number(createForm.quantity),
+        variants: variantsPayload,
+        note: createForm.note,
         date: createForm.date,
       };
 
       const res = await insertInTransitProduct(payload).unwrap();
       if (res?.success) {
         toast.success("Created!");
-        setCreateForm({ receivedId: "", quantity: "" });
         closeAdd();
         refetch?.();
       } else toast.error(res?.message || "Create failed!");
@@ -231,9 +508,17 @@ const IntransiteProductTable = () => {
   // ✅ update
   const handleUpdate = async () => {
     if (!currentItem?.Id) return toast.error("Invalid item");
-    if (!currentItem?.receivedId) return toast.error("Please select a product");
+    if (!currentItem?.receivedId && !currentItem?.productId)
+      return toast.error("Please select a product");
     if (!currentItem.quantity || Number(currentItem.quantity) <= 0)
       return toast.error("Please enter valid quantity");
+
+    const variantsPayload = getNormalizedVariantsPayload(
+      currentItem?.variantRows,
+    );
+    if (hasDuplicateVariantCombination(variantsPayload)) {
+      return toast.error("Duplicate size and color combination found");
+    }
 
     try {
       const payload = {
@@ -243,7 +528,9 @@ const IntransiteProductTable = () => {
         warehouseId: Number(currentItem.warehouseId),
         date: currentItem.date,
         quantity: Number(currentItem.quantity),
-        receivedId: Number(currentItem.receivedId),
+        variants: variantsPayload,
+        receivedId: Number(currentItem.receivedId || currentItem.productId),
+        productId: Number(currentItem.productId || currentItem.receivedId),
         userId: userId,
         actorRole: role,
       };
@@ -272,7 +559,8 @@ const IntransiteProductTable = () => {
         note: currentItem.note,
         status: currentItem.status,
         quantity: Number(currentItem.quantity || 0),
-        receivedId: Number(currentItem.receivedId),
+        receivedId: Number(currentItem.receivedId || currentItem.productId),
+        productId: Number(currentItem.productId || currentItem.receivedId),
         userId: userId,
         actorRole: role,
       };
@@ -554,6 +842,9 @@ const IntransiteProductTable = () => {
                 Quantity
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Variants
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Purchase Price
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -569,14 +860,17 @@ const IntransiteProductTable = () => {
           </thead>
 
           <tbody className="divide-y divide-slate-200 bg-white">
-            {rows.map((rp) => (
-              <motion.tr
-                key={rp.Id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-                className="hover:bg-slate-50"
-              >
+            {rows.map((rp) => {
+              const variantDisplayRows = getVariantDisplayRows(rp);
+
+              return (
+                <motion.tr
+                  key={rp.Id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className="hover:bg-slate-50"
+                >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                   {rp.date}
                 </td>
@@ -591,6 +885,37 @@ const IntransiteProductTable = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.quantity || 0).toFixed(2)}
+                </td>
+                <td className="px-6 py-4 min-w-[260px]">
+                  {variantDisplayRows.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {variantDisplayRows.map((variant, index) => (
+                        <div
+                          key={`${rp.Id}-variant-${index}`}
+                          className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-3 py-2 shadow-sm"
+                        >
+                          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
+                            <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">
+                              {variant.size || "N/A"}
+                            </span>
+                            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-700">
+                              {variant.color || "N/A"}
+                            </span>
+                          </div>
+                          <div className="mt-2 text-[11px] font-medium text-slate-500">
+                            Qty{" "}
+                            <span className="font-bold text-slate-900">
+                              {Number(variant.quantity || 0).toFixed(0)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center rounded-full border border-dashed border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-400">
+                      No variants
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.purchase_price || 0).toFixed(2)}
@@ -690,13 +1015,14 @@ const IntransiteProductTable = () => {
                     </div>
                   </div>
                 )}
-              </motion.tr>
-            ))}
+                </motion.tr>
+              );
+            })}
 
             {!isLoading && rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={10}
                   className="px-6 py-10 text-center text-sm text-slate-500"
                 >
                   No data found
@@ -749,9 +1075,10 @@ const IntransiteProductTable = () => {
 
       {/* Edit Modal */}
       {isEditOpen && currentItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 p-4 backdrop-blur-sm">
+          <div className="flex min-h-full items-start justify-center py-6 sm:items-center">
           <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
+            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-4xl border border-slate-200 max-h-[90vh] overflow-y-auto"
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
@@ -772,7 +1099,10 @@ const IntransiteProductTable = () => {
                 onChange={(selected) =>
                   setCurrentItem((p) => ({
                     ...p,
+                    productId: selected?.value || "",
                     receivedId: selected?.value || "",
+                    variantRows: [createEmptyVariantRow()],
+                    quantity: "",
                   }))
                 }
                 placeholder={receivedLoading ? "Loading..." : "Select Product"}
@@ -782,6 +1112,136 @@ const IntransiteProductTable = () => {
                 styles={selectStyles}
               />
             </div>
+            <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Product Variants
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    Add size, color and quantity combinations
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => addVariantRow("edit")}
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 transition"
+                  disabled={!currentItem?.receivedId}
+                >
+                  <Plus size={14} />
+                  Add Variant
+                </button>
+              </div>
+
+              {normalizeVariantRows(currentItem?.variantRows).map(
+                (row, index) => {
+                  const colorOptions = row.size
+                    ? getVariationColorsForSize(selectedEditProductData, row.size)
+                    : editColorOptions;
+
+                  return (
+                    <div
+                      key={`edit-variant-${index}`}
+                      className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
+                    >
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Size
+                        </label>
+                        <Select
+                          options={editSizeOptions}
+                          value={
+                            editSizeOptions.find(
+                              (option) => option.value === row.size,
+                            ) || null
+                          }
+                          onChange={(selected) =>
+                            updateVariantRow(
+                              "edit",
+                              index,
+                              "size",
+                              selected?.value || "",
+                            )
+                          }
+                          placeholder="Select size..."
+                          isClearable
+                          styles={selectStyles}
+                          className="text-sm font-medium"
+                          isDisabled={
+                            !currentItem?.receivedId ||
+                            editSizeOptions.length === 0
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Color
+                        </label>
+                        <Select
+                          options={colorOptions}
+                          value={
+                            colorOptions.find(
+                              (option) => option.value === row.color,
+                            ) || null
+                          }
+                          onChange={(selected) =>
+                            updateVariantRow(
+                              "edit",
+                              index,
+                              "color",
+                              selected?.value || "",
+                            )
+                          }
+                          placeholder="Select color..."
+                          isClearable
+                          styles={selectStyles}
+                          className="text-sm font-medium"
+                          isDisabled={!row.size || colorOptions.length === 0}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Quantity
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={row.quantity}
+                          onChange={(e) =>
+                            updateVariantRow(
+                              "edit",
+                              index,
+                              "quantity",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeVariantRow("edit", index)}
+                        className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
+                        disabled={
+                          normalizeVariantRows(currentItem?.variantRows)
+                            .length === 1
+                        }
+                      >
+                        <span className="mx-auto block text-base leading-none">
+                          x
+                        </span>
+                      </button>
+                    </div>
+                  );
+                },
+              )}
+            </div>
+
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Date</label>
               <input
@@ -855,11 +1315,8 @@ const IntransiteProductTable = () => {
                 type="number"
                 step="0.01"
                 value={currentItem.quantity ?? ""}
-                onChange={(e) =>
-                  setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                readOnly
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-slate-50 outline-none"
               />
             </div>
 
@@ -912,14 +1369,16 @@ const IntransiteProductTable = () => {
               </button>
             </div>
           </motion.div>
+          </div>
         </div>
       )}
 
       {/* Note / Delete Request Modal */}
       {isEditOpen1 && currentItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 p-4 backdrop-blur-sm">
+          <div className="flex min-h-full items-start justify-center py-6 sm:items-center">
           <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
+            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200 max-h-[90vh] overflow-y-auto"
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
@@ -955,165 +1414,295 @@ const IntransiteProductTable = () => {
               </button>
             </div>
           </motion.div>
+          </div>
         </div>
       )}
 
-      {/* Add Modal */}
-      {isAddOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200"
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">
-              Add Product
-            </h2>
+      <Modal
+        isOpen={isAddOpen}
+        onClose={closeAdd}
+        title="Add New Purchase"
+        maxWidth="max-w-2xl"
+      >
+        <form
+          onSubmit={handleCreate}
+          className="space-y-4 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar"
+        >
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              Select Product
+            </label>
+            <Select
+              options={receivedDropdownOptions}
+              value={
+                receivedDropdownOptions.find(
+                  (o) => o.value === String(createForm.receivedId),
+                ) || null
+              }
+              onChange={(selected) =>
+                setCreateForm((prev) => ({
+                  ...prev,
+                  productId: selected?.value || "",
+                  receivedId: selected?.value || "",
+                  variantRows: [createEmptyVariantRow()],
+                  quantity: "",
+                }))
+              }
+              placeholder="Search product..."
+              isClearable
+              styles={selectStyles}
+              className="text-sm text-black font-medium"
+              isDisabled={receivedLoading}
+            />
+          </div>
 
-            <form onSubmit={handleCreate}>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Product</label>
-                <Select
-                  options={receivedDropdownOptions}
-                  value={
-                    receivedDropdownOptions.find(
-                      (o) => o.value === String(createForm.receivedId),
-                    ) || null
-                  }
-                  onChange={(selected) =>
-                    setCreateForm((p) => ({
-                      ...p,
-                      receivedId: selected?.value || "",
-                    }))
-                  }
-                  placeholder={
-                    receivedLoading ? "Loading..." : "Select Product"
-                  }
-                  isClearable
-                  className="text-black"
-                  isDisabled={receivedLoading}
-                  styles={selectStyles}
-                />
+          <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Product Variants
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Add size, color and quantity combinations
+                </p>
               </div>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Date</label>
-                <input
-                  type="date"
-                  value={createForm?.date || ""}
-                  onChange={(e) =>
-                    setCreateForm((p) => ({ ...p, date: e.target.value }))
-                  }
-                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
+              <button
+                type="button"
+                onClick={() => addVariantRow("create")}
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 transition"
+                disabled={!createForm?.receivedId}
+              >
+                <Plus size={14} />
+                Add Variant
+              </button>
+            </div>
 
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">
-                  Warehouse
-                </label>
-                <select
-                  value={createForm?.warehouseId || ""}
-                  onChange={(e) =>
-                    setCreateForm({
-                      ...createForm,
-                      warehouseId: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
+            {normalizeVariantRows(createForm?.variantRows).map((row, index) => {
+              const colorOptions = row.size
+                ? getVariationColorsForSize(selectedCreateProductData, row.size)
+                : createColorOptions;
+
+              return (
+                <div
+                  key={`create-variant-${index}`}
+                  className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
                 >
-                  <option value="">Select Warehouse</option>
-                  {isLoadingWarehouse ? (
-                    <option disabled>Loading...</option>
-                  ) : (
-                    warehouses?.map((w) => (
-                      <option key={w.Id} value={w.Id}>
-                        {w.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                      Size
+                    </label>
+                    <Select
+                      options={createSizeOptions}
+                      value={
+                        createSizeOptions.find(
+                          (option) => option.value === row.size,
+                        ) || null
+                      }
+                      onChange={(selected) =>
+                        updateVariantRow(
+                          "create",
+                          index,
+                          "size",
+                          selected?.value || "",
+                        )
+                      }
+                      placeholder="Select size..."
+                      isClearable
+                      styles={selectStyles}
+                      className="text-sm text-black font-medium"
+                      isDisabled={
+                        !createForm?.receivedId || createSizeOptions.length === 0
+                      }
+                    />
+                  </div>
 
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Supplier</label>
-                <select
-                  value={createForm?.supplierId || ""}
-                  onChange={(e) =>
-                    setCreateForm({
-                      ...createForm,
-                      supplierId: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Supplier</option>
-                  {isLoadingSupplier ? (
-                    <option disabled>Loading...</option>
-                  ) : (
-                    suppliers?.map((s) => (
-                      <option key={s.Id} value={s.Id}>
-                        {s.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                      Color
+                    </label>
+                    <Select
+                      options={colorOptions}
+                      value={
+                        colorOptions.find(
+                          (option) => option.value === row.color,
+                        ) || null
+                      }
+                      onChange={(selected) =>
+                        updateVariantRow(
+                          "create",
+                          index,
+                          "color",
+                          selected?.value || "",
+                        )
+                      }
+                      placeholder="Select color..."
+                      isClearable
+                      styles={selectStyles}
+                      className="text-sm text-black font-medium"
+                      isDisabled={!row.size || colorOptions.length === 0}
+                    />
+                  </div>
 
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Quantity</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={createForm.quantity}
-                  onChange={(e) =>
-                    setCreateForm((p) => ({ ...p, quantity: e.target.value }))
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                />
-              </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                      Quantity
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={row.quantity}
+                      onChange={(e) =>
+                        updateVariantRow(
+                          "create",
+                          index,
+                          "quantity",
+                          e.target.value,
+                        )
+                      }
+                      className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                      placeholder="0"
+                    />
+                  </div>
 
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Note</label>
-                <textarea
-                  value={createForm?.note || ""}
-                  onChange={(e) =>
-                    setCreateForm({
-                      ...createForm,
-                      note: e.target.value,
-                    })
-                  }
-                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => removeVariantRow("create", index)}
+                    className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
+                    disabled={
+                      normalizeVariantRows(createForm?.variantRows).length === 1
+                    }
+                  >
+                    <span className="mx-auto block text-base leading-none">
+                      x
+                    </span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
 
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                  onClick={closeAdd}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                Purchase Date
+              </label>
+              <input
+                type="date"
+                value={createForm?.date || ""}
+                onChange={(e) =>
+                  setCreateForm((p) => ({ ...p, date: e.target.value }))
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                Warehouse
+              </label>
+              <select
+                value={createForm?.warehouseId || ""}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    warehouseId: e.target.value,
+                  }))
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                required
+              >
+                <option value="">Select Warehouse</option>
+                {isLoadingWarehouse ? (
+                  <option disabled>Loading...</option>
+                ) : (
+                  warehouses?.map((w) => (
+                    <option key={w.Id} value={w.Id}>
+                      {w.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                Supplier
+              </label>
+              <select
+                value={createForm?.supplierId || ""}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    supplierId: e.target.value,
+                  }))
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                required
+              >
+                <option value="">Select Supplier</option>
+                {isLoadingSupplier ? (
+                  <option disabled>Loading...</option>
+                ) : (
+                  suppliers?.map((s) => (
+                    <option key={s.Id} value={s.Id}>
+                      {s.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                Quantity
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={createForm.quantity}
+                readOnly
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-slate-50 outline-none"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              Note
+            </label>
+            <textarea
+              value={createForm?.note || ""}
+              onChange={(e) =>
+                setCreateForm((prev) => ({
+                  ...prev,
+                  note: e.target.value,
+                }))
+              }
+              className="w-full min-h-[100px] border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition resize-none"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+            <button
+              type="button"
+              className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition active:scale-95"
+              onClick={closeAdd}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-100 active:scale-95"
+            >
+              Save
+            </button>
+          </div>
+        </form>
+      </Modal>
     </motion.div>
   );
 };

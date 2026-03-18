@@ -8,6 +8,29 @@ import { useGetAllInventoryOverviewQuery } from "../../features/inventoryOvervie
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
 
+const getVariantDisplayRows = (record) => {
+  if (Array.isArray(record?.variants)) {
+    return record.variants.filter(
+      (item) => item && (item.size || item.color || item.quantity),
+    );
+  }
+
+  if (typeof record?.variants === "string") {
+    try {
+      const parsed = JSON.parse(record.variants);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(
+          (item) => item && (item.size || item.color || item.quantity),
+        );
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
+
 const InventoryOverviewTable = () => {
   const { language } = useLayout();
   const t = translations[language] || translations.EN;
@@ -181,36 +204,86 @@ const InventoryOverviewTable = () => {
               <tr>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.last_updated || "Last Updated"}</th>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.item_detail || "Item Detail"}</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.variants || "Variants"}</th>
                 <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.in_hand_qty || "In Hand Quantity"}</th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-slate-100">
-              {rows.map((rp) => (
-                <motion.tr
-                  key={rp.Id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="hover:bg-indigo-50/30 transition-colors group"
-                >
-                  <td className="px-6 py-5 whitespace-nowrap">
-                    <div className="flex items-center gap-2 text-sm font-medium text-slate-500 group-hover:text-indigo-600">
-                      <Calendar size={14} className="opacity-40" />
-                      {rp.createdAt ? new Date(rp.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : "—"}
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 whitespace-nowrap">
-                    <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
-                      {resolveProductName(rp)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 whitespace-nowrap text-center">
-                    <span className="inline-flex items-center px-4 py-1.5 rounded-2xl text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm shadow-indigo-50 tabular-nums">
-                      {Number(rp.quantity || 0).toLocaleString()}
-                    </span>
-                  </td>
-                </motion.tr>
-              ))}
+              {rows.map((rp) => {
+                const variantDisplayRows = getVariantDisplayRows(rp);
+
+                return (
+                  <motion.tr
+                    key={rp.Id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="hover:bg-indigo-50/30 transition-colors group"
+                  >
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className="flex items-center gap-2 text-sm font-medium text-slate-500 group-hover:text-indigo-600">
+                        <Calendar size={14} className="opacity-40" />
+                        {rp.createdAt
+                          ? new Date(rp.createdAt).toLocaleDateString(undefined, {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "—"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className="flex flex-col gap-2">
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
+                          {resolveProductName(rp)}
+                        </div>
+                        <div className="inline-flex w-fit items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                          {t.in_hand_qty || "In Hand Quantity"}:{" "}
+                          <span className="ml-1 font-black text-slate-800">
+                            {Number(rp.quantity || 0).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 min-w-[260px]">
+                      {variantDisplayRows.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {variantDisplayRows.map((variant, index) => (
+                            <div
+                              key={`${rp.Id}-variant-${index}`}
+                              className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-3 py-2 shadow-sm"
+                            >
+                              <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
+                                <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">
+                                  {variant.size || "N/A"}
+                                </span>
+                                <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-700">
+                                  {variant.color || "N/A"}
+                                </span>
+                              </div>
+                              <div className="mt-2 text-[11px] font-medium text-slate-500">
+                                Qty{" "}
+                                <span className="font-bold text-slate-900">
+                                  {Number(variant.quantity || 0).toFixed(0)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center rounded-full border border-dashed border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-400">
+                          No variants
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-5 whitespace-nowrap text-center">
+                      <span className="inline-flex items-center px-4 py-1.5 rounded-2xl text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm shadow-indigo-50 tabular-nums">
+                        {Number(rp.quantity || 0).toLocaleString()}
+                      </span>
+                    </td>
+                  </motion.tr>
+                );
+              })}
             </tbody>
           </table>
 

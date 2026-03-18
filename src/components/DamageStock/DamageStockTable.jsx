@@ -14,6 +14,29 @@ import {
   useUpdateDamageStockMutation,
 } from "../../features/damageStock/damageStock";
 
+const getVariantDisplayRows = (record) => {
+  if (Array.isArray(record?.variants)) {
+    return record.variants.filter(
+      (item) => item && (item.size || item.color || item.quantity),
+    );
+  }
+
+  if (typeof record?.variants === "string") {
+    try {
+      const parsed = JSON.parse(record.variants);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(
+          (item) => item && (item.size || item.color || item.quantity),
+        );
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
+
 const DamageStockTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isEditOpen1, setIsEditOpen1] = useState(false);
@@ -527,6 +550,9 @@ const DamageStockTable = () => {
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Quantity
               </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Variants
+              </th>
 
               {/* <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Status
@@ -538,14 +564,17 @@ const DamageStockTable = () => {
           </thead>
 
           <tbody className="divide-y divide-slate-200 bg-white">
-            {rows.map((rp) => (
-              <motion.tr
-                key={rp.Id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-                className="hover:bg-slate-50"
-              >
+            {rows.map((rp) => {
+              const variantDisplayRows = getVariantDisplayRows(rp);
+
+              return (
+                <motion.tr
+                  key={rp.Id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className="hover:bg-slate-50"
+                >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
 
                   {rp.createdAt
@@ -557,6 +586,37 @@ const DamageStockTable = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.quantity || 0)}
+                </td>
+                <td className="px-6 py-4 min-w-[260px]">
+                  {variantDisplayRows.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {variantDisplayRows.map((variant, index) => (
+                        <div
+                          key={`${rp.Id}-variant-${index}`}
+                          className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-3 py-2 shadow-sm"
+                        >
+                          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
+                            <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">
+                              {variant.size || "N/A"}
+                            </span>
+                            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-700">
+                              {variant.color || "N/A"}
+                            </span>
+                          </div>
+                          <div className="mt-2 text-[11px] font-medium text-slate-500">
+                            Qty{" "}
+                            <span className="font-bold text-slate-900">
+                              {Number(variant.quantity || 0).toFixed(0)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center rounded-full border border-dashed border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-400">
+                      No variants
+                    </div>
+                  )}
                 </td>
                 {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
@@ -641,13 +701,14 @@ const DamageStockTable = () => {
                     </div>
                   </div>
                 )}
-              </motion.tr>
-            ))}
+                </motion.tr>
+              );
+            })}
 
             {!isLoading && rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={5}
                   className="px-6 py-8 text-center text-sm text-slate-600"
                 >
                   No data found

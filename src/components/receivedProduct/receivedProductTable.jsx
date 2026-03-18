@@ -134,6 +134,29 @@ const getInitialVariantRowsFromRecord = (record) => {
   return [createEmptyVariantRow()];
 };
 
+const getVariantDisplayRows = (record) => {
+  if (Array.isArray(record?.variants)) {
+    return record.variants.filter(
+      (item) => item && (item.size || item.color || item.quantity),
+    );
+  }
+
+  if (typeof record?.variants === "string") {
+    try {
+      const parsed = JSON.parse(record.variants);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(
+          (item) => item && (item.size || item.color || item.quantity),
+        );
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
+
 const getVariationColorsForSize = (product, size) => {
   if (!size || !Array.isArray(product?.variations)) return [];
 
@@ -981,6 +1004,9 @@ const ReceivedProductTable = () => {
                   {t.product_details || "Product Details"}
                 </th>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  {t.variants || "Variants"}
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.financials}
                 </th>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
@@ -993,84 +1019,121 @@ const ReceivedProductTable = () => {
             </thead>
 
             <tbody className="divide-y divide-slate-100 bg-white">
-              {rows.map((rp) => (
-                <motion.tr
-                  key={rp.Id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                  className="hover:bg-slate-50 group"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-slate-900">
-                      {rp.date}
-                    </div>
-                  </td>
+              {rows.map((rp) => {
+                const variantDisplayRows = getVariantDisplayRows(rp);
 
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase tracking-tighter">
-                      {rp?.warehouse?.name || t.no_warehouse || "No Warehouse"}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-tighter">
-                      {rp?.supplier?.name || t.no_supplier || "No Supplier"}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex flex-col">
-                      <div className="text-sm font-bold text-slate-900">
-                        {resolveProductName(rp)}
+                return (
+                  <motion.tr
+                    key={rp.Id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                    className="hover:bg-slate-50 group"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-slate-900">
+                        {rp.date}
                       </div>
-                      <div className="text-xs text-slate-500">
-                        {t.qty_label || "Qty"}:{" "}
-                        {Number(rp.quantity || 0).toFixed(0)}
-                      </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex flex-col gap-1">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                        {t.total_buy_label || "Total Buy"}:{" "}
-                        <span className="text-slate-900 border-b border-dotted border-slate-300">
-                          ৳
-                          {Number(
-                            (rp.purchase_price || 0) * (rp.quantity || 0),
-                          ).toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                        {t.total_sell_label || "Total Sell"}:{" "}
-                        <span className="text-emerald-600">
-                          ৳
-                          {Number(
-                            (rp.sale_price || 0) * (rp.quantity || 0),
-                          ).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase tracking-tighter">
+                        {rp?.warehouse?.name ||
+                          t.no_warehouse ||
+                          "No Warehouse"}
+                      </span>
+                    </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${
-                        rp.status === "Approved"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm shadow-emerald-100"
-                          : rp.status === "Active"
-                            ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm shadow-blue-100"
-                            : "bg-amber-50 text-amber-700 border-amber-200 shadow-sm shadow-amber-100"
-                      }`}
-                    >
-                      {rp.status}
-                    </span>
-                  </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-tighter">
+                        {rp?.supplier?.name || t.no_supplier || "No Supplier"}
+                      </span>
+                    </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {/* <button
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-col">
+                        <div className="text-sm font-bold text-slate-900">
+                          {resolveProductName(rp)}
+                        </div>
+                        <div className="mt-1 inline-flex w-fit items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                          {t.qty_label || "Qty"}:{" "}
+                          {Number(rp.quantity || 0).toFixed(0)}
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 min-w-[260px]">
+                      {variantDisplayRows.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {variantDisplayRows.map((variant, index) => (
+                            <div
+                              key={`${rp.Id}-variant-${index}`}
+                              className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-3 py-2 shadow-sm"
+                            >
+                              <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
+                                <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">
+                                  {variant.size || "N/A"}
+                                </span>
+                                <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-700">
+                                  {variant.color || "N/A"}
+                                </span>
+                              </div>
+                              <div className="mt-2 text-[11px] font-medium text-slate-500">
+                                Qty{" "}
+                                <span className="text-slate-900 font-bold">
+                                  {Number(variant.quantity || 0).toFixed(0)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center rounded-full border border-dashed border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-400">
+                          No variants
+                        </div>
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-col gap-1">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                          {t.total_buy_label || "Total Buy"}:{" "}
+                          <span className="text-slate-900 border-b border-dotted border-slate-300">
+                            ৳
+                            {Number(
+                              (rp.purchase_price || 0) * (rp.quantity || 0),
+                            ).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                          {t.total_sell_label || "Total Sell"}:{" "}
+                          <span className="text-emerald-600">
+                            ৳
+                            {Number(
+                              (rp.sale_price || 0) * (rp.quantity || 0),
+                            ).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${
+                          rp.status === "Approved"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm shadow-emerald-100"
+                            : rp.status === "Active"
+                              ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm shadow-blue-100"
+                              : "bg-amber-50 text-amber-700 border-amber-200 shadow-sm shadow-amber-100"
+                        }`}
+                      >
+                        {rp.status}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {/* <button
                         className="relative h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition shadow-sm"
                         title="View Note"
                         type="button"
@@ -1085,67 +1148,68 @@ const ReceivedProductTable = () => {
                         )}
                       </button> */}
 
-                      {rp.note ? (
-                        <div className="relative">
+                        {rp.note ? (
+                          <div className="relative">
+                            <button
+                              className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                              title={rp.note}
+                              type="button"
+                              onClick={() => handleNoteClick(rp.note)}
+                            >
+                              <Notebook size={18} className="text-slate-700" />
+                            </button>
+
+                            <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                              1
+                            </span>
+                          </div>
+                        ) : (
                           <button
-                            className="relative h-10 w-10 rounded-md flex items-center justify-center"
-                            title={rp.note}
+                            className="h-10 w-10 rounded-md flex items-center justify-center cursor-default"
+                            title={t.no_note_available || "No note available"}
                             type="button"
-                            onClick={() => handleNoteClick(rp.note)}
                           >
-                            <Notebook size={18} className="text-slate-700" />
+                            <Notebook size={18} className="text-slate-300" />
                           </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleEditClick(rp)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm"
+                          title={t.edit_record || "Edit"}
+                        >
+                          <Edit size={16} />
+                        </button>
 
-                          <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
-                            1
-                          </span>
-                        </div>
-                      ) : (
-                        <button
-                          className="h-10 w-10 rounded-md flex items-center justify-center cursor-default"
-                          title={t.no_note_available || "No note available"}
-                          type="button"
-                        >
-                          <Notebook size={18} className="text-slate-300" />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleEditClick(rp)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm"
-                        title={t.edit_record || "Edit"}
-                      >
-                        <Edit size={16} />
-                      </button>
-
-                      {role === "superAdmin" || role === "admin" ? (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteProduct(rp.Id)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition shadow-sm"
-                          title={t.delete_record || "Delete"}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleEditClick1(rp)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-amber-600 hover:border-amber-200 hover:bg-amber-50 transition shadow-sm"
-                          title={t.request_delete || "Request Delete"}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
+                        {role === "superAdmin" || role === "admin" ? (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProduct(rp.Id)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition shadow-sm"
+                            title={t.delete_record || "Delete"}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleEditClick1(rp)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-amber-600 hover:border-amber-200 hover:bg-amber-50 transition shadow-sm"
+                            title={t.request_delete || "Request Delete"}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </motion.tr>
+                );
+              })}
 
               {!isLoading && rows.length === 0 && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-6 py-20 text-center text-sm text-slate-400 italic"
                   >
                     {t.no_purchase_records}
