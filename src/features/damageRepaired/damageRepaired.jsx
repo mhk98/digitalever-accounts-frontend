@@ -12,6 +12,7 @@ export const damageRepairedApi = baseApi.injectEndpoints({
         { type: "DamageRepaired", id: "LIST" },
         { type: "DamageProduct", id: "LIST" }, // ✅ receive stock affected
         { type: "DamageStock", id: "LIST" }, // ✅ receive stock affected
+        { type: "InventoryOverview", id: "LIST" }, // ✅ receive stock affected
       ],
     }),
 
@@ -26,6 +27,7 @@ export const damageRepairedApi = baseApi.injectEndpoints({
 
         { type: "DamageProduct", id: "LIST" }, // ✅ stock return/update
         { type: "DamageStock", id: "LIST" }, // ✅ stock return/update
+        { type: "InventoryOverview", id: "LIST" }, // ✅ stock return/update
       ],
     }),
 
@@ -41,6 +43,7 @@ export const damageRepairedApi = baseApi.injectEndpoints({
 
         { type: "DamageProduct", id: "LIST" }, // ✅ if update changes qty/status
         { type: "DamageStock", id: "LIST" }, // ✅ if update changes qty/status
+        { type: "InventoryOverview", id: "LIST" }, // ✅ if update changes qty/status
       ],
     }),
 
@@ -59,12 +62,12 @@ export const damageRepairedApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-            { type: "DamageRepaired", id: "LIST" },
-            ...result.data.map((r) => ({
-              type: "DamageRepaired",
-              id: r.Id,
-            })),
-          ]
+              { type: "DamageRepaired", id: "LIST" },
+              ...result.data.map((r) => ({
+                type: "DamageRepaired",
+                id: r.Id,
+              })),
+            ]
           : [{ type: "DamageRepaired", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),

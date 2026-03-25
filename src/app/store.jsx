@@ -140,6 +140,8 @@ import { manufactureApi } from "../features/manufacture/manufacture";
 import { itemApi } from "../features/item/item";
 import { mixerApi } from "../features/mixer/mixer";
 import { itemMasterApi } from "../features/manufactureStock/manufactureStock";
+import { damageRepairingStockApi } from "../features/damageRepairingStock/damageRepairingStock";
+import { employeeListApi } from "../features/employeeList/employeeList";
 
 // ✅ 1) Collect all apis once
 const apis = [
@@ -152,6 +154,7 @@ const apis = [
   purchaseReturnProductApi,
   damageProductApi,
   damageStockApi,
+  damageRepairingStockApi,
   confirmOrderApi,
   assetsPurchaseApi,
   manufactureApi,
@@ -176,6 +179,7 @@ const apis = [
   payableApi,
   overviewApi,
   employeeApi,
+  employeeListApi,
   notificationApi,
   salaryApi,
   logoApi,
@@ -192,11 +196,21 @@ const reducer = Object.fromEntries(
 
 // ✅ 3) Unique middleware only (no duplicates)
 const apiMiddlewares = [...new Set(apis.map((api) => api.middleware))];
+const ignoredApiPaths = apis.map((api) => api.reducerPath);
 
 const store = configureStore({
   reducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(apiMiddlewares, errorMiddleware),
+    getDefaultMiddleware({
+      immutableCheck: {
+        ignoredPaths: ignoredApiPaths,
+        warnAfter: 128,
+      },
+      serializableCheck: {
+        ignoredPaths: ignoredApiPaths,
+        warnAfter: 128,
+      },
+    }).concat(apiMiddlewares, errorMiddleware),
 });
 
 export default store;

@@ -55,6 +55,8 @@ import ItemsPage from "./pages/ItemsPage";
 import ManufactureStockPage from "./pages/ManufactureStockPage";
 import MixerPage from "./pages/MixerPage";
 import StockAdjustmentPage from "./pages/StockAdjustmentPage";
+import DamageRepairingStockPage from "./pages/DamageRepairingStockPage";
+import EmployeeListPage from "./pages/EmployeeListPage";
 
 function App() {
   return (
@@ -77,6 +79,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <OverviewPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/employee-list"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <EmployeeListPage />
                   </SidebarLayout>
                 </RequireAuth>
               }
@@ -247,6 +259,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <DamageStockPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/damage-repairing-stock"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <DamageRepairingStockPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

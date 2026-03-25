@@ -72,6 +72,15 @@ const SIDEBAR_ITEMS = [
   },
 
   {
+    name: "Employee List",
+    key: "employee_list",
+    icon: UserCog,
+    color: "#22c55e",
+    href: "/employee-list",
+    roles: ["superAdmin", "admin", "accountant"],
+  },
+
+  {
     name: "Payroll",
     key: "payroll",
     icon: UserCog,
@@ -251,6 +260,13 @@ const SIDEBAR_ITEMS = [
         key: "damage_product",
         icon: TriangleAlert,
         href: "/damage-product",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Damage Repairing Stock",
+        key: "damage_repairing_stock",
+        icon: Wrench,
+        href: "/damage-repairing-stock",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
@@ -545,11 +561,7 @@ const Sidebar = () => {
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
                   <img
-                    src={
-                      logo
-                        ? ` https://apikafela.digitalever.com.bd/${logo}`
-                        : ""
-                    }
+                    src={logo ? ` http://localhost:5000/${logo}` : ""}
                     alt="Logo"
                     className="h-full w-full object-cover"
                   />

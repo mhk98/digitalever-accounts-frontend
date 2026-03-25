@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const baseApi = createApi({
   reducerPath: "baseApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
+    baseUrl: " http://localhost:5000/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -35,6 +35,8 @@ export const baseApi = createApi({
     "Manufacture",
     "ItemMaster",
     "StockAdjustment",
+    "DamageRepairingStock",
+    "EmployeeList",
   ],
 
   endpoints: () => ({}),

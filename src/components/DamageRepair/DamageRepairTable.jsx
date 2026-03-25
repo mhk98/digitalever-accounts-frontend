@@ -14,6 +14,7 @@ import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supp
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 import { useGetAllDamageStockWithoutQueryQuery } from "../../features/damageStock/damageStock";
 import { useGetSingleProductByIdQuery } from "../../features/product/product";
+import Modal from "../common/Modal";
 
 const initialCreateForm = {
   warehouseId: "",
@@ -248,13 +249,9 @@ const DamageRepairTable = () => {
   );
 
   const selectedCreateProductId =
-    selectedCreateDamageStock?.productId ||
-    createForm?.productId ||
-    undefined;
+    selectedCreateDamageStock?.productId || createForm?.productId || undefined;
   const selectedEditProductId =
-    selectedEditDamageStock?.productId ||
-    currentItem?.productId ||
-    undefined;
+    selectedEditDamageStock?.productId || currentItem?.productId || undefined;
 
   const { data: selectedCreateProductRes } = useGetSingleProductByIdQuery(
     selectedCreateProductId,
@@ -481,7 +478,9 @@ const DamageRepairTable = () => {
     if (!createForm.quantity || Number(createForm.quantity) <= 0)
       return toast.error("Please enter valid quantity");
 
-    const variantsPayload = getNormalizedVariantsPayload(createForm.variantRows);
+    const variantsPayload = getNormalizedVariantsPayload(
+      createForm.variantRows,
+    );
     if (hasDuplicateVariantCombination(variantsPayload)) {
       return toast.error("Duplicate size and color combination found");
     }
@@ -875,140 +874,140 @@ const DamageRepairTable = () => {
                   transition={{ duration: 0.2 }}
                   className="hover:bg-slate-50"
                 >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.date}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.updatedAt
-                    ? new Date(rp.updatedAt).toLocaleDateString()
-                    : "-"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {resolveProductName(rp)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp?.supplier?.name || "-"}
-                </td>{" "}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp?.warehouse?.name || "-"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.quantity || 0)}
-                </td>
-                <td className="px-6 py-4 min-w-[260px]">
-                  {variantDisplayRows.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {variantDisplayRows.map((variant, index) => (
-                        <div
-                          key={`${rp.Id}-variant-${index}`}
-                          className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-3 py-2 shadow-sm"
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                    {rp.date}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                    {rp.updatedAt
+                      ? new Date(rp.updatedAt).toLocaleDateString()
+                      : "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                    {resolveProductName(rp)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp?.supplier?.name || "-"}
+                  </td>{" "}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp?.warehouse?.name || "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {Number(rp.quantity || 0)}
+                  </td>
+                  <td className="px-6 py-4 min-w-[260px]">
+                    {variantDisplayRows.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {variantDisplayRows.map((variant, index) => (
+                          <div
+                            key={`${rp.Id}-variant-${index}`}
+                            className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-3 py-2 shadow-sm"
+                          >
+                            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
+                              <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">
+                                {variant.size || "N/A"}
+                              </span>
+                              <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-700">
+                                {variant.color || "N/A"}
+                              </span>
+                            </div>
+                            <div className="mt-2 text-[11px] font-medium text-slate-500">
+                              Qty{" "}
+                              <span className="font-bold text-slate-900">
+                                {Number(variant.quantity || 0).toFixed(0)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center rounded-full border border-dashed border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-400">
+                        No variants
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {Number(rp.purchase_price || 0).toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {Number(rp.sale_price || 0).toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp.remarks || ""}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp.status || "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-3">
+                    {rp.note ? (
+                      <div className="relative">
+                        <button
+                          className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                          title={rp.note}
+                          type="button"
+                          onClick={() => handleNoteClick(rp.note)} // Open modal on click
                         >
-                          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
-                            <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">
-                              {variant.size || "N/A"}
-                            </span>
-                            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-700">
-                              {variant.color || "N/A"}
-                            </span>
-                          </div>
-                          <div className="mt-2 text-[11px] font-medium text-slate-500">
-                            Qty{" "}
-                            <span className="font-bold text-slate-900">
-                              {Number(variant.quantity || 0).toFixed(0)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="inline-flex items-center rounded-full border border-dashed border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-400">
-                      No variants
-                    </div>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.purchase_price || 0).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.sale_price || 0).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.remarks || ""}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp.status || "-"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-3">
-                  {rp.note ? (
-                    <div className="relative">
+                          <Notebook size={18} className="text-slate-700" />
+                        </button>
+
+                        <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                          {rp.note ? 1 : null}
+                        </span>
+                      </div>
+                    ) : (
                       <button
-                        className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                        className="h-10 w-10 rounded-md flex items-center justify-center"
                         title={rp.note}
                         type="button"
-                        onClick={() => handleNoteClick(rp.note)} // Open modal on click
                       >
                         <Notebook size={18} className="text-slate-700" />
                       </button>
+                    )}
 
-                      <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
-                        {rp.note ? 1 : null}
-                      </span>
-                    </div>
-                  ) : (
                     <button
-                      className="h-10 w-10 rounded-md flex items-center justify-center"
-                      title={rp.note}
-                      type="button"
+                      onClick={() => openEdit(rp)}
+                      className="text-indigo-600 hover:text-indigo-700"
                     >
-                      <Notebook size={18} className="text-slate-700" />
+                      <Edit size={18} />
                     </button>
-                  )}
 
-                  <button
-                    onClick={() => openEdit(rp)}
-                    className="text-indigo-600 hover:text-indigo-700"
-                  >
-                    <Edit size={18} />
-                  </button>
+                    {role === "superAdmin" || role === "admin" ? (
+                      <button
+                        onClick={() => handleDelete(rp.Id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => openEdit1(rp)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </td>
+                  {/* ✅ Note Modal (Popup) */}
+                  {isNoteModalOpen && (
+                    <div className="fixed inset-0 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
+                        <h2 className="text-xl font-semibold text-slate-900">
+                          Note
+                        </h2>
+                        <p className="mt-4 text-sm text-slate-700">
+                          {noteContent}
+                        </p>
 
-                  {role === "superAdmin" || role === "admin" ? (
-                    <button
-                      onClick={() => handleDelete(rp.Id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => openEdit1(rp)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
-                </td>
-                {/* ✅ Note Modal (Popup) */}
-                {isNoteModalOpen && (
-                  <div className="fixed inset-0 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
-                      <h2 className="text-xl font-semibold text-slate-900">
-                        Note
-                      </h2>
-                      <p className="mt-4 text-sm text-slate-700">
-                        {noteContent}
-                      </p>
-
-                      <div className="mt-6 flex justify-end gap-2">
-                        <button
-                          onClick={handleNoteModalClose}
-                          className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                        >
-                          Close
-                        </button>
+                        <div className="mt-6 flex justify-end gap-2">
+                          <button
+                            onClick={handleNoteModalClose}
+                            className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+                          >
+                            Close
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
                 </motion.tr>
               );
             })}
@@ -1045,10 +1044,11 @@ const DamageRepairTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${active
-                ? "bg-indigo-600 text-white border-indigo-600"
-                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                }`}
+              className={`px-4 py-2 rounded-xl border transition ${
+                active
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              }`}
             >
               {pageNum}
             </button>
@@ -1433,8 +1433,8 @@ const DamageRepairTable = () => {
       )}
 
       {/* Add Modal */}
-      {isAddOpen && (
-        <div className="fixed top-32 inset-0 flex items-center justify-center   p-4">
+      {/* {isAddOpen && (
+        <div className="fixed top-42 inset-0 flex items-center justify-center   p-4">
           <motion.div
             className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
             initial={{ opacity: 0, y: -30 }}
@@ -1446,39 +1446,55 @@ const DamageRepairTable = () => {
             </h2>
 
             <form onSubmit={handleCreate}>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-600 mb-1">
-                  Name
-                </label>
-                <Select
-                  options={receivedDropdownOptions}
-                  value={
-                    receivedDropdownOptions.find(
-                      (o) => o.value === String(createForm.receivedId),
-                    ) || null
-                  }
-                  onChange={(selected) =>
-                    setCreateForm((p) => ({
-                      ...p,
-                      productId: String(
-                        receivedData.find(
-                          (item) => String(item.Id) === String(selected?.value),
-                        )?.productId || "",
-                      ),
-                      receivedId: selected?.value || "",
-                      variantRows: [createEmptyVariantRow()],
-                      quantity: "",
-                    }))
-                  }
-                  placeholder={
-                    receivedLoading ? "Loading..." : "Select Product"
-                  }
-                  isClearable
-                  isDisabled={receivedLoading}
-                  styles={selectStyles}
-                  className="text-black"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="mt-4">
+                  <label className="block text-sm text-slate-600 mb-1">
+                    Name
+                  </label>
+                  <Select
+                    options={receivedDropdownOptions}
+                    value={
+                      receivedDropdownOptions.find(
+                        (o) => o.value === String(createForm.receivedId),
+                      ) || null
+                    }
+                    onChange={(selected) =>
+                      setCreateForm((p) => ({
+                        ...p,
+                        productId: String(
+                          receivedData.find(
+                            (item) =>
+                              String(item.Id) === String(selected?.value),
+                          )?.productId || "",
+                        ),
+                        receivedId: selected?.value || "",
+                        variantRows: [createEmptyVariantRow()],
+                        quantity: "",
+                      }))
+                    }
+                    placeholder={
+                      receivedLoading ? "Loading..." : "Select Product"
+                    }
+                    isClearable
+                    isDisabled={receivedLoading}
+                    styles={selectStyles}
+                    className="text-black"
+                  />
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm text-slate-700">Date</label>
+                  <input
+                    type="date"
+                    value={createForm?.date || ""}
+                    onChange={(e) =>
+                      setCreateForm((p) => ({ ...p, date: e.target.value }))
+                    }
+                    className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  />
+                </div>
               </div>
+
               <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -1568,7 +1584,9 @@ const DamageRepairTable = () => {
                               isClearable
                               styles={selectStyles}
                               className="text-sm font-medium"
-                              isDisabled={!row.size || colorOptions.length === 0}
+                              isDisabled={
+                                !row.size || colorOptions.length === 0
+                              }
                             />
                           </div>
 
@@ -1612,18 +1630,6 @@ const DamageRepairTable = () => {
                     },
                   )}
                 </div>
-              </div>
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Date</label>
-                <input
-                  type="date"
-                  value={createForm?.date || ""}
-                  onChange={(e) =>
-                    setCreateForm((p) => ({ ...p, date: e.target.value }))
-                  }
-                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
               </div>
 
               <div className="mt-4">
@@ -1744,7 +1750,307 @@ const DamageRepairTable = () => {
             </form>
           </motion.div>
         </div>
-      )}
+      )} */}
+
+      <Modal
+        isOpen={isAddOpen}
+        onClose={closeAdd}
+        title="Add Damage Repaired Product"
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={handleCreate}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mt-4">
+              <label className="block text-sm text-slate-600 mb-1">Name</label>
+              <Select
+                options={receivedDropdownOptions}
+                value={
+                  receivedDropdownOptions.find(
+                    (o) => o.value === String(createForm.receivedId),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCreateForm((p) => ({
+                    ...p,
+                    productId: String(
+                      receivedData.find(
+                        (item) => String(item.Id) === String(selected?.value),
+                      )?.productId || "",
+                    ),
+                    receivedId: selected?.value || "",
+                    variantRows: [createEmptyVariantRow()],
+                    quantity: "",
+                  }))
+                }
+                placeholder={receivedLoading ? "Loading..." : "Select Product"}
+                isClearable
+                isDisabled={receivedLoading}
+                styles={selectStyles}
+                className="text-black"
+              />
+            </div>
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Date</label>
+              <input
+                type="date"
+                value={createForm?.date || ""}
+                onChange={(e) =>
+                  setCreateForm((p) => ({ ...p, date: e.target.value }))
+                }
+                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Product Variants
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Add size, color and quantity combinations
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => addVariantRow("create")}
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 transition"
+                disabled={!createForm?.receivedId}
+              >
+                <Plus size={14} />
+                Add Variant
+              </button>
+            </div>
+
+            <div className="mt-3 space-y-3">
+              {normalizeVariantRows(createForm?.variantRows).map(
+                (row, index) => {
+                  const colorOptions = row.size
+                    ? getVariationColorsForSize(
+                        selectedCreateProductData,
+                        row.size,
+                      )
+                    : createColorOptions;
+
+                  return (
+                    <div
+                      key={`create-variant-${index}`}
+                      className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
+                    >
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Size
+                        </label>
+                        <Select
+                          options={createSizeOptions}
+                          value={
+                            createSizeOptions.find(
+                              (option) => option.value === row.size,
+                            ) || null
+                          }
+                          onChange={(selected) =>
+                            updateVariantRow(
+                              "create",
+                              index,
+                              "size",
+                              selected?.value || "",
+                            )
+                          }
+                          placeholder="Select size..."
+                          isClearable
+                          styles={selectStyles}
+                          className="text-sm font-medium"
+                          isDisabled={
+                            !createForm?.receivedId ||
+                            createSizeOptions.length === 0
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Color
+                        </label>
+                        <Select
+                          options={colorOptions}
+                          value={
+                            colorOptions.find(
+                              (option) => option.value === row.color,
+                            ) || null
+                          }
+                          onChange={(selected) =>
+                            updateVariantRow(
+                              "create",
+                              index,
+                              "color",
+                              selected?.value || "",
+                            )
+                          }
+                          placeholder="Select color..."
+                          isClearable
+                          styles={selectStyles}
+                          className="text-sm font-medium"
+                          isDisabled={!row.size || colorOptions.length === 0}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Quantity
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={row.quantity}
+                          onChange={(e) =>
+                            updateVariantRow(
+                              "create",
+                              index,
+                              "quantity",
+                              e.target.value,
+                            )
+                          }
+                          className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeVariantRow("create", index)}
+                        className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
+                        disabled={
+                          normalizeVariantRows(createForm?.variantRows)
+                            .length === 1
+                        }
+                      >
+                        <span className="mx-auto block text-base leading-none">
+                          x
+                        </span>
+                      </button>
+                    </div>
+                  );
+                },
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm text-slate-700">Warehouse</label>
+            <select
+              value={createForm?.warehouseId || ""}
+              onChange={(e) =>
+                setCreateForm({
+                  ...createForm,
+                  warehouseId: e.target.value,
+                })
+              }
+              className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              required
+            >
+              <option value="">Select Warehouse</option>
+              {isLoadingWarehouse ? (
+                <option disabled>Loading...</option>
+              ) : (
+                warehouses?.map((w) => (
+                  <option key={w.Id} value={w.Id}>
+                    {w.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm text-slate-700">Supplier</label>
+            <select
+              value={createForm?.supplierId || ""}
+              onChange={(e) =>
+                setCreateForm({
+                  ...createForm,
+                  supplierId: e.target.value,
+                })
+              }
+              className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              required
+            >
+              <option value="">Select Supplier</option>
+              {isLoadingSupplier ? (
+                <option disabled>Loading...</option>
+              ) : (
+                suppliers?.map((s) => (
+                  <option key={s.Id} value={s.Id}>
+                    {s.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm text-slate-600 mb-1">
+              Quantity
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              value={createForm.quantity}
+              readOnly
+              className="h-11 border bg-slate-50 border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none"
+              required
+            />
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm text-slate-600 mb-1">Remarks</label>
+            <input
+              type="text"
+              value={createForm.remarks}
+              onChange={(e) =>
+                setCreateForm((p) => ({ ...p, remarks: e.target.value }))
+              }
+              className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+            />
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm text-slate-700">Note</label>
+            <textarea
+              value={createForm?.note || ""}
+              onChange={(e) =>
+                setCreateForm({
+                  ...createForm,
+                  note: e.target.value,
+                })
+              }
+              className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
+                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+            />
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <button
+              type="submit"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 h-11 rounded-xl font-semibold"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              className="bg-white hover:bg-slate-50 text-slate-800 px-4 h-11 rounded-xl border border-slate-200 font-semibold"
+              onClick={closeAdd}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
     </motion.div>
   );
 };

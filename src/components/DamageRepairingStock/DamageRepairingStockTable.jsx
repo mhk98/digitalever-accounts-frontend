@@ -8,11 +8,11 @@ import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wi
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
 import {
-  useDeleteDamageStockMutation,
-  useGetAllDamageStockQuery,
-  useInsertDamageStockMutation,
-  useUpdateDamageStockMutation,
-} from "../../features/damageStock/damageStock";
+  useDeleteDamageRepairingStockMutation,
+  useGetAllDamageRepairingStockQuery,
+  useInsertDamageRepairingStockMutation,
+  useUpdateDamageRepairingStockMutation,
+} from "../../features/damageRepairingStock/damageRepairingStock";
 
 const getVariantDisplayRows = (record) => {
   if (Array.isArray(record?.variants)) {
@@ -37,7 +37,7 @@ const getVariantDisplayRows = (record) => {
   return [];
 };
 
-const DamageStockTable = () => {
+const DamageRepairingStockTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isEditOpen1, setIsEditOpen1] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -144,7 +144,7 @@ const DamageStockTable = () => {
   };
 
   const { data, isLoading, isError, error, refetch } =
-    useGetAllDamageStockQuery(queryArgs);
+    useGetAllDamageRepairingStockQuery(queryArgs);
 
   useEffect(() => {
     if (isError) console.error("DamageProduct fetch error:", error);
@@ -207,9 +207,9 @@ const DamageStockTable = () => {
   };
 
   // mutations
-  const [insertDamageStock] = useInsertDamageStockMutation();
-  const [updateDamageStock] = useUpdateDamageStockMutation();
-  const [deleteDamageStock] = useDeleteDamageStockMutation();
+  const [insertDamageRepairingStock] = useInsertDamageRepairingStockMutation();
+  const [updateDamageRepairingStock] = useUpdateDamageRepairingStockMutation();
+  const [deleteDamageRepairingStock] = useDeleteDamageRepairingStockMutation();
 
   // create
   const handleCreate = async (e) => {
@@ -228,7 +228,7 @@ const DamageStockTable = () => {
         date: createForm.date,
       };
 
-      const res = await insertDamageStock(payload).unwrap();
+      const res = await insertDamageRepairingStock(payload).unwrap();
       if (res?.success) {
         toast.success("Created!");
         setCreateForm({ receivedId: "", quantity: "" });
@@ -260,7 +260,7 @@ const DamageStockTable = () => {
         actorRole: role,
       };
 
-      const res = await updateDamageStock({
+      const res = await updateDamageRepairingStock({
         id: currentItem.Id,
         data: payload,
       }).unwrap();
@@ -289,7 +289,7 @@ const DamageStockTable = () => {
         actorRole: role,
       };
 
-      const res = await updateDamageStock({
+      const res = await updateDamageRepairingStock({
         id: currentItem.Id,
         data: payload,
       }).unwrap();
@@ -310,7 +310,7 @@ const DamageStockTable = () => {
     if (!window.confirm("Do you want to delete this item?")) return;
 
     try {
-      const res = await deleteDamageStock(id).unwrap();
+      const res = await deleteDamageRepairingStock(id).unwrap();
       if (res?.success) {
         toast.success("Deleted!");
         refetch?.();
@@ -1134,4 +1134,4 @@ const DamageStockTable = () => {
   );
 };
 
-export default DamageStockTable;
+export default DamageRepairingStockTable;
