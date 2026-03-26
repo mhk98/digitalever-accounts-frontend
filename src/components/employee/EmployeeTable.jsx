@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2, FileText, X, Notebook, Download } from "lucide-react";
+import { Edit, Plus, Trash2, FileText, Notebook, Download } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -17,7 +17,7 @@ import { useGetAllSalaryQuery } from "../../features/salary/salary";
 import Modal from "../common/Modal";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
-
+import { useGetAllEmployeeListWithoutQueryQuery } from "../../features/employeeList/employeeList";
 
 const EmployeeTable = () => {
   const { language } = useLayout();
@@ -257,6 +257,8 @@ const EmployeeTable = () => {
     }
   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
 
+  const { data: employeeList } = useGetAllEmployeeListWithoutQueryQuery();
+
   // ----------------------------
   // Options
   // ----------------------------
@@ -266,6 +268,43 @@ const EmployeeTable = () => {
       label: e.name,
     }));
   }, [employeesAll]);
+
+  const employeeSalaryOptions = useMemo(() => {
+    return (employeeList?.data || []).map((employee) => ({
+      value: employee.name || "",
+      label: employee.name || "",
+      employee_id: employee.employee_id || "",
+      salary: employee.salary ?? employee.basic_salary ?? employee.price ?? "",
+    }));
+  }, [employeeList]);
+
+  const applyEmployeeSalaryDefaults = (prev, selected) => {
+    const next = {
+      ...(prev || {}),
+      name: selected?.value || "",
+      employee_id: selected?.employee_id || "",
+      basic_salary:
+        selected?.salary !== undefined && selected?.salary !== null
+          ? String(selected.salary)
+          : "",
+    };
+
+    const s = calcSalary(next);
+
+    return {
+      ...next,
+      total_salary: s.total_salary.toFixed(2),
+      net_salary: s.net_salary.toFixed(2),
+    };
+  };
+
+  const handleCreateEmployeeSelect = (selected) => {
+    setCreateEmployee((prev) => applyEmployeeSalaryDefaults(prev, selected));
+  };
+
+  const handleCurrentEmployeeSelect = (selected) => {
+    setCurrentEmployee((prev) => applyEmployeeSalaryDefaults(prev, selected));
+  };
 
   // ----------------------------
   // Modal Handlers
@@ -329,6 +368,9 @@ const EmployeeTable = () => {
 
   const handleCreateEmployee = async (e) => {
     e.preventDefault();
+    if (!createEmployee.name?.trim()) return toast.error("Name is required!");
+    if (!createEmployee.employee_id?.toString().trim())
+      return toast.error("Employee Id is required!");
     try {
       const s = calcSalary(createEmployee);
 
@@ -369,6 +411,9 @@ const EmployeeTable = () => {
 
   const handleUpdateEmployee = async () => {
     if (!currentEmployee) return;
+    if (!currentEmployee.name?.trim()) return toast.error("Name is required!");
+    if (!currentEmployee.employee_id?.toString().trim())
+      return toast.error("Employee Id is required!");
     try {
       const s = calcSalary(currentEmployee);
 
@@ -666,7 +711,6 @@ const EmployeeTable = () => {
   //   }
   // };
 
-
   // const printBulkInvoices = () => {
   //   if (!selectedEmployees?.length) return;
 
@@ -920,7 +964,6 @@ const EmployeeTable = () => {
   //   printWindow.document.close();
   // };
 
-
   const printBulkInvoices = () => {
     if (!selectedEmployees?.length) return;
 
@@ -1025,14 +1068,15 @@ const EmployeeTable = () => {
             </tbody>
           </table>
 
-          ${emp?.note
-            ? `
+          ${
+            emp?.note
+              ? `
             <div class="note-box">
               <p class="note-title">Important Note</p>
               <p class="note-text">${escapeHtml(emp?.note)}</p>
             </div>
           `
-            : ""
+              : ""
           }
 
           <div class="signature-section">
@@ -1405,7 +1449,9 @@ const EmployeeTable = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">{t.per_page_label}</label>
+          <label className="text-sm text-slate-600 mb-1">
+            {t.per_page_label}
+          </label>
           <select
             value={itemsPerPage}
             onChange={(e) => {
@@ -1445,10 +1491,19 @@ const EmployeeTable = () => {
               {[
                 { key: "Date", label: t.date },
                 { key: "Employee", label: t.employee || "Employee" },
-                { key: "Employee ID", label: t.employee_id_label || "Employee ID" },
-                { key: "Basic Salary", label: t.basic_salary || "Basic Salary" },
+                {
+                  key: "Employee ID",
+                  label: t.employee_id_label || "Employee ID",
+                },
+                {
+                  key: "Basic Salary",
+                  label: t.basic_salary || "Basic Salary",
+                },
                 { key: "Incentive", label: t.incentive || "Incentive" },
-                { key: "Holiday Days", label: t.holiday_days || "Holiday Days" },
+                {
+                  key: "Holiday Days",
+                  label: t.holiday_days || "Holiday Days",
+                },
                 { key: "Advance", label: t.advance || "Advance" },
                 { key: "Total Salary", label: t.total_salary },
                 { key: "Net Salary", label: t.net_salary },
@@ -1528,12 +1583,13 @@ const EmployeeTable = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${emp.status === "Approved"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : emp.status === "Active"
-                        ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                        : "bg-amber-50 text-amber-700 border-amber-200"
-                      }`}
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                      emp.status === "Approved"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : emp.status === "Active"
+                          ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
                   >
                     {emp.status}
                   </span>
@@ -1600,7 +1656,6 @@ const EmployeeTable = () => {
                     )}
                   </div>
                 </td>
-
               </motion.tr>
             ))}
           </tbody>
@@ -1624,10 +1679,11 @@ const EmployeeTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${active
-                ? "bg-indigo-600 text-white border-indigo-600"
-                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                }`}
+              className={`px-4 py-2 rounded-xl border transition ${
+                active
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              }`}
             >
               {pageNum}
             </button>
@@ -1652,13 +1708,24 @@ const EmployeeTable = () => {
       >
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field
-              label={t.employee_name_label || "Employee Name:"}
-              value={currentEmployee?.name}
-              onChange={(v) =>
-                setCurrentEmployee({ ...currentEmployee, name: v })
-              }
-            />
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                {t.employee_name_label || "Employee Name:"}
+              </label>
+              <Select
+                options={employeeSalaryOptions}
+                value={
+                  employeeSalaryOptions.find(
+                    (option) => option.value === (currentEmployee?.name || ""),
+                  ) || null
+                }
+                onChange={handleCurrentEmployeeSelect}
+                placeholder={t.select_employee || "Select Employee"}
+                isClearable
+                styles={selectStyles}
+                className="w-full"
+              />
+            </div>
 
             <Field
               label={t.employee_id_label + ":" || "Employee Id:"}
@@ -1729,7 +1796,9 @@ const EmployeeTable = () => {
             />
 
             <Field
-              label={t.unapproval_absent_days_label || "Unapproval Absent (days):"}
+              label={
+                t.unapproval_absent_days_label || "Unapproval Absent (days):"
+              }
               type="number"
               value={currentEmployee?.unapproval_absent}
               onChange={(v) => updateCurrentField("unapproval_absent", v)}
@@ -1753,7 +1822,9 @@ const EmployeeTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.remarks}</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              {t.remarks}
+            </label>
             <textarea
               value={currentEmployee?.remarks || ""}
               onChange={(e) =>
@@ -1764,14 +1835,18 @@ const EmployeeTable = () => {
               }
               className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               rows={3}
-              placeholder={t.enter_additional_remarks || "Enter any additional remarks..."}
+              placeholder={
+                t.enter_additional_remarks || "Enter any additional remarks..."
+              }
             />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
             {role === "superAdmin" ? (
               <div className="flex-1">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.status}</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                  {t.status}
+                </label>
                 <select
                   value={currentEmployee?.status || ""}
                   onChange={(e) =>
@@ -1791,7 +1866,9 @@ const EmployeeTable = () => {
               </div>
             ) : (
               <div className="flex-1">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.note}</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                  {t.note}
+                </label>
                 <textarea
                   value={currentEmployee?.note || ""}
                   onChange={(e) =>
@@ -1835,7 +1912,9 @@ const EmployeeTable = () => {
         <div className="space-y-6">
           {role === "superAdmin" ? (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.status}</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                {t.status}
+              </label>
               <select
                 value={currentEmployee?.status || ""}
                 onChange={(e) =>
@@ -1854,7 +1933,9 @@ const EmployeeTable = () => {
             </div>
           ) : (
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.internal_notes || "Internal Note"}</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                {t.internal_notes || "Internal Note"}
+              </label>
               <textarea
                 value={currentEmployee?.note || ""}
                 onChange={(e) =>
@@ -1864,7 +1945,10 @@ const EmployeeTable = () => {
                   })
                 }
                 className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                placeholder={t.explain_why_remove_record || "Brief reason for status change or deletion request..."}
+                placeholder={
+                  t.explain_why_remove_record ||
+                  "Brief reason for status change or deletion request..."
+                }
                 rows={4}
               />
             </div>
@@ -1892,19 +1976,31 @@ const EmployeeTable = () => {
       <Modal
         isOpen={isAddModalOpen}
         onClose={closeAddModal}
-        title={t.employee_salary_calculation_title || "Employee Salary Calculation"}
+        title={
+          t.employee_salary_calculation_title || "Employee Salary Calculation"
+        }
         maxWidth="max-w-4xl"
       >
         <form onSubmit={handleCreateEmployee} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field
-              label={t.employee_name_label + ":" || "Employee Name:"}
-              value={createEmployee.name}
-              onChange={(v) =>
-                setCreateEmployee({ ...createEmployee, name: v })
-              }
-              required
-            />
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                {t.employee_name_label + ":" || "Employee Name:"}
+              </label>
+              <Select
+                options={employeeSalaryOptions}
+                value={
+                  employeeSalaryOptions.find(
+                    (option) => option.value === createEmployee.name,
+                  ) || null
+                }
+                onChange={handleCreateEmployeeSelect}
+                placeholder={t.select_employee || "Select Employee"}
+                isClearable
+                styles={selectStyles}
+                className="w-full"
+              />
+            </div>
 
             <Field
               label="Employee Id:"
@@ -1969,14 +2065,19 @@ const EmployeeTable = () => {
             />
 
             <Field
-              label={t.friday_absent_days_label + ":" || "Friday Absent (days):"}
+              label={
+                t.friday_absent_days_label + ":" || "Friday Absent (days):"
+              }
               type="number"
               value={createEmployee.friday_absent}
               onChange={(v) => updateCreateField("friday_absent", v)}
             />
 
             <Field
-              label={t.unapproval_absent_days_label + ":" || "Unapproval Absent (days):"}
+              label={
+                t.unapproval_absent_days_label + ":" ||
+                "Unapproval Absent (days):"
+              }
               type="number"
               value={createEmployee.unapproval_absent}
               onChange={(v) => updateCreateField("unapproval_absent", v)}
@@ -2000,7 +2101,9 @@ const EmployeeTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t.remarks || "Remarks"}</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+              {t.remarks || "Remarks"}
+            </label>
             <textarea
               value={createEmployee.remarks}
               onChange={(e) =>
@@ -2011,7 +2114,10 @@ const EmployeeTable = () => {
               }
               className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               rows={3}
-              placeholder={t.any_additional_notes || "Any additional notes about this entry..."}
+              placeholder={
+                t.any_additional_notes ||
+                "Any additional notes about this entry..."
+              }
             />
           </div>
 
@@ -2063,15 +2169,21 @@ const EmployeeTable = () => {
           >
             <div className="flex justify-between items-start mb-8">
               <div>
-                <h3 className="text-2xl font-black text-indigo-600 mb-1">Kafela Mart</h3>
-                <p className="text-sm font-bold text-slate-500">Official Salary Statement</p>
-                <p className="text-xs text-slate-400 mt-2">Phone: +880 9647-555333</p>
+                <h3 className="text-2xl font-black text-indigo-600 mb-1">
+                  Kafela Mart
+                </h3>
+                <p className="text-sm font-bold text-slate-500">
+                  Official Salary Statement
+                </p>
+                <p className="text-xs text-slate-400 mt-2">
+                  Phone: +880 9647-555333
+                </p>
               </div>
 
               {/* <div>
                 <img
                   src={logo}
-                  alt="Kafela Mart Logo"
+                  alt=" Logo"
                   className="w-36 h-auto mb-3 object-contain"
                 />
                 <p className="text-sm font-bold text-slate-500">Official Salary Statement</p>
@@ -2079,63 +2191,110 @@ const EmployeeTable = () => {
               </div> */}
 
               <div className="text-right">
-                <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">{t.salary_statement || "INVOICE"}</h3>
-                <p className="text-xs font-bold text-slate-500">Date: {new Date().toLocaleDateString()}</p>
+                <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">
+                  {t.salary_statement || "INVOICE"}
+                </h3>
+                <p className="text-xs font-bold text-slate-500">
+                  Date: {new Date().toLocaleDateString()}
+                </p>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
-                  ID: {invoiceEmployee?.employee_id}-{String(Date.now()).slice(-6)}
+                  ID: {invoiceEmployee?.employee_id}-
+                  {String(Date.now()).slice(-6)}
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-8 mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.employee_name || "Employee Name"}</p>
-                <p className="text-sm font-bold text-slate-900">{invoiceEmployee?.name}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                  {t.employee_name || "Employee Name"}
+                </p>
+                <p className="text-sm font-bold text-slate-900">
+                  {invoiceEmployee?.name}
+                </p>
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.employee_id || "Employee ID"}</p>
-                <p className="text-sm font-bold text-slate-900">{invoiceEmployee?.employee_id}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                  {t.employee_id || "Employee ID"}
+                </p>
+                <p className="text-sm font-bold text-slate-900">
+                  {invoiceEmployee?.employee_id}
+                </p>
               </div>
             </div>
 
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200">
-                  <th className="text-left py-3 text-xs font-black text-slate-500 uppercase tracking-widest">{t.description || "Description"}</th>
-                  <th className="text-right py-3 text-xs font-black text-slate-500 uppercase tracking-widest">{t.amount || "Amount"}</th>
+                  <th className="text-left py-3 text-xs font-black text-slate-500 uppercase tracking-widest">
+                    {t.description || "Description"}
+                  </th>
+                  <th className="text-right py-3 text-xs font-black text-slate-500 uppercase tracking-widest">
+                    {t.amount || "Amount"}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 <tr>
-                  <td className="py-4 font-bold text-slate-700">{t.basic_salary || "Basic Salary"}</td>
-                  <td className="py-4 text-right font-black text-slate-900">{Number(invoiceEmployee?.basic_salary || 0).toLocaleString()}</td>
+                  <td className="py-4 font-bold text-slate-700">
+                    {t.basic_salary || "Basic Salary"}
+                  </td>
+                  <td className="py-4 text-right font-black text-slate-900">
+                    {Number(
+                      invoiceEmployee?.basic_salary || 0,
+                    ).toLocaleString()}
+                  </td>
                 </tr>
                 <tr>
-                  <td className="py-4 font-bold text-slate-700">{t.incentive || "Incentive"}</td>
-                  <td className="py-4 text-right font-black text-slate-900">{Number(invoiceEmployee?.incentive || 0).toLocaleString()}</td>
+                  <td className="py-4 font-bold text-slate-700">
+                    {t.incentive || "Incentive"}
+                  </td>
+                  <td className="py-4 text-right font-black text-slate-900">
+                    {Number(invoiceEmployee?.incentive || 0).toLocaleString()}
+                  </td>
                 </tr>
                 <tr>
-                  <td className="py-4 font-bold text-slate-700">{t.holiday_days || "Holiday Days"}</td>
-                  <td className="py-4 text-right font-black text-slate-900">{Number(invoiceEmployee?.holiday_payment || 0)}</td>
+                  <td className="py-4 font-bold text-slate-700">
+                    {t.holiday_days || "Holiday Days"}
+                  </td>
+                  <td className="py-4 text-right font-black text-slate-900">
+                    {Number(invoiceEmployee?.holiday_payment || 0)}
+                  </td>
                 </tr>
                 <tr>
-                  <td className="py-4 font-bold text-slate-500">{t.advance || "Advance (Deduction)"}</td>
-                  <td className="py-4 text-right font-black text-red-600">-{Number(invoiceEmployee?.advance || 0).toLocaleString()}</td>
+                  <td className="py-4 font-bold text-slate-500">
+                    {t.advance || "Advance (Deduction)"}
+                  </td>
+                  <td className="py-4 text-right font-black text-red-600">
+                    -{Number(invoiceEmployee?.advance || 0).toLocaleString()}
+                  </td>
                 </tr>
                 <tr>
-                  <td className="py-4 font-bold text-slate-700">{t.attendance_penalty || "Attendance Penalty"}</td>
+                  <td className="py-4 font-bold text-slate-700">
+                    {t.attendance_penalty || "Attendance Penalty"}
+                  </td>
                   <td className="py-4 text-right font-medium text-slate-400">
-                    L:{invoiceEmployee?.late} | E:{invoiceEmployee?.early_leave} | A:{invoiceEmployee?.absent}
+                    L:{invoiceEmployee?.late} | E:{invoiceEmployee?.early_leave}{" "}
+                    | A:{invoiceEmployee?.absent}
                   </td>
                 </tr>
                 <tr className="bg-slate-50/50">
-                  <td className="py-4 font-black text-slate-900">{t.total_calculation || "Total Calculation"}</td>
-                  <td className="py-4 text-right font-black text-slate-900 border-t-2 border-slate-900">{Number(invoiceEmployee?.total_salary || 0).toLocaleString()}</td>
+                  <td className="py-4 font-black text-slate-900">
+                    {t.total_calculation || "Total Calculation"}
+                  </td>
+                  <td className="py-4 text-right font-black text-slate-900 border-t-2 border-slate-900">
+                    {Number(
+                      invoiceEmployee?.total_salary || 0,
+                    ).toLocaleString()}
+                  </td>
                 </tr>
                 <tr className="bg-white">
-                  <td className="py-5 px-4 font-black text-black rounded-l-2xl">{t.net_salary_payable || "NET SALARY PAYABLE"}</td>
+                  <td className="py-5 px-4 font-black text-black rounded-l-2xl">
+                    {t.net_salary_payable || "NET SALARY PAYABLE"}
+                  </td>
                   <td className="py-5 px-4 text-right font-black text-black rounded-r-2xl text-xl">
-                    ৳ {Number(invoiceEmployee?.net_salary || 0).toLocaleString()}
+                    ৳{" "}
+                    {Number(invoiceEmployee?.net_salary || 0).toLocaleString()}
                   </td>
                 </tr>
               </tbody>
@@ -2143,19 +2302,31 @@ const EmployeeTable = () => {
 
             {invoiceEmployee?.note && (
               <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-100">
-                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">{t.important_note || "Important Note"}</p>
-                <p className="text-xs font-bold text-amber-800 leading-relaxed">{invoiceEmployee.note}</p>
+                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">
+                  {t.important_note || "Important Note"}
+                </p>
+                <p className="text-xs font-bold text-amber-800 leading-relaxed">
+                  {invoiceEmployee.note}
+                </p>
               </div>
             )}
 
             <div className="mt-16 grid grid-cols-2 gap-20">
               <div className="text-center pt-4 border-t border-slate-200">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.received_by || "Received By"}</p>
-                <p className="text-sm font-bold text-slate-900">{invoiceEmployee?.name}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                  {t.received_by || "Received By"}
+                </p>
+                <p className="text-sm font-bold text-slate-900">
+                  {invoiceEmployee?.name}
+                </p>
               </div>
               <div className="text-center pt-4 border-t border-slate-200">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.authorized_by || "Authorized By"}</p>
-                <p className="text-sm font-bold text-slate-900">Kafela Mart Management</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                  {t.authorized_by || "Authorized By"}
+                </p>
+                <p className="text-sm font-bold text-slate-900">
+                  Kafela Mart Management
+                </p>
               </div>
             </div>
           </div>
@@ -2172,7 +2343,11 @@ const EmployeeTable = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
             <p className="text-sm font-bold text-slate-500">
-              {t.generating_invoices_prefix || "Generating"} <span className="text-indigo-600">{selectedEmployees.length}</span> {t.generating_invoices_suffix || "invoices in current batch"}
+              {t.generating_invoices_prefix || "Generating"}{" "}
+              <span className="text-indigo-600">
+                {selectedEmployees.length}
+              </span>{" "}
+              {t.generating_invoices_suffix || "invoices in current batch"}
             </p>
             <div className="flex gap-3">
               <button
@@ -2200,7 +2375,7 @@ const EmployeeTable = () => {
                 >
                   <div className="flex justify-between items-start mb-6">
                     <div>
-                      <h3 className="text-xl font-black text-indigo-600">Kafela Mart</h3>
+                      <h3 className="text-xl font-black text-indigo-600"></h3>
                       <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Statement of Earnings</p>
                     </div>
 
@@ -2248,8 +2423,9 @@ const EmployeeTable = () => {
               {selectedEmployees.map((emp, idx) => (
                 <div
                   key={emp.Id}
-                  className={`invoice-page bg-white text-slate-900 rounded-3xl p-8 border border-slate-100 shadow-sm ${idx !== selectedEmployees.length - 1 ? "mb-8" : ""
-                    }`}
+                  className={`invoice-page bg-white text-slate-900 rounded-3xl p-8 border border-slate-100 shadow-sm ${
+                    idx !== selectedEmployees.length - 1 ? "mb-8" : ""
+                  }`}
                 >
                   <div className="flex justify-between items-start mb-8">
                     <div>
@@ -2257,7 +2433,8 @@ const EmployeeTable = () => {
                         Kafela Mart
                       </h3>
                       <p className="text-sm font-bold text-slate-500">
-                        {t.official_salary_statement || "Official Salary Statement"}
+                        {t.official_salary_statement ||
+                          "Official Salary Statement"}
                       </p>
                       <p className="text-xs text-slate-400 mt-2">
                         Phone: +880 9647-555333
@@ -2282,7 +2459,9 @@ const EmployeeTable = () => {
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
                         {t.employee_name || "Employee Name"}
                       </p>
-                      <p className="text-sm font-bold text-slate-900">{emp?.name}</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {emp?.name}
+                      </p>
                     </div>
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
@@ -2308,21 +2487,27 @@ const EmployeeTable = () => {
 
                     <tbody className="divide-y divide-slate-100">
                       <tr>
-                        <td className="py-4 font-bold text-slate-700">{t.basic_salary || "Basic Salary"}</td>
+                        <td className="py-4 font-bold text-slate-700">
+                          {t.basic_salary || "Basic Salary"}
+                        </td>
                         <td className="py-4 text-right font-black text-slate-900">
                           {Number(emp?.basic_salary || 0).toLocaleString()}
                         </td>
                       </tr>
 
                       <tr>
-                        <td className="py-4 font-bold text-slate-700">{t.incentive || "Incentive"}</td>
+                        <td className="py-4 font-bold text-slate-700">
+                          {t.incentive || "Incentive"}
+                        </td>
                         <td className="py-4 text-right font-black text-slate-900">
                           {Number(emp?.incentive || 0).toLocaleString()}
                         </td>
                       </tr>
 
                       <tr>
-                        <td className="py-4 font-bold text-slate-700">{t.holiday_days || "Holiday Days"}</td>
+                        <td className="py-4 font-bold text-slate-700">
+                          {t.holiday_days || "Holiday Days"}
+                        </td>
                         <td className="py-4 text-right font-black text-slate-900">
                           {Number(emp?.holiday_payment || 0)}
                         </td>
@@ -2384,7 +2569,9 @@ const EmployeeTable = () => {
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
                         {t.received_by || "Received By"}
                       </p>
-                      <p className="text-sm font-bold text-slate-900">{emp?.name}</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {emp?.name}
+                      </p>
                     </div>
 
                     <div className="text-center pt-4 border-t border-slate-200">
@@ -2392,7 +2579,7 @@ const EmployeeTable = () => {
                         {t.authorized_by || "Authorized By"}
                       </p>
                       <p className="text-sm font-bold text-slate-900">
-                        {t.kafela_mart_management || "Kafela Mart Management"}
+                        {t.holy_gift_management || "Kafela Mart Management"}
                       </p>
                     </div>
                   </div>
@@ -2448,8 +2635,9 @@ const Field = ({
       onChange={(e) => onChange(e.target.value)}
       readOnly={readOnly}
       required={required}
-      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
-        }`}
+      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${
+        readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
+      }`}
     />
   </div>
 );

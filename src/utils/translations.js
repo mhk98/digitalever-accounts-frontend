@@ -287,7 +287,7 @@ export const translations = {
     employee_note_title: "Employee Note",
     employee_signature: "Employee Signature",
     authorized_signature: "Authorized Signature",
-    kafela_mart_management: "Kafela Mart Management",
+    holy_gift_management: "Kafela Mart Management",
     statement_of_earnings: "Statement of Earnings",
     active_users: "Active Users",
     manage_platform_access: "Manage platform access and member privileges",

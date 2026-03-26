@@ -21,12 +21,12 @@ export const inventoryOverviewApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-            { type: "InventoryOverview", id: "LIST" },
-            ...result.data.map((r) => ({
-              type: "InventoryOverview",
-              id: r.Id,
-            })),
-          ]
+              { type: "InventoryOverview", id: "LIST" },
+              ...result.data.map((r) => ({
+                type: "InventoryOverview",
+                id: r.Id,
+              })),
+            ]
           : [{ type: "InventoryOverview", id: "LIST" }],
 
       refetchOnMountOrArgChange: true,
@@ -34,6 +34,12 @@ export const inventoryOverviewApi = baseApi.injectEndpoints({
 
     getAllInventoryOverviewWithoutQuery: build.query({
       query: () => ({ url: "/inventory-master/all" }),
+      providesTags: [{ type: "InventoryOverview", id: "LIST" }],
+      refetchOnMountOrArgChange: true,
+    }),
+
+    getInventoryOverviewLowStock: build.query({
+      query: () => ({ url: "/inventory-master/low-stock" }),
       providesTags: [{ type: "InventoryOverview", id: "LIST" }],
       refetchOnMountOrArgChange: true,
     }),
@@ -80,4 +86,5 @@ export const {
   useInsertInventoryOverviewMutation,
   useUpdateInventoryOverviewMutation,
   useDeleteInventoryOverviewMutation,
+  useGetInventoryOverviewLowStockQuery,
 } = inventoryOverviewApi;

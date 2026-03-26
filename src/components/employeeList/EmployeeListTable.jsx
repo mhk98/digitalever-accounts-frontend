@@ -23,6 +23,7 @@ const EmployeeListTable = () => {
 
   const [createProduct, setCreateProduct] = useState({
     name: "",
+    employee_id: "",
     salary: "",
     note: "",
     date: new Date().toISOString().slice(0, 10),
@@ -121,18 +122,35 @@ const EmployeeListTable = () => {
   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
 
   // Modals
-  const handleModalClose = () => setIsModalOpen(false);
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setCurrentProduct(null);
+  };
   const handleAddProduct = () => setIsModalOpen1(true);
-  const handleModalClose1 = () => setIsModalOpen1(false);
+  const handleModalClose1 = () => {
+    setIsModalOpen1(false);
+    setCreateProduct({
+      name: "",
+      employee_id: "",
+      salary: "",
+      note: "",
+      date: new Date().toISOString().slice(0, 10),
+    });
+  };
 
   const [updateEmployeeList] = useUpdateEmployeeListMutation();
   const [isModalOpen2, setIsModalOpen2] = useState(false);
-  const handleModalClose2 = () => setIsModalOpen2(false);
+  const handleModalClose2 = () => {
+    setIsModalOpen2(false);
+    setCurrentProduct(null);
+  };
 
   const handleEditClick1 = (product) => {
     setCurrentProduct({
       ...product,
-      salary: product.salary ?? product.price ?? "",
+      salary: product.salary ?? "",
+      employee_id: product.employee_id ?? "",
+      name: product.name ?? "",
       note: product.note ?? "",
       status: product.status ?? "",
       userId: userId,
@@ -148,6 +166,7 @@ const EmployeeListTable = () => {
     try {
       const payload = {
         name: currentProduct.name.trim(),
+        employee_id: Number(currentProduct.employee_id),
         salary: Number(currentProduct.salary),
         price: Number(currentProduct.salary),
         note: currentProduct.note,
@@ -177,6 +196,8 @@ const EmployeeListTable = () => {
     setCurrentProduct({
       ...product,
       salary: product.salary ?? product.price ?? "",
+      employee_id: product.employee_id ?? "",
+      name: product.name ?? "",
       note: product.note ?? "",
       status: product.status ?? "",
       date: product.date ?? "",
@@ -188,12 +209,15 @@ const EmployeeListTable = () => {
   const handleUpdateProduct = async () => {
     if (!currentProduct?.Id) return toast.error("Invalid item!");
     if (!currentProduct?.name?.trim()) return toast.error("Name is required!");
+    if (!currentProduct?.employee_id?.toString().trim())
+      return toast.error("Employee Id is required!");
     if (currentProduct?.salary === "" || currentProduct?.salary === null)
       return toast.error("Salary is required!");
 
     try {
       const payload = {
         name: currentProduct.name.trim(),
+        employee_id: Number(currentProduct.employee_id),
         salary: Number(currentProduct.salary),
         price: Number(currentProduct.salary),
         note: currentProduct.note,
@@ -226,13 +250,15 @@ const EmployeeListTable = () => {
     e.preventDefault();
 
     if (!createProduct.name?.trim()) return toast.error("Name is required!");
+    if (!createProduct.employee_id?.toString().trim())
+      return toast.error("Employee Id is required!");
     if (!createProduct.salary) return toast.error("Salary is required!");
 
     try {
       const payload = {
         name: createProduct.name.trim(),
+        employee_id: Number(createProduct.employee_id),
         salary: Number(createProduct.salary),
-        price: Number(createProduct.salary),
         date: createProduct.date,
         note: createProduct.note,
       };
@@ -243,6 +269,7 @@ const EmployeeListTable = () => {
         setIsModalOpen1(false);
         setCreateProduct({
           name: "",
+          employee_id: "",
           salary: "",
           note: "",
           date: new Date().toISOString().slice(0, 10),
@@ -657,6 +684,16 @@ const EmployeeListTable = () => {
           />
 
           <Field
+            label="Employee Id"
+            value={currentProduct?.employee_id || ""}
+            onChange={(v) =>
+              setCurrentProduct({ ...currentProduct, employee_id: v })
+            }
+            required
+            placeholder="Enter employee id"
+          />
+
+          <Field
             label="Salary"
             type="number"
             step="0.01"
@@ -805,6 +842,15 @@ const EmployeeListTable = () => {
             onChange={(v) => setCreateProduct({ ...createProduct, name: v })}
             required
             placeholder="Enter employee name"
+          />
+          <Field
+            label="Employee Id"
+            value={createProduct.employee_id}
+            onChange={(v) =>
+              setCreateProduct({ ...createProduct, employee_id: v })
+            }
+            required
+            placeholder="Enter employee id"
           />
 
           <Field

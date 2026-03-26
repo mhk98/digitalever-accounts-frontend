@@ -997,7 +997,7 @@
 
 //                 <div className="text-right">
 //                   <div className="text-sm font-semibold text-slate-900">
-//                     Kafela / Holy Gift
+//                     Kafela / Kafela Mart
 //                   </div>
 //                   <div className="text-xs text-slate-600">POS Sale Invoice</div>
 //                 </div>

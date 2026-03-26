@@ -15,6 +15,7 @@ import { useGetOverviewSummaryQuery } from "../features/overview/overview";
 import { useGetTrendingProductsQuery } from "../features/confirmOrder/confirmOrder";
 import { useLayout } from "../context/LayoutContext";
 import { translations } from "../utils/translations";
+import { useGetInventoryOverviewLowStockQuery } from "../features/inventoryOverview/inventoryOverview";
 
 // ✅ helper: default range (এই মাসের ১ তারিখ → আজ)
 const getDefaultRange = () => {
@@ -91,7 +92,6 @@ const OverviewPage = () => {
 
   if (trendingIsError) console.error("Trending error:", trendingErr);
 
-
   const trendSummary = useMemo(() => {
     if (!trending.length) {
       return {
@@ -129,6 +129,19 @@ const OverviewPage = () => {
     };
   }, [trending]);
 
+  // useGetInventoryOverviewLowStockQuery
+
+  const {
+    data: lowStockRes,
+    isLoading: isLowStockLoading,
+    isError: isLowStockError,
+    error: lowStockError,
+  } = useGetInventoryOverviewLowStockQuery();
+
+  const lowStockProducts = lowStockRes?.data ?? [];
+
+  if (isLowStockError) console.error("Low stock error:", lowStockError);
+
   return (
     <div className="flex-1 overflow-auto bg-slate-50/50">
       <Header title={t.management_console} />
@@ -136,10 +149,11 @@ const OverviewPage = () => {
       {/* ✅ Page background */}
       <main className="min-h-[calc(100vh-64px)] py-8 px-4 lg:px-8">
         <div className="max-w-8xl mx-auto">
-
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-10">
             <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t.executive_dashboard}</h1>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                {t.executive_dashboard}
+              </h1>
               <p className="text-slate-500 text-base mt-2 font-medium max-w-2xl">
                 {t.real_time_view}
               </p>
@@ -149,7 +163,8 @@ const OverviewPage = () => {
             <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row items-end gap-3 lg:gap-4 ring-1 ring-slate-100">
               <div className="flex flex-col flex-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 flex items-center gap-1.5">
-                  <CalendarDays size={12} className="text-indigo-500" /> {t.start_date}
+                  <CalendarDays size={12} className="text-indigo-500" />{" "}
+                  {t.start_date}
                 </label>
                 <input
                   type="date"
@@ -161,7 +176,8 @@ const OverviewPage = () => {
 
               <div className="flex flex-col flex-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 flex items-center gap-1.5">
-                  <CalendarDays size={12} className="text-indigo-500" /> {t.end_date}
+                  <CalendarDays size={12} className="text-indigo-500" />{" "}
+                  {t.end_date}
                 </label>
                 <input
                   type="date"
@@ -193,9 +209,13 @@ const OverviewPage = () => {
           {/* ✅ Status Indicator */}
           <div className="mb-8 px-2">
             <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 bg-white border border-slate-100 shadow-sm">
-              <div className={`h-2 w-2 rounded-full ${isLoading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-500'}`}></div>
+              <div
+                className={`h-2 w-2 rounded-full ${isLoading ? "bg-amber-400 animate-pulse" : "bg-emerald-500"}`}
+              ></div>
               <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.1em]">
-                {isLoading ? t.syncing : `${t.live_summary}: ${applied.from} → ${applied.to}`}
+                {isLoading
+                  ? t.syncing
+                  : `${t.live_summary}: ${applied.from} → ${applied.to}`}
               </span>
             </div>
           </div>
@@ -210,7 +230,11 @@ const OverviewPage = () => {
             <StatCard
               name={t.asset_portfolio}
               icon={Truck}
-              value={isLoading ? "..." : `৳${totalPurchaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+              value={
+                isLoading
+                  ? "..."
+                  : `৳${totalPurchaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+              }
               iconBg="#EEF2FF"
               iconColor="#4F46E5"
             />
@@ -218,7 +242,11 @@ const OverviewPage = () => {
             <StatCard
               name={t.liquid_stock}
               icon={Receipt}
-              value={isLoading ? "..." : `৳${inventoryOverview.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+              value={
+                isLoading
+                  ? "..."
+                  : `৳${inventoryOverview.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+              }
               iconBg="#ECFDF5"
               iconColor="#059669"
             />
@@ -226,7 +254,11 @@ const OverviewPage = () => {
             <StatCard
               name={t.marketing_investment}
               icon={TrendingUp}
-              value={isLoading ? "..." : `৳${totalMetaAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+              value={
+                isLoading
+                  ? "..."
+                  : `৳${totalMetaAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+              }
               iconBg="#E0F2FE"
               iconColor="#0284C7"
             />
@@ -234,7 +266,11 @@ const OverviewPage = () => {
             <StatCard
               name={t.expected_receivables}
               icon={Receipt}
-              value={isLoading ? "..." : `৳${totalReceiveableAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+              value={
+                isLoading
+                  ? "..."
+                  : `৳${totalReceiveableAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+              }
               iconBg="#FFF7ED"
               iconColor="#D97706"
             />
@@ -242,7 +278,11 @@ const OverviewPage = () => {
             <StatCard
               name={t.liabilities}
               icon={Receipt}
-              value={isLoading ? "..." : `৳${totalPayableAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+              value={
+                isLoading
+                  ? "..."
+                  : `৳${totalPayableAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+              }
               iconBg="#FFF1F2"
               iconColor="#E11D48"
             />
@@ -250,7 +290,11 @@ const OverviewPage = () => {
             <StatCard
               name={t.cash_in}
               icon={Landmark}
-              value={isLoading ? "..." : `৳${totalCashInAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+              value={
+                isLoading
+                  ? "..."
+                  : `৳${totalCashInAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+              }
               iconBg="#F5F3FF"
               iconColor="#7C3AED"
             />
@@ -258,7 +302,11 @@ const OverviewPage = () => {
             <StatCard
               name={t.cash_out}
               icon={Landmark}
-              value={isLoading ? "..." : `৳${totalCashOutAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+              value={
+                isLoading
+                  ? "..."
+                  : `৳${totalCashOutAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+              }
               iconBg="#F0FDFA"
               iconColor="#0D9488"
             />
@@ -293,7 +341,12 @@ const OverviewPage = () => {
                     value={trendDays}
                     onChange={(e) => setTrendDays(Number(e.target.value))}
                     className="h-11 pl-4 pr-10 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-black outline-none focus:ring-4 focus:ring-indigo-500/10 transition appearance-none cursor-pointer"
-                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '16px' }}
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 12px center",
+                      backgroundSize: "16px",
+                    }}
                   >
                     <option value={1}> {t.today}</option>
                     <option value={2}>2 {t.days}</option>
@@ -332,7 +385,8 @@ const OverviewPage = () => {
                     {trending.map((row, idx) => {
                       const soldQty = Number(row?.soldQty || 0);
                       const revenue = Number(row?.revenue || 0);
-                      const pName = row?.product?.name || row?.name || t.inventory_item;
+                      const pName =
+                        row?.product?.name || row?.name || t.inventory_item;
 
                       return (
                         <motion.div
@@ -362,19 +416,135 @@ const OverviewPage = () => {
                                 {pName}
                               </div>
                               <div className="text-[10px] font-black text-slate-400 mt-0.5 uppercase tracking-widest">
-                                ID: {row?.productId != null ? String(row.productId).slice(-6).toUpperCase() : "NEW"}
+                                ID:{" "}
+                                {row?.productId != null
+                                  ? String(row.productId)
+                                      .slice(-6)
+                                      .toUpperCase()
+                                  : "NEW"}
                               </div>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-8">
                             <div className="text-right hidden sm:block">
-                              <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.velocity}</div>
-                              <div className="text-sm font-black text-slate-700">{soldQty} {t.units}</div>
+                              <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                                {t.velocity}
+                              </div>
+                              <div className="text-sm font-black text-slate-700">
+                                {soldQty} {t.units}
+                              </div>
                             </div>
                             <div className="text-right min-w-[100px]">
-                              <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.revenue_impact}</div>
-                              <div className="text-sm font-black text-indigo-600">৳{revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                              <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                                {t.revenue_impact}
+                              </div>
+                              <div className="text-sm font-black text-indigo-600">
+                                ৳
+                                {revenue.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="lg:col-span-3 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.1 }}
+            >
+              <div className="p-6 flex items-center justify-between border-b border-slate-50">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-600 shadow-sm border border-rose-100/50">
+                    <Package size={20} />
+                  </div>
+                  <div>
+                    <div className="text-base font-black text-slate-900 tracking-tight">
+                      Low Stock Products
+                    </div>
+                    <div className="text-xs font-bold text-slate-400 mt-0.5">
+                      Items that need restocking soon
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {isLowStockLoading ? (
+                  <div className="py-20 text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-[3px] border-rose-600/20 border-t-rose-600"></div>
+                  </div>
+                ) : isLowStockError ? (
+                  <div className="py-20 text-center text-red-500 font-bold italic">
+                    Failed to load low stock products.
+                  </div>
+                ) : lowStockProducts.length === 0 ? (
+                  <div className="py-20 text-center text-slate-300 font-black italic text-sm">
+                    <Package size={40} className="mx-auto mb-3 opacity-10" />
+                    No low stock products found.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {lowStockProducts.map((item, idx) => {
+                      const productName =
+                        item?.name || item?.product?.name || t.inventory_item;
+                      const productId =
+                        item?.productId ?? item?.id ?? item?.Id ?? idx;
+                      const currentStock = Number(
+                        item?.currentStock ?? item?.stock ?? item?.quantity ?? 0,
+                      );
+                      const minStock = Number(
+                        item?.minimumStock ?? item?.minStock ?? item?.threshold ?? 0,
+                      );
+
+                      return (
+                        <motion.div
+                          key={productId}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.04 }}
+                          className="rounded-2xl border border-rose-100 bg-rose-50/40 p-5 hover:shadow-lg hover:shadow-rose-100/50 transition-all"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="text-sm font-black text-slate-900 truncate tracking-tight">
+                                {productName}
+                              </div>
+                              <div className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">
+                                ID: {String(productId).slice(-6).toUpperCase()}
+                              </div>
+                            </div>
+
+                            <div className="px-2.5 py-1 rounded-full bg-white text-rose-600 text-[10px] font-black uppercase tracking-widest border border-rose-100">
+                              Low
+                            </div>
+                          </div>
+
+                          <div className="mt-5 grid grid-cols-2 gap-3">
+                            <div className="rounded-xl bg-white p-3 border border-slate-100">
+                              <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                                Current Stock
+                              </div>
+                              <div className="text-lg font-black text-rose-600 mt-1">
+                                {currentStock}
+                              </div>
+                            </div>
+
+                            <div className="rounded-xl bg-white p-3 border border-slate-100">
+                              <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                                Minimum Stock
+                              </div>
+                              <div className="text-lg font-black text-slate-700 mt-1">
+                                {minStock}
+                              </div>
                             </div>
                           </div>
                         </motion.div>

@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const employeeListApi = createApi({
   reducerPath: "employeeListApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " http://localhost:4000/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken(); // Fetch the token
       if (token) {

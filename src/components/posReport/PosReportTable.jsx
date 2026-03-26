@@ -791,7 +791,7 @@
 //             >
 //               <div className="flex justify-between items-start">
 //                 <div>
-//                   <h3 className="text-xl font-bold">Holy Gift</h3>
+//                   <h3 className="text-xl font-bold">Kafela Mart</h3>
 //                   <p className="text-sm text-slate-600">Address line</p>
 //                   <p className="text-sm text-slate-600">
 //                     Phone: +880 9647-555333
@@ -1692,10 +1692,11 @@ const PosReportTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${active
+              className={`px-4 py-2 rounded-xl border transition ${
+                active
                   ? "bg-indigo-600 text-white border-indigo-600"
                   : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                }`}
+              }`}
             >
               {pageNum}
             </button>
@@ -2132,8 +2133,9 @@ const Field = ({
       onChange={(e) => onChange(e.target.value)}
       readOnly={readOnly}
       required={required}
-      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
-        }`}
+      className={`border border-slate-200 rounded-xl p-3 w-full mt-1 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 ${
+        readOnly ? "text-slate-900 opacity-80" : "text-slate-900"
+      }`}
     />
   </div>
 );
