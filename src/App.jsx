@@ -57,6 +57,7 @@ import MixerPage from "./pages/MixerPage";
 import StockAdjustmentPage from "./pages/StockAdjustmentPage";
 import DamageRepairingStockPage from "./pages/DamageRepairingStockPage";
 import EmployeeListPage from "./pages/EmployeeListPage";
+import DailyProfitLossPage from "./pages/DailyProfitLossPage";
 
 function App() {
   return (
@@ -430,6 +431,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <MarketingExpensePage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/profit-loss"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <DailyProfitLossPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

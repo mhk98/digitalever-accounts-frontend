@@ -128,12 +128,29 @@ const SIDEBAR_ITEMS = [
   },
 
   {
-    name: "DM Expense",
-    key: "dm_expense",
+    name: "Marketing",
+    key: "marketing",
     icon: Megaphone,
     color: "#f97316",
-    href: "/marketing-book",
     roles: ["superAdmin", "admin", "marketer"],
+    children: [
+      {
+        name: "DM Expense",
+        key: "dm_expense",
+        icon: Megaphone,
+        color: "#f97316",
+        href: "/marketing-book",
+        roles: ["superAdmin", "admin", "marketer"],
+      },
+      {
+        name: "Daily Profit & Loss",
+        key: "profit_loss",
+        icon: BarChart3,
+        color: "#f97316",
+        href: "/profit-loss",
+        roles: ["superAdmin", "admin", "marketer"],
+      },
+    ],
   },
 
   {
@@ -561,7 +578,11 @@ const Sidebar = () => {
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
                   <img
-                    src={logo ? ` http://localhost:4000/${logo}` : ""}
+                    src={
+                      logo
+                        ? ` https://apikafela.digitalever.com.bd/${logo}`
+                        : ""
+                    }
                     alt="Logo"
                     className="h-full w-full object-cover"
                   />

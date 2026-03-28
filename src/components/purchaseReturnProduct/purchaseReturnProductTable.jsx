@@ -169,6 +169,16 @@ const getVariantRowsTotalQuantity = (rows) =>
     0,
   );
 
+const hasConfiguredVariants = (rows) =>
+  Array.isArray(rows) &&
+  rows.some(
+    (row) =>
+      row &&
+      (String(row.size || "").trim() ||
+        String(row.color || "").trim() ||
+        String(row.quantity || "").trim()),
+  );
+
 const hasDuplicateVariantCombination = (rows) => {
   const seen = new Set();
 
@@ -1342,8 +1352,12 @@ const PurchaseReturnProductTable = () => {
                 onChange={(e) =>
                   setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
                 }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                readOnly={hasConfiguredVariants(currentItem?.variantRows)}
+                className={`h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none ${
+                  hasConfiguredVariants(currentItem?.variantRows)
+                    ? "bg-slate-50"
+                    : "bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                }`}
               />
             </div>
 
@@ -1688,8 +1702,15 @@ const PurchaseReturnProductTable = () => {
                 type="number"
                 step="0.01"
                 value={createForm.quantity}
-                readOnly
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-slate-50 outline-none"
+                onChange={(e) =>
+                  setCreateForm((p) => ({ ...p, quantity: e.target.value }))
+                }
+                readOnly={hasConfiguredVariants(createForm?.variantRows)}
+                className={`w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 outline-none ${
+                  hasConfiguredVariants(createForm?.variantRows)
+                    ? "bg-slate-50"
+                    : "bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                }`}
               />
             </div>
           </div>

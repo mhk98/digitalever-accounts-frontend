@@ -35,6 +35,8 @@ const initialCreateProduct = {
   bookId: "",
   supplierId: "",
   productId: "",
+  sku: "",
+  weight: "",
   variantRows: [{ size: "", color: "", quantity: "" }],
   quantity: "",
   purchase_price: "",
@@ -187,6 +189,16 @@ const getVariantRowsTotalQuantity = (rows) =>
     0,
   );
 
+const hasConfiguredVariants = (rows) =>
+  Array.isArray(rows) &&
+  rows.some(
+    (row) =>
+      row &&
+      (String(row.size || "").trim() ||
+        String(row.color || "").trim() ||
+        String(row.quantity || "").trim()),
+  );
+
 const hasDuplicateVariantCombination = (rows) => {
   const seen = new Set();
 
@@ -275,7 +287,10 @@ const ReceivedProductTable = () => {
     error: errorAllProducts,
   } = useGetAllProductWithoutQueryQuery();
 
-  const productsData = allProductsRes?.data || [];
+  const productsData = useMemo(
+    () => allProductsRes?.data || [],
+    [allProductsRes],
+  );
 
   useEffect(() => {
     if (isErrorAllProducts) {
@@ -487,6 +502,8 @@ const ReceivedProductTable = () => {
       supplierId: rp.supplierId ?? "",
       warehouseId: rp.warehouseId ?? "",
       bookId: rp.bookId ?? "",
+      sku: rp.sku ?? "",
+      weight: rp.weight ?? "",
       purchase_price: rp.purchase_price ?? "",
       sale_price: rp.sale_price ?? "",
       duePayment: rp.duePayment ?? "",
@@ -519,6 +536,8 @@ const ReceivedProductTable = () => {
       supplierId: rp.supplierId ?? "",
       warehouseId: rp.warehouseId ?? "",
       bookId: rp.bookId ?? "",
+      sku: rp.sku ?? "",
+      weight: rp.weight ?? "",
       purchase_price: rp.purchase_price ?? "",
       sale_price: rp.sale_price ?? "",
       supplier: rp.supplier ?? "",
@@ -556,6 +575,8 @@ const ReceivedProductTable = () => {
       fd.append("warehouseId", Number(currentProduct.warehouseId) || "");
       fd.append("quantity", Number(currentProduct.quantity) || 0);
       fd.append("variants", JSON.stringify(variantsPayload));
+      fd.append("sku", currentProduct.sku || "");
+      fd.append("weight", currentProduct.weight || "");
       fd.append("purchase_price", Number(currentProduct.purchase_price) || 0);
       fd.append("sale_price", Number(currentProduct.sale_price) || 0);
       fd.append("date", currentProduct.date || "");
@@ -617,6 +638,8 @@ const ReceivedProductTable = () => {
       fd.append("warehouseId", Number(currentProduct.warehouseId) || "");
       fd.append("quantity", Number(currentProduct.quantity) || 0);
       fd.append("variants", JSON.stringify(variantsPayload));
+      fd.append("sku", currentProduct.sku || "");
+      fd.append("weight", currentProduct.weight || "");
       fd.append("purchase_price", Number(currentProduct.purchase_price) || 0);
       fd.append("sale_price", Number(currentProduct.sale_price) || 0);
       fd.append("date", currentProduct.date || "");
@@ -682,6 +705,8 @@ const ReceivedProductTable = () => {
     fd.append("warehouseId", Number(createProduct.warehouseId) || "");
     fd.append("quantity", Number(createProduct.quantity) || 0);
     fd.append("variants", JSON.stringify(variantsPayload));
+    fd.append("sku", createProduct.sku || "");
+    fd.append("weight", createProduct.weight || "");
     fd.append("purchase_price", Number(createProduct.purchase_price) || 0);
     fd.append("sale_price", Number(createProduct.sale_price) || 0);
     fd.append("date", createProduct.date || "");
@@ -785,7 +810,7 @@ const ReceivedProductTable = () => {
     isError: isErrorSupplier,
     error: errorSupplier,
   } = useGetAllSupplierWithoutQueryQuery();
-  const suppliers = allSupplierRes?.data || [];
+  const suppliers = useMemo(() => allSupplierRes?.data || [], [allSupplierRes]);
 
   useEffect(() => {
     if (isErrorSupplier)
@@ -807,7 +832,10 @@ const ReceivedProductTable = () => {
     isError: isErrorWarehouse,
     error: errorWarehouse,
   } = useGetAllWirehouseWithoutQueryQuery();
-  const warehouses = allWarehousesRes?.data || [];
+  const warehouses = useMemo(
+    () => allWarehousesRes?.data || [],
+    [allWarehousesRes],
+  );
 
   useEffect(() => {
     if (isErrorWarehouse)
@@ -1055,9 +1083,21 @@ const ReceivedProductTable = () => {
                         <div className="text-sm font-bold text-slate-900">
                           {resolveProductName(rp)}
                         </div>
-                        <div className="mt-1 inline-flex w-fit items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-                          {t.qty_label || "Qty"}:{" "}
-                          {Number(rp.quantity || 0).toFixed(0)}
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          <span className="inline-flex w-fit items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                            {t.qty_label || "Qty"}:{" "}
+                            {Number(rp.quantity || 0).toFixed(0)}
+                          </span>
+                          {rp?.sku ? (
+                            <span className="inline-flex w-fit items-center rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
+                              SKU: {rp.sku}
+                            </span>
+                          ) : null}
+                          {rp?.weight ? (
+                            <span className="inline-flex w-fit items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                              Weight: {rp.weight}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </td>
@@ -1552,8 +1592,53 @@ const ReceivedProductTable = () => {
                 type="number"
                 step="0.01"
                 value={currentProduct?.quantity || ""}
-                readOnly
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-slate-50 outline-none"
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({ ...p, quantity: e.target.value }))
+                }
+                readOnly={hasConfiguredVariants(currentProduct?.variantRows)}
+                className={`w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 outline-none ${
+                  hasConfiguredVariants(currentProduct?.variantRows)
+                    ? "bg-slate-50"
+                    : "bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                }`}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                SKU
+              </label>
+              <input
+                type="text"
+                value={currentProduct?.sku || ""}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    sku: e.target.value,
+                  })
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                placeholder="SKU-2024-001"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                Weight (kg)
+              </label>
+              <input
+                type="text"
+                value={currentProduct?.weight || ""}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    weight: e.target.value,
+                  })
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                placeholder="1.5"
               />
             </div>
           </div>
@@ -2033,14 +2118,59 @@ const ReceivedProductTable = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                SKU
+              </label>
+              <input
+                type="text"
+                value={createProduct?.sku || ""}
+                onChange={(e) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    sku: e.target.value,
+                  })
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                placeholder="SKU-2024-001"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                Weight (kg)
+              </label>
+              <input
+                type="text"
+                value={createProduct?.weight || ""}
+                onChange={(e) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    weight: e.target.value,
+                  })
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                placeholder="1.5"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.quantity || "Quantity"}
               </label>
               <input
                 type="number"
                 step="0.01"
                 value={createProduct.quantity}
-                readOnly
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-slate-50 outline-none"
+                onChange={(e) =>
+                  setCreateProduct((p) => ({ ...p, quantity: e.target.value }))
+                }
+                readOnly={hasConfiguredVariants(createProduct?.variantRows)}
+                className={`w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 outline-none ${
+                  hasConfiguredVariants(createProduct?.variantRows)
+                    ? "bg-slate-50"
+                    : "bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                }`}
                 required
               />
             </div>

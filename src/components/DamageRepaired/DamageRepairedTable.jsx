@@ -165,6 +165,16 @@ const getVariantRowsTotalQuantity = (rows) =>
     0,
   );
 
+const hasConfiguredVariants = (rows) =>
+  Array.isArray(rows) &&
+  rows.some(
+    (row) =>
+      row &&
+      (String(row.size || "").trim() ||
+        String(row.color || "").trim() ||
+        String(row.quantity || "").trim()),
+  );
+
 const hasDuplicateVariantCombination = (rows) => {
   const seen = new Set();
 
@@ -1298,8 +1308,15 @@ const DamageRepairedTable = () => {
                 type="number"
                 step="0.01"
                 value={currentItem?.quantity ?? ""}
-                readOnly
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-slate-50 outline-none"
+                onChange={(e) =>
+                  setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
+                }
+                readOnly={hasConfiguredVariants(currentItem?.variantRows)}
+                className={`h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none ${
+                  hasConfiguredVariants(currentItem?.variantRows)
+                    ? "bg-slate-50"
+                    : "bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                }`}
               />
             </div>
             <div>
@@ -1634,8 +1651,15 @@ const DamageRepairedTable = () => {
                 type="number"
                 step="0.01"
                 value={createForm.quantity}
-                readOnly
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-slate-50 outline-none"
+                onChange={(e) =>
+                  setCreateForm((p) => ({ ...p, quantity: e.target.value }))
+                }
+                readOnly={hasConfiguredVariants(createForm?.variantRows)}
+                className={`h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none ${
+                  hasConfiguredVariants(createForm?.variantRows)
+                    ? "bg-slate-50"
+                    : "bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                }`}
                 required
               />
             </div>

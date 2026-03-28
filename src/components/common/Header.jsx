@@ -50,7 +50,7 @@
 
 //   const avatarSrc =
 //     user?.image && user?.image !== "null"
-//       ? `http://localhost:4000/${user.image}`
+//       ? `https://apikafela.digitalever.com.bd/${user.image}`
 //       : "https://i.pravatar.cc/300";
 
 //   return (
@@ -201,7 +201,7 @@ const Header = ({ title }) => {
 
   const avatarSrc =
     user?.image && user?.image !== "null"
-      ? `http://localhost:4000/${user.image}`
+      ? `https://apikafela.digitalever.com.bd/${user.image}`
       : "https://i.pravatar.cc/300";
 
   // ✅ outside click close (dropdown + notif)
