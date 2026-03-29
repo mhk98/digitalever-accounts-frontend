@@ -768,7 +768,7 @@ const SupplierHistoryTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `https://apikafela.digitalever.com.bd/${safePath}`
+                ? `http://localhost:4000/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(

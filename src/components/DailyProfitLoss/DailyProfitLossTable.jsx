@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { RefreshCcw, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useGetAllReceivedProductWithoutQueryQuery } from "../../features/receivedProduct/receivedProduct";
+import Select from "react-select";
+import { useGetAllInventoryOverviewWithoutQueryQuery } from "../../features/inventoryOverview/inventoryOverview";
 
 const safeNumber = (value) => {
   const parsed = Number(value);
@@ -31,6 +32,7 @@ const getProductSku = (item) =>
 const getSellingPrice = (item) =>
   safeNumber(
     item?.sellingPrice ??
+      item?.sale_price ??
       item?.salePrice ??
       item?.selling_price ??
       item?.unitPrice ??
@@ -38,13 +40,23 @@ const getSellingPrice = (item) =>
       item?.mrp,
   );
 
+const getStockQuantity = (item) =>
+  safeNumber(
+    item?.quantity ??
+      item?.stockQuantity ??
+      item?.inHandQuantity ??
+      item?.availableQuantity ??
+      item?.qty ??
+      item?.stock,
+  );
+
 const getCostPrice = (item) =>
   safeNumber(
     item?.costPrice ??
+      item?.purchase_price ??
       item?.purchasePrice ??
       item?.buyingPrice ??
       item?.cost_price ??
-      item?.purchase_price ??
       item?.buyPrice,
   );
 
@@ -54,6 +66,7 @@ const normalizeReceivedProducts = (items = []) =>
     productId: item?.productId ?? item?.Id ?? item?.id ?? index,
     name: getProductName(item),
     sku: getProductSku(item),
+    quantity: getStockQuantity(item),
     costPrice: getCostPrice(item),
     sellingPrice: getSellingPrice(item),
     unitsSold: safeNumber(
@@ -61,13 +74,69 @@ const normalizeReceivedProducts = (items = []) =>
     ),
   }));
 
+const selectStyles = {
+  control: (base, state) => ({
+    ...base,
+    minHeight: 48,
+    borderRadius: 16,
+    borderColor: state.isFocused ? "#a5b4fc" : "#e2e8f0",
+    boxShadow: state.isFocused ? "0 0 0 4px rgba(99, 102, 241, 0.12)" : "none",
+    "&:hover": {
+      borderColor: state.isFocused ? "#a5b4fc" : "#cbd5e1",
+    },
+  }),
+  valueContainer: (base) => ({
+    ...base,
+    padding: "4px 12px",
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: "#64748b",
+    fontWeight: 500,
+  }),
+  multiValue: (base) => ({
+    ...base,
+    backgroundColor: "#eef2ff",
+    borderRadius: 10,
+  }),
+  multiValueLabel: (base) => ({
+    ...base,
+    color: "#3730a3",
+    fontWeight: 700,
+  }),
+  multiValueRemove: (base) => ({
+    ...base,
+    color: "#4338ca",
+    ":hover": {
+      backgroundColor: "#c7d2fe",
+      color: "#312e81",
+    },
+  }),
+  menu: (base) => ({
+    ...base,
+    borderRadius: 18,
+    overflow: "hidden",
+    zIndex: 30,
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected
+      ? "#e0e7ff"
+      : state.isFocused
+        ? "#f8fafc"
+        : "#ffffff",
+    color: "#0f172a",
+    padding: 14,
+  }),
+};
+
 const DailyProfitLossTable = () => {
   const {
     data: receivedRes,
     isLoading: receivedLoading,
     isError: receivedError,
     error: receivedErrObj,
-  } = useGetAllReceivedProductWithoutQueryQuery();
+  } = useGetAllInventoryOverviewWithoutQueryQuery();
 
   const receivedData = useMemo(() => receivedRes?.data || [], [receivedRes]);
 
@@ -82,13 +151,62 @@ const DailyProfitLossTable = () => {
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [marketingSpends, setMarketingSpends] = useState(0);
+  const [otherExpenses, setOtherExpenses] = useState(0);
+  const [returnPercentage, setReturnPercentage] = useState(0);
 
   useEffect(() => {
     setSelectedRows((prev) => {
       const prevMap = new Map(prev.map((item) => [item.id, item]));
+      const normalizedMap = new Map(
+        normalizedProducts.map((item) => [item.id, item]),
+      );
 
-      return normalizedProducts.map((item) => {
-        const existing = prevMap.get(item.id);
+      return prev
+        .map((item) => {
+          const updatedItem = normalizedMap.get(item.id);
+          if (!updatedItem) return null;
+
+          const existing = prevMap.get(item.id);
+          return existing
+            ? {
+                ...updatedItem,
+                costPrice: existing.costPrice,
+                sellingPrice: existing.sellingPrice,
+                unitsSold: existing.unitsSold,
+              }
+            : updatedItem;
+        })
+        .filter(Boolean);
+    });
+  }, [normalizedProducts]);
+
+  const productOptions = useMemo(
+    () =>
+      normalizedProducts.map((item) => ({
+        value: item.id,
+        label: item.name,
+        sku: item.sku,
+        quantity: item.quantity,
+        data: item,
+      })),
+    [normalizedProducts],
+  );
+
+  const selectedProductOptions = useMemo(() => {
+    const selectedIdSet = new Set(selectedRows.map((item) => item.id));
+
+    return productOptions.filter((option) => selectedIdSet.has(option.value));
+  }, [productOptions, selectedRows]);
+
+  const handleProductSelect = (selectedOptions) => {
+    const options = selectedOptions || [];
+    setSelectedRows((prev) => {
+      const prevMap = new Map(prev.map((item) => [item.id, item]));
+
+      return options.map((option) => {
+        const item = option.data;
+        const existing = prevMap.get(option.value);
         return existing
           ? {
               ...item,
@@ -99,7 +217,7 @@ const DailyProfitLossTable = () => {
           : item;
       });
     });
-  }, [normalizedProducts]);
+  };
 
   const handleFieldChange = (id, field, value) => {
     setSelectedRows((prev) =>
@@ -119,8 +237,11 @@ const DailyProfitLossTable = () => {
   };
 
   const handleReset = () => {
-    setSelectedRows(normalizedProducts);
+    setSelectedRows([]);
     setSearchTerm("");
+    setMarketingSpends(0);
+    setOtherExpenses(0);
+    setReturnPercentage(0);
   };
 
   const filteredRows = useMemo(() => {
@@ -135,7 +256,7 @@ const DailyProfitLossTable = () => {
   }, [searchTerm, selectedRows]);
 
   const summary = useMemo(() => {
-    return filteredRows.reduce(
+    const baseSummary = filteredRows.reduce(
       (acc, item) => {
         const sellingPrice = safeNumber(item.sellingPrice);
         const costPrice = safeNumber(item.costPrice);
@@ -157,12 +278,27 @@ const DailyProfitLossTable = () => {
         totalUnits: 0,
       },
     );
-  }, [filteredRows]);
+
+    const marketingCost = safeNumber(marketingSpends);
+    const otherCost = safeNumber(otherExpenses);
+    const returnRate = safeNumber(returnPercentage);
+    const returnDeduction = (baseSummary.totalRevenue * returnRate) / 100;
+
+    return {
+      ...baseSummary,
+      marketingCost,
+      otherCost,
+      returnRate,
+      returnDeduction,
+      finalProfit:
+        baseSummary.totalProfit - marketingCost - otherCost - returnDeduction,
+    };
+  }, [filteredRows, marketingSpends, otherExpenses, returnPercentage]);
 
   const summaryCards = [
     {
-      label: "Selected Variants",
-      value: filteredRows.length,
+      label: "Selected Products",
+      value: selectedRows.length,
       tone: "text-slate-900",
       bg: "from-slate-50 to-white",
     },
@@ -180,10 +316,10 @@ const DailyProfitLossTable = () => {
     },
     {
       label: "Profit/Loss",
-      value: formatCurrency(summary.totalProfit),
-      tone: summary.totalProfit >= 0 ? "text-emerald-600" : "text-rose-600",
+      value: formatCurrency(summary.finalProfit),
+      tone: summary.finalProfit >= 0 ? "text-emerald-600" : "text-rose-600",
       bg:
-        summary.totalProfit >= 0
+        summary.finalProfit >= 0
           ? "from-emerald-50 to-white"
           : "from-rose-50 to-white",
     },
@@ -209,7 +345,37 @@ const DailyProfitLossTable = () => {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <label className="relative min-w-[260px]">
+            <div className="min-w-[320px] flex-1">
+              <Select
+                isMulti
+                options={productOptions}
+                value={selectedProductOptions}
+                onChange={handleProductSelect}
+                isLoading={receivedLoading}
+                isDisabled={receivedLoading || normalizedProducts.length === 0}
+                closeMenuOnSelect={false}
+                hideSelectedOptions={false}
+                placeholder="Select product by variants"
+                styles={selectStyles}
+                formatOptionLabel={(option) => (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-slate-900">
+                        {option.label}
+                      </div>
+                      <div className="text-xs font-medium text-slate-500">
+                        SKU: {option.sku}
+                      </div>
+                    </div>
+                    <div className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                      Qty: {Number(option.quantity || 0).toLocaleString()}
+                    </div>
+                  </div>
+                )}
+              />
+            </div>
+
+            <label className="relative min-w-[260px] flex-1">
               <Search
                 size={18}
                 className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -218,7 +384,7 @@ const DailyProfitLossTable = () => {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by product or SKU"
+                placeholder="Search selected product or SKU"
                 className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100"
               />
             </label>
@@ -258,7 +424,7 @@ const DailyProfitLossTable = () => {
               {[
                 "Product",
                 "SKU",
-                "Cost Price",
+                "Purchase Price",
                 "Selling Price",
                 "Units Sold",
                 "Total Revenue",
@@ -292,7 +458,9 @@ const DailyProfitLossTable = () => {
                   colSpan={9}
                   className="px-3 py-16 text-center text-sm font-medium text-slate-500"
                 >
-                  কোনো product পাওয়া যায়নি।
+                  {selectedRows.length === 0
+                    ? "Dropdown থেকে product select করলে এখানে দেখা যাবে।"
+                    : "Search অনুযায়ী কোনো product পাওয়া যায়নি।"}
                 </td>
               </tr>
             ) : (
@@ -307,8 +475,13 @@ const DailyProfitLossTable = () => {
                 return (
                   <tr key={item.id} className="group">
                     <td className="border-b border-slate-100 px-3 py-4 first:pl-2">
-                      <div className="max-w-[270px] truncate text-[15px] font-semibold text-slate-900">
-                        {item.name}
+                      <div className="space-y-2">
+                        <div className="max-w-[270px] truncate text-[15px] font-semibold text-slate-900">
+                          {item.name}
+                        </div>
+                        <div className="inline-flex w-fit items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                          Qty: {Number(item.quantity || 0).toLocaleString()}
+                        </div>
                       </div>
                     </td>
 
@@ -386,6 +559,106 @@ const DailyProfitLossTable = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 gap-4 xl:grid-cols-4">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 className="text-2xl font-bold text-slate-900">
+            Marketing Spends
+          </h3>
+          <p className="mt-6 text-sm leading-7 text-slate-500">
+            (Optional) Enter any marketing spends for the day to include in the
+            profit/loss calculation.
+          </p>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={marketingSpends}
+            onChange={(e) => setMarketingSpends(e.target.value)}
+            className="mt-3 h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-base font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+          />
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 className="text-2xl font-bold text-slate-900">Other Expenses</h3>
+          <p className="mt-6 text-sm leading-7 text-slate-500">
+            (Optional) Enter any other expenses for the day to include in the
+            profit/loss calculation.
+          </p>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={otherExpenses}
+            onChange={(e) => setOtherExpenses(e.target.value)}
+            className="mt-3 h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-base font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+          />
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 className="text-2xl font-bold text-slate-900">
+            Return Percentage
+          </h3>
+          <p className="mt-6 text-sm leading-7 text-slate-500">
+            (Optional) Enter return percentage to deduct from total revenue
+            (e.g. 20 for 20%).
+          </p>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={returnPercentage}
+            onChange={(e) => setReturnPercentage(e.target.value)}
+            className="mt-3 h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-base font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+          />
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 className="text-2xl font-bold text-slate-900">Actions</h3>
+          <button
+            type="button"
+            className="mt-10 inline-flex h-11 w-full items-center justify-center rounded-2xl bg-orange-500 px-4 text-sm font-semibold text-white transition hover:bg-orange-600"
+          >
+            Calculate Profit/Loss
+          </button>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+        <div className="grid grid-cols-1 gap-3 text-sm font-medium text-slate-600 md:grid-cols-2 xl:grid-cols-4">
+          <div>
+            Gross Profit:{" "}
+            <span className="font-bold text-slate-900">
+              {formatCurrency(summary.totalProfit)}
+            </span>
+          </div>
+          <div>
+            Marketing Spends:{" "}
+            <span className="font-bold text-slate-900">
+              {formatCurrency(summary.marketingCost)}
+            </span>
+          </div>
+          <div>
+            Other Expenses:{" "}
+            <span className="font-bold text-slate-900">
+              {formatCurrency(summary.otherCost)}
+            </span>
+          </div>
+          <div>
+            Return Deduction ({safeNumber(summary.returnRate).toFixed(2)}%):{" "}
+            <span className="font-bold text-slate-900">
+              {formatCurrency(summary.returnDeduction)}
+            </span>
+          </div>
+        </div>
       </div>
     </motion.div>
   );

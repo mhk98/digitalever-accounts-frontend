@@ -1985,6 +1985,43 @@ const ReceivedProductTable = () => {
                 );
               },
             )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                  SKU
+                </label>
+                <input
+                  type="text"
+                  value={createProduct?.sku || ""}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      sku: e.target.value,
+                    })
+                  }
+                  className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                  placeholder="SKU-2024-001"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                  Weight (kg)
+                </label>
+                <input
+                  type="text"
+                  value={createProduct?.weight || ""}
+                  onChange={(e) =>
+                    setCreateProduct({
+                      ...createProduct,
+                      weight: e.target.value,
+                    })
+                  }
+                  className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                  placeholder="1.5"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2111,44 +2148,6 @@ const ReceivedProductTable = () => {
                   })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                SKU
-              </label>
-              <input
-                type="text"
-                value={createProduct?.sku || ""}
-                onChange={(e) =>
-                  setCreateProduct({
-                    ...createProduct,
-                    sku: e.target.value,
-                  })
-                }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                placeholder="SKU-2024-001"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Weight (kg)
-              </label>
-              <input
-                type="text"
-                value={createProduct?.weight || ""}
-                onChange={(e) =>
-                  setCreateProduct({
-                    ...createProduct,
-                    weight: e.target.value,
-                  })
-                }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                placeholder="1.5"
               />
             </div>
           </div>

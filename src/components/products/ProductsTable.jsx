@@ -365,9 +365,9 @@ const ProductsTable = () => {
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.product_details}
                 </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                {/* <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   SKU
-                </th>
+                </th> */}
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   Size
                 </th>
@@ -397,11 +397,11 @@ const ProductsTable = () => {
                         {product.name}
                       </div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap">
+                    {/* <td className="px-6 py-5 whitespace-nowrap">
                       <span className="text-sm font-semibold text-slate-700">
                         {product.sku || "N/A"}
                       </span>
-                    </td>
+                    </td> */}
                     <td className="px-6 py-5">
                       <div className="flex flex-wrap gap-2 min-w-[160px]">
                         {sizes.length > 0 ? (
@@ -547,7 +547,7 @@ const ProductsTable = () => {
               placeholder={t.enter_product_name}
             />
           </div>
-
+          {/* 
           <div>
             <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
               SKU
@@ -561,7 +561,7 @@ const ProductsTable = () => {
               className="h-12 border border-slate-200 rounded-2xl px-4 w-full text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
               placeholder="e.g. HD-001"
             />
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -638,7 +638,7 @@ const ProductsTable = () => {
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
               SKU
             </label>
@@ -651,7 +651,7 @@ const ProductsTable = () => {
               className="h-12 border border-slate-200 rounded-2xl px-4 w-full bg-white text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold"
               placeholder="e.g. HD-001"
             />
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
