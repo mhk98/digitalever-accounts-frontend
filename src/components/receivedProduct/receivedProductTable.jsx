@@ -966,6 +966,7 @@ const ReceivedProductTable = () => {
             isClearable
             isDisabled={isLoadingAllProducts}
             styles={selectStyles}
+            className="text-black"
           />
         </div>
 
@@ -984,6 +985,7 @@ const ReceivedProductTable = () => {
             placeholder={t.search}
             isClearable
             styles={selectStyles}
+            className="text-black"
           />
         </div>
 
@@ -1002,6 +1004,7 @@ const ReceivedProductTable = () => {
             placeholder={t.search}
             isClearable
             styles={selectStyles}
+            className="text-black"
           />
         </div>
 
@@ -1359,7 +1362,7 @@ const ReceivedProductTable = () => {
               placeholder={t.search_product || "Search product..."}
               isClearable
               styles={selectStyles}
-              className="text-sm font-medium"
+              className="text-sm font-medium text-black"
               isDisabled={isLoadingAllProducts}
             />
           </div>

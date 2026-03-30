@@ -1,8 +1,13 @@
 import { motion } from "framer-motion";
-import { RefreshCcw, Search, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import Select from "react-select";
 import { useGetAllInventoryOverviewWithoutQueryQuery } from "../../features/inventoryOverview/inventoryOverview";
+import {
+  useGetAllProfitLossQuery,
+  useInsertProfitLossMutation,
+} from "../../features/profitLoss/profitLoss";
 
 const safeNumber = (value) => {
   const parsed = Number(value);
@@ -14,6 +19,12 @@ const formatCurrency = (value) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+
+const formatDate = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
+};
 
 const getProductName = (item) =>
   item?.name ||
@@ -130,6 +141,14 @@ const selectStyles = {
   }),
 };
 
+const salesTypeOptions = [
+  { value: "Regular Sale", label: "Regular Sale" },
+  { value: "Up Sale", label: "Up Sale" },
+  { value: "Cross Sale", label: "Cross Sale" },
+  { value: "Organic Sale", label: "Organic Sale" },
+  { value: "Office Sale", label: "Office Sale" },
+];
+
 const DailyProfitLossTable = () => {
   const {
     data: receivedRes,
@@ -148,12 +167,54 @@ const DailyProfitLossTable = () => {
     () => normalizeReceivedProducts(receivedData),
     [receivedData],
   );
+  const [insertProfitLoss, { isLoading: isSavingProfitLoss }] =
+    useInsertProfitLossMutation();
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [marketingSpends, setMarketingSpends] = useState(0);
   const [otherExpenses, setOtherExpenses] = useState(0);
   const [returnPercentage, setReturnPercentage] = useState(0);
+  const [salesType, setSalesType] = useState(null);
+  const [historyStartDate, setHistoryStartDate] = useState("");
+  const [historyEndDate, setHistoryEndDate] = useState("");
+  const [salesTypeSearch, setSalesTypeSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  console.log("salesTypeSearch", salesTypeSearch);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [historyStartDate, historyEndDate, salesTypeSearch]);
+
+  const profitLossQueryArgs = useMemo(
+    () => ({
+      page: currentPage,
+      limit: itemsPerPage,
+      startDate: historyStartDate || undefined,
+      endDate: historyEndDate || undefined,
+      name: salesTypeSearch || undefined,
+      searchTerm: salesTypeSearch || undefined,
+    }),
+    [currentPage, historyEndDate, historyStartDate, salesTypeSearch],
+  );
+
+  const {
+    data: profitLossRes,
+    isLoading: profitLossLoading,
+    isFetching: profitLossFetching,
+  } = useGetAllProfitLossQuery(profitLossQueryArgs);
+
+  const profitLossRows = useMemo(
+    () => profitLossRes?.data || [],
+    [profitLossRes],
+  );
+  const totalProfitLossCount = safeNumber(profitLossRes?.meta?.count);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalProfitLossCount / itemsPerPage),
+  );
 
   useEffect(() => {
     setSelectedRows((prev) => {
@@ -180,6 +241,8 @@ const DailyProfitLossTable = () => {
         .filter(Boolean);
     });
   }, [normalizedProducts]);
+
+  console.log("profitLossRes", profitLossRes);
 
   const productOptions = useMemo(
     () =>
@@ -242,6 +305,7 @@ const DailyProfitLossTable = () => {
     setMarketingSpends(0);
     setOtherExpenses(0);
     setReturnPercentage(0);
+    setSalesType(null);
   };
 
   const filteredRows = useMemo(() => {
@@ -281,19 +345,58 @@ const DailyProfitLossTable = () => {
 
     const marketingCost = safeNumber(marketingSpends);
     const otherCost = safeNumber(otherExpenses);
+    const extraCost = marketingCost + otherCost;
     const returnRate = safeNumber(returnPercentage);
-    const returnDeduction = (baseSummary.totalRevenue * returnRate) / 100;
+    const revenueBeforeReturn = baseSummary.totalRevenue + extraCost;
+    const returnDeduction = (revenueBeforeReturn * returnRate) / 100;
+    const adjustedTotalRevenue = revenueBeforeReturn - returnDeduction;
+    const finalProfit = adjustedTotalRevenue - baseSummary.totalCost;
 
     return {
       ...baseSummary,
+      rawRevenue: baseSummary.totalRevenue,
+      totalRevenue: adjustedTotalRevenue,
+      revenueBeforeReturn,
       marketingCost,
       otherCost,
+      extraCost,
       returnRate,
       returnDeduction,
-      finalProfit:
-        baseSummary.totalProfit - marketingCost - otherCost - returnDeduction,
+      finalProfit,
     };
   }, [filteredRows, marketingSpends, otherExpenses, returnPercentage]);
+
+  const handleSaveProfitLoss = async () => {
+    if (!selectedRows.length) {
+      toast.error("Please select at least one product");
+      return;
+    }
+
+    if (!salesType?.value) {
+      toast.error("Please select a sales type");
+      return;
+    }
+
+    const payload = {
+      products: selectedRows.length,
+      revenue: Math.round(summary.rawRevenue),
+      cost: Math.round(summary.extraCost),
+      profitLoss: Math.round(summary.finalProfit),
+      salesType: salesType.value,
+    };
+
+    try {
+      const res = await insertProfitLoss(payload).unwrap();
+      if (res?.success) {
+        toast.success("Profit/Loss saved successfully");
+        handleReset();
+      } else {
+        toast.error(res?.message || "Save failed");
+      }
+    } catch (error) {
+      toast.error(error?.data?.message || "Save failed");
+    }
+  };
 
   const summaryCards = [
     {
@@ -376,10 +479,10 @@ const DailyProfitLossTable = () => {
             </div>
 
             <label className="relative min-w-[260px] flex-1">
-              <Search
+              {/* <Search
                 size={18}
                 className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-              />
+              /> */}
               <input
                 type="text"
                 value={searchTerm}
@@ -427,8 +530,8 @@ const DailyProfitLossTable = () => {
                 "Purchase Price",
                 "Selling Price",
                 "Units Sold",
-                "Total Revenue",
-                "Total Cost",
+                "Total Purchase Price",
+                "Total Selling Price",
                 "Profit/Loss",
                 "Actions",
               ].map((heading) => (
@@ -526,13 +629,11 @@ const DailyProfitLossTable = () => {
                         className="h-10 w-[82px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
                       />
                     </td>
-
-                    <td className="border-b border-slate-100 px-3 py-4 text-[15px] font-semibold text-slate-900">
-                      {formatCurrency(totalRevenue)}
-                    </td>
-
                     <td className="border-b border-slate-100 px-3 py-4 text-[15px] font-semibold text-slate-700">
                       {formatCurrency(totalCost)}
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-4 text-[15px] font-semibold text-slate-900">
+                      {formatCurrency(totalRevenue)}
                     </td>
 
                     <td
@@ -616,11 +717,22 @@ const DailyProfitLossTable = () => {
 
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <h3 className="text-2xl font-bold text-slate-900">Actions</h3>
+          <div className="mt-6">
+            <Select
+              options={salesTypeOptions}
+              value={salesType}
+              onChange={setSalesType}
+              placeholder="Select sales type"
+              styles={selectStyles}
+            />
+          </div>
           <button
             type="button"
-            className="mt-10 inline-flex h-11 w-full items-center justify-center rounded-2xl bg-orange-500 px-4 text-sm font-semibold text-white transition hover:bg-orange-600"
+            onClick={handleSaveProfitLoss}
+            disabled={isSavingProfitLoss}
+            className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-2xl bg-orange-500 px-4 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-orange-300"
           >
-            Calculate Profit/Loss
+            {isSavingProfitLoss ? "Saving..." : "Calculate Profit/Loss"}
           </button>
           <button
             type="button"
@@ -657,6 +769,166 @@ const DailyProfitLossTable = () => {
             <span className="font-bold text-slate-900">
               {formatCurrency(summary.returnDeduction)}
             </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.04)] sm:p-6">
+        <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h3 className="text-xl font-bold tracking-tight text-slate-900">
+              Saved Profit/Loss History
+            </h3>
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              Date filter, sales type search আর pagination সহ saved data দেখা
+              যাবে।
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <label className="min-w-[180px]">
+              <span className="mb-1.5 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                Start Date
+              </span>
+              <input
+                type="date"
+                value={historyStartDate}
+                onChange={(e) => setHistoryStartDate(e.target.value)}
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+              />
+            </label>
+
+            <label className="min-w-[180px]">
+              <span className="mb-1.5 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                End Date
+              </span>
+              <input
+                type="date"
+                value={historyEndDate}
+                onChange={(e) => setHistoryEndDate(e.target.value)}
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+              />
+            </label>
+
+            <label className="min-w-[220px]">
+              <span className="mb-1.5 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                Sales Type
+              </span>
+              <input
+                type="text"
+                value={salesTypeSearch}
+                onChange={(e) => setSalesTypeSearch(e.target.value)}
+                placeholder="Search by sales type"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="mt-6 overflow-x-auto">
+          <table className="min-w-[920px] w-full border-separate border-spacing-0">
+            <thead>
+              <tr className="text-left">
+                {[
+                  "Date",
+                  "Sales Type",
+                  "Products",
+                  "Revenue",
+                  "Cost",
+                  "Profit/Loss",
+                ].map((heading) => (
+                  <th
+                    key={heading}
+                    className="border-b border-slate-200 px-3 py-4 text-sm font-bold text-slate-700 first:pl-2"
+                  >
+                    {heading}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {profitLossLoading || profitLossFetching ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-3 py-16 text-center text-sm font-medium text-slate-500"
+                  >
+                    Loading saved profit/loss data...
+                  </td>
+                </tr>
+              ) : profitLossRows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-3 py-16 text-center text-sm font-medium text-slate-500"
+                  >
+                    কোনো saved profit/loss data পাওয়া যায়নি।
+                  </td>
+                </tr>
+              ) : (
+                profitLossRows.map((row) => (
+                  <tr key={row?.Id} className="group">
+                    <td className="border-b border-slate-100 px-3 py-4 text-sm font-medium text-slate-700 first:pl-2">
+                      {formatDate(row?.createdAt || row?.date)}
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-4 text-sm font-semibold text-slate-900">
+                      {row?.salesType || "-"}
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-4 text-sm font-medium text-slate-700">
+                      {safeNumber(row?.products)}
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-4 text-sm font-semibold text-slate-900">
+                      {formatCurrency(row?.revenue)}
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-4 text-sm font-semibold text-slate-700">
+                      {formatCurrency(row?.cost)}
+                    </td>
+                    <td
+                      className={`border-b border-slate-100 px-3 py-4 text-sm font-bold ${
+                        safeNumber(row?.profitLoss) >= 0
+                          ? "text-emerald-600"
+                          : "text-rose-600"
+                      }`}
+                    >
+                      {formatCurrency(row?.profitLoss)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-slate-500">
+            Total: {totalProfitLossCount} records
+          </p>
+
+          <div className="flex items-center gap-2 self-end">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ChevronLeft size={18} />
+            </button>
+
+            <div className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700">
+              Page {currentPage} / {totalPages}
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ChevronRight size={18} />
+            </button>
           </div>
         </div>
       </div>

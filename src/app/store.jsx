@@ -142,6 +142,7 @@ import { mixerApi } from "../features/mixer/mixer";
 import { itemMasterApi } from "../features/manufactureStock/manufactureStock";
 import { damageRepairingStockApi } from "../features/damageRepairingStock/damageRepairingStock";
 import { employeeListApi } from "../features/employeeList/employeeList";
+import { profitLossApi } from "../features/profitLoss/profitLoss";
 
 // ✅ 1) Collect all apis once
 const apis = [
@@ -169,6 +170,7 @@ const apis = [
   cashInOutApi,
   marketingBookApi,
   marketingExpenseApi,
+  profitLossApi,
   itemApi,
   supplierApi,
   supplierHistoryApi,

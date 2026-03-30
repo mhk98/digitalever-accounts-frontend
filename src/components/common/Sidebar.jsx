@@ -571,14 +571,26 @@ const Sidebar = () => {
         style={{ width: isSidebarOpen ? 280 : 88 }}
       >
         {/* ✅ Light dashboard sidebar shell */}
-        <div className="h-full p-4 border-r border-slate-200 bg-slate-50 flex flex-col">
+        <div
+          className={`h-full border-r border-slate-200 bg-slate-50 flex flex-col ${
+            isSidebarOpen ? "p-4" : "p-2"
+          }`}
+        >
           <div className="flex-1 rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="p-4 border-b border-slate-200">
+            <div
+              className={`border-b border-slate-200 ${
+                isSidebarOpen ? "p-4" : "p-2"
+              }`}
+            >
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
                   <img
-                    src={logo ? ` http://localhost:4000/${logo}` : ""}
+                    src={
+                      logo
+                        ? ` https://apikafela.digitalever.com.bd/${logo}`
+                        : ""
+                    }
                     alt="Logo"
                     className="h-full w-full object-cover"
                   />
@@ -670,7 +682,11 @@ const Sidebar = () => {
             </div>
 
             {/* Nav */}
-            <nav className="flex-1 overflow-y-auto px-2 py-3 sidebar-scroll min-h-0">
+            <nav
+              className={`flex-1 overflow-y-auto py-3 sidebar-scroll min-h-0 ${
+                isSidebarOpen ? "px-2" : "px-1"
+              }`}
+            >
               {filteredItems.length === 0 ? (
                 <div className="px-3 py-6 text-sm text-slate-500">
                   No menu found.
@@ -690,8 +706,9 @@ const Sidebar = () => {
                   ? isActive(item.href)
                   : childActive;
 
-                const parentBase =
-                  "w-full group flex items-center gap-3 px-3 py-3 rounded-xl transition relative";
+                const parentBase = `w-full group flex items-center rounded-xl transition relative ${
+                  isSidebarOpen ? "gap-3 px-3 py-3" : "justify-center px-2 py-3"
+                }`;
 
                 const parentState = parentActive
                   ? "bg-indigo-50 border border-indigo-100"

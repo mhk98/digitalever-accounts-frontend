@@ -471,7 +471,9 @@ const DamageProductTable = () => {
     if (!createForm.quantity || Number(createForm.quantity) <= 0)
       return toast.error("Please enter valid quantity");
 
-    const variantsPayload = getNormalizedVariantsPayload(createForm.variantRows);
+    const variantsPayload = getNormalizedVariantsPayload(
+      createForm.variantRows,
+    );
     if (hasDuplicateVariantCombination(variantsPayload)) {
       return toast.error("Duplicate size and color combination found");
     }
@@ -855,124 +857,125 @@ const DamageProductTable = () => {
                   transition={{ duration: 0.2 }}
                   className="hover:bg-slate-50"
                 >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.date}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {resolveProductName(rp)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp?.supplier?.name || "-"}
-                </td>{" "}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp?.warehouse?.name || "-"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.quantity || 0)}
-                </td>
-                <td className="px-6 py-4 min-w-[260px]">
-                  {variantDisplayRows.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {variantDisplayRows.map((variant, index) => (
-                        <div
-                          key={`${rp.Id}-variant-${index}`}
-                          className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-3 py-2 shadow-sm"
-                        >
-                          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
-                            <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">
-                              {variant.size || "N/A"}
-                            </span>
-                            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-700">
-                              {variant.color || "N/A"}
-                            </span>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                    {rp.date}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                    {resolveProductName(rp)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp?.supplier?.name || "-"}
+                  </td>{" "}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp?.warehouse?.name || "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {Number(rp.quantity || 0)}
+                  </td>
+                  <td className="px-6 py-4 min-w-[260px]">
+                    {variantDisplayRows.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {variantDisplayRows.map((variant, index) => (
+                          <div
+                            key={`${rp.Id}-variant-${index}`}
+                            className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-3 py-2 shadow-sm"
+                          >
+                            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
+                              <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">
+                                {variant.size || "N/A"}
+                              </span>
+                              <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-700">
+                                {variant.color || "N/A"}
+                              </span>
+                            </div>
+                            <div className="mt-2 text-[11px] font-medium text-slate-500">
+                              Qty{" "}
+                              <span className="font-bold text-slate-900">
+                                {Number(variant.quantity || 0).toFixed(0)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="mt-2 text-[11px] font-medium text-slate-500">
-                            Qty{" "}
-                            <span className="font-bold text-slate-900">
-                              {Number(variant.quantity || 0).toFixed(0)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="inline-flex items-center rounded-full border border-dashed border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-400">
-                      No variants
-                    </div>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.purchase_price || 0).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.sale_price || 0).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${rp.status === "Approved"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : rp.status === "Active"
-                        ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                        : "bg-amber-50 text-amber-700 border-amber-200"
-                      }`}
-                  >
-                    {rp.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex items-center gap-3">
-                    {rp.note ? (
-                      <div className="relative">
-                        <button
-                          className="relative h-10 w-10 rounded-md flex items-center justify-center"
-                          title={rp.note}
-                          type="button"
-                          onClick={() => handleNoteClick(rp.note)}
-                        >
-                          <Notebook size={18} className="text-slate-700" />
-                        </button>
-
-                        <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
-                          1
-                        </span>
+                        ))}
                       </div>
                     ) : (
-                      <button
-                        className="h-10 w-10 rounded-md flex items-center justify-center cursor-default"
-                        title="No note available"
-                        type="button"
-                      >
-                        <Notebook size={18} className="text-slate-300" />
-                      </button>
+                      <div className="inline-flex items-center rounded-full border border-dashed border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-400">
+                        No variants
+                      </div>
                     )}
-
-                    <button
-                      onClick={() => openEdit(rp)}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-indigo-50 transition"
-                      title="Edit"
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {Number(rp.purchase_price || 0).toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {Number(rp.sale_price || 0).toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                        rp.status === "Approved"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : rp.status === "Active"
+                            ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                            : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
                     >
-                      <Edit size={18} className="text-indigo-600" />
-                    </button>
+                      {rp.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center gap-3">
+                      {rp.note ? (
+                        <div className="relative">
+                          <button
+                            className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                            title={rp.note}
+                            type="button"
+                            onClick={() => handleNoteClick(rp.note)}
+                          >
+                            <Notebook size={18} className="text-slate-700" />
+                          </button>
 
-                    {role === "superAdmin" || role === "admin" ? (
+                          <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                            1
+                          </span>
+                        </div>
+                      ) : (
+                        <button
+                          className="h-10 w-10 rounded-md flex items-center justify-center cursor-default"
+                          title="No note available"
+                          type="button"
+                        >
+                          <Notebook size={18} className="text-slate-300" />
+                        </button>
+                      )}
+
                       <button
-                        onClick={() => handleDelete(rp.Id)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
-                        title="Delete"
+                        onClick={() => openEdit(rp)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-indigo-50 transition"
+                        title="Edit"
                       >
-                        <Trash2 size={18} className="text-rose-600" />
+                        <Edit size={18} className="text-indigo-600" />
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => openEdit1(rp)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
-                        title="Delete Request / Note"
-                      >
-                        <Trash2 size={18} className="text-rose-600" />
-                      </button>
-                    )}
-                  </div>
-                </td>
+
+                      {role === "superAdmin" || role === "admin" ? (
+                        <button
+                          onClick={() => handleDelete(rp.Id)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
+                          title="Delete"
+                        >
+                          <Trash2 size={18} className="text-rose-600" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => openEdit1(rp)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
+                          title="Delete Request / Note"
+                        >
+                          <Trash2 size={18} className="text-rose-600" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </motion.tr>
               );
             })}
@@ -1009,10 +1012,11 @@ const DamageProductTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${active
-                ? "bg-indigo-600 text-white border-indigo-600"
-                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                }`}
+              className={`px-4 py-2 rounded-xl border transition ${
+                active
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              }`}
             >
               {pageNum}
             </button>
@@ -1059,7 +1063,9 @@ const DamageProductTable = () => {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Product
+              </label>
               <Select
                 options={receivedDropdownOptions}
                 value={
@@ -1080,10 +1086,13 @@ const DamageProductTable = () => {
                 isClearable
                 isDisabled={receivedLoading}
                 styles={selectStyles}
+                className="text-black"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Date
+              </label>
               <input
                 type="date"
                 value={currentItem?.date || ""}
@@ -1211,8 +1220,8 @@ const DamageProductTable = () => {
                       onClick={() => removeVariantRow("edit", index)}
                       className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
                       disabled={
-                        normalizeVariantRows(currentItem?.variantRows).length ===
-                        1
+                        normalizeVariantRows(currentItem?.variantRows)
+                          .length === 1
                       }
                     >
                       <span className="mx-auto block text-base leading-none">
@@ -1227,7 +1236,9 @@ const DamageProductTable = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Warehouse</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Warehouse
+              </label>
               <select
                 value={currentItem?.warehouseId || ""}
                 onChange={(e) =>
@@ -1248,7 +1259,9 @@ const DamageProductTable = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Supplier
+              </label>
               <select
                 value={currentItem?.supplierId || ""}
                 onChange={(e) =>
@@ -1271,7 +1284,9 @@ const DamageProductTable = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Quantity</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Quantity
+            </label>
             <input
               type="number"
               step="0.01"
@@ -1291,7 +1306,9 @@ const DamageProductTable = () => {
           <div className="space-y-4 pt-2">
             {role === "superAdmin" || role === "admin" ? (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Status
+                </label>
                 <select
                   value={currentItem?.status || ""}
                   onChange={(e) =>
@@ -1311,7 +1328,9 @@ const DamageProductTable = () => {
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Note
+                </label>
                 <textarea
                   value={currentItem?.note || ""}
                   onChange={(e) =>
@@ -1351,7 +1370,9 @@ const DamageProductTable = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Note
+            </label>
             <textarea
               value={currentItem?.note || ""}
               onChange={(e) =>
@@ -1390,7 +1411,9 @@ const DamageProductTable = () => {
         <form onSubmit={handleCreate} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Product
+              </label>
               <Select
                 options={receivedDropdownOptions}
                 value={
@@ -1411,10 +1434,13 @@ const DamageProductTable = () => {
                 isClearable
                 isDisabled={receivedLoading}
                 styles={selectStyles}
+                className="text-black"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Date
+              </label>
               <input
                 type="date"
                 value={createForm?.date || ""}
@@ -1481,7 +1507,8 @@ const DamageProductTable = () => {
                       styles={selectStyles}
                       className="text-sm font-medium"
                       isDisabled={
-                        !createForm?.receivedId || createSizeOptions.length === 0
+                        !createForm?.receivedId ||
+                        createSizeOptions.length === 0
                       }
                     />
                   </div>
@@ -1554,7 +1581,9 @@ const DamageProductTable = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Warehouse</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Warehouse
+              </label>
               <select
                 value={createForm?.warehouseId || ""}
                 onChange={(e) =>
@@ -1575,7 +1604,9 @@ const DamageProductTable = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Supplier
+              </label>
               <select
                 value={createForm?.supplierId || ""}
                 onChange={(e) =>
@@ -1598,7 +1629,9 @@ const DamageProductTable = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Quantity</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Quantity
+            </label>
             <input
               type="number"
               step="0.01"
@@ -1617,7 +1650,9 @@ const DamageProductTable = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Note
+            </label>
             <textarea
               value={createForm?.note || ""}
               onChange={(e) =>
