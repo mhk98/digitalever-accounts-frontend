@@ -266,7 +266,10 @@ const PurchaseRequisionTable = () => {
     error: errorAllProducts,
   } = useGetAllProductWithoutQueryQuery();
 
-  const productsData = useMemo(() => allProductsRes?.data || [], [allProductsRes]);
+  const productsData = useMemo(
+    () => allProductsRes?.data || [],
+    [allProductsRes],
+  );
 
   useEffect(() => {
     if (isErrorAllProducts)
@@ -940,134 +943,134 @@ const PurchaseRequisionTable = () => {
               const variantDisplayRows = getVariantDisplayRows(rp);
 
               return (
-              <motion.tr
-                key={rp.Id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-                className="hover:bg-slate-50"
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {rp.date}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp?.supplier?.name || "-"}
-                </td>{" "}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {rp?.warehouse?.name || "-"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                  {rp.name || resolveProductName(rp)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {Number(rp.quantity || 0)}
-                </td>
-                <td className="px-6 py-4 min-w-[240px]">
-                  {variantDisplayRows.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {variantDisplayRows.map((variant, index) => (
-                        <div
-                          key={`${rp.Id}-variant-${index}`}
-                          className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2"
-                        >
-                          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
-                            <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">
-                              {variant.size || "N/A"}
-                            </span>
-                            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-700">
-                              {variant.color || "N/A"}
-                            </span>
+                <motion.tr
+                  key={rp.Id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className="hover:bg-slate-50"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                    {rp.date}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp?.supplier?.name || "-"}
+                  </td>{" "}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp?.warehouse?.name || "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
+                    {rp.name || resolveProductName(rp)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {Number(rp.quantity || 0)}
+                  </td>
+                  <td className="px-6 py-4 min-w-[240px]">
+                    {variantDisplayRows.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {variantDisplayRows.map((variant, index) => (
+                          <div
+                            key={`${rp.Id}-variant-${index}`}
+                            className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2"
+                          >
+                            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
+                              <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">
+                                {variant.size || "N/A"}
+                              </span>
+                              <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-700">
+                                {variant.color || "N/A"}
+                              </span>
+                            </div>
+                            <div className="mt-2 text-[11px] font-medium text-slate-500">
+                              Qty{" "}
+                              <span className="font-bold text-slate-900">
+                                {Number(variant.quantity || 0).toFixed(0)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="mt-2 text-[11px] font-medium text-slate-500">
-                            Qty{" "}
-                            <span className="font-bold text-slate-900">
-                              {Number(variant.quantity || 0).toFixed(0)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="inline-flex items-center rounded-full border border-dashed border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-400">
-                      No variants
-                    </span>
-                  )}
-                </td>
-                {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full border border-dashed border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-400">
+                        No variants
+                      </span>
+                    )}
+                  </td>
+                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(rp.sale_price || 0).toFixed(2)}
                 </td> */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
-                      rp.status === "Approved"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : rp.status === "Active"
-                          ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                          : "bg-amber-50 text-amber-700 border-amber-200"
-                    }`}
-                  >
-                    {rp.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex items-center gap-2">
-                    {rp.note ? (
-                      <div className="relative">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                        rp.status === "Approved"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : rp.status === "Active"
+                            ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                            : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
+                    >
+                      {rp.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      {rp.note ? (
+                        <div className="relative">
+                          <button
+                            className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                            title={rp.note}
+                            type="button"
+                            onClick={() => handleNoteClick(rp.note)} // Open modal on click
+                          >
+                            <Notebook size={18} className="text-slate-700" />
+                          </button>
+
+                          <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                            {rp.note ? 1 : null}
+                          </span>
+                        </div>
+                      ) : (
                         <button
-                          className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                          className="h-10 w-10 rounded-md flex items-center justify-center"
                           title={rp.note}
                           type="button"
-                          onClick={() => handleNoteClick(rp.note)} // Open modal on click
                         >
                           <Notebook size={18} className="text-slate-700" />
                         </button>
+                      )}
 
-                        <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
-                          {rp.note ? 1 : null}
-                        </span>
-                      </div>
-                    ) : (
-                      <button
-                        className="h-10 w-10 rounded-md flex items-center justify-center"
-                        title={rp.note}
-                        type="button"
-                      >
-                        <Notebook size={18} className="text-slate-700" />
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => handleEditClick(rp)}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
-                      title="Edit"
-                    >
-                      <Edit size={18} className="text-indigo-600" />
-                    </button>
-
-                    {role === "superAdmin" || role === "admin" ? (
                       <button
                         type="button"
-                        onClick={() => handleDeleteProduct(rp.Id)}
+                        onClick={() => handleEditClick(rp)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
-                        title="Delete"
+                        title="Edit"
                       >
-                        <Trash2 size={18} className="text-red-600" />
+                        <Edit size={18} className="text-indigo-600" />
                       </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleEditClick1(rp)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
-                        title="Request Delete"
-                      >
-                        <Trash2 size={18} className="text-amber-600" />
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </motion.tr>
-            );
+
+                      {role === "superAdmin" || role === "admin" ? (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProduct(rp.Id)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                          title="Delete"
+                        >
+                          <Trash2 size={18} className="text-red-600" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleEditClick1(rp)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                          title="Request Delete"
+                        >
+                          <Trash2 size={18} className="text-amber-600" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </motion.tr>
+              );
             })}
 
             {!isLoading && rows.length === 0 && (
@@ -1181,7 +1184,10 @@ const PurchaseRequisionTable = () => {
               {normalizeVariantRows(currentProduct?.variantRows).map(
                 (row, index) => {
                   const colorOptions = row.size
-                    ? getVariationColorsForSize(selectedEditProductData, row.size)
+                    ? getVariationColorsForSize(
+                        selectedEditProductData,
+                        row.size,
+                      )
                     : editColorOptions;
 
                   return (
@@ -1191,7 +1197,7 @@ const PurchaseRequisionTable = () => {
                     >
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                          Size
+                          Size / Code
                         </label>
                         <Select
                           options={editSizeOptions}
@@ -1488,7 +1494,7 @@ const PurchaseRequisionTable = () => {
                     >
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                          Size
+                          Size / Code
                         </label>
                         <Select
                           options={createSizeOptions}

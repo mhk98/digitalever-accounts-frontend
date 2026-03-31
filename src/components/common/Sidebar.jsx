@@ -72,24 +72,6 @@ const SIDEBAR_ITEMS = [
   },
 
   {
-    name: "Employee List",
-    key: "employee_list",
-    icon: UserCog,
-    color: "#22c55e",
-    href: "/employee-list",
-    roles: ["superAdmin", "admin", "accountant"],
-  },
-
-  {
-    name: "Payroll",
-    key: "payroll",
-    icon: UserCog,
-    color: "#22c55e",
-    href: "/employee",
-    roles: ["superAdmin", "admin", "accountant"],
-  },
-
-  {
     name: "Assets",
     key: "assets",
     icon: ShieldCheck,
@@ -403,13 +385,6 @@ const SIDEBAR_ITEMS = [
     roles: ["superAdmin", "admin"],
     children: [
       {
-        name: "Payroll Fine",
-        key: "payroll_fine",
-        icon: DollarSign,
-        href: "/salary",
-        roles: ["superAdmin", "admin"],
-      },
-      {
         name: "Logo",
         key: "logo",
         icon: Image,
@@ -418,7 +393,39 @@ const SIDEBAR_ITEMS = [
       },
     ],
   },
+  {
+    name: "HR & Payroll",
+    key: "hr_payroll",
+    icon: UserCog,
+    color: "#ec4899",
+    roles: ["superAdmin", "admin", "accountant"],
+    children: [
+      {
+        name: "Employee List",
+        key: "employee_list",
+        icon: UserCog,
+        color: "#22c55e",
+        href: "/employee-list",
+        roles: ["superAdmin", "admin", "accountant"],
+      },
 
+      {
+        name: "Payroll",
+        key: "payroll",
+        icon: UserCog,
+        color: "#22c55e",
+        href: "/employee",
+        roles: ["superAdmin", "admin", "accountant"],
+      },
+      {
+        name: "Payroll Fine",
+        key: "payroll_fine",
+        icon: DollarSign,
+        href: "/salary",
+        roles: ["superAdmin", "admin", "accountant"],
+      },
+    ],
+  },
   {
     name: "Expire Product",
     key: "expired_product",

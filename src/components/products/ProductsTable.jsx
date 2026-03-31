@@ -369,7 +369,7 @@ const ProductsTable = () => {
                   SKU
                 </th> */}
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  Size
+                  Size / Code
                 </th>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   Color
@@ -566,7 +566,7 @@ const ProductsTable = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
-                Sizes
+                Size / Code
               </label>
               <input
                 type="text"
@@ -656,7 +656,7 @@ const ProductsTable = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
-                Sizes
+                Size / Code
               </label>
               <input
                 type="text"

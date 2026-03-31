@@ -8,20 +8,61 @@ import { useGetAllInventoryOverviewQuery } from "../../features/inventoryOvervie
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
 
+const sanitizeSkuSegment = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toUpperCase();
+
+const getBaseSku = (record) =>
+  record?.sku ||
+  record?.productSku ||
+  record?.product?.sku ||
+  record?.receivedProduct?.sku ||
+  record?.SKU ||
+  "";
+
+const getVariantSku = (record, variant, index) => {
+  if (variant?.sku) return variant.sku;
+
+  const baseSku = sanitizeSkuSegment(getBaseSku(record));
+  if (!baseSku) return "";
+
+  const sizeSegment = sanitizeSkuSegment(variant?.size);
+  const colorSegment = sanitizeSkuSegment(variant?.color);
+
+  return [
+    baseSku,
+    sizeSegment || `VAR${index + 1}`,
+    colorSegment || `ITEM${index + 1}`,
+  ].join("-");
+};
+
 const getVariantDisplayRows = (record) => {
   if (Array.isArray(record?.variants)) {
-    return record.variants.filter(
-      (item) => item && (item.size || item.color || item.quantity),
-    );
+    return record.variants
+      .filter((item) => item && (item.size || item.color || item.quantity))
+      .map((item) => ({
+        size: item?.size ? String(item.size) : "",
+        color: item?.color ? String(item.color) : "",
+        quantity: Number(item?.quantity) || 0,
+        sku: item?.sku ? String(item.sku) : "",
+      }));
   }
 
   if (typeof record?.variants === "string") {
     try {
       const parsed = JSON.parse(record.variants);
       if (Array.isArray(parsed)) {
-        return parsed.filter(
-          (item) => item && (item.size || item.color || item.quantity),
-        );
+        return parsed
+          .filter((item) => item && (item.size || item.color || item.quantity))
+          .map((item) => ({
+            size: item?.size ? String(item.size) : "",
+            color: item?.color ? String(item.color) : "",
+            quantity: Number(item?.quantity) || 0,
+            sku: item?.sku ? String(item.sku) : "",
+          }));
       }
     } catch {
       return [];
@@ -267,6 +308,11 @@ const InventoryOverviewTable = () => {
                                   {Number(variant.quantity || 0).toFixed(0)}
                                 </span>
                               </div>
+                              {getVariantSku(rp, variant, index) ? (
+                                <div className="mt-1 text-[10px] font-semibold text-indigo-600 break-all">
+                                  SKU: {getVariantSku(rp, variant, index)}
+                                </div>
+                              ) : null}
                             </div>
                           ))}
                         </div>

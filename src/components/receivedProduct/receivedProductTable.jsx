@@ -173,13 +173,35 @@ const getVariationColorsForSize = (product, size) => {
   ].map((value) => ({ value, label: value }));
 };
 
-const getNormalizedVariantsPayload = (rows) =>
+const sanitizeSkuSegment = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toUpperCase();
+
+const generateVariantSku = (baseSku, row, index) => {
+  const normalizedBaseSku = sanitizeSkuSegment(baseSku);
+  if (!normalizedBaseSku) return "";
+
+  const sizeSegment = sanitizeSkuSegment(row?.size);
+  const colorSegment = sanitizeSkuSegment(row?.color);
+
+  return [
+    normalizedBaseSku,
+    sizeSegment || `VAR${index + 1}`,
+    colorSegment || `ITEM${index + 1}`,
+  ].join("-");
+};
+
+const getNormalizedVariantsPayload = (rows, baseSku = "") =>
   normalizeVariantRows(rows)
     .filter((row) => row.size || row.color || row.quantity)
-    .map((row) => ({
+    .map((row, index) => ({
       size: row.size || "",
       color: row.color || "",
       quantity: Number(row.quantity) || 0,
+      sku: generateVariantSku(baseSku, row, index),
     }))
     .filter((row) => row.size && row.color);
 
@@ -563,6 +585,7 @@ const ReceivedProductTable = () => {
     try {
       const variantsPayload = getNormalizedVariantsPayload(
         currentProduct?.variantRows,
+        currentProduct?.sku,
       );
       if (hasDuplicateVariantCombination(variantsPayload)) {
         return toast.error("Duplicate size and color combination found");
@@ -626,6 +649,7 @@ const ReceivedProductTable = () => {
     try {
       const variantsPayload = getNormalizedVariantsPayload(
         currentProduct?.variantRows,
+        currentProduct?.sku,
       );
       if (hasDuplicateVariantCombination(variantsPayload)) {
         return toast.error("Duplicate size and color combination found");
@@ -693,6 +717,7 @@ const ReceivedProductTable = () => {
 
     const variantsPayload = getNormalizedVariantsPayload(
       createProduct.variantRows,
+      createProduct.sku,
     );
     if (hasDuplicateVariantCombination(variantsPayload)) {
       return toast.error("Duplicate size and color combination found");
@@ -1127,6 +1152,11 @@ const ReceivedProductTable = () => {
                                   {Number(variant.quantity || 0).toFixed(0)}
                                 </span>
                               </div>
+                              {variant?.sku ? (
+                                <div className="mt-1 text-[10px] font-semibold text-indigo-600 break-all">
+                                  SKU: {variant.sku}
+                                </div>
+                              ) : null}
                             </div>
                           ))}
                         </div>
@@ -1401,7 +1431,7 @@ const ReceivedProductTable = () => {
                   >
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                        Size
+                        Size / Code
                       </label>
                       <Select
                         options={editSizeOptions}
@@ -1489,6 +1519,14 @@ const ReceivedProductTable = () => {
                     >
                       <X size={16} className="mx-auto" />
                     </button>
+
+                    <div className="sm:col-span-full">
+                      <p className="text-[11px] font-semibold text-indigo-600 break-all">
+                        Variant SKU:{" "}
+                        {generateVariantSku(currentProduct?.sku, row, index) ||
+                          "Enter base SKU to auto generate"}
+                      </p>
+                    </div>
                   </div>
                 );
               },
@@ -1623,7 +1661,7 @@ const ReceivedProductTable = () => {
                   })
                 }
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                placeholder="SKU-2024-001"
+                placeholder="HD-2024-001"
               />
             </div>
 
@@ -1896,7 +1934,7 @@ const ReceivedProductTable = () => {
                   >
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                        Size
+                        Size / Code
                       </label>
                       <Select
                         options={createSizeOptions}
@@ -1984,6 +2022,14 @@ const ReceivedProductTable = () => {
                     >
                       <X size={16} className="mx-auto" />
                     </button>
+
+                    <div className="sm:col-span-full">
+                      <p className="text-[11px] font-semibold text-indigo-600 break-all">
+                        Variant SKU:{" "}
+                        {generateVariantSku(createProduct?.sku, row, index) ||
+                          "Enter base SKU to auto generate"}
+                      </p>
+                    </div>
                   </div>
                 );
               },
@@ -2003,7 +2049,7 @@ const ReceivedProductTable = () => {
                     })
                   }
                   className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                  placeholder="SKU-2024-001"
+                  placeholder="HD-2024-001"
                 />
               </div>
 

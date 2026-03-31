@@ -1138,7 +1138,7 @@ const DamageProductTable = () => {
                   >
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                        Size
+                        Size / Code
                       </label>
                       <Select
                         options={editSizeOptions}
@@ -1485,7 +1485,7 @@ const DamageProductTable = () => {
                 >
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                      Size
+                      Size / Code
                     </label>
                     <Select
                       options={createSizeOptions}

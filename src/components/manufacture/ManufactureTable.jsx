@@ -952,6 +952,7 @@ const ManufactureTable = () => {
                     <option value="Pcs">Pcs</option>
                     <option value="Kg">Kg</option>
                     <option value="Liter">Liter</option>
+                    <option value="ml">ml</option>
                     <option value="Box">Box</option>
                     <option value="Dozen">Dozen</option>
                   </select>
@@ -1168,6 +1169,7 @@ const ManufactureTable = () => {
                     <option value="Pcs">Pcs</option>
                     <option value="Kg">Kg</option>
                     <option value="Liter">Liter</option>
+                    <option value="ml">ml</option>
                     <option value="Box">Box</option>
                     <option value="Dozen">Dozen</option>
                   </select>
