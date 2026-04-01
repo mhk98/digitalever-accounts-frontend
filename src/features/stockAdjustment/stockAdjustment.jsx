@@ -52,9 +52,9 @@ export const stockAdjustmentApi = baseApi.injectEndpoints({
     }),
 
     getAllStockAdjustment: build.query({
-      query: ({ page, limit, startDate, endDate, name }) => ({
+      query: ({ page, limit, startDate, endDate, name, supplierId }) => ({
         url: "stock-adjustment",
-        params: { page, limit, startDate, endDate, name },
+        params: { page, limit, startDate, endDate, name, supplierId },
       }),
       providesTags: (result) =>
         result?.data?.length

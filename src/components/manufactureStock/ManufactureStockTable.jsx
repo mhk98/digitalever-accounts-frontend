@@ -236,9 +236,9 @@ const ManufactureStockTable = () => {
                 <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.in_hand_qty || "In Hand Value"}
                 </th>
-                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                {/* <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.unit_cost || "Unit Cost"}
-                </th>
+                </th> */}
               </tr>
             </thead>
 
@@ -270,14 +270,14 @@ const ManufactureStockTable = () => {
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap text-center">
                     <span className="inline-flex items-center px-4 py-1.5 rounded-2xl text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm shadow-indigo-50 tabular-nums">
-                      {Number(rp.unitValue || 0).toLocaleString()}
+                      {Number(rp.unitValue || 0)} {rp.unit || "Pcs"}
                     </span>
                   </td>
-                  <td className="px-6 py-5 whitespace-nowrap text-center">
+                  {/* <td className="px-6 py-5 whitespace-nowrap text-center">
                     <span className="inline-flex items-center px-4 py-1.5 rounded-2xl text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm shadow-indigo-50 tabular-nums">
                       {Number(rp.unitCost || 0).toLocaleString()}
                     </span>
-                  </td>
+                  </td> */}
                 </motion.tr>
               ))}
             </tbody>

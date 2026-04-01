@@ -24,10 +24,12 @@ import {
 } from "../../features/manufacture/manufacture";
 import { useGetAllItemWithoutQueryQuery } from "../../features/item/item";
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
+import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 
 const initialCreateProduct = {
   itemId: "",
   productId: "",
+  supplierId: "",
   unitValue: "",
   cost: "",
   note: "",
@@ -39,6 +41,7 @@ const initialCreateProduct = {
 const ManufactureTable = () => {
   const { language } = useLayout();
   const t = translations[language] || translations.EN;
+  const [supplier, setSupplier] = useState("");
 
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
@@ -205,6 +208,7 @@ const ManufactureTable = () => {
       startDate: startDate || undefined,
       endDate: endDate || undefined,
       name: itemName || undefined,
+      supplierId: supplier || undefined,
     };
 
     Object.keys(args).forEach((k) => {
@@ -214,7 +218,7 @@ const ManufactureTable = () => {
     });
 
     return args;
-  }, [currentPage, itemsPerPage, startDate, endDate, itemName]);
+  }, [currentPage, itemsPerPage, startDate, endDate, itemName, supplier]);
 
   const { data, isLoading, isError, error, refetch } =
     useGetAllManufactureQuery(queryArgs);
@@ -261,6 +265,7 @@ const ManufactureTable = () => {
       ...rp,
       itemId: rp.itemId ? String(rp.itemId) : "",
       productId: rp.productId ? String(rp.productId) : "",
+      supplierId: rp.supplierId ? String(rp.supplierId) : "",
       date: rp.date ?? "",
       note: rp.note ?? "",
       cost: rp.cost ?? "",
@@ -278,6 +283,7 @@ const ManufactureTable = () => {
       ...rp,
       itemId: rp.itemId ? String(rp.itemId) : "",
       productId: rp.productId ? String(rp.productId) : "",
+      supplierId: rp.supplierId ? String(rp.supplierId) : "",
       date: rp.date ?? "",
       note: rp.note ?? "",
       cost: rp.cost ?? "",
@@ -312,6 +318,7 @@ const ManufactureTable = () => {
         cost: Number(createProduct.cost) || 0,
         date: createProduct.date || "",
         note: createProduct.note || "",
+        supplierId: Number(createProduct.supplierId) || undefined,
         userId: Number(userId) || 0,
         actorRole: role,
       };
@@ -343,6 +350,7 @@ const ManufactureTable = () => {
         cost: Number(currentProduct.cost) || 0,
         date: currentProduct.date || "",
         note: currentProduct.note || "",
+        supplierId: Number(currentProduct.supplierId) || undefined,
         userId: Number(currentProduct.userId) || 0,
         actorRole: role,
       };
@@ -382,6 +390,7 @@ const ManufactureTable = () => {
         cost: Number(currentProduct.cost) || 0,
         date: currentProduct.date || "",
         note: currentProduct.note || "",
+        supplierId: Number(currentProduct.supplierId) || undefined,
         userId: Number(currentProduct.userId) || 0,
         actorRole: role,
       };
@@ -482,6 +491,28 @@ const ManufactureTable = () => {
     placeholder: (base) => ({ ...base, color: "#64748b" }),
     menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
   };
+
+  // ✅ suppliers
+  const {
+    data: allSupplierRes,
+    isError: isErrorSupplier,
+    error: errorSupplier,
+  } = useGetAllSupplierWithoutQueryQuery();
+  const suppliers = useMemo(() => allSupplierRes?.data || [], [allSupplierRes]);
+
+  useEffect(() => {
+    if (isErrorSupplier)
+      console.error("Error fetching suppliers", errorSupplier);
+  }, [isErrorSupplier, errorSupplier]);
+
+  const supplierOptions = useMemo(
+    () =>
+      (suppliers || []).map((s) => ({
+        value: s.Id,
+        label: s.name,
+      })),
+    [suppliers],
+  );
 
   return (
     <motion.div
@@ -585,7 +616,24 @@ const ManufactureTable = () => {
             className="text-black"
           />
         </div>
-
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
+            {t.supplier}
+          </label>
+          <Select
+            options={supplierOptions}
+            value={
+              supplierOptions.find(
+                (o) => String(o.value) === String(supplier),
+              ) || null
+            }
+            onChange={(selected) => setSupplier(selected?.value || "")}
+            placeholder={t.search}
+            isClearable
+            styles={selectStyles}
+            className="text-black"
+          />
+        </div>
         <button
           type="button"
           className="h-11 bg-slate-100 hover:bg-slate-200 text-slate-600 transition rounded-xl px-4 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 border border-slate-200"
@@ -606,9 +654,9 @@ const ManufactureTable = () => {
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.product || "Product"}
                 </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                {/* <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.unit || "Unit"}
-                </th>
+                </th> */}
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.unit_value || "Unit Value"}
                 </th>
@@ -645,12 +693,12 @@ const ManufactureTable = () => {
                     </div>
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.unit || "Pcs"}
-                  </td>
+                  </td> */}
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.unitValue || 0)}
+                    {Number(rp.unitValue || 0)} {rp.unit || "Pcs"}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
@@ -869,7 +917,28 @@ const ManufactureTable = () => {
               isDisabled={isLoadingAllItems}
             />
           </div>
-
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              {t.supplier || "Supplier"}
+            </label>
+            <select
+              value={currentProduct?.supplierId || ""}
+              onChange={(e) =>
+                setCurrentProduct({
+                  ...currentProduct,
+                  supplierId: e.target.value,
+                })
+              }
+              className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+            >
+              <option value="">{t.select_supplier || "Select Supplier"}</option>
+              {suppliers?.map((s) => (
+                <option key={s.Id} value={s.Id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               {t.date || "Date"}
@@ -951,10 +1020,11 @@ const ManufactureTable = () => {
                   >
                     <option value="Pcs">Pcs</option>
                     <option value="Kg">Kg</option>
-                    <option value="Liter">Liter</option>
-                    <option value="ml">ml</option>
-                    <option value="Box">Box</option>
-                    <option value="Dozen">Dozen</option>
+                    {/* <option value="Liter">Liter</option> */}
+                    <option value="Ml">Ml</option>
+                    <option value="Gram">Gram</option>
+                    {/* <option value="Box">Box</option>
+                    <option value="Dozen">Dozen</option> */}
                   </select>
                 </div>
               </div>
@@ -1089,6 +1159,28 @@ const ManufactureTable = () => {
 
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              {t.supplier || "Supplier"}
+            </label>
+            <select
+              value={createProduct?.supplierId || ""}
+              onChange={(e) =>
+                setCreateProduct({
+                  ...createProduct,
+                  supplierId: e.target.value,
+                })
+              }
+              className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+            >
+              <option value="">{t.select_supplier || "Select Supplier"}</option>
+              {suppliers?.map((s) => (
+                <option key={s.Id} value={s.Id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               {t.date || "Date"}
             </label>
             <input
@@ -1168,10 +1260,11 @@ const ManufactureTable = () => {
                   >
                     <option value="Pcs">Pcs</option>
                     <option value="Kg">Kg</option>
-                    <option value="Liter">Liter</option>
-                    <option value="ml">ml</option>
-                    <option value="Box">Box</option>
-                    <option value="Dozen">Dozen</option>
+                    {/* <option value="Liter">Liter</option> */}
+                    <option value="Ml">Ml</option>
+                    <option value="Gram">Gram</option>
+                    {/* <option value="Box">Box</option>
+                    <option value="Dozen">Dozen</option> */}
                   </select>
                 </div>
               </div>

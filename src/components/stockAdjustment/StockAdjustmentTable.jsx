@@ -23,10 +23,12 @@ import {
   useInsertStockAdjustmentMutation,
   useUpdateStockAdjustmentMutation,
 } from "../../features/stockAdjustment/stockAdjustment";
+import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 
 const initialCreateProduct = {
   itemId: "",
   productId: "",
+  supplierId: "",
   unitValue: "",
   note: "",
   date: new Date().toISOString().slice(0, 10),
@@ -54,6 +56,7 @@ const StockAdjustmentTable = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [itemName, setItemName] = useState("");
+  const [supplier, setSupplier] = useState("");
 
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -203,6 +206,7 @@ const StockAdjustmentTable = () => {
       startDate: startDate || undefined,
       endDate: endDate || undefined,
       name: itemName || undefined,
+      supplierId: supplier || undefined,
     };
 
     Object.keys(args).forEach((k) => {
@@ -212,7 +216,7 @@ const StockAdjustmentTable = () => {
     });
 
     return args;
-  }, [currentPage, itemsPerPage, startDate, endDate, itemName]);
+  }, [currentPage, itemsPerPage, startDate, endDate, itemName, supplier]);
 
   const { data, isLoading, isError, error, refetch } =
     useGetAllStockAdjustmentQuery(queryArgs);
@@ -264,11 +268,13 @@ const StockAdjustmentTable = () => {
       ...rp,
       itemId: rp.itemId ? String(rp.itemId) : "",
       productId: rp.productId ? String(rp.productId) : "",
+      supplierId: rp.supplierId ? String(rp.supplierId) : "",
       date: rp.date ?? "",
       note: rp.note ?? "",
       unitValue: rp.unitValue ?? "",
       unit: rp.unit ?? "Pcs",
       hasUnit: !!rp.unitValue,
+
       userId,
     });
 
@@ -280,11 +286,13 @@ const StockAdjustmentTable = () => {
       ...rp,
       itemId: rp.itemId ? String(rp.itemId) : "",
       productId: rp.productId ? String(rp.productId) : "",
+      supplierId: rp.supplierId ? String(rp.supplierId) : "",
       date: rp.date ?? "",
       note: rp.note ?? "",
       unitValue: rp.unitValue ?? "",
       unit: rp.unit ?? "Pcs",
       hasUnit: !!rp.unitValue,
+
       userId,
     });
 
@@ -309,6 +317,8 @@ const StockAdjustmentTable = () => {
         date: createProduct.date || "",
         note: createProduct.note || "",
         userId: Number(userId) || 0,
+        supplierId: Number(createProduct.supplierId) || undefined,
+
         actorRole: role,
       };
 
@@ -345,6 +355,8 @@ const StockAdjustmentTable = () => {
         date: createProduct.date || "",
         note: createProduct.note || "",
         userId: Number(userId) || 0,
+        supplierId: Number(createProduct.supplierId) || undefined,
+
         actorRole: role,
       };
 
@@ -374,6 +386,8 @@ const StockAdjustmentTable = () => {
         date: currentProduct.date || "",
         note: currentProduct.note || "",
         userId: Number(currentProduct.userId) || 0,
+        supplierId: Number(currentProduct.supplierId) || undefined,
+
         actorRole: role,
       };
 
@@ -411,6 +425,8 @@ const StockAdjustmentTable = () => {
           : 0,
         date: currentProduct.date || "",
         note: currentProduct.note || "",
+        supplierId: Number(currentProduct.supplierId) || undefined,
+
         userId: Number(currentProduct.userId) || 0,
         actorRole: role,
       };
@@ -512,6 +528,27 @@ const StockAdjustmentTable = () => {
     menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
   };
 
+  // ✅ suppliers
+  const {
+    data: allSupplierRes,
+    isError: isErrorSupplier,
+    error: errorSupplier,
+  } = useGetAllSupplierWithoutQueryQuery();
+  const suppliers = useMemo(() => allSupplierRes?.data || [], [allSupplierRes]);
+
+  useEffect(() => {
+    if (isErrorSupplier)
+      console.error("Error fetching suppliers", errorSupplier);
+  }, [isErrorSupplier, errorSupplier]);
+
+  const supplierOptions = useMemo(
+    () =>
+      (suppliers || []).map((s) => ({
+        value: s.Id,
+        label: s.name,
+      })),
+    [suppliers],
+  );
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_4px_20px_rgba(15,23,42,0.04)] rounded-2xl p-4 sm:p-6 border border-slate-200 mb-8"
@@ -622,6 +659,25 @@ const StockAdjustmentTable = () => {
           />
         </div>
 
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
+            {t.supplier}
+          </label>
+          <Select
+            options={supplierOptions}
+            value={
+              supplierOptions.find(
+                (o) => String(o.value) === String(supplier),
+              ) || null
+            }
+            onChange={(selected) => setSupplier(selected?.value || "")}
+            placeholder={t.search}
+            isClearable
+            styles={selectStyles}
+            className="text-black"
+          />
+        </div>
+
         <button
           type="button"
           className="h-11 bg-slate-100 hover:bg-slate-200 text-slate-600 transition rounded-xl px-4 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 border border-slate-200"
@@ -642,9 +698,9 @@ const StockAdjustmentTable = () => {
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.product || "Product"}
                 </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                {/* <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.unit || "Unit"}
-                </th>
+                </th> */}
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.unit_value || "Unit Value"}
                 </th>
@@ -678,12 +734,12 @@ const StockAdjustmentTable = () => {
                     </div>
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.unit || "Pcs"}
-                  </td>
+                  </td> */}
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.unitValue || 0)}
+                    {Number(rp.unitValue || 0)} {rp.unit || "Pcs"}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -982,7 +1038,8 @@ const StockAdjustmentTable = () => {
                     <option value="Pcs">Pcs</option>
                     <option value="Kg">Kg</option>
                     <option value="Liter">Liter</option>
-                    <option value="ml">ml</option>
+                    <option value="Ml">Ml</option>
+                    <option value="Gram">Gram</option>
                     <option value="Box">Box</option>
                     <option value="Dozen">Dozen</option>
                   </select>
@@ -1043,6 +1100,28 @@ const StockAdjustmentTable = () => {
             >
               <option value="In">{t.Stock_In || "Stock In"}</option>
               <option value="Out">{t.Stock_Out || "Stock Out"}</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              {t.supplier || "Supplier"}
+            </label>
+            <select
+              value={currentProduct?.supplierId || ""}
+              onChange={(e) =>
+                setCurrentProduct({
+                  ...currentProduct,
+                  supplierId: e.target.value,
+                })
+              }
+              className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+            >
+              <option value="">{t.select_supplier || "Select Supplier"}</option>
+              {suppliers?.map((s) => (
+                <option key={s.Id} value={s.Id}>
+                  {s.name}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -1205,7 +1284,8 @@ const StockAdjustmentTable = () => {
                     <option value="Pcs">Pcs</option>
                     <option value="Kg">Kg</option>
                     <option value="Liter">Liter</option>
-                    <option value="ml">ml</option>
+                    <option value="Ml">Ml</option>
+                    <option value="Gram">Gram</option>
                     <option value="Box">Box</option>
                     <option value="Dozen">Dozen</option>
                   </select>
@@ -1227,7 +1307,28 @@ const StockAdjustmentTable = () => {
               placeholder={t.add_extra_info || "Add any extra info..."}
             />
           </div>
-
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              {t.supplier || "Supplier"}
+            </label>
+            <select
+              value={createProduct?.supplierId || ""}
+              onChange={(e) =>
+                setCreateProduct({
+                  ...createProduct,
+                  supplierId: e.target.value,
+                })
+              }
+              className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+            >
+              <option value="">{t.select_supplier || "Select Supplier"}</option>
+              {suppliers?.map((s) => (
+                <option key={s.Id} value={s.Id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
             <button
               type="button"
@@ -1388,8 +1489,9 @@ const StockAdjustmentTable = () => {
                   >
                     <option value="Pcs">Pcs</option>
                     <option value="Kg">Kg</option>
+                    <option value="Ml">Ml</option>
                     <option value="Liter">Liter</option>
-                    <option value="ml">ml</option>
+                    <option value="Gram">Gram</option>
                     <option value="Box">Box</option>
                     <option value="Dozen">Dozen</option>
                   </select>

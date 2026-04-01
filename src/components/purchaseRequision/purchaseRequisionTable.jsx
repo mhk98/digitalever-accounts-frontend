@@ -149,7 +149,7 @@ const getNormalizedVariantsPayload = (rows) =>
       color: row.color || "",
       quantity: Number(row.quantity) || 0,
     }))
-    .filter((row) => row.size && row.color);
+    .filter((row) => row.size);
 
 const getVariantRowsTotalQuantity = (rows) =>
   normalizeVariantRows(rows).reduce(
@@ -171,8 +171,8 @@ const hasDuplicateVariantCombination = (rows) => {
   const seen = new Set();
 
   for (const row of rows) {
-    if (!row.size || !row.color) continue;
-    const key = `${row.size}__${row.color}`;
+    if (!row.size) continue;
+    const key = `${row.size}__${row.color || ""}`;
     if (seen.has(key)) return true;
     seen.add(key);
   }
