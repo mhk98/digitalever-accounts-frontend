@@ -654,9 +654,9 @@ const ManufactureTable = () => {
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.product || "Product"}
                 </th>
-                {/* <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  {t.unit || "Unit"}
-                </th> */}
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  {t.supplier || "Supplier"}
+                </th>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.unit_value || "Unit Value"}
                 </th>
@@ -693,9 +693,9 @@ const ManufactureTable = () => {
                     </div>
                   </td>
 
-                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {rp.unit || "Pcs"}
-                  </td> */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp.supplier?.name || "N/A"}
+                  </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {Number(rp.unitValue || 0)} {rp.unit || "Pcs"}

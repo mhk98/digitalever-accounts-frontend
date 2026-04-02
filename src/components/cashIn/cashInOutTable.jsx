@@ -1547,6 +1547,7 @@ import toast from "react-hot-toast";
 import {
   useDeleteCashInOutMutation,
   useGetAllCashInOutQuery,
+  useGetAllCashInOutWithoutQueryQuery,
   useInsertCashInOutMutation,
   useUpdateCashInOutMutation,
 } from "../../features/cashInOut/cashInOut";
@@ -1609,6 +1610,7 @@ const CashInOutTable = () => {
   const [isModalOpen3, setIsModalOpen3] = useState(false); // delete/note
   const [currentProduct, setCurrentProduct] = useState(null);
   const [filterCategory, setFilterCategory] = useState("");
+  const [filterLender, setFilterLender] = useState("");
 
   const userId = localStorage.getItem("userId");
 
@@ -1618,6 +1620,7 @@ const CashInOutTable = () => {
     bankName: "",
     bankAccount: "",
     supplierId: "",
+    lender: "",
     note: "",
     status: "",
     category: "",
@@ -1656,6 +1659,11 @@ const CashInOutTable = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
 
+  const isLoanCategory = (category) =>
+    String(category || "")
+      .trim()
+      .toLowerCase() === "loan";
+
   useEffect(() => {
     const updatePagesPerSet = () => {
       if (window.innerWidth < 640) setPagesPerSet(5);
@@ -1693,7 +1701,14 @@ const CashInOutTable = () => {
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate, filterPaymentMode, filterPaymentStatus]);
+  }, [
+    startDate,
+    endDate,
+    filterPaymentMode,
+    filterPaymentStatus,
+    filterCategory,
+    filterLender,
+  ]);
 
   useEffect(() => {
     if (startDate && endDate && startDate > endDate) setEndDate(startDate);
@@ -1708,6 +1723,12 @@ const CashInOutTable = () => {
     }
   }, [createProduct.paymentMode]);
 
+  useEffect(() => {
+    if (!isLoanCategory(createProduct.category) && createProduct.lender) {
+      setCreateProduct((p) => ({ ...p, lender: "" }));
+    }
+  }, [createProduct.category]);
+
   // ✅ Bank না হলে bank fields reset (Edit)
   useEffect(() => {
     if (!currentProduct) return;
@@ -1717,6 +1738,13 @@ const CashInOutTable = () => {
       }
     }
   }, [currentProduct?.paymentMode]);
+
+  useEffect(() => {
+    if (!currentProduct) return;
+    if (!isLoanCategory(currentProduct.category) && currentProduct.lender) {
+      setCurrentProduct((p) => ({ ...p, lender: "" }));
+    }
+  }, [currentProduct?.category]);
 
   // const queryArgs = useMemo(() => {
   //   const args = {
@@ -1759,6 +1787,7 @@ const CashInOutTable = () => {
       endDate: endDate || undefined,
       bookId: id,
       category: filterCategory || undefined,
+      lender: filterLender || undefined,
       paymentMode: filterPaymentMode || undefined,
       paymentStatus: filterPaymentStatus || undefined,
       searchTerm: searchTerm || undefined, // ensure it's included in the query
@@ -1779,6 +1808,7 @@ const CashInOutTable = () => {
     filterPaymentMode,
     filterPaymentStatus,
     filterCategory,
+    filterLender,
     searchTerm,
   ]);
 
@@ -1794,6 +1824,45 @@ const CashInOutTable = () => {
       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
+
+  const { data: allCashInOutRes } = useGetAllCashInOutWithoutQueryQuery();
+
+  const lenderOptions = useMemo(() => {
+    const rows = Array.isArray(allCashInOutRes?.data)
+      ? allCashInOutRes.data
+      : Array.isArray(products)
+        ? products
+        : [];
+
+    const values = [
+      ...rows.map(
+        (row) =>
+          row?.lender ??
+          row?.loanName ??
+          row?.loan_person_name ??
+          row?.loanPersonName ??
+          "",
+      ),
+      createProduct?.lender || "",
+      currentProduct?.lender || "",
+    ];
+
+    const seen = new Set();
+
+    return values.filter((value) => {
+      const normalized = String(value || "").trim();
+      const key = normalized.toLowerCase();
+
+      if (!normalized || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [
+    allCashInOutRes?.data,
+    products,
+    createProduct?.lender,
+    currentProduct?.lender,
+  ]);
 
   // book info (name for report header)
   const { data: bookRes } = useGetSingleBookDataByIdQuery(id, { skip: !id });
@@ -1892,6 +1961,12 @@ const CashInOutTable = () => {
       bankName: rp.bankName ?? "",
       bankAccount: rp.bankAccount ?? "",
       supplierId: rp.supplierId ?? "",
+      lender:
+        rp.lender ??
+        rp.loanName ??
+        rp.loan_person_name ??
+        rp.loanPersonName ??
+        "",
       note: rp.note ?? "",
       status: rp.status ?? "",
       date: rp.date ?? "",
@@ -1912,6 +1987,12 @@ const CashInOutTable = () => {
       amount: rp.amount ?? "",
       bankName: rp.bankName ?? "",
       supplierId: rp.supplierId ?? "",
+      lender:
+        rp.lender ??
+        rp.loanName ??
+        rp.loan_person_name ??
+        rp.loanPersonName ??
+        "",
       bankAccount: rp.bankAccount ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
@@ -1934,6 +2015,13 @@ const CashInOutTable = () => {
     try {
       let finalCategoryName = currentProduct.category;
 
+      if (
+        isLoanCategory(finalCategoryName) &&
+        !String(currentProduct.lender || "").trim()
+      ) {
+        return toast.error("Lender name is required!");
+      }
+
       // If the category is new and being added dynamically
       if (isNewCategoryEdit) {
         const createdCategoryName =
@@ -1947,6 +2035,7 @@ const CashInOutTable = () => {
       formData.append("paymentStatus", currentProduct.paymentStatus);
       formData.append("note", currentProduct.note);
       formData.append("supplierId", currentProduct?.supplierId || "");
+      formData.append("lender", currentProduct?.lender?.trim() || "");
       formData.append("status", currentProduct.status);
       formData.append("date", currentProduct.date);
       formData.append("userId", userId);
@@ -2043,6 +2132,13 @@ const CashInOutTable = () => {
         finalCategoryName = createdCategoryName; // Using the newly created category name
       }
 
+      if (
+        isLoanCategory(finalCategoryName) &&
+        !String(createProduct.lender || "").trim()
+      ) {
+        return toast.error("Lender name is required!");
+      }
+
       // Form data preparation for submission
       const formData = new FormData();
       formData.append("paymentMode", createProduct.paymentMode);
@@ -2067,6 +2163,7 @@ const CashInOutTable = () => {
       formData.append("amount", String(Number(createProduct.amount)));
       formData.append("bookId", id);
       formData.append("supplierId", createProduct?.supplierId);
+      formData.append("lender", createProduct?.lender?.trim() || "");
       if (createProduct.file) formData.append("file", createProduct.file);
       console.log("cash in data", formData);
 
@@ -2082,6 +2179,7 @@ const CashInOutTable = () => {
           paymentStatus: "",
           bankName: "",
           bankAccount: "",
+          lender: "",
           category: "", // Reset the category name
           remarks: "",
           note: "",
@@ -2127,6 +2225,13 @@ const CashInOutTable = () => {
         finalCategoryName = createdCategoryName; // Using the newly created category name
       }
 
+      if (
+        isLoanCategory(finalCategoryName) &&
+        !String(createProduct.lender || "").trim()
+      ) {
+        return toast.error("Lender name is required!");
+      }
+
       // Form data preparation for submission
       const formData = new FormData();
       formData.append("paymentMode", createProduct.paymentMode);
@@ -2151,6 +2256,7 @@ const CashInOutTable = () => {
       formData.append("amount", String(Number(createProduct.amount)));
       formData.append("bookId", id);
       formData.append("supplierId", createProduct?.supplierId);
+      formData.append("lender", createProduct?.lender?.trim() || "");
       if (createProduct.file) formData.append("file", createProduct.file);
 
       const res = await insertCashIn(formData).unwrap();
@@ -2165,6 +2271,7 @@ const CashInOutTable = () => {
           paymentStatus: "",
           bankName: "",
           bankAccount: "",
+          lender: "",
           category: "", // Reset the category name
           remarks: "",
           amount: "",
@@ -2201,6 +2308,7 @@ const CashInOutTable = () => {
     setFilterPaymentMode("");
     setFilterPaymentStatus("");
     setFilterCategory("");
+    setFilterLender("");
     setSupplier("");
   };
 
@@ -2312,6 +2420,15 @@ const CashInOutTable = () => {
         label: s.name,
       })),
     [suppliers],
+  );
+
+  const lenderSelectOptions = useMemo(
+    () =>
+      (lenderOptions || []).map((name) => ({
+        value: name,
+        label: name,
+      })),
+    [lenderOptions],
   );
 
   const [suppliersDue, setSuppliersDue] = useState([]);
@@ -2526,7 +2643,7 @@ const CashInOutTable = () => {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mb-6 w-full">
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end mb-6 w-full">
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">{t.from}</label>
           <input
@@ -2586,6 +2703,23 @@ const CashInOutTable = () => {
         </div>
 
         <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Lender</label>
+          <Select
+            options={lenderSelectOptions}
+            value={
+              lenderSelectOptions.find(
+                (option) => option.value === filterLender,
+              ) || null
+            }
+            onChange={(selected) => setFilterLender(selected?.value || "")}
+            placeholder="Search lender"
+            isClearable
+            styles={selectStyles}
+            className="text-black"
+          />
+        </div>
+
+        <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">
             {t.category || "Category"}:
           </label>
@@ -2618,6 +2752,7 @@ const CashInOutTable = () => {
             placeholder={t.search}
             isClearable
             styles={selectStyles}
+            className="text-black"
           />
         </div>
         {/* ✅ Per Page Dropdown (same position like your screenshot) */}
@@ -2650,6 +2785,12 @@ const CashInOutTable = () => {
           </button>
         </div>
       </div>
+
+      <datalist id="cashinout-lender-options">
+        {lenderOptions.map((lender) => (
+          <option key={lender} value={lender} />
+        ))}
+      </datalist>
 
       {/* Table */}
       <div className="overflow-x-auto">
@@ -2752,7 +2893,21 @@ const CashInOutTable = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {rp.category || "---"}
+                    <div className="space-y-1">
+                      <div>{rp.category || "---"}</div>
+                      {(rp.lender ||
+                        rp.loanName ||
+                        rp.loan_person_name ||
+                        rp.loanPersonName) && (
+                        <div className="text-xs font-medium text-amber-700">
+                          {rp.paymentStatus === "CashOut" ? "To: " : "From: "}
+                          {rp.lender ||
+                            rp.loanName ||
+                            rp.loan_person_name ||
+                            rp.loanPersonName}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.paymentMode || "---"}
@@ -3100,6 +3255,34 @@ const CashInOutTable = () => {
             )}
           </div>
 
+          {isLoanCategory(currentProduct?.category) && (
+            <div>
+              <label className="block text-sm text-slate-600 mb-1">
+                {currentProduct?.paymentStatus === "CashOut"
+                  ? "Loan Given To"
+                  : "Loan Taken From"}
+              </label>
+              <input
+                type="text"
+                value={currentProduct?.lender || ""}
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({
+                    ...p,
+                    lender: e.target.value,
+                  }))
+                }
+                list="cashinout-lender-options"
+                placeholder={
+                  currentProduct?.paymentStatus === "CashOut"
+                    ? "Enter receiver name"
+                    : "Enter provider name"
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               {t.supplier || "Supplier"}
@@ -3359,6 +3542,28 @@ const CashInOutTable = () => {
             )}
           </div>
 
+          {isLoanCategory(createProduct.category) && (
+            <div>
+              <label className="block text-sm text-slate-600 mb-1">
+                Loan Taken From
+              </label>
+              <input
+                type="text"
+                value={createProduct.lender || ""}
+                onChange={(e) =>
+                  setCreateProduct((p) => ({
+                    ...p,
+                    lender: e.target.value,
+                  }))
+                }
+                list="cashinout-lender-options"
+                placeholder="Enter provider name"
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-slate-600 mb-1">
@@ -3586,6 +3791,28 @@ const CashInOutTable = () => {
                 </div>
               )}
             </div>
+
+            {isLoanCategory(createProduct.category) && (
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">
+                  Loan Given To
+                </label>
+                <input
+                  type="text"
+                  value={createProduct.lender || ""}
+                  onChange={(e) =>
+                    setCreateProduct((p) => ({
+                      ...p,
+                      lender: e.target.value,
+                    }))
+                  }
+                  list="cashinout-lender-options"
+                  placeholder="Enter receiver name"
+                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                />
+              </div>
+            )}
             {/* <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.supplier || "Supplier"}

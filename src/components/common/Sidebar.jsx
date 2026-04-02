@@ -315,6 +315,13 @@ const SIDEBAR_ITEMS = [
     roles: ["superAdmin", "admin", "accountant"],
     children: [
       {
+        name: "Supplier",
+        key: "supplier",
+        icon: Truck,
+        href: "/supplier",
+        roles: ["superAdmin", "admin"],
+      },
+      {
         name: "Book",
         key: "book",
         icon: BookOpen,

@@ -159,6 +159,8 @@ const DailyProfitLossTable = () => {
 
   const receivedData = useMemo(() => receivedRes?.data || [], [receivedRes]);
 
+  console.log("receivedRes", receivedRes);
+
   useEffect(() => {
     if (receivedError) console.error("Received fetch error:", receivedErrObj);
   }, [receivedError, receivedErrObj]);

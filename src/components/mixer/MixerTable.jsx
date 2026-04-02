@@ -28,6 +28,7 @@ import { useGetSingleItemMasterDataByIdMutation } from "../../features/manufactu
 
 const initialCreateProduct = {
   productId: "",
+  combo: "",
   note: "",
   date: new Date().toISOString().slice(0, 10),
   materialSelections: [],
@@ -58,8 +59,27 @@ const normalizeManufactureItems = (response) => {
       item?.item?.name ||
       item?.product?.name ||
       `Manufacture Item ${index + 1}`,
+    unitValue:
+      item?.unitValue ??
+      item?.quantity ??
+      item?.item?.unitValue ??
+      item?.product?.unitValue ??
+      "",
+    unit: item?.unit ?? item?.item?.unit ?? item?.product?.unit ?? "Pcs",
   }));
 };
+
+const formatManufactureItemUnit = (item) => {
+  const value = Number(item?.unitValue);
+
+  if (!item || Number.isNaN(value) || value <= 0) {
+    return item?.unit || "Pcs";
+  }
+
+  return `${value} ${item?.unit || "Pcs"}`;
+};
+
+const getManufactureItemUnitLabel = (item) => item?.unit || "Pcs";
 
 const buildMaterialSelections = (items, existingSelections = []) =>
   items.map((item, index) => ({
@@ -211,7 +231,7 @@ const MixerTable = () => {
     () =>
       createManufactureItems.map((item) => ({
         value: item.id,
-        label: item.label,
+        label: `${item.label} (${formatManufactureItemUnit(item)})`,
       })),
     [createManufactureItems],
   );
@@ -220,7 +240,7 @@ const MixerTable = () => {
     () =>
       currentManufactureItems.map((item) => ({
         value: item.id,
-        label: item.label,
+        label: `${item.label} (${formatManufactureItemUnit(item)})`,
       })),
     [currentManufactureItems],
   );
@@ -360,6 +380,7 @@ const MixerTable = () => {
         rp.productId || rp.product_id || rp.ProductId
           ? String(rp.productId || rp.product_id || rp.ProductId)
           : "",
+      combo: rp.combo ?? "",
       date: rp.date ?? "",
       note: rp.note ?? "",
       // cost: rp.cost ?? "",
@@ -400,6 +421,10 @@ const MixerTable = () => {
       return toast.error("Please select a product");
     }
 
+    if (!createProduct.combo || Number(createProduct.combo) <= 0) {
+      return toast.error("Please enter valid combo quantity");
+    }
+
     if (createManufactureItems.length) {
       for (const [index, selection] of (
         createProduct.materialSelections || []
@@ -426,6 +451,7 @@ const MixerTable = () => {
 
       const payload = {
         productId: Number(createProduct.productId) || "",
+        combo: Number(createProduct.combo) || 0,
         mixItems: (createProduct.materialSelections || []).map((selection) => ({
           manufactureId: Number(selection.manufactureId) || "",
           unitValue: Number(selection.quantity) || 0,
@@ -458,6 +484,10 @@ const MixerTable = () => {
 
   const handleUpdateProduct = async () => {
     try {
+      if (!currentProduct?.combo || Number(currentProduct.combo) <= 0) {
+        return toast.error("Please enter valid combo quantity");
+      }
+
       if (currentManufactureItems.length) {
         for (const [index, selection] of (
           currentProduct?.materialSelections || []
@@ -481,6 +511,7 @@ const MixerTable = () => {
 
       const payload = {
         productId: Number(currentProduct.productId) || "",
+        combo: Number(currentProduct.combo) || 0,
         mixItems: (currentProduct?.materialSelections || []).map(
           (selection) => ({
             manufactureId: Number(selection.manufactureId) || "",
@@ -630,6 +661,30 @@ const MixerTable = () => {
     });
   };
 
+  const getCreateManufactureItemByIndex = (index) => {
+    const selectedId = String(
+      createProduct?.materialSelections?.[index]?.manufactureId || "",
+    );
+
+    return (
+      createManufactureItems.find((item) => item.id === selectedId) ||
+      createManufactureItems[index] ||
+      null
+    );
+  };
+
+  const getCurrentManufactureItemByIndex = (index) => {
+    const selectedId = String(
+      currentProduct?.materialSelections?.[index]?.manufactureId || "",
+    );
+
+    return (
+      currentManufactureItems.find((item) => item.id === selectedId) ||
+      currentManufactureItems[index] ||
+      null
+    );
+  };
+
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_4px_20px_rgba(15,23,42,0.04)] rounded-2xl p-4 sm:p-6 border border-slate-200 mb-8"
@@ -640,11 +695,10 @@ const MixerTable = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            {t.manufacture_history || "Manufacture History"}
+            {t.mixer_history || "Mixer History"}
           </h2>
           <p className="text-slate-500 text-sm mt-1 font-medium">
-            {t.track_manufacture_entries ||
-              "Track and manage manufacture entries"}
+            {t.track_mixer_entries || "Track and manage mixer entries"}
           </p>
         </div>
 
@@ -754,7 +808,7 @@ const MixerTable = () => {
                   {t.product || "Product"}
                 </th>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  {t.unit || "Unit"}
+                  {t.unit || "Combo Quantity"}
                 </th>
                 {/* <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.unit_value || "Unit Value"}
@@ -1001,96 +1055,22 @@ const MixerTable = () => {
             />
           </div>
 
-          {/* <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-1">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div>
-                <span className="text-sm font-black text-slate-700 uppercase tracking-tight">
-                  {t.unit_settings || "Unit Settings"}
-                </span>
-                <p className="text-[10px] font-bold text-slate-400">
-                  {t.enable_if_needed || "Enable if needed"}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setCurrentProduct((prev) => ({
-                    ...prev,
-                    hasUnit: !prev?.hasUnit,
-                    unitValue: prev?.hasUnit ? "" : prev?.unitValue || "",
-                    unit: prev?.hasUnit ? "Pcs" : prev?.unit || "Pcs",
-                  }))
-                }
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
-                  currentProduct?.hasUnit ? "bg-indigo-600" : "bg-slate-300"
-                }`}
-              >
-                <span className="sr-only">Toggle Unit</span>
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${
-                    currentProduct?.hasUnit ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
-            </div>
-
-            {currentProduct?.hasUnit && (
-              <div className="bg-white rounded-xl border border-slate-100 m-1 p-4 space-y-3 shadow-sm">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  {t.unit_details || "Unit Details"}
-                </label>
-
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    value={currentProduct?.unitValue || ""}
-                    onChange={(e) =>
-                      setCurrentProduct((prev) => ({
-                        ...prev,
-                        unitValue: e.target.value,
-                      }))
-                    }
-                    placeholder="30"
-                    className="h-11 flex-1 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                  />
-
-                  <select
-                    value={currentProduct?.unit || "Pcs"}
-                    onChange={(e) =>
-                      setCurrentProduct((prev) => ({
-                        ...prev,
-                        unit: e.target.value,
-                      }))
-                    }
-                    className="h-11 w-32 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition appearance-none cursor-pointer"
-                  >
-                    <option value="Pcs">Pcs</option>
-                    <option value="Kg">Kg</option>
-                    <option value="Liter">Liter</option>
-                    <option value="Box">Box</option>
-                    <option value="Dozen">Dozen</option>
-                  </select>
-                </div>
-              </div>
-            )}
-          </div> */}
-
-          {/* <div>
+          <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-              {t.cost || "Cost"}
+              Combo Quantity
             </label>
             <input
               type="number"
+              min="0.01"
               step="0.01"
-              value={currentProduct?.cost || ""}
+              value={currentProduct?.combo || ""}
               onChange={(e) =>
-                setCurrentProduct({ ...currentProduct, cost: e.target.value })
+                setCurrentProduct((p) => ({ ...p, combo: e.target.value }))
               }
               className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              placeholder="Enter combo quantity"
             />
-          </div> */}
+          </div>
 
           {currentProduct?.productId && (
             <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 space-y-4">
@@ -1143,29 +1123,42 @@ const MixerTable = () => {
                           styles={selectStyles}
                           className="text-sm text-black font-medium"
                         />
+                        <p className="mt-1.5 ml-1 text-[11px] font-medium text-slate-500">
+                          Unit:{" "}
+                          {formatManufactureItemUnit(
+                            getCurrentManufactureItemByIndex(index),
+                          )}
+                        </p>
                       </div>
 
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                           Value
                         </label>
-                        <input
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          value={
-                            currentProduct?.materialSelections?.[index]
-                              ?.quantity || ""
-                          }
-                          onChange={(e) =>
-                            handleCurrentMaterialSelectionChange(
-                              index,
-                              "quantity",
-                              e.target.value,
-                            )
-                          }
-                          className="w-full h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={
+                              currentProduct?.materialSelections?.[index]
+                                ?.quantity || ""
+                            }
+                            onChange={(e) =>
+                              handleCurrentMaterialSelectionChange(
+                                index,
+                                "quantity",
+                                e.target.value,
+                              )
+                            }
+                            className="w-full h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                          />
+                          <span className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-600">
+                            {getManufactureItemUnitLabel(
+                              getCurrentManufactureItemByIndex(index),
+                            )}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1277,6 +1270,23 @@ const MixerTable = () => {
                 setCreateProduct((p) => ({ ...p, date: e.target.value }))
               }
               className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              Combo Quantity
+            </label>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={createProduct?.combo || ""}
+              onChange={(e) =>
+                setCreateProduct((p) => ({ ...p, combo: e.target.value }))
+              }
+              className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              placeholder="Enter combo quantity"
             />
           </div>
 
@@ -1422,29 +1432,42 @@ const MixerTable = () => {
                           styles={selectStyles}
                           className="text-sm text-black font-medium"
                         />
+                        <p className="mt-1.5 ml-1 text-[11px] font-medium text-slate-500">
+                          Unit:{" "}
+                          {formatManufactureItemUnit(
+                            getCreateManufactureItemByIndex(index),
+                          )}
+                        </p>
                       </div>
 
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                           Value
                         </label>
-                        <input
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          value={
-                            createProduct?.materialSelections?.[index]
-                              ?.quantity || ""
-                          }
-                          onChange={(e) =>
-                            handleCreateMaterialSelectionChange(
-                              index,
-                              "quantity",
-                              e.target.value,
-                            )
-                          }
-                          className="w-full h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={
+                              createProduct?.materialSelections?.[index]
+                                ?.quantity || ""
+                            }
+                            onChange={(e) =>
+                              handleCreateMaterialSelectionChange(
+                                index,
+                                "quantity",
+                                e.target.value,
+                              )
+                            }
+                            className="w-full h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                          />
+                          <span className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-600">
+                            {getManufactureItemUnitLabel(
+                              getCreateManufactureItemByIndex(index),
+                            )}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}

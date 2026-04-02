@@ -235,7 +235,7 @@ const StockAdjustmentTable = () => {
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
 
-  console.log("Stock Adjustment data:", data);
+  console.log("Stock Adjustment data", data);
 
   const [insertStockAdjustment] = useInsertStockAdjustmentMutation();
   const [updateStockAdjustment] = useUpdateStockAdjustmentMutation();
@@ -559,11 +559,10 @@ const StockAdjustmentTable = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            {t.manufacture_history || "Manufacture History"}
+            {t.stock_adjustment_history || "Stock Adjustment History"}
           </h2>
           <p className="text-slate-500 text-sm mt-1 font-medium">
-            {t.track_manufacture_entries ||
-              "Track and manage manufacture entries"}
+            {t.track_stock_adjustments || "Track and manage stock adjustments"}
           </p>
         </div>
 
@@ -698,9 +697,9 @@ const StockAdjustmentTable = () => {
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.product || "Product"}
                 </th>
-                {/* <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
-                  {t.unit || "Unit"}
-                </th> */}
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  {t.supplier || "Supplier"}
+                </th>
                 <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   {t.unit_value || "Unit Value"}
                 </th>
@@ -734,9 +733,9 @@ const StockAdjustmentTable = () => {
                     </div>
                   </td>
 
-                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {rp.unit || "Pcs"}
-                  </td> */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp.supplier?.name || "N/A"}
+                  </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {Number(rp.unitValue || 0)} {rp.unit || "Pcs"}

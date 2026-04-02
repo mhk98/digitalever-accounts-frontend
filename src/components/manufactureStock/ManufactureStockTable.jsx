@@ -263,7 +263,7 @@ const ManufactureStockTable = () => {
                     </div>
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">
-                    <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
+                    <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors tracking-tight">
                       {/* {resolveProductName(rp)} */}
                       {rp.name || "N/A"}
                     </div>

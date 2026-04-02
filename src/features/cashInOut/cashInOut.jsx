@@ -52,6 +52,7 @@ export const cashInOutApi = baseApi.injectEndpoints({
           paymentMode,
           paymentStatus,
           category,
+          lender,
           bookId,
         } = arg;
 
@@ -65,6 +66,7 @@ export const cashInOutApi = baseApi.injectEndpoints({
           paymentMode,
           paymentStatus,
           category,
+          lender,
         };
 
         Object.keys(params).forEach((k) => {
