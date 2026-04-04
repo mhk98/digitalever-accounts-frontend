@@ -136,9 +136,9 @@ const SIDEBAR_ITEMS = [
   },
 
   {
-    name: "Inventory",
-    key: "inventory",
-    icon: Boxes,
+    name: "Manufacture",
+    key: "manufacture",
+    icon: Factory,
     color: "#8b5cf6",
     roles: ["superAdmin", "admin", "inventor"],
     children: [
@@ -177,6 +177,16 @@ const SIDEBAR_ITEMS = [
         href: "/mixer",
         roles: ["superAdmin", "admin"],
       },
+    ],
+  },
+
+  {
+    name: "Inventory",
+    key: "inventory",
+    icon: Boxes,
+    color: "#8b5cf6",
+    roles: ["superAdmin", "admin", "inventor"],
+    children: [
       {
         name: "Overview",
         key: "overview",
@@ -247,6 +257,16 @@ const SIDEBAR_ITEMS = [
         href: "/sales-return",
         roles: ["superAdmin", "admin", "inventor"],
       },
+    ],
+  },
+
+  {
+    name: "Damage Management",
+    key: "damage_management",
+    icon: Boxes,
+    color: "#8b5cf6",
+    roles: ["superAdmin", "admin", "inventor"],
+    children: [
       {
         name: "Damage stock",
         key: "damage_stock",
@@ -284,6 +304,7 @@ const SIDEBAR_ITEMS = [
       },
     ],
   },
+
   {
     name: "Pos",
     key: "pos_panel",
@@ -600,11 +621,7 @@ const Sidebar = () => {
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
                   <img
-                    src={
-                      logo
-                        ? ` https://apikafela.digitalever.com.bd/${logo}`
-                        : ""
-                    }
+                    src={logo ? ` http://localhost:4000/${logo}` : ""}
                     alt="Logo"
                     className="h-full w-full object-cover"
                   />

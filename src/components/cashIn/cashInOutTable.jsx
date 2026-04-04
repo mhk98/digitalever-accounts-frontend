@@ -770,7 +770,7 @@
 
 //               const safePath = String(rp.file || "").replace(/\\/g, "/");
 //               const fileUrl = safePath
-//                 ? ` https://apikafela.digitalever.com.bd/${safePath}`
+//                 ? ` http://localhost:4000/${safePath}`
 //                 : "";
 //               const ext = safePath.split(".").pop()?.toLowerCase();
 //               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -2822,9 +2822,6 @@ const CashInOutTable = () => {
                 {t.total_amount || "Total Amount"}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                {t.paid_amount || "Paid Amount"}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 {t.status}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -2839,7 +2836,7 @@ const CashInOutTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `https://apikafela.digitalever.com.bd/${safePath}`
+                ? `http://localhost:4000/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -2927,9 +2924,6 @@ const CashInOutTable = () => {
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
                     {Number(rp.amount || 0).toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 tabular-nums">
-                    {Number(rp.paidAmount || 0).toFixed(2)}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
@@ -3134,6 +3128,29 @@ const CashInOutTable = () => {
               className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
                          focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm text-slate-600 mb-1">
+              Payment Status
+            </label>
+            <select
+              value={currentProduct?.paymentStatus || ""}
+              onChange={(e) =>
+                setCurrentProduct((p) => ({
+                  ...p,
+                  paymentStatus: e.target.value,
+                }))
+              }
+              className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                         focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              required
+            >
+              <option value="">Select Payment Status</option>
+              <option value="CashIn">CashIn</option>
+              <option value="CashOut">CashOut</option>
+              <option value="Unpaid">Unpaid</option>
+            </select>
           </div>
 
           <div>

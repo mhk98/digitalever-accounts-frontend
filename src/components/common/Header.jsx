@@ -69,7 +69,7 @@ const Header = ({ title }) => {
 
   const avatarSrc =
     user?.image && user?.image !== "null"
-      ? `https://apikafela.digitalever.com.bd/${user.image}`
+      ? `http://localhost:4000/${user.image}`
       : null;
 
   const avatarInitials =

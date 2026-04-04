@@ -14,6 +14,8 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import Select from "react-select";
+import { useGetAllEmployeeListWithoutQueryQuery } from "../../features/employeeList/employeeList";
 import {
   useGetAllLedgerWithoutQueryQuery,
   useInsertLedgerMutation,
@@ -22,6 +24,7 @@ import {
   useGetAllLedgerHistoryQuery,
   useInsertLedgerHistoryMutation,
 } from "../../features/ledgerHistory/ledgerHistory";
+import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 
 const ENTITY_TYPES = {
   customer: {
@@ -268,6 +271,27 @@ const getInitialLedgerForm = () => ({
   sendMessage: false,
 });
 
+const ledgerEntitySelectStyles = {
+  control: (base, state) => ({
+    ...base,
+    minHeight: 44,
+    borderRadius: 8,
+    borderColor: state.isFocused ? "#cbd5e1" : "#cbd5e1",
+    boxShadow: state.isFocused ? "0 0 0 2px rgba(203, 213, 225, 0.8)" : "none",
+    "&:hover": { borderColor: "#cbd5e1" },
+    backgroundColor: "white",
+    fontSize: "14px",
+  }),
+  placeholder: (base) => ({ ...base, color: "#64748b", fontSize: "14px" }),
+  singleValue: (base) => ({ ...base, color: "#334155", fontSize: "14px" }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 100,
+    borderRadius: 12,
+    overflow: "hidden",
+  }),
+};
+
 const getInitialLedgerHistoryForm = () => ({
   date: new Date().toISOString().slice(0, 10),
   amount: "",
@@ -431,10 +455,49 @@ const CreditLedgerTable = () => {
     COUNTRY_LIST.find((country) => country.code === createLedger.countryCode) ||
     COUNTRY_LIST[0];
 
+  const { data: supplierResponse } = useGetAllSupplierWithoutQueryQuery();
+  const { data: employeeResponse } = useGetAllEmployeeListWithoutQueryQuery();
+
+  const supplierOptions = useMemo(
+    () =>
+      (supplierResponse?.data || []).map((supplier) => ({
+        value: String(supplier?.Id ?? supplier?.id ?? ""),
+        label: supplier?.name || "Unnamed Supplier",
+        name: supplier?.name || "",
+        phone: supplier?.phone || "",
+        extra: supplier?.remarks || "",
+      })),
+    [supplierResponse],
+  );
+
+  const employeeOptions = useMemo(
+    () =>
+      (employeeResponse?.data || []).map((employee) => ({
+        value: String(
+          employee?.Id ?? employee?.id ?? employee?.employee_id ?? "",
+        ),
+        label: employee?.employee_id
+          ? `${employee?.name || "Unnamed Employee"} (${employee.employee_id})`
+          : employee?.name || "Unnamed Employee",
+        name: employee?.name || "",
+        phone: employee?.phone || "",
+        extra: employee?.employee_id
+          ? `Employee ID: ${employee.employee_id}`
+          : employee?.remarks || "",
+      })),
+    [employeeResponse],
+  );
+
   // Create
   const [insertLedger] = useInsertLedgerMutation();
   const handleCreateLedger = async (e) => {
     e.preventDefault();
+
+    if (!createLedger.name.trim()) {
+      toast.error(`Please select ${activeEntityConfig.label.toLowerCase()}!`);
+      return;
+    }
+
     try {
       const normalizedPhone = createLedger.phone.trim();
       const payload = {
@@ -469,6 +532,27 @@ const CreditLedgerTable = () => {
 
   const updateCreateLedgerField = (field, value) => {
     setCreateLedger((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCreateLedgerTypeChange = (type) => {
+    setCreateLedger((prev) => ({
+      ...getInitialLedgerForm(),
+      type,
+      date: prev.date,
+      cashType: prev.cashType,
+      amount: prev.amount,
+      note: prev.note,
+      sendMessage: prev.sendMessage,
+    }));
+  };
+
+  const handleEntitySelect = (selectedOption) => {
+    setCreateLedger((prev) => ({
+      ...prev,
+      name: selectedOption?.name || "",
+      phone: selectedOption?.phone || "",
+      extra: selectedOption?.extra || "",
+    }));
   };
 
   const updateLedgerHistoryField = (field, value) => {
@@ -710,7 +794,9 @@ const CreditLedgerTable = () => {
         (sum, item) => sum + item.unpaidAmount,
         0,
       ),
-      balance: mainFilteredHistory.length ? mainFilteredHistory[0].balanceValue : 0,
+      balance: mainFilteredHistory.length
+        ? mainFilteredHistory[0].balanceValue
+        : 0,
     }),
     [mainFilteredHistory],
   );
@@ -792,6 +878,27 @@ const CreditLedgerTable = () => {
 
   const activeTabMeta = ENTITY_TABS.find((tab) => tab.key === activeTab);
   const isEntityListLoading = isLoading;
+  const createLedgerEntityOptions =
+    createLedger.type === "supplier"
+      ? supplierOptions
+      : createLedger.type === "employee"
+        ? employeeOptions
+        : [];
+  const selectedCreateLedgerEntityOption =
+    createLedgerEntityOptions.find(
+      (option) =>
+        option.name === createLedger.name &&
+        (option.extra || "") === (createLedger.extra || ""),
+    ) || null;
+  const shouldUseEntityDropdown =
+    createLedger.type === "supplier" || createLedger.type === "employee";
+  const isPhoneRequired = createLedger.type === "customer";
+
+  console.log(
+    "Add Money Given Entry",
+    selectedCreateLedgerEntityOption,
+    createLedger,
+  );
 
   const [insertLedgerHistory] = useInsertLedgerHistoryMutation();
 
@@ -1097,10 +1204,10 @@ const CreditLedgerTable = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-500">
-            Total Receivable: {formatCurrency(selectedTotals.totalReceived)}
+            Total Unpaid: {formatCurrency(selectedTotals.totalReceived)}
           </div>
           <div className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-500">
-            Total Unpaid: {formatCurrency(selectedTotals.totalPaid)}
+            Total Paid: {formatCurrency(selectedTotals.totalPaid)}
           </div>
           <button
             type="button"
@@ -2012,7 +2119,7 @@ const CreditLedgerTable = () => {
                         <button
                           key={key}
                           type="button"
-                          onClick={() => updateCreateLedgerField("type", key)}
+                          onClick={() => handleCreateLedgerTypeChange(key)}
                           className={`h-10 rounded-md text-sm transition ${
                             isActive
                               ? "bg-white font-semibold text-slate-700 shadow-sm"
@@ -2146,29 +2253,45 @@ const CreditLedgerTable = () => {
                       {activeEntityConfig.nameLabel}{" "}
                       <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={createLedger.name}
-                        onChange={(e) =>
-                          updateCreateLedgerField("name", e.target.value)
+                    {shouldUseEntityDropdown ? (
+                      <Select
+                        value={selectedCreateLedgerEntityOption}
+                        options={createLedgerEntityOptions}
+                        onChange={handleEntitySelect}
+                        placeholder={`Select ${activeEntityConfig.label}`}
+                        isClearable
+                        styles={ledgerEntitySelectStyles}
+                        noOptionsMessage={() =>
+                          `No ${activeEntityConfig.label.toLowerCase()} found`
                         }
-                        placeholder={activeEntityConfig.namePlaceholder}
-                        className="w-full h-11 rounded-lg border border-slate-300 bg-white px-4 pr-11 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-300"
-                        required
                       />
-                      <Search
-                        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
-                        size={18}
-                      />
-                    </div>
+                    ) : (
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={createLedger.name}
+                          onChange={(e) =>
+                            updateCreateLedgerField("name", e.target.value)
+                          }
+                          placeholder={activeEntityConfig.namePlaceholder}
+                          className="w-full h-11 rounded-lg border border-slate-300 bg-white px-4 pr-11 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-300"
+                          required
+                        />
+                        <Search
+                          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                          size={18}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Phone */}
                   <div>
                     <label className="block text-sm font-medium text-slate-800 mb-2">
-                      {activeEntityConfig.secondaryLabel}{" "}
-                      <span className="text-red-500">*</span>
+                      {activeEntityConfig.secondaryLabel}
+                      {isPhoneRequired && (
+                        <span className="text-red-500"> *</span>
+                      )}
                     </label>
 
                     <div className="flex h-11 rounded-lg border border-slate-300 overflow-hidden">
@@ -2203,7 +2326,7 @@ const CreditLedgerTable = () => {
                         }
                         placeholder={activeEntityConfig.secondaryPlaceholder}
                         className="flex-1 bg-white px-4 text-sm text-slate-700 outline-none"
-                        required
+                        required={isPhoneRequired}
                       />
                     </div>
                   </div>
