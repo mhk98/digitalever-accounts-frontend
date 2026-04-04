@@ -27,15 +27,6 @@ import {
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 
 const ENTITY_TYPES = {
-  customer: {
-    label: "Customer",
-    nameLabel: "Customer's Name",
-    namePlaceholder: "Customer's Name",
-    secondaryLabel: "Phone Number",
-    secondaryPlaceholder: "+88 XXXXXXXXXXX",
-    extraLabel: "Address",
-    extraPlaceholder: "Customer's Address",
-  },
   supplier: {
     label: "Supplier",
     nameLabel: "Supplier's Name",
@@ -299,7 +290,6 @@ const getInitialLedgerHistoryForm = () => ({
 });
 
 const ENTITY_TABS = [
-  { key: "customer", role: "Customer", label: "Customer" },
   { key: "supplier", role: "Supplier", label: "Supplier" },
   { key: "employee", role: "Employee", label: "Employee" },
 ];
@@ -1235,7 +1225,7 @@ const CreditLedgerTable = () => {
         <aside className="border-b border-slate-200 xl:border-b-0 xl:border-r">
           <div className="p-3 sm:p-4">
             {/* Tabs */}
-            <div className="flex flex-wrap gap-5 border-b border-slate-200 text-sm font-medium text-slate-500">
+            {/* <div className="flex flex-wrap gap-5 border-b border-slate-200 text-sm font-medium text-slate-500">
               {ENTITY_TABS.map((tab) => {
                 const isActive = activeTab === tab.key;
 
@@ -1257,8 +1247,30 @@ const CreditLedgerTable = () => {
                   </button>
                 );
               })}
-            </div>
+            </div> */}
+<div className="grid grid-cols-2 gap-3 border-b border-slate-200 text-sm font-medium text-slate-500">
+  {ENTITY_TABS.map((tab) => {
+    const isActive = activeTab === tab.key;
 
+    return (
+      <button
+        key={tab.key}
+        type="button"
+        onClick={() => {
+          setActiveTab(tab.key);
+          setSearchTerm("");
+        }}
+        className={`py-2 text-center rounded transition ${
+          isActive
+            ? "bg-black text-white"
+            : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+        }`}
+      >
+        {tab.label} ({entitiesByType[tab.key]?.length || 0})
+      </button>
+    );
+  })}
+</div>
             {/* Search */}
             <div className="mt-4 flex gap-2">
               <div className="relative flex-1">
@@ -1623,45 +1635,6 @@ const CreditLedgerTable = () => {
           </div>
         </section>
       </div>
-
-      {/* Add New */}
-      {/* <Modal
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        title="Add Marketing Channel"
-      >
-        <form onSubmit={handleCreateLedger} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-              Channel Name
-            </label>
-            <input
-              type="text"
-              value={createLedger.name}
-              onChange={(e) => setCreateLedger({ name: e.target.value })}
-              className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              placeholder="e.g. Google Search"
-              required
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={handleModalClose}
-              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
-            >
-              Create Channel
-            </button>
-          </div>
-        </form>
-      </Modal> */}
 
       <AnimatePresence>
         {isDueHistoryModalOpen && (
@@ -2112,7 +2085,7 @@ const CreditLedgerTable = () => {
               >
                 <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
                   {/* Tabs */}
-                  <div className="rounded-lg bg-slate-200 p-1 grid grid-cols-3 gap-1">
+                  <div className="rounded-lg bg-slate-200 p-1 grid grid-cols-2 gap-1">
                     {Object.entries(ENTITY_TYPES).map(([key, value]) => {
                       const isActive = createLedger.type === key;
                       return (
