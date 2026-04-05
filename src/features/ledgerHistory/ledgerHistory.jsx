@@ -42,9 +42,23 @@ export const ledgerHistoryApi = baseApi.injectEndpoints({
         name,
         searchTerm,
         ledgerId,
+        employeeId,
+        employee_id,
+        supplierId,
       }) => ({
         url: "ledger-history",
-        params: { page, limit, startDate, endDate, name, searchTerm, ledgerId },
+        params: {
+          page,
+          limit,
+          startDate,
+          endDate,
+          name,
+          searchTerm,
+          ledgerId,
+          employeeId,
+          employee_id,
+          supplierId,
+        },
       }),
       providesTags: (result) =>
         result?.data?.length

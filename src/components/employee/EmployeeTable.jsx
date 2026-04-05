@@ -13,6 +13,8 @@ import {
   useInsertEmployeeMutation,
   useUpdateEmployeeMutation,
 } from "../../features/employee/employee";
+import { useGetAllBookWithoutQueryQuery } from "../../features/book/book";
+import { useGetAllLedgerHistoryQuery } from "../../features/ledgerHistory/ledgerHistory";
 import { useGetAllSalaryQuery } from "../../features/salary/salary";
 import Modal from "../common/Modal";
 import { useLayout } from "../../context/LayoutContext";
@@ -50,6 +52,7 @@ const EmployeeTable = () => {
   const emptyEmployee = {
     name: "",
     employee_id: "",
+    bookId: "",
     basic_salary: "",
     incentive: "",
     holiday_payment: "",
@@ -258,6 +261,7 @@ const EmployeeTable = () => {
   }, [data, isLoading, isError, error, currentPage, itemsPerPage]);
 
   const { data: employeeList } = useGetAllEmployeeListWithoutQueryQuery();
+  const { data: allBookRes } = useGetAllBookWithoutQueryQuery();
 
   // ----------------------------
   // Options
@@ -277,6 +281,59 @@ const EmployeeTable = () => {
       salary: employee.salary ?? employee.basic_salary ?? employee.price ?? "",
     }));
   }, [employeeList]);
+
+  const bookOptions = useMemo(() => {
+    return (allBookRes?.data || []).map((book) => ({
+      value: String(book?.Id ?? book?.id ?? ""),
+      label: book?.name || "Unnamed Book",
+    }));
+  }, [allBookRes]);
+
+  const hasAdvanceValue = (value) => {
+    if (value === null || value === undefined) return false;
+    return String(value).trim() !== "";
+  };
+
+  const toNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const getNetBalanceValue = (response) =>
+    response?.meta?.netBalance ??
+    response?.meta?.net_balance ??
+    response?.data?.[0]?.netBalance ??
+    response?.data?.[0]?.net_balance;
+
+  const createEmployeeId = createEmployee?.employee_id?.toString().trim() || "";
+  const currentEmployeeId =
+    currentEmployee?.employee_id?.toString().trim() || "";
+
+  const { data: createLedgerHistoryData } = useGetAllLedgerHistoryQuery(
+    {
+      page: 1,
+      limit: 1000,
+      employee_id: createEmployeeId || undefined,
+    },
+    { skip: !createEmployeeId },
+  );
+
+  const { data: currentLedgerHistoryData } = useGetAllLedgerHistoryQuery(
+    {
+      page: 1,
+      limit: 1000,
+      employee_id: currentEmployeeId || undefined,
+    },
+    { skip: !currentEmployeeId },
+  );
+
+  const createNetBalance = toNumber(getNetBalanceValue(createLedgerHistoryData));
+  const currentNetBalance = toNumber(getNetBalanceValue(currentLedgerHistoryData));
+  const hasCreateNetBalance =
+    createEmployeeId && getNetBalanceValue(createLedgerHistoryData) !== undefined;
+  const hasCurrentNetBalance =
+    currentEmployeeId &&
+    getNetBalanceValue(currentLedgerHistoryData) !== undefined;
 
   const applyEmployeeSalaryDefaults = (prev, selected) => {
     const next = {
@@ -306,6 +363,34 @@ const EmployeeTable = () => {
     setCurrentEmployee((prev) => applyEmployeeSalaryDefaults(prev, selected));
   };
 
+  useEffect(() => {
+    if (!createEmployeeId) return;
+
+    setCreateEmployee((prev) => {
+      if (!prev || prev.employee_id?.toString().trim() !== createEmployeeId) {
+        return prev;
+      }
+
+      return hasCreateNetBalance
+        ? { ...prev, advance: String(createNetBalance) }
+        : { ...prev, advance: "", bookId: "" };
+    });
+  }, [createEmployeeId, createNetBalance, hasCreateNetBalance]);
+
+  useEffect(() => {
+    if (!currentEmployeeId) return;
+
+    setCurrentEmployee((prev) => {
+      if (!prev || prev.employee_id?.toString().trim() !== currentEmployeeId) {
+        return prev;
+      }
+
+      return hasCurrentNetBalance
+        ? { ...prev, advance: String(currentNetBalance) }
+        : { ...prev, advance: "", bookId: "" };
+    });
+  }, [currentEmployeeId, currentNetBalance, hasCurrentNetBalance]);
+
   // ----------------------------
   // Modal Handlers
   // ----------------------------
@@ -314,6 +399,7 @@ const EmployeeTable = () => {
       ...employee,
       name: employee.name ?? "",
       employee_id: employee.employee_id ?? "",
+      bookId: employee.bookId ?? employee.book?.Id ?? employee.book?.id ?? "",
       basic_salary: employee.basic_salary ?? "",
       incentive: employee.incentive ?? "",
       holiday_payment: employee.holiday_payment ?? "",
@@ -378,6 +464,7 @@ const EmployeeTable = () => {
         ...createEmployee,
         name: createEmployee.name || "",
         employee_id: createEmployee.employee_id || "",
+        bookId: Number(createEmployee.bookId) || undefined,
         note: createEmployee.note || "",
         remarks: createEmployee.remarks || "",
 
@@ -420,6 +507,7 @@ const EmployeeTable = () => {
       const updatedEmployee = {
         name: currentEmployee.name || "",
         employee_id: currentEmployee.employee_id || "",
+        bookId: Number(currentEmployee.bookId) || undefined,
         note: currentEmployee.note || "",
         remarks: currentEmployee.remarks || "",
 
@@ -1764,8 +1852,42 @@ const EmployeeTable = () => {
               type="number"
               step="0.01"
               value={currentEmployee?.advance}
-              onChange={(v) => updateCurrentField("advance", v)}
+              readOnly={hasCurrentNetBalance}
+              onChange={(v) => {
+                updateCurrentField("advance", v);
+                if (!hasAdvanceValue(v)) {
+                  setCurrentEmployee((prev) => ({ ...prev, bookId: "" }));
+                }
+              }}
             />
+
+            {hasAdvanceValue(currentEmployee?.advance) && (
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                  Book:
+                </label>
+                <Select
+                  options={bookOptions}
+                  value={
+                    bookOptions.find(
+                      (option) =>
+                        String(option.value) ===
+                        String(currentEmployee?.bookId || ""),
+                    ) || null
+                  }
+                  onChange={(selected) =>
+                    setCurrentEmployee((prev) => ({
+                      ...prev,
+                      bookId: selected?.value || "",
+                    }))
+                  }
+                  placeholder="Select Book"
+                  isClearable
+                  styles={selectStyles}
+                  className="w-full"
+                />
+              </div>
+            )}
 
             <Field
               label={t.late_days_label || "Late (days):"}
@@ -2040,8 +2162,42 @@ const EmployeeTable = () => {
               type="number"
               step="0.01"
               value={createEmployee.advance}
-              onChange={(v) => updateCreateField("advance", v)}
+              readOnly={hasCreateNetBalance}
+              onChange={(v) => {
+                updateCreateField("advance", v);
+                if (!hasAdvanceValue(v)) {
+                  setCreateEmployee((prev) => ({ ...prev, bookId: "" }));
+                }
+              }}
             />
+
+            {hasAdvanceValue(createEmployee.advance) && (
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                  Book:
+                </label>
+                <Select
+                  options={bookOptions}
+                  value={
+                    bookOptions.find(
+                      (option) =>
+                        String(option.value) ===
+                        String(createEmployee.bookId || ""),
+                    ) || null
+                  }
+                  onChange={(selected) =>
+                    setCreateEmployee((prev) => ({
+                      ...prev,
+                      bookId: selected?.value || "",
+                    }))
+                  }
+                  placeholder="Select Book"
+                  isClearable
+                  styles={selectStyles}
+                  className="w-full"
+                />
+              </div>
+            )}
 
             <Field
               label={t.late_days_label + ":" || "Late (days):"}

@@ -15,6 +15,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
+import { useGetAllBookWithoutQueryQuery } from "../../features/book/book";
 import { useGetAllEmployeeListWithoutQueryQuery } from "../../features/employeeList/employeeList";
 import {
   useGetAllLedgerWithoutQueryQuery,
@@ -250,12 +251,15 @@ const getFlagEmoji = (countryCode) =>
     .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)));
 
 const getInitialLedgerForm = () => ({
-  type: "employee",
+  type: "supplier",
   countryCode: "BD",
+  bookId: "",
   date: new Date().toISOString().slice(0, 10),
   cashType: "Unpaid",
   amount: "",
   name: "",
+  supplierId: "",
+  employeeId: "",
   phone: "",
   extra: "",
   note: "",
@@ -284,6 +288,7 @@ const ledgerEntitySelectStyles = {
 };
 
 const getInitialLedgerHistoryForm = () => ({
+  bookId: "",
   date: new Date().toISOString().slice(0, 10),
   amount: "",
   note: "",
@@ -386,7 +391,7 @@ const CreditLedgerTable = () => {
   // const [itemName, setItemName] = useState("");
 
   const dueHistoryItemsPerPage = 10;
-  const [activeTab, setActiveTab] = useState("customer");
+  const [activeTab, setActiveTab] = useState("supplier");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEntityId, setSelectedEntityId] = useState("");
   const [mainHistoryStartDate, setMainHistoryStartDate] = useState("");
@@ -447,11 +452,13 @@ const CreditLedgerTable = () => {
 
   const { data: supplierResponse } = useGetAllSupplierWithoutQueryQuery();
   const { data: employeeResponse } = useGetAllEmployeeListWithoutQueryQuery();
+  const { data: allBookRes } = useGetAllBookWithoutQueryQuery();
 
   const supplierOptions = useMemo(
     () =>
       (supplierResponse?.data || []).map((supplier) => ({
         value: String(supplier?.Id ?? supplier?.id ?? ""),
+        supplierId: String(supplier?.Id ?? supplier?.id ?? ""),
         label: supplier?.name || "Unnamed Supplier",
         name: supplier?.name || "",
         phone: supplier?.phone || "",
@@ -464,7 +471,10 @@ const CreditLedgerTable = () => {
     () =>
       (employeeResponse?.data || []).map((employee) => ({
         value: String(
-          employee?.Id ?? employee?.id ?? employee?.employee_id ?? "",
+          employee?.employee_id ?? employee?.Id ?? employee?.id ?? "",
+        ),
+        employeeId: String(
+          employee?.employee_id ?? employee?.Id ?? employee?.id ?? "",
         ),
         label: employee?.employee_id
           ? `${employee?.name || "Unnamed Employee"} (${employee.employee_id})`
@@ -476,6 +486,15 @@ const CreditLedgerTable = () => {
           : employee?.remarks || "",
       })),
     [employeeResponse],
+  );
+
+  const bookOptions = useMemo(
+    () =>
+      (allBookRes?.data || []).map((book) => ({
+        value: String(book?.Id ?? book?.id ?? ""),
+        label: book?.name || "Unnamed Book",
+      })),
+    [allBookRes],
   );
 
   // Create
@@ -493,6 +512,11 @@ const CreditLedgerTable = () => {
       const payload = {
         role: ENTITY_TYPES[createLedger.type]?.label,
         name: createLedger.name,
+        bookId: Number(createLedger.bookId) || undefined,
+        supplierId:
+          createLedger.type === "supplier" ? createLedger.supplierId || "" : "",
+        employeeId:
+          createLedger.type === "employee" ? createLedger.employeeId || "" : "",
         phone: normalizedPhone
           ? `${selectedCountry.dialCode} ${normalizedPhone}`
           : "",
@@ -540,10 +564,24 @@ const CreditLedgerTable = () => {
     setCreateLedger((prev) => ({
       ...prev,
       name: selectedOption?.name || "",
+      supplierId:
+        prev.type === "supplier" ? selectedOption?.supplierId || "" : "",
+      employeeId:
+        prev.type === "employee" ? selectedOption?.employeeId || "" : "",
       phone: selectedOption?.phone || "",
       extra: selectedOption?.extra || "",
     }));
   };
+
+  const selectedCreateLedgerBookOption =
+    bookOptions.find(
+      (option) => String(option.value) === String(createLedger.bookId),
+    ) || null;
+
+  const selectedLedgerHistoryBookOption =
+    bookOptions.find(
+      (option) => String(option.value) === String(ledgerHistoryForm.bookId),
+    ) || null;
 
   const updateLedgerHistoryField = (field, value) => {
     setLedgerHistoryForm((prev) => ({ ...prev, [field]: value }));
@@ -698,10 +736,23 @@ const CreditLedgerTable = () => {
   const selectedLedgerId = String(
     selectedLedger?.Id ?? selectedLedger?.id ?? "",
   );
+  const selectedSupplierId = String(
+    selectedLedger?.supplierId ??
+      selectedLedger?.supplier_id ??
+      selectedEntity?.supplierId ??
+      "",
+  );
+  const selectedEmployeeId = String(
+    selectedLedger?.employeeId ??
+      selectedLedger?.employee_id ??
+      selectedEntity?.employeeId ??
+      "",
+  );
   const { data: ledgerHistoryData } = useGetAllLedgerHistoryQuery({
     page: 1,
     limit: 1000,
-    ledgerId: selectedLedgerId || undefined,
+    supplierId: selectedSupplierId || undefined,
+    employeeId: selectedEmployeeId || undefined,
   });
   const ledgerHistoryRecords = useMemo(
     () => ledgerHistoryData?.data || [],
@@ -709,15 +760,21 @@ const CreditLedgerTable = () => {
   );
 
   const selectedHistory = useMemo(() => {
-    if (!selectedLedgerId) return [];
+    const isSupplierTab = activeTab === "supplier";
+    const targetId = isSupplierTab ? selectedSupplierId : selectedEmployeeId;
+
+    if (!targetId) return [];
 
     const history = ledgerHistoryRecords
-      .filter(
-        (entry) =>
-          String(
-            entry?.ledgerId ?? entry?.LedgerId ?? entry?.ledgerID ?? "",
-          ) === selectedLedgerId,
-      )
+      .filter((entry) => {
+        const entryTargetId = String(
+          isSupplierTab
+            ? entry?.supplierId ?? entry?.supplier_id ?? entry?.SupplierId ?? ""
+            : entry?.employeeId ?? entry?.employee_id ?? entry?.EmployeeId ?? "",
+        );
+
+        return entryTargetId === targetId;
+      })
       .sort((a, b) => {
         const aTime = new Date(a?.date || 0).getTime();
         const bTime = new Date(b?.date || 0).getTime();
@@ -754,7 +811,7 @@ const CreditLedgerTable = () => {
         };
       })
       .reverse();
-  }, [ledgerHistoryRecords, selectedLedgerId]);
+  }, [activeTab, ledgerHistoryRecords, selectedEmployeeId, selectedSupplierId]);
 
   const mainFilteredHistory = useMemo(() => {
     const startTime = mainHistoryStartDate
@@ -877,18 +934,16 @@ const CreditLedgerTable = () => {
   const selectedCreateLedgerEntityOption =
     createLedgerEntityOptions.find(
       (option) =>
-        option.name === createLedger.name &&
-        (option.extra || "") === (createLedger.extra || ""),
+        option.value ===
+        (createLedger.type === "supplier"
+          ? createLedger.supplierId
+          : createLedger.type === "employee"
+            ? createLedger.employeeId
+            : ""),
     ) || null;
   const shouldUseEntityDropdown =
     createLedger.type === "supplier" || createLedger.type === "employee";
   const isPhoneRequired = createLedger.type === "customer";
-
-  console.log(
-    "Add Money Given Entry",
-    selectedCreateLedgerEntityOption,
-    createLedger,
-  );
 
   const [insertLedgerHistory] = useInsertLedgerHistoryMutation();
 
@@ -920,6 +975,7 @@ const CreditLedgerTable = () => {
 
     const payload = {
       ledgerId,
+      bookId: Number(ledgerHistoryForm.bookId) || undefined,
       date: ledgerHistoryForm.date,
       note: ledgerHistoryForm.note,
       cashType: historyEntryType,
@@ -1248,29 +1304,29 @@ const CreditLedgerTable = () => {
                 );
               })}
             </div> */}
-<div className="grid grid-cols-2 gap-3 border-b border-slate-200 text-sm font-medium text-slate-500">
-  {ENTITY_TABS.map((tab) => {
-    const isActive = activeTab === tab.key;
+            <div className="grid grid-cols-2 gap-3 border-b border-slate-200 text-sm font-medium text-slate-500">
+              {ENTITY_TABS.map((tab) => {
+                const isActive = activeTab === tab.key;
 
-    return (
-      <button
-        key={tab.key}
-        type="button"
-        onClick={() => {
-          setActiveTab(tab.key);
-          setSearchTerm("");
-        }}
-        className={`py-2 text-center rounded transition ${
-          isActive
-            ? "bg-black text-white"
-            : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-        }`}
-      >
-        {tab.label} ({entitiesByType[tab.key]?.length || 0})
-      </button>
-    );
-  })}
-</div>
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => {
+                      setActiveTab(tab.key);
+                      setSearchTerm("");
+                    }}
+                    className={`py-2 text-center rounded transition ${
+                      isActive
+                        ? "bg-black text-white"
+                        : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {tab.label} ({entitiesByType[tab.key]?.length || 0})
+                  </button>
+                );
+              })}
+            </div>
             {/* Search */}
             <div className="mt-4 flex gap-2">
               <div className="relative flex-1">
@@ -1996,6 +2052,26 @@ const CreditLedgerTable = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-slate-800 mb-2">
+                      Book
+                    </label>
+                    <Select
+                      value={selectedLedgerHistoryBookOption}
+                      options={bookOptions}
+                      onChange={(selectedOption) =>
+                        updateLedgerHistoryField(
+                          "bookId",
+                          selectedOption?.value || "",
+                        )
+                      }
+                      placeholder="Select Book"
+                      isClearable
+                      styles={ledgerEntitySelectStyles}
+                      noOptionsMessage={() => "No book found"}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-800 mb-2">
                       {historyEntryType} Amount
                     </label>
                     <input
@@ -2132,6 +2208,26 @@ const CreditLedgerTable = () => {
                         <Calendar size={18} />
                       </button>
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-800 mb-2">
+                      Book
+                    </label>
+                    <Select
+                      value={selectedCreateLedgerBookOption}
+                      options={bookOptions}
+                      onChange={(selectedOption) =>
+                        updateCreateLedgerField(
+                          "bookId",
+                          selectedOption?.value || "",
+                        )
+                      }
+                      placeholder="Select Book"
+                      isClearable
+                      styles={ledgerEntitySelectStyles}
+                      noOptionsMessage={() => "No book found"}
+                    />
                   </div>
 
                   {/* Cash Type */}

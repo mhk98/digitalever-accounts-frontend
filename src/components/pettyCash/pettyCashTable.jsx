@@ -19,6 +19,7 @@ import {
 } from "../../features/category/category";
 
 const BANKS = [
+  "AB Bank",
   "Al Arafah",
   "BRAC Bank",
   "Bank Asia",
@@ -945,7 +946,7 @@ const PettyCashTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? ` http://localhost:4000/${safePath}`
+                ? ` http://localhost:5000/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(

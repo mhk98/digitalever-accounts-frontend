@@ -770,7 +770,7 @@
 
 //               const safePath = String(rp.file || "").replace(/\\/g, "/");
 //               const fileUrl = safePath
-//                 ? ` http://localhost:4000/${safePath}`
+//                 ? ` http://localhost:5000/${safePath}`
 //                 : "";
 //               const ext = safePath.split(".").pop()?.toLowerCase();
 //               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -1570,6 +1570,7 @@ import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supp
 import { useGetAllSupplierHistoryQuery } from "../../features/supplierHistory/supplierHistory";
 
 const BANKS = [
+  "AB Bank",
   "Al Arafah",
   "BRAC Bank",
   "Bank Asia",
@@ -2836,7 +2837,7 @@ const CashInOutTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `http://localhost:4000/${safePath}`
+                ? `http://localhost:5000/${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(

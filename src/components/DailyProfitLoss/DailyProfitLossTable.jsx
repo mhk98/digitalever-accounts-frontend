@@ -322,19 +322,25 @@ const DailyProfitLossTable = () => {
   }, [searchTerm, selectedRows]);
 
   const summary = useMemo(() => {
+    const returnRate = Math.min(Math.max(safeNumber(returnPercentage), 0), 100);
+
     const baseSummary = filteredRows.reduce(
       (acc, item) => {
         const sellingPrice = safeNumber(item.sellingPrice);
         const costPrice = safeNumber(item.costPrice);
-        const unitsSold = safeNumber(item.unitsSold);
-        const revenue = sellingPrice * unitsSold;
-        const totalCost = costPrice * unitsSold;
+        const unitsSold = Math.max(safeNumber(item.unitsSold), 0);
+        const returnedUnits = (unitsSold * returnRate) / 100;
+        const effectiveUnitsSold = unitsSold - returnedUnits;
+        const revenue = sellingPrice * effectiveUnitsSold;
+        const totalCost = costPrice * effectiveUnitsSold;
         const profit = revenue - totalCost;
 
         acc.totalRevenue += revenue;
         acc.totalCost += totalCost;
         acc.totalProfit += profit;
-        acc.totalUnits += unitsSold;
+        acc.totalUnits += effectiveUnitsSold;
+        acc.rawTotalUnits += unitsSold;
+        acc.returnUnits += returnedUnits;
         return acc;
       },
       {
@@ -342,28 +348,28 @@ const DailyProfitLossTable = () => {
         totalCost: 0,
         totalProfit: 0,
         totalUnits: 0,
+        rawTotalUnits: 0,
+        returnUnits: 0,
       },
     );
 
     const marketingCost = safeNumber(marketingSpends);
     const otherCost = safeNumber(otherExpenses);
     const extraCost = marketingCost + otherCost;
-    const returnRate = safeNumber(returnPercentage);
-    const revenueBeforeReturn = baseSummary.totalRevenue + extraCost;
-    const returnDeduction = (revenueBeforeReturn * returnRate) / 100;
-    const adjustedTotalRevenue = revenueBeforeReturn - returnDeduction;
-    const finalProfit = adjustedTotalRevenue - baseSummary.totalCost;
+    const adjustedTotalRevenue = baseSummary.totalRevenue;
+    const finalProfit =
+      adjustedTotalRevenue - baseSummary.totalCost - extraCost;
 
     return {
       ...baseSummary,
       rawRevenue: baseSummary.totalRevenue,
       totalRevenue: adjustedTotalRevenue,
-      revenueBeforeReturn,
+      revenueBeforeReturn: baseSummary.totalRevenue,
       marketingCost,
       otherCost,
       extraCost,
       returnRate,
-      returnDeduction,
+      returnDeduction: baseSummary.returnUnits,
       finalProfit,
     };
   }, [filteredRows, marketingSpends, otherExpenses, returnPercentage]);
@@ -704,7 +710,7 @@ const DailyProfitLossTable = () => {
             Return Percentage
           </h3>
           <p className="mt-6 text-sm leading-7 text-slate-500">
-            (Optional) Enter return percentage to deduct from total revenue
+            (Optional) Enter return percentage to deduct from units sold
             (e.g. 20 for 20%).
           </p>
           <input
