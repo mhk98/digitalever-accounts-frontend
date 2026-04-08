@@ -9,7 +9,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
@@ -251,6 +251,12 @@ const ReceivedProductTable = () => {
   const [createProduct, setCreateProduct] = useState(initialCreateProduct);
 
   const [rows, setRows] = useState([]);
+  const editVariantRowRefs = useRef([]);
+  const createVariantRowRefs = useRef([]);
+  const editModalBodyRef = useRef(null);
+  const createModalBodyRef = useRef(null);
+  const [pendingVariantScrollMode, setPendingVariantScrollMode] =
+    useState(null);
 
   // ✅ Filters
   const [startDate, setStartDate] = useState("");
@@ -395,6 +401,7 @@ const ReceivedProductTable = () => {
 
   const addVariantRow = (mode) => {
     const setter = mode === "edit" ? setCurrentProduct : setCreateProduct;
+    setPendingVariantScrollMode(mode);
 
     setter((prev) => ({
       ...prev,
@@ -405,6 +412,50 @@ const ReceivedProductTable = () => {
       quantity: String(getVariantRowsTotalQuantity(prev?.variantRows)),
     }));
   };
+
+  useEffect(() => {
+    if (pendingVariantScrollMode !== "edit" || !isModalOpen) return;
+
+    const variantRows = normalizeVariantRows(currentProduct?.variantRows);
+    const scrollContainer = editModalBodyRef.current;
+    const lastRow = editVariantRowRefs.current[variantRows.length - 1];
+
+    if (!scrollContainer || !lastRow) return;
+
+    const timeoutId = window.setTimeout(() => {
+      const targetTop = lastRow.offsetTop - scrollContainer.offsetTop - 24;
+
+      scrollContainer.scrollTo({
+        top: Math.max(targetTop, 0),
+        behavior: "smooth",
+      });
+      setPendingVariantScrollMode(null);
+    }, 80);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [currentProduct?.variantRows, isModalOpen, pendingVariantScrollMode]);
+
+  useEffect(() => {
+    if (pendingVariantScrollMode !== "create" || !isModalOpen1) return;
+
+    const variantRows = normalizeVariantRows(createProduct?.variantRows);
+    const scrollContainer = createModalBodyRef.current;
+    const lastRow = createVariantRowRefs.current[variantRows.length - 1];
+
+    if (!scrollContainer || !lastRow) return;
+
+    const timeoutId = window.setTimeout(() => {
+      const targetTop = lastRow.offsetTop - scrollContainer.offsetTop - 24;
+
+      scrollContainer.scrollTo({
+        top: Math.max(targetTop, 0),
+        behavior: "smooth",
+      });
+      setPendingVariantScrollMode(null);
+    }, 80);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [createProduct?.variantRows, isModalOpen1, pendingVariantScrollMode]);
 
   const removeVariantRow = (mode, index) => {
     const setter = mode === "edit" ? setCurrentProduct : setCreateProduct;
@@ -805,7 +856,18 @@ const ReceivedProductTable = () => {
     }),
     valueContainer: (base) => ({ ...base, padding: "0 12px" }),
     placeholder: (base) => ({ ...base, color: "#64748b" }),
-    menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
+    menu: (base) => ({
+      ...base,
+      borderRadius: 14,
+      overflow: "hidden",
+      zIndex: 9999,
+    }),
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+  };
+
+  const selectMenuProps = {
+    menuPortalTarget: typeof document !== "undefined" ? document.body : null,
+    menuPosition: "fixed",
   };
 
   // ✅ Books
@@ -820,14 +882,14 @@ const ReceivedProductTable = () => {
     if (isErrorBook) console.error("Error fetching Books", errorBook);
   }, [isErrorBook, errorBook]);
 
-  // const bookOptions = useMemo(
-  //   () =>
-  //     (books || []).map((s) => ({
-  //       value: s.Id,
-  //       label: s.name,
-  //     })),
-  //   [books],
-  // );
+  const bookOptions = useMemo(
+    () =>
+      (books || []).map((s) => ({
+        value: s.Id,
+        label: s.name,
+      })),
+    [books],
+  );
 
   // ✅ suppliers
   const {
@@ -963,17 +1025,16 @@ const ReceivedProductTable = () => {
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
             {t.per_page_label}
           </label>
-          <select
-            value={itemsPerPage}
-            onChange={(e) => setItemsPerPage(Number(e.target.value))}
-            className="h-11 px-4 rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold text-sm appearance-none cursor-pointer"
-          >
-            {[10, 20, 50, 100].map((v) => (
-              <option key={v} value={v}>
-                {v}
-              </option>
-            ))}
-          </select>
+          <Select
+            options={[10, 20, 50, 100].map((v) => ({
+              value: v,
+              label: String(v),
+            }))}
+            value={{ value: itemsPerPage, label: String(itemsPerPage) }}
+            onChange={(selected) => setItemsPerPage(selected?.value || 10)}
+            styles={selectStyles}
+            className="text-black"
+          />
         </div>
 
         <div className="flex flex-col">
@@ -1370,7 +1431,10 @@ const ReceivedProductTable = () => {
         onClose={handleModalClose}
         title={t.edit_purchase || "Edit Purchase"}
       >
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
+        <div
+          ref={editModalBodyRef}
+          className="space-y-4 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar"
+        >
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               {t.select_product || "Select Product"}
@@ -1392,13 +1456,14 @@ const ReceivedProductTable = () => {
               placeholder={t.search_product || "Search product..."}
               isClearable
               styles={selectStyles}
+              {...selectMenuProps}
               className="text-sm font-medium text-black"
               isDisabled={isLoadingAllProducts}
             />
           </div>
 
           <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
-            <div className="flex items-center justify-between gap-3">
+            <div>
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Product Variants
@@ -1407,10 +1472,13 @@ const ReceivedProductTable = () => {
                   Add size, color and quantity combinations
                 </p>
               </div>
+            </div>
+
+            <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
               <button
                 type="button"
                 onClick={() => addVariantRow("edit")}
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 transition"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
                 disabled={!currentProduct?.productId}
               >
                 <Plus size={14} />
@@ -1427,6 +1495,9 @@ const ReceivedProductTable = () => {
                 return (
                   <div
                     key={`edit-variant-${index}`}
+                    ref={(element) => {
+                      editVariantRowRefs.current[index] = element;
+                    }}
                     className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
                   >
                     <div>
@@ -1451,6 +1522,7 @@ const ReceivedProductTable = () => {
                         placeholder="Select size..."
                         isClearable
                         styles={selectStyles}
+                        {...selectMenuProps}
                         className="text-sm font-medium"
                         isDisabled={
                           !currentProduct?.productId ||
@@ -1481,6 +1553,7 @@ const ReceivedProductTable = () => {
                         placeholder="Select color..."
                         isClearable
                         styles={selectStyles}
+                        {...selectMenuProps}
                         className="text-sm font-medium"
                         isDisabled={!row.size || colorOptions.length === 0}
                       />
@@ -1552,25 +1625,27 @@ const ReceivedProductTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.warehouse || "Warehouse"}
               </label>
-              <select
-                value={currentProduct?.warehouseId || ""}
-                onChange={(e) =>
+              <Select
+                options={warehouseOptions}
+                value={
+                  warehouseOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(currentProduct?.warehouseId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    warehouseId: e.target.value,
+                    warehouseId: selected?.value || "",
                   })
                 }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="">
-                  {t.select_warehouse || "Select Warehouse"}
-                </option>
-                {warehouses?.map((w) => (
-                  <option key={w.Id} value={w.Id}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
+                placeholder={t.select_warehouse || "Select Warehouse"}
+                isClearable
+                styles={selectStyles}
+                {...selectMenuProps}
+                className="text-black"
+              />
             </div>
           </div>
 
@@ -1579,48 +1654,54 @@ const ReceivedProductTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.book || "Book"}
               </label>
-              <select
-                value={currentProduct?.bookId || ""}
-                onChange={(e) =>
+              <Select
+                options={bookOptions}
+                value={
+                  bookOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(currentProduct?.bookId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    bookId: e.target.value,
+                    bookId: selected?.value || "",
                   })
                 }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="">{t.select_book || "Select Book"}</option>
-                {books?.map((s) => (
-                  <option key={s.Id} value={s.Id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                placeholder={t.select_book || "Select Book"}
+                isClearable
+                styles={selectStyles}
+                {...selectMenuProps}
+                className="text-black"
+              />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.supplier || "Supplier"}
               </label>
-              <select
-                value={currentProduct?.supplierId || ""}
-                onChange={(e) =>
+              <Select
+                options={supplierOptions}
+                value={
+                  supplierOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(currentProduct?.supplierId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    supplierId: e.target.value,
+                    supplierId: selected?.value || "",
                   })
                 }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="">
-                  {t.select_supplier || "Select Supplier"}
-                </option>
-                {suppliers?.map((s) => (
-                  <option key={s.Id} value={s.Id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                placeholder={t.select_supplier || "Select Supplier"}
+                isClearable
+                styles={selectStyles}
+                {...selectMenuProps}
+                className="text-black"
+              />
             </div>
           </div>
 
@@ -1788,21 +1869,30 @@ const ReceivedProductTable = () => {
                     focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                   />
 
-                  <select
-                    value={currentProduct?.warrantyUnit || "Day"}
-                    onChange={(e) =>
+                  <Select
+                    options={[
+                      { value: "Day", label: t.days },
+                      { value: "Month", label: t.months || "Months" },
+                      { value: "Year", label: t.years || "Years" },
+                    ]}
+                    value={{
+                      value: currentProduct?.warrantyUnit || "Day",
+                      label:
+                        currentProduct?.warrantyUnit === "Month"
+                          ? t.months || "Months"
+                          : currentProduct?.warrantyUnit === "Year"
+                            ? t.years || "Years"
+                            : t.days,
+                    }}
+                    onChange={(selected) =>
                       setCurrentProduct((prev) => ({
                         ...prev,
-                        warrantyUnit: e.target.value,
+                        warrantyUnit: selected?.value || "Day",
                       }))
                     }
-                    className="h-11 w-32 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none
-                    focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition appearance-none cursor-pointer"
-                  >
-                    <option value="Day">{t.days}</option>
-                    <option value="Month">{t.months || "Months"}</option>
-                    <option value="Year">{t.years || "Years"}</option>
-                  </select>
+                    styles={selectStyles}
+                    className="w-32 text-black"
+                  />
                 </div>
               </div>
             )}
@@ -1813,20 +1903,34 @@ const ReceivedProductTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.status || "Status"}
               </label>
-              <select
-                value={currentProduct?.status || ""}
-                onChange={(e) =>
+              <Select
+                options={[
+                  { value: "Pending", label: t.pending },
+                  { value: "Active", label: t.active },
+                  { value: "Approved", label: t.approved },
+                ]}
+                value={
+                  currentProduct?.status
+                    ? {
+                        value: currentProduct.status,
+                        label:
+                          currentProduct.status === "Active"
+                            ? t.active
+                            : currentProduct.status === "Approved"
+                              ? t.approved
+                              : t.pending,
+                      }
+                    : null
+                }
+                onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    status: e.target.value,
+                    status: selected?.value || "",
                   })
                 }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="Pending">{t.pending}</option>
-                <option value="Active">{t.active}</option>
-                <option value="Approved">{t.approved}</option>
-              </select>
+                styles={selectStyles}
+                className="text-black"
+              />
             </div>
           ) : (
             <div>
@@ -1869,6 +1973,7 @@ const ReceivedProductTable = () => {
       >
         <form
           onSubmit={handleCreateProduct}
+          ref={createModalBodyRef}
           className="space-y-4 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar"
         >
           <div>
@@ -1892,13 +1997,14 @@ const ReceivedProductTable = () => {
               placeholder={t.search_product || "Search product..."}
               isClearable
               styles={selectStyles}
+              {...selectMenuProps}
               className="text-sm text-black font-medium"
               isDisabled={isLoadingAllProducts}
             />
           </div>
 
           <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
-            <div className="flex items-center justify-between gap-3">
+            <div>
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Product Variants
@@ -1907,10 +2013,13 @@ const ReceivedProductTable = () => {
                   Add size, color and quantity combinations
                 </p>
               </div>
+            </div>
+
+            <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
               <button
                 type="button"
                 onClick={() => addVariantRow("create")}
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 transition"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
                 disabled={!createProduct?.productId}
               >
                 <Plus size={14} />
@@ -1930,6 +2039,9 @@ const ReceivedProductTable = () => {
                 return (
                   <div
                     key={`create-variant-${index}`}
+                    ref={(element) => {
+                      createVariantRowRefs.current[index] = element;
+                    }}
                     className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
                   >
                     <div>
@@ -1954,6 +2066,7 @@ const ReceivedProductTable = () => {
                         placeholder="Select size..."
                         isClearable
                         styles={selectStyles}
+                        {...selectMenuProps}
                         className="text-sm text-black font-medium"
                         isDisabled={
                           !createProduct?.productId ||
@@ -1984,6 +2097,7 @@ const ReceivedProductTable = () => {
                         placeholder="Select color..."
                         isClearable
                         styles={selectStyles}
+                        {...selectMenuProps}
                         className="text-sm text-black font-medium"
                         isDisabled={!row.size || colorOptions.length === 0}
                       />
@@ -2092,26 +2206,27 @@ const ReceivedProductTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.warehouse || "Warehouse"}
               </label>
-              <select
-                value={createProduct?.warehouseId || ""}
-                onChange={(e) =>
+              <Select
+                options={warehouseOptions}
+                value={
+                  warehouseOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(createProduct?.warehouseId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCreateProduct({
                     ...createProduct,
-                    warehouseId: e.target.value,
+                    warehouseId: selected?.value || "",
                   })
                 }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                required
-              >
-                <option value="">
-                  {t.select_warehouse || "Select Warehouse"}
-                </option>
-                {warehouses?.map((w) => (
-                  <option key={w.Id} value={w.Id}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
+                placeholder={t.select_warehouse || "Select Warehouse"}
+                isClearable
+                styles={selectStyles}
+                {...selectMenuProps}
+                className="text-black"
+              />
             </div>
           </div>
 
@@ -2120,46 +2235,54 @@ const ReceivedProductTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.book || "Book"}
               </label>
-              <select
-                value={createProduct?.bookId || ""}
-                onChange={(e) =>
-                  setCreateProduct({ ...createProduct, bookId: e.target.value })
+              <Select
+                options={bookOptions}
+                value={
+                  bookOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(createProduct?.bookId || ""),
+                  ) || null
                 }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="">{t.select_book || "Select Book"}</option>
-                {books?.map((s) => (
-                  <option key={s.Id} value={s.Id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(selected) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    bookId: selected?.value || "",
+                  })
+                }
+                placeholder={t.select_book || "Select Book"}
+                isClearable
+                styles={selectStyles}
+                {...selectMenuProps}
+                className="text-black"
+              />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.supplier || "Supplier"}
               </label>
-              <select
-                value={createProduct?.supplierId || ""}
-                onChange={(e) =>
+              <Select
+                options={supplierOptions}
+                value={
+                  supplierOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(createProduct?.supplierId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCreateProduct({
                     ...createProduct,
-                    supplierId: e.target.value,
+                    supplierId: selected?.value || "",
                   })
                 }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                required
-              >
-                <option value="">
-                  {t.select_supplier || "Select Supplier"}
-                </option>
-                {suppliers?.map((s) => (
-                  <option key={s.Id} value={s.Id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                placeholder={t.select_supplier || "Select Supplier"}
+                isClearable
+                styles={selectStyles}
+                {...selectMenuProps}
+                className="text-black"
+              />
             </div>
           </div>
 

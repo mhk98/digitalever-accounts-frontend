@@ -17,6 +17,7 @@ import {
   useGetAllCategoryQuery,
   useInsertCategoryMutation,
 } from "../../features/category/category";
+import Select from "react-select";
 
 const BANKS = [
   "AB Bank",
@@ -237,6 +238,67 @@ const PettyCashTable = () => {
 
     return merged;
   }, [categories]);
+
+  const selectStyles = {
+    control: (base, state) => ({
+      ...base,
+      minHeight: 44,
+      borderRadius: 14,
+      borderColor: state.isFocused ? "#c7d2fe" : "#cbd5e1",
+      boxShadow: state.isFocused ? "0 0 0 4px rgba(99,102,241,0.15)" : "none",
+      "&:hover": { borderColor: "#cbd5e1" },
+    }),
+    valueContainer: (base) => ({ ...base, padding: "0 12px" }),
+    placeholder: (base) => ({ ...base, color: "#64748b" }),
+    menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
+  };
+
+  const paymentModeOptions = useMemo(
+    () =>
+      ["Cash", "Bkash", "Nagad", "Rocket", "Bank", "Card"].map((mode) => ({
+        value: mode,
+        label: mode,
+      })),
+    [],
+  );
+
+  const paymentStatusOptions = useMemo(
+    () =>
+      ["CashIn", "CashOut"].map((status) => ({
+        value: status,
+        label: status,
+      })),
+    [],
+  );
+
+  const bankOptions = useMemo(
+    () =>
+      BANKS.map((bank) => ({
+        value: bank,
+        label: bank,
+      })),
+    [],
+  );
+
+  const categorySelectOptions = useMemo(
+    () => [
+      ...categoryOptions.map((c) => ({
+        value: c.name,
+        label: c.name,
+      })),
+      { value: "__new__", label: "+ New Category" },
+    ],
+    [categoryOptions],
+  );
+
+  const statusOptions = useMemo(
+    () =>
+      ["Active", "Approved", "Pending"].map((status) => ({
+        value: status,
+        label: status,
+      })),
+    [],
+  );
 
   // ✅ Insert category mutation
   const [insertCategory, { isLoading: isAddingCategory }] =
@@ -829,67 +891,76 @@ const PettyCashTable = () => {
 
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Payment Mode:</label>
-          <select
-            value={filterPaymentMode}
-            onChange={(e) => setFilterPaymentMode(e.target.value)}
-            className="border py-2 border-slate-300 rounded-lg px-3 text-slate-900 bg-white w-full outline-none
-                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
-          >
-            <option value="">All</option>
-            <option value="Cash">Cash</option>
-            <option value="Bkash">Bkash</option>
-            <option value="Nagad">Nagad</option>
-            <option value="Rocket">Rocket</option>
-            <option value="Bank">Bank</option>
-            <option value="Card">Card</option>
-          </select>
+          <Select
+            options={paymentModeOptions}
+            value={
+              paymentModeOptions.find(
+                (option) => option.value === filterPaymentMode,
+              ) || null
+            }
+            onChange={(selected) => setFilterPaymentMode(selected?.value || "")}
+            placeholder="All"
+            isClearable
+            styles={selectStyles}
+            className="text-black"
+          />
         </div>
 
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Payment Status:</label>
-          <select
-            value={filterPaymentStatus}
-            onChange={(e) => setFilterPaymentStatus(e.target.value)}
-            className="border py-2 border-slate-300 rounded-lg px-3 text-slate-900 bg-white w-full outline-none
-                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
-          >
-            <option value="">All</option>
-            <option value="CashIn">CashIn</option>
-            <option value="CashOut">CashOut</option>
-          </select>
+          <Select
+            options={paymentStatusOptions}
+            value={
+              paymentStatusOptions.find(
+                (option) => option.value === filterPaymentStatus,
+              ) || null
+            }
+            onChange={(selected) =>
+              setFilterPaymentStatus(selected?.value || "")
+            }
+            placeholder="All"
+            isClearable
+            styles={selectStyles}
+            className="text-black"
+          />
         </div>
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Category:</label>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="border py-2 border-slate-300 rounded-lg px-3 text-slate-900 bg-white w-full outline-none
-               focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
-          >
-            <option value="">All</option>
-            {categoryOptions.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <Select
+            options={categoryOptions.map((c) => ({
+              value: c.id,
+              label: c.name,
+            }))}
+            value={
+              categoryOptions
+                .map((c) => ({ value: c.id, label: c.name }))
+                .find(
+                  (option) => String(option.value) === String(filterCategory),
+                ) || null
+            }
+            onChange={(selected) => setFilterCategory(selected?.value || "")}
+            placeholder="All"
+            isClearable
+            styles={selectStyles}
+            className="text-black"
+          />
         </div>
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Per Page</label>
-          <select
-            value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
+          <Select
+            options={[10, 20, 50, 100].map((v) => ({
+              value: v,
+              label: String(v),
+            }))}
+            value={{ value: itemsPerPage, label: String(itemsPerPage) }}
+            onChange={(selected) => {
+              setItemsPerPage(selected?.value || 10);
               setCurrentPage(1);
               setStartPage(1);
             }}
-            className="px-3 py-[10px] rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
+            styles={selectStyles}
+            className="text-black"
+          />
         </div>
 
         <div>
@@ -946,7 +1017,7 @@ const PettyCashTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? ` http://localhost:5000/${safePath}`
+                ? ` https://apikafela.digitalever.com.bd${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -1235,45 +1306,44 @@ const PettyCashTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Payment Mode
               </label>
-              <select
-                value={currentProduct?.paymentMode || ""}
-                onChange={(e) =>
+              <Select
+                options={paymentModeOptions}
+                value={
+                  paymentModeOptions.find(
+                    (option) => option.value === currentProduct?.paymentMode,
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    paymentMode: e.target.value,
+                    paymentMode: selected?.value || "",
                   })
                 }
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="Cash">Cash</option>
-                <option value="Bkash">Bkash</option>
-                <option value="Nagad">Nagad</option>
-                <option value="Rocket">Rocket</option>
-                <option value="Bank">Bank</option>
-                <option value="Card">Card</option>
-              </select>
+                styles={selectStyles}
+                className="text-black"
+              />
             </div>
             {currentProduct?.paymentMode === "Bank" && (
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                   Bank Name
                 </label>
-                <select
-                  value={currentProduct?.bankName || ""}
-                  onChange={(e) =>
+                <Select
+                  options={bankOptions}
+                  value={
+                    bankOptions.find(
+                      (option) => option.value === currentProduct?.bankName,
+                    ) || null
+                  }
+                  onChange={(selected) =>
                     setCurrentProduct({
                       ...currentProduct,
-                      bankName: e.target.value,
+                      bankName: selected?.value || "",
                     })
                   }
-                  className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                >
-                  {BANKS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
+                  styles={selectStyles}
+                  className="text-black"
+                />
               </div>
             )}
           </div>
@@ -1283,12 +1353,17 @@ const PettyCashTable = () => {
               Category
             </label>
             <div className="flex gap-2">
-              <select
+              <Select
+                options={categorySelectOptions}
                 value={
-                  isNewCategoryEdit ? "__new__" : currentProduct?.category || ""
+                  isNewCategoryEdit
+                    ? { value: "__new__", label: "+ New Category" }
+                    : categorySelectOptions.find(
+                        (option) => option.value === currentProduct?.category,
+                      ) || null
                 }
-                onChange={(e) => {
-                  const v = e.target.value;
+                onChange={(selected) => {
+                  const v = selected?.value || "";
                   if (v === "__new__") {
                     setIsNewCategoryEdit(true);
                   } else {
@@ -1296,16 +1371,10 @@ const PettyCashTable = () => {
                     setCurrentProduct({ ...currentProduct, category: v });
                   }
                 }}
-                className="flex-1 h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="">Select Category</option>
-                {categoryOptions.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-                <option value="__new__">+ New Category</option>
-              </select>
+                placeholder="Select Category"
+                styles={selectStyles}
+                className="flex-1 text-black"
+              />
             </div>
             {isNewCategoryEdit && (
               <div className="mt-3 flex gap-2">
@@ -1359,20 +1428,22 @@ const PettyCashTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Status
               </label>
-              <select
-                value={currentProduct?.status || ""}
-                onChange={(e) =>
+              <Select
+                options={statusOptions}
+                value={
+                  statusOptions.find(
+                    (option) => option.value === currentProduct?.status,
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    status: e.target.value,
+                    status: selected?.value || "",
                   })
                 }
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="Active">Active</option>
-                <option value="Approved">Approved</option>
-                <option value="Pending">Pending</option>
-              </select>
+                styles={selectStyles}
+                className="text-black"
+              />
             </div>
           )}
 
@@ -1438,49 +1509,46 @@ const PettyCashTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Payment Mode
               </label>
-              <select
-                value={createProduct.paymentMode}
-                onChange={(e) =>
+              <Select
+                options={paymentModeOptions}
+                value={
+                  paymentModeOptions.find(
+                    (option) => option.value === createProduct.paymentMode,
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCreateProduct({
                     ...createProduct,
-                    paymentMode: e.target.value,
+                    paymentMode: selected?.value || "",
                   })
                 }
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                required
-              >
-                <option value="">Select Mode</option>
-                <option value="Cash">Cash</option>
-                <option value="Bkash">Bkash</option>
-                <option value="Nagad">Nagad</option>
-                <option value="Rocket">Rocket</option>
-                <option value="Bank">Bank</option>
-                <option value="Card">Card</option>
-              </select>
+                placeholder="Select Mode"
+                styles={selectStyles}
+                className="text-black"
+              />
             </div>
             {createProduct.paymentMode === "Bank" && (
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                   Bank Name
                 </label>
-                <select
-                  value={createProduct.bankName}
-                  onChange={(e) =>
+                <Select
+                  options={bankOptions}
+                  value={
+                    bankOptions.find(
+                      (option) => option.value === createProduct.bankName,
+                    ) || null
+                  }
+                  onChange={(selected) =>
                     setCreateProduct({
                       ...createProduct,
-                      bankName: e.target.value,
+                      bankName: selected?.value || "",
                     })
                   }
-                  className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                  required
-                >
-                  <option value="">Select Bank</option>
-                  {BANKS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select Bank"
+                  styles={selectStyles}
+                  className="text-black"
+                />
               </div>
             )}
           </div>
@@ -1490,10 +1558,17 @@ const PettyCashTable = () => {
               Category
             </label>
             <div className="flex gap-2">
-              <select
-                value={isNewCategoryAdd ? "__new__" : createProduct.category}
-                onChange={(e) => {
-                  const v = e.target.value;
+              <Select
+                options={categorySelectOptions}
+                value={
+                  isNewCategoryAdd
+                    ? { value: "__new__", label: "+ New Category" }
+                    : categorySelectOptions.find(
+                        (option) => option.value === createProduct.category,
+                      ) || null
+                }
+                onChange={(selected) => {
+                  const v = selected?.value || "";
                   if (v === "__new__") {
                     setIsNewCategoryAdd(true);
                   } else {
@@ -1501,17 +1576,10 @@ const PettyCashTable = () => {
                     setCreateProduct({ ...createProduct, category: v });
                   }
                 }}
-                className="flex-1 h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                required
-              >
-                <option value="">Select Category</option>
-                {categoryOptions.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-                <option value="__new__">+ New Category</option>
-              </select>
+                placeholder="Select Category"
+                styles={selectStyles}
+                className="flex-1 text-black"
+              />
             </div>
             {isNewCategoryAdd && (
               <div className="mt-3 flex gap-2">
@@ -1618,49 +1686,46 @@ const PettyCashTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Payment Mode
               </label>
-              <select
-                value={createProduct.paymentMode}
-                onChange={(e) =>
+              <Select
+                options={paymentModeOptions}
+                value={
+                  paymentModeOptions.find(
+                    (option) => option.value === createProduct.paymentMode,
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCreateProduct({
                     ...createProduct,
-                    paymentMode: e.target.value,
+                    paymentMode: selected?.value || "",
                   })
                 }
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                required
-              >
-                <option value="">Select Mode</option>
-                <option value="Cash">Cash</option>
-                <option value="Bkash">Bkash</option>
-                <option value="Nagad">Nagad</option>
-                <option value="Rocket">Rocket</option>
-                <option value="Bank">Bank</option>
-                <option value="Card">Card</option>
-              </select>
+                placeholder="Select Mode"
+                styles={selectStyles}
+                className="text-black"
+              />
             </div>
             {createProduct.paymentMode === "Bank" && (
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                   Bank Name
                 </label>
-                <select
-                  value={createProduct.bankName}
-                  onChange={(e) =>
+                <Select
+                  options={bankOptions}
+                  value={
+                    bankOptions.find(
+                      (option) => option.value === createProduct.bankName,
+                    ) || null
+                  }
+                  onChange={(selected) =>
                     setCreateProduct({
                       ...createProduct,
-                      bankName: e.target.value,
+                      bankName: selected?.value || "",
                     })
                   }
-                  className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                  required
-                >
-                  <option value="">Select Bank</option>
-                  {BANKS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select Bank"
+                  styles={selectStyles}
+                  className="text-black"
+                />
               </div>
             )}
           </div>
@@ -1670,10 +1735,17 @@ const PettyCashTable = () => {
               Category
             </label>
             <div className="flex gap-2">
-              <select
-                value={isNewCategoryAdd ? "__new__" : createProduct.category}
-                onChange={(e) => {
-                  const v = e.target.value;
+              <Select
+                options={categorySelectOptions}
+                value={
+                  isNewCategoryAdd
+                    ? { value: "__new__", label: "+ New Category" }
+                    : categorySelectOptions.find(
+                        (option) => option.value === createProduct.category,
+                      ) || null
+                }
+                onChange={(selected) => {
+                  const v = selected?.value || "";
                   if (v === "__new__") {
                     setIsNewCategoryAdd(true);
                   } else {
@@ -1681,17 +1753,10 @@ const PettyCashTable = () => {
                     setCreateProduct({ ...createProduct, category: v });
                   }
                 }}
-                className="flex-1 h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                required
-              >
-                <option value="">Select Category</option>
-                {categoryOptions.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-                <option value="__new__">+ New Category</option>
-              </select>
+                placeholder="Select Category"
+                styles={selectStyles}
+                className="flex-1 text-black"
+              />
             </div>
             {isNewCategoryAdd && (
               <div className="mt-3 flex gap-2">
@@ -1768,20 +1833,22 @@ const PettyCashTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Status
               </label>
-              <select
-                value={currentProduct?.status || ""}
-                onChange={(e) =>
+              <Select
+                options={statusOptions}
+                value={
+                  statusOptions.find(
+                    (option) => option.value === currentProduct?.status,
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    status: e.target.value,
+                    status: selected?.value || "",
                   })
                 }
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="Active">Active</option>
-                <option value="Approved">Approved</option>
-                <option value="Pending">Pending</option>
-              </select>
+                styles={selectStyles}
+                className="text-black"
+              />
             </div>
           ) : (
             <div>

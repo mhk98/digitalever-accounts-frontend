@@ -460,21 +460,20 @@ const DamageRepairingStockTable = () => {
         {/* ✅ Per Page */}
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Per Page</label>
-          <select
-            value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
+          <Select
+            options={[10, 20, 50, 100].map((v) => ({
+              value: v,
+              label: String(v),
+            }))}
+            value={{ value: itemsPerPage, label: String(itemsPerPage) }}
+            onChange={(selected) => {
+              setItemsPerPage(selected?.value || 10);
               setCurrentPage(1);
               setStartPage(1);
             }}
-            className="h-11 px-3 rounded-xl bg-white border border-slate-200 text-slate-900 outline-none
-                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
+            className="text-black"
+            styles={selectStyles}
+          />
         </div>
 
         {/* Product */}

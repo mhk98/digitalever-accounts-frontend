@@ -1,12 +1,21 @@
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, RefreshCcw, Trash2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Mail,
+  Printer,
+  RefreshCcw,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
+import Modal from "../common/Modal";
 import { useGetAllInventoryOverviewWithoutQueryQuery } from "../../features/inventoryOverview/inventoryOverview";
 import {
   useGetAllProfitLossQuery,
   useInsertProfitLossMutation,
+  useSendProfitLossInvoiceMutation,
 } from "../../features/profitLoss/profitLoss";
 
 const safeNumber = (value) => {
@@ -25,6 +34,14 @@ const formatDate = (value) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
 };
+
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 const getProductName = (item) =>
   item?.name ||
@@ -171,6 +188,8 @@ const DailyProfitLossTable = () => {
   );
   const [insertProfitLoss, { isLoading: isSavingProfitLoss }] =
     useInsertProfitLossMutation();
+  const [sendProfitLossInvoice, { isLoading: isSendingProfitLossInvoice }] =
+    useSendProfitLossInvoiceMutation();
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -182,6 +201,9 @@ const DailyProfitLossTable = () => {
   const [historyEndDate, setHistoryEndDate] = useState("");
   const [salesTypeSearch, setSalesTypeSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [selectedInvoiceRow, setSelectedInvoiceRow] = useState(null);
+  const [clientEmail, setClientEmail] = useState("");
   const itemsPerPage = 10;
 
   console.log("salesTypeSearch", salesTypeSearch);
@@ -331,10 +353,14 @@ const DailyProfitLossTable = () => {
         const unitsSold = Math.max(safeNumber(item.unitsSold), 0);
         const returnedUnits = (unitsSold * returnRate) / 100;
         const effectiveUnitsSold = unitsSold - returnedUnits;
+        const grossCost = costPrice * unitsSold;
+        const grossRevenue = sellingPrice * unitsSold;
         const revenue = sellingPrice * effectiveUnitsSold;
         const totalCost = costPrice * effectiveUnitsSold;
         const profit = revenue - totalCost;
 
+        acc.rawCost += grossCost;
+        acc.rawRevenue += grossRevenue;
         acc.totalRevenue += revenue;
         acc.totalCost += totalCost;
         acc.totalProfit += profit;
@@ -344,6 +370,8 @@ const DailyProfitLossTable = () => {
         return acc;
       },
       {
+        rawCost: 0,
+        rawRevenue: 0,
         totalRevenue: 0,
         totalCost: 0,
         totalProfit: 0,
@@ -362,14 +390,15 @@ const DailyProfitLossTable = () => {
 
     return {
       ...baseSummary,
-      rawRevenue: baseSummary.totalRevenue,
+      rawRevenue: baseSummary.rawRevenue,
+      rawCost: baseSummary.rawCost,
       totalRevenue: adjustedTotalRevenue,
-      revenueBeforeReturn: baseSummary.totalRevenue,
+      revenueBeforeReturn: baseSummary.rawRevenue,
       marketingCost,
       otherCost,
       extraCost,
       returnRate,
-      returnDeduction: baseSummary.returnUnits,
+      returnDeduction: baseSummary.rawCost - baseSummary.totalCost,
       finalProfit,
     };
   }, [filteredRows, marketingSpends, otherExpenses, returnPercentage]);
@@ -387,7 +416,9 @@ const DailyProfitLossTable = () => {
 
     const payload = {
       products: selectedRows.length,
-      revenue: Math.round(summary.rawRevenue),
+      purchase: Math.round(summary.totalCost),
+      revenue: Math.round(summary.totalRevenue),
+      return: Math.round(summary.returnDeduction),
       cost: Math.round(summary.extraCost),
       profitLoss: Math.round(summary.finalProfit),
       salesType: salesType.value,
@@ -406,6 +437,123 @@ const DailyProfitLossTable = () => {
     }
   };
 
+  const handlePrintInvoice = (row) => {
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+    if (!printWindow) {
+      toast.error("Please allow popups to print the invoice");
+      return;
+    }
+
+    const invoiceDate = formatDate(row?.createdAt || row?.date);
+    const salesTypeLabel = escapeHtml(row?.salesType || "-");
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Profit Loss Invoice</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 32px; color: #0f172a; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+            .title { font-size: 28px; font-weight: 700; margin: 0 0 8px; }
+            .meta { color: #475569; font-size: 14px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #cbd5e1; padding: 12px; text-align: left; }
+            th { background: #f8fafc; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; }
+            .amount { font-weight: 700; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <h1 class="title">Profit/Loss Invoice</h1>
+              <div class="meta">Date: ${escapeHtml(invoiceDate)}</div>
+              <div class="meta">Sales Type: ${salesTypeLabel}</div>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Products</th>
+                <th>Purchase</th>
+                <th>Sale</th>
+                <th>Return</th>
+                <th>Cost</th>
+                <th>Profit/Loss</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${escapeHtml(safeNumber(row?.products))}</td>
+                <td class="amount">${escapeHtml(formatCurrency(row?.purchase))}</td>
+                <td class="amount">${escapeHtml(formatCurrency(row?.revenue))}</td>
+                <td class="amount">${escapeHtml(formatCurrency(row?.return))}</td>
+                <td class="amount">${escapeHtml(formatCurrency(row?.cost))}</td>
+                <td class="amount">${escapeHtml(formatCurrency(row?.profitLoss))}</td>
+              </tr>
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
+  const handleSendEmail = (row) => {
+    setSelectedInvoiceRow(row);
+    setClientEmail("");
+    setIsEmailModalOpen(true);
+  };
+
+  const handleCloseEmailModal = () => {
+    setIsEmailModalOpen(false);
+    setSelectedInvoiceRow(null);
+    setClientEmail("");
+  };
+
+  const handleSubmitInvoiceEmail = async () => {
+    if (!clientEmail.trim()) {
+      toast.error("Please enter client email");
+      return;
+    }
+
+    if (!selectedInvoiceRow) {
+      toast.error("No invoice selected");
+      return;
+    }
+
+    const payload = {
+      clientEmail: clientEmail.trim(),
+      invoiceNumber: `PL-${selectedInvoiceRow?.Id || selectedInvoiceRow?.id || Date.now()}`,
+      companyName: "Kafelamart Accounts",
+      reportTitle: "Profit & Loss Invoice",
+      reportDate: selectedInvoiceRow?.createdAt || selectedInvoiceRow?.date,
+      profitLossId: selectedInvoiceRow?.Id || selectedInvoiceRow?.id,
+      salesType: selectedInvoiceRow?.salesType || "",
+      products: safeNumber(selectedInvoiceRow?.products),
+      purchase: safeNumber(selectedInvoiceRow?.purchase),
+      revenue: safeNumber(selectedInvoiceRow?.revenue),
+      return: safeNumber(selectedInvoiceRow?.return),
+      cost: safeNumber(selectedInvoiceRow?.cost),
+      profitLoss: safeNumber(selectedInvoiceRow?.profitLoss),
+    };
+
+    try {
+      const res = await sendProfitLossInvoice(payload).unwrap();
+      if (res?.success) {
+        toast.success("Invoice sent successfully");
+        handleCloseEmailModal();
+      } else {
+        toast.error(res?.message || "Failed to send invoice");
+      }
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to send invoice");
+    }
+  };
+
   const summaryCards = [
     {
       label: "Selected Products",
@@ -420,7 +568,13 @@ const DailyProfitLossTable = () => {
       bg: "from-sky-50 to-white",
     },
     {
-      label: "Total Revenue",
+      label: "Total Purchase",
+      value: formatCurrency(summary.totalCost),
+      tone: "text-amber-700",
+      bg: "from-amber-50 to-white",
+    },
+    {
+      label: "Total Sale",
       value: formatCurrency(summary.totalRevenue),
       tone: "text-indigo-700",
       bg: "from-indigo-50 to-white",
@@ -511,7 +665,7 @@ const DailyProfitLossTable = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {summaryCards.map((card) => (
             <div
               key={card.label}
@@ -710,8 +864,8 @@ const DailyProfitLossTable = () => {
             Return Percentage
           </h3>
           <p className="mt-6 text-sm leading-7 text-slate-500">
-            (Optional) Enter return percentage to deduct from units sold
-            (e.g. 20 for 20%).
+            (Optional) Enter return percentage to deduct from units sold (e.g.
+            20 for 20%).
           </p>
           <input
             type="number"
@@ -841,9 +995,12 @@ const DailyProfitLossTable = () => {
                   "Date",
                   "Sales Type",
                   "Products",
-                  "Revenue",
+                  "Purchase",
+                  "Sale",
+                  "Return",
                   "Cost",
                   "Profit/Loss",
+                  "Action",
                 ].map((heading) => (
                   <th
                     key={heading}
@@ -859,7 +1016,7 @@ const DailyProfitLossTable = () => {
               {profitLossLoading || profitLossFetching ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={9}
                     className="px-3 py-16 text-center text-sm font-medium text-slate-500"
                   >
                     Loading saved profit/loss data...
@@ -868,7 +1025,7 @@ const DailyProfitLossTable = () => {
               ) : profitLossRows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={9}
                     className="px-3 py-16 text-center text-sm font-medium text-slate-500"
                   >
                     কোনো saved profit/loss data পাওয়া যায়নি।
@@ -887,7 +1044,13 @@ const DailyProfitLossTable = () => {
                       {safeNumber(row?.products)}
                     </td>
                     <td className="border-b border-slate-100 px-3 py-4 text-sm font-semibold text-slate-900">
+                      {formatCurrency(row?.purchase)}
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-4 text-sm font-semibold text-slate-700">
                       {formatCurrency(row?.revenue)}
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-4 text-sm font-semibold text-slate-700">
+                      {formatCurrency(row?.return)}
                     </td>
                     <td className="border-b border-slate-100 px-3 py-4 text-sm font-semibold text-slate-700">
                       {formatCurrency(row?.cost)}
@@ -900,6 +1063,26 @@ const DailyProfitLossTable = () => {
                       }`}
                     >
                       {formatCurrency(row?.profitLoss)}
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handlePrintInvoice(row)}
+                          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                        >
+                          <Printer size={14} />
+                          Print
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSendEmail(row)}
+                          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                        >
+                          <Mail size={14} />
+                          Email
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -940,6 +1123,58 @@ const DailyProfitLossTable = () => {
           </div>
         </div>
       </div>
+
+      <Modal
+        isOpen={isEmailModalOpen}
+        onClose={handleCloseEmailModal}
+        title="Send Profit/Loss Invoice"
+        maxWidth="max-w-lg"
+      >
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-semibold text-slate-900">
+              {selectedInvoiceRow?.salesType || "Profit/Loss Invoice"}
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Date: {formatDate(selectedInvoiceRow?.createdAt || selectedInvoiceRow?.date)}
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Invoice No: PL-{selectedInvoiceRow?.Id || selectedInvoiceRow?.id || "-"}
+            </p>
+          </div>
+
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+              Client Email
+            </span>
+            <input
+              type="email"
+              value={clientEmail}
+              onChange={(e) => setClientEmail(e.target.value)}
+              placeholder="Enter email address"
+              className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+            />
+          </label>
+
+          <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
+            <button
+              type="button"
+              onClick={handleCloseEmailModal}
+              className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmitInvoiceEmail}
+              disabled={isSendingProfitLossInvoice}
+              className="inline-flex h-11 items-center justify-center rounded-2xl bg-indigo-600 px-4 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSendingProfitLossInvoice ? "Sending..." : "Send Email"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </motion.div>
   );
 };

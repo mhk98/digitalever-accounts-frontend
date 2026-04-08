@@ -12,6 +12,14 @@ export const profitLossApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: "ProfitLoss", id: "LIST" }],
     }),
+    sendProfitLossInvoice: build.mutation({
+      query: (data) => ({
+        url: "profit-loss/invoice",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: [{ type: "ProfitLoss", id: "LIST" }],
+    }),
 
     deleteProfitLoss: build.mutation({
       query: (id) => ({
@@ -62,6 +70,7 @@ export const profitLossApi = baseApi.injectEndpoints({
 
 export const {
   useInsertProfitLossMutation,
+  useSendProfitLossInvoiceMutation,
   useGetAllProfitLossQuery,
   useDeleteProfitLossMutation,
   useUpdateProfitLossMutation,

@@ -43,6 +43,8 @@ const SupplierHistoryTable = () => {
 
   const [rows, setRows] = useState([]);
 
+  console.log("params", id);
+
   // ✅ Filters: start/end + product NAME
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -113,7 +115,7 @@ const SupplierHistoryTable = () => {
       startDate: startDate || undefined,
       endDate: endDate || undefined,
       supplierId: id,
-      bookId: book || undefined, // ✅ backend filter by name
+      bookId: book || undefined,
     };
     Object.keys(args).forEach((k) => {
       if (args[k] === undefined || args[k] === null || args[k] === "")
@@ -140,7 +142,7 @@ const SupplierHistoryTable = () => {
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
 
-  console.log("supplierhistory", rows);
+  console.log("supplierhistory", data);
 
   // ✅ Modals
   const handleAddProduct = () => setIsModalOpen1(true);
@@ -768,7 +770,7 @@ const SupplierHistoryTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `http://localhost:5000/${safePath}`
+                ? `https://apikafela.digitalever.com.bd${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(

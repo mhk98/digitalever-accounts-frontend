@@ -309,7 +309,12 @@ const DamageRepairedTable = () => {
     valueContainer: (base) => ({ ...base, padding: "0 12px" }),
     placeholder: (base) => ({ ...base, color: "#64748b" }),
     singleValue: (base) => ({ ...base, color: "#0f172a" }),
-    menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
+    menu: (base) => ({
+      ...base,
+      borderRadius: 14,
+      overflow: "hidden",
+      zIndex: 40,
+    }),
   };
 
   // ✅ responsive pagesPerSet
@@ -752,21 +757,20 @@ const DamageRepairedTable = () => {
         {/* ✅ Per Page */}
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Per Page</label>
-          <select
-            value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
+          <Select
+            options={[10, 20, 50, 100].map((v) => ({
+              value: v,
+              label: String(v),
+            }))}
+            value={{ value: itemsPerPage, label: String(itemsPerPage) }}
+            onChange={(selected) => {
+              setItemsPerPage(selected?.value || 10);
               setCurrentPage(1);
               setStartPage(1);
             }}
-            className="h-11 px-3 rounded-xl bg-white border border-slate-200 text-slate-900 outline-none
-                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
+            className="text-black"
+            styles={selectStyles}
+          />
         </div>
 
         {/* Product */}
@@ -1127,7 +1131,7 @@ const DamageRepairedTable = () => {
           </div>
 
           <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
-            <div className="flex items-center justify-between gap-3">
+            <div>
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Product Variants
@@ -1136,10 +1140,12 @@ const DamageRepairedTable = () => {
                   Add size, color and quantity combinations
                 </p>
               </div>
+            </div>
+            <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
               <button
                 type="button"
                 onClick={() => addVariantRow("edit")}
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 transition"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
                 disabled={!currentItem?.receivedId}
               >
                 <Plus size={14} />
@@ -1259,45 +1265,49 @@ const DamageRepairedTable = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Warehouse</label>
-              <select
-                value={currentItem?.warehouseId || ""}
-                onChange={(e) =>
+              <Select
+                options={warehouseOptions}
+                value={
+                  warehouseOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(currentItem?.warehouseId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCurrentItem({
                     ...currentItem,
-                    warehouseId: e.target.value,
+                    warehouseId: selected?.value || "",
                   })
                 }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                required
-              >
-                <option value="">Select Warehouse</option>
-                {warehouses?.map((w) => (
-                  <option key={w.Id} value={w.Id}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select Warehouse"
+                isClearable
+                styles={selectStyles}
+                className="text-black"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
-              <select
-                value={currentItem?.supplierId || ""}
-                onChange={(e) =>
+              <Select
+                options={supplierOptions}
+                value={
+                  supplierOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(currentItem?.supplierId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCurrentItem({
                     ...currentItem,
-                    supplierId: e.target.value,
+                    supplierId: selected?.value || "",
                   })
                 }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                required
-              >
-                <option value="">Select Supplier</option>
-                {suppliers?.map((s) => (
-                  <option key={s.Id} value={s.Id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select Supplier"
+                isClearable
+                styles={selectStyles}
+                className="text-black"
+              />
             </div>
           </div>
 
@@ -1336,21 +1346,26 @@ const DamageRepairedTable = () => {
             {role === "superAdmin" || role === "admin" ? (
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-                <select
-                  value={currentItem?.status || ""}
-                  onChange={(e) =>
+                <Select
+                  options={["Active", "Approved", "Pending"].map((status) => ({
+                    value: status,
+                    label: status,
+                  }))}
+                  value={
+                    currentItem?.status
+                      ? { value: currentItem.status, label: currentItem.status }
+                      : null
+                  }
+                  onChange={(selected) =>
                     setCurrentItem((p) => ({
                       ...p,
-                      status: e.target.value,
+                      status: selected?.value || "",
                     }))
                   }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                >
-                  <option value="">Select Status</option>
-                  <option value="Active">Active</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Pending">Pending</option>
-                </select>
+                  placeholder="Select Status"
+                  styles={selectStyles}
+                  className="text-black"
+                />
               </div>
             ) : (
               <div>
@@ -1474,7 +1489,7 @@ const DamageRepairedTable = () => {
           </div>
 
           <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
-            <div className="flex items-center justify-between gap-3">
+            <div>
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Product Variants
@@ -1483,10 +1498,12 @@ const DamageRepairedTable = () => {
                   Add size, color and quantity combinations
                 </p>
               </div>
+            </div>
+            <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
               <button
                 type="button"
                 onClick={() => addVariantRow("create")}
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 transition"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
                 disabled={!createForm?.receivedId}
               >
                 <Plus size={14} />
@@ -1602,45 +1619,49 @@ const DamageRepairedTable = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Warehouse</label>
-              <select
-                value={createForm?.warehouseId || ""}
-                onChange={(e) =>
+              <Select
+                options={warehouseOptions}
+                value={
+                  warehouseOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(createForm?.warehouseId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCreateForm({
                     ...createForm,
-                    warehouseId: e.target.value,
+                    warehouseId: selected?.value || "",
                   })
                 }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                required
-              >
-                <option value="">Select Warehouse</option>
-                {warehouses?.map((w) => (
-                  <option key={w.Id} value={w.Id}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select Warehouse"
+                isClearable
+                styles={selectStyles}
+                className="text-black"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
-              <select
-                value={createForm?.supplierId || ""}
-                onChange={(e) =>
+              <Select
+                options={supplierOptions}
+                value={
+                  supplierOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(createForm?.supplierId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCreateForm({
                     ...createForm,
-                    supplierId: e.target.value,
+                    supplierId: selected?.value || "",
                   })
                 }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                required
-              >
-                <option value="">Select Supplier</option>
-                {suppliers?.map((s) => (
-                  <option key={s.Id} value={s.Id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select Supplier"
+                isClearable
+                styles={selectStyles}
+                className="text-black"
+              />
             </div>
           </div>
 

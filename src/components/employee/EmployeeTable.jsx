@@ -1,5 +1,13 @@
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2, FileText, Notebook, Download } from "lucide-react";
+import {
+  Edit,
+  Plus,
+  Trash2,
+  FileText,
+  Notebook,
+  Download,
+  RotateCcw,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -50,6 +58,7 @@ const EmployeeTable = () => {
   const [currentEmployee, setCurrentEmployee] = useState(null);
 
   const emptyEmployee = {
+    date: "",
     name: "",
     employee_id: "",
     bookId: "",
@@ -142,10 +151,12 @@ const EmployeeTable = () => {
     const friday_absent = Number(p.friday_absent) || 0;
     const unapproval_absent = Number(p.unapproval_absent) || 0;
 
-    const perDay = basic_salary / 30;
+    const perDayBasicSalary = basic_salary / 30;
 
-    const holiday_salary = perDay * holiday_days;
+    const holiday_salary = perDayBasicSalary * holiday_days;
     const total_salary = basic_salary + holiday_salary + incentive;
+
+    const perDay = total_salary / 30;
 
     const lateAbsentCount = Math.floor(late / 3);
     const earlyAbsentCount = Math.floor(early_leave / 3);
@@ -299,9 +310,11 @@ const EmployeeTable = () => {
     return Number.isFinite(parsed) ? parsed : 0;
   };
 
-  const getNetBalanceValue = (response) =>
+  const getAdvanceBalanceValue = (response) =>
+    response?.meta?.unpaid ??
     response?.meta?.netBalance ??
     response?.meta?.net_balance ??
+    response?.data?.[0]?.unpaidAmount ??
     response?.data?.[0]?.netBalance ??
     response?.data?.[0]?.net_balance;
 
@@ -309,31 +322,52 @@ const EmployeeTable = () => {
   const currentEmployeeId =
     currentEmployee?.employee_id?.toString().trim() || "";
 
+  const getEmployeeInternalId = (employeeCode) => {
+    if (!employeeCode) return undefined;
+
+    const matchedEmployee = (employeeList?.data || []).find(
+      (employee) => String(employee?.employee_id ?? "").trim() === employeeCode,
+    );
+
+    return matchedEmployee?.Id ?? matchedEmployee?.id ?? undefined;
+  };
+
+  const createEmployeeInternalId = getEmployeeInternalId(createEmployeeId);
+  const currentEmployeeInternalId = getEmployeeInternalId(currentEmployeeId);
+
   const { data: createLedgerHistoryData } = useGetAllLedgerHistoryQuery(
     {
       page: 1,
       limit: 1000,
-      employee_id: createEmployeeId || undefined,
+      employeeId: createEmployeeInternalId,
     },
-    { skip: !createEmployeeId },
+    { skip: !createEmployeeInternalId },
   );
 
   const { data: currentLedgerHistoryData } = useGetAllLedgerHistoryQuery(
     {
       page: 1,
       limit: 1000,
-      employee_id: currentEmployeeId || undefined,
+      employeeId: currentEmployeeInternalId,
     },
-    { skip: !currentEmployeeId },
+    { skip: !currentEmployeeInternalId },
   );
 
-  const createNetBalance = toNumber(getNetBalanceValue(createLedgerHistoryData));
-  const currentNetBalance = toNumber(getNetBalanceValue(currentLedgerHistoryData));
+  console.log("createLedgerHistoryData", createLedgerHistoryData);
+  console.log("currentLedgerHistoryData", currentLedgerHistoryData);
+
+  const createNetBalance = toNumber(
+    getAdvanceBalanceValue(createLedgerHistoryData),
+  );
+  const currentNetBalance = toNumber(
+    getAdvanceBalanceValue(currentLedgerHistoryData),
+  );
   const hasCreateNetBalance =
-    createEmployeeId && getNetBalanceValue(createLedgerHistoryData) !== undefined;
+    createEmployeeInternalId &&
+    getAdvanceBalanceValue(createLedgerHistoryData) !== undefined;
   const hasCurrentNetBalance =
-    currentEmployeeId &&
-    getNetBalanceValue(currentLedgerHistoryData) !== undefined;
+    currentEmployeeInternalId &&
+    getAdvanceBalanceValue(currentLedgerHistoryData) !== undefined;
 
   const applyEmployeeSalaryDefaults = (prev, selected) => {
     const next = {
@@ -371,9 +405,16 @@ const EmployeeTable = () => {
         return prev;
       }
 
-      return hasCreateNetBalance
+      const next = hasCreateNetBalance
         ? { ...prev, advance: String(createNetBalance) }
         : { ...prev, advance: "", bookId: "" };
+      const s = calcSalary(next);
+
+      return {
+        ...next,
+        total_salary: s.total_salary.toFixed(2),
+        net_salary: s.net_salary.toFixed(2),
+      };
     });
   }, [createEmployeeId, createNetBalance, hasCreateNetBalance]);
 
@@ -385,9 +426,16 @@ const EmployeeTable = () => {
         return prev;
       }
 
-      return hasCurrentNetBalance
+      const next = hasCurrentNetBalance
         ? { ...prev, advance: String(currentNetBalance) }
         : { ...prev, advance: "", bookId: "" };
+      const s = calcSalary(next);
+
+      return {
+        ...next,
+        total_salary: s.total_salary.toFixed(2),
+        net_salary: s.net_salary.toFixed(2),
+      };
     });
   }, [currentEmployeeId, currentNetBalance, hasCurrentNetBalance]);
 
@@ -397,6 +445,7 @@ const EmployeeTable = () => {
   const handleEditClick = (employee) => {
     const normalized = {
       ...employee,
+      date: employee.date ?? "",
       name: employee.name ?? "",
       employee_id: employee.employee_id ?? "",
       bookId: employee.bookId ?? employee.book?.Id ?? employee.book?.id ?? "",
@@ -462,6 +511,7 @@ const EmployeeTable = () => {
 
       const payload = {
         ...createEmployee,
+        date: createEmployee.date || undefined,
         name: createEmployee.name || "",
         employee_id: createEmployee.employee_id || "",
         bookId: Number(createEmployee.bookId) || undefined,
@@ -505,6 +555,7 @@ const EmployeeTable = () => {
       const s = calcSalary(currentEmployee);
 
       const updatedEmployee = {
+        date: currentEmployee.date || undefined,
         name: currentEmployee.name || "",
         employee_id: currentEmployee.employee_id || "",
         bookId: Number(currentEmployee.bookId) || undefined,
@@ -1477,30 +1528,41 @@ const EmployeeTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <div className="my-6 flex flex-wrap gap-3 items-center justify-start">
-        <button
-          className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition px-4 py-2 rounded-xl shadow-sm"
-          onClick={openAddModal}
-        >
-          {t.add} <Plus size={18} />
-        </button>
+      <div className="my-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="my-6 flex flex-wrap gap-3 items-center justify-start">
+          <button
+            className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition px-4 py-2 rounded-xl shadow-sm"
+            onClick={openAddModal}
+          >
+            {t.add} <Plus size={18} />
+          </button>
 
-        {/* ✅ Bulk actions */}
-        <button
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl disabled:opacity-60 shadow-sm"
-          onClick={() => setIsBulkInvoiceOpen(true)}
-          disabled={selectedIds.length === 0}
-        >
-          {t.print_selected || "Print Selected"} ({selectedIds.length})
-        </button>
+          <button
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl disabled:opacity-60 shadow-sm"
+            onClick={() => setIsBulkInvoiceOpen(true)}
+            disabled={selectedIds.length === 0}
+          >
+            {t.print_selected || "Print Selected"} ({selectedIds.length})
+          </button>
 
-        <button
-          className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200 disabled:opacity-60"
-          onClick={() => setSelectedIds([])}
-          disabled={selectedIds.length === 0}
-        >
-          {t.clear_selection || "Clear Selection"}
-        </button>
+          <button
+            className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200 disabled:opacity-60"
+            onClick={() => setSelectedIds([])}
+            disabled={selectedIds.length === 0}
+          >
+            {t.clear_selection || "Clear Selection"}
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between sm:justify-end gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-700">
+            <RotateCcw size={18} className="text-amber-500" />
+            <span className="text-sm">Total Salary</span>
+          </div>
+          <span className="text-slate-900 font-semibold tabular-nums">
+            {isLoading ? "Loading..." : (data?.meta?.totalSalary ?? 0)}
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6 w-full justify-center mx-auto">
@@ -1626,8 +1688,8 @@ const EmployeeTable = () => {
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                  {emp.createdAt
-                    ? new Date(emp.createdAt).toLocaleDateString()
+                  {emp.date || emp.createdAt
+                    ? new Date(emp.date || emp.createdAt).toLocaleDateString()
                     : "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
@@ -1796,6 +1858,15 @@ const EmployeeTable = () => {
       >
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Field
+              label="Date:"
+              type="date"
+              value={currentEmployee?.date}
+              onChange={(v) =>
+                setCurrentEmployee({ ...currentEmployee, date: v })
+              }
+            />
+
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 {t.employee_name_label || "Employee Name:"}
@@ -2105,6 +2176,15 @@ const EmployeeTable = () => {
       >
         <form onSubmit={handleCreateEmployee} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Field
+              label="Date:"
+              type="date"
+              value={createEmployee.date}
+              onChange={(v) =>
+                setCreateEmployee({ ...createEmployee, date: v })
+              }
+            />
+
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 {t.employee_name_label + ":" || "Employee Name:"}

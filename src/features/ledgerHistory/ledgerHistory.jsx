@@ -43,7 +43,6 @@ export const ledgerHistoryApi = baseApi.injectEndpoints({
         searchTerm,
         ledgerId,
         employeeId,
-        employee_id,
         supplierId,
       }) => ({
         url: "ledger-history",
@@ -56,7 +55,6 @@ export const ledgerHistoryApi = baseApi.injectEndpoints({
           searchTerm,
           ledgerId,
           employeeId,
-          employee_id,
           supplierId,
         },
       }),
@@ -70,7 +68,7 @@ export const ledgerHistoryApi = baseApi.injectEndpoints({
       refetchOnMountOrArgChange: true,
     }),
 
-    getAllLedgerWithoutQuery: build.query({
+    getAllLedgerHistoryWithoutQuery: build.query({
       query: () => ({
         url: "ledger-history/all",
       }),
@@ -87,5 +85,5 @@ export const {
   useGetAllLedgerHistoryQuery,
   useDeleteLedgerHistoryMutation,
   useUpdateLedgerHistoryMutation,
-  useGetAllLedgerWithoutQueryQuery,
+  useGetAllLedgerHistoryWithoutQueryQuery,
 } = ledgerHistoryApi;

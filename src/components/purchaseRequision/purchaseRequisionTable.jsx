@@ -831,20 +831,20 @@ const PurchaseRequisionTable = () => {
         {/* ✅ Per Page Dropdown (same position like your screenshot) */}
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Per Page</label>
-          <select
-            value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
+          <Select
+            options={[10, 20, 50, 100].map((v) => ({
+              value: v,
+              label: String(v),
+            }))}
+            value={{ value: itemsPerPage, label: String(itemsPerPage) }}
+            onChange={(selected) => {
+              setItemsPerPage(selected?.value || 10);
               setCurrentPage(1);
               setStartPage(1);
             }}
-            className="px-3 py-[10px] rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
+            className="text-black"
+            styles={selectStyles}
+          />
         </div>
 
         {/* Product Filter (stores NAME) */}
@@ -878,6 +878,7 @@ const PurchaseRequisionTable = () => {
             placeholder="Select Warehouse"
             isClearable
             className="text-black"
+            styles={selectStyles}
           />
         </div>
 
@@ -894,6 +895,7 @@ const PurchaseRequisionTable = () => {
             placeholder="Select Supplier"
             isClearable
             className="text-black"
+            styles={selectStyles}
           />
         </div>
 
@@ -1294,45 +1296,51 @@ const PurchaseRequisionTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Warehouse
               </label>
-              <select
-                value={currentProduct?.warehouseId || ""}
-                onChange={(e) =>
+              <Select
+                options={warehouseOptions}
+                value={
+                  warehouseOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(currentProduct?.warehouseId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    warehouseId: e.target.value,
+                    warehouseId: selected?.value || "",
                   })
                 }
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="">Select Warehouse</option>
-                {warehouses?.map((w) => (
-                  <option key={w.Id} value={w.Id}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select Warehouse"
+                isClearable
+                className="text-black"
+                styles={selectStyles}
+              />
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Supplier
               </label>
-              <select
-                value={currentProduct?.supplierId || ""}
-                onChange={(e) =>
+              <Select
+                options={supplierOptions}
+                value={
+                  supplierOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(currentProduct?.supplierId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    supplierId: e.target.value,
+                    supplierId: selected?.value || "",
                   })
                 }
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="">Select Supplier</option>
-                {suppliers?.map((s) => (
-                  <option key={s.Id} value={s.Id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select Supplier"
+                isClearable
+                className="text-black"
+                styles={selectStyles}
+              />
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
@@ -1373,20 +1381,29 @@ const PurchaseRequisionTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Status
               </label>
-              <select
-                value={currentProduct?.status || ""}
-                onChange={(e) =>
+              <Select
+                options={["Active", "Approved", "Pending"].map((status) => ({
+                  value: status,
+                  label: status,
+                }))}
+                value={
+                  currentProduct?.status
+                    ? {
+                        value: currentProduct.status,
+                        label: currentProduct.status,
+                      }
+                    : null
+                }
+                onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    status: e.target.value,
+                    status: selected?.value || "",
                   })
                 }
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="Active">Active</option>
-                <option value="Approved">Approved</option>
-                <option value="Pending">Pending</option>
-              </select>
+                placeholder="Select Status"
+                className="text-black"
+                styles={selectStyles}
+              />
             </div>
           ) : (
             <div>
@@ -1605,47 +1622,51 @@ const PurchaseRequisionTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Warehouse
               </label>
-              <select
-                value={createProduct.warehouseId}
-                onChange={(e) =>
+              <Select
+                options={warehouseOptions}
+                value={
+                  warehouseOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(createProduct.warehouseId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCreateProduct({
                     ...createProduct,
-                    warehouseId: e.target.value,
+                    warehouseId: selected?.value || "",
                   })
                 }
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                required
-              >
-                <option value="">Select Warehouse</option>
-                {warehouses?.map((w) => (
-                  <option key={w.Id} value={w.Id}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select Warehouse"
+                isClearable
+                className="text-black"
+                styles={selectStyles}
+              />
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Supplier
               </label>
-              <select
-                value={createProduct.supplierId}
-                onChange={(e) =>
+              <Select
+                options={supplierOptions}
+                value={
+                  supplierOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(createProduct.supplierId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
                   setCreateProduct({
                     ...createProduct,
-                    supplierId: e.target.value,
+                    supplierId: selected?.value || "",
                   })
                 }
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                required
-              >
-                <option value="">Select Supplier</option>
-                {suppliers?.map((s) => (
-                  <option key={s.Id} value={s.Id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select Supplier"
+                isClearable
+                className="text-black"
+                styles={selectStyles}
+              />
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
@@ -1713,20 +1734,29 @@ const PurchaseRequisionTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Status
               </label>
-              <select
-                value={currentProduct?.status || ""}
-                onChange={(e) =>
+              <Select
+                options={["Active", "Approved", "Pending"].map((status) => ({
+                  value: status,
+                  label: status,
+                }))}
+                value={
+                  currentProduct?.status
+                    ? {
+                        value: currentProduct.status,
+                        label: currentProduct.status,
+                      }
+                    : null
+                }
+                onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    status: e.target.value,
+                    status: selected?.value || "",
                   })
                 }
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="Active">Active</option>
-                <option value="Approved">Approved</option>
-                <option value="Pending">Pending</option>
-              </select>
+                placeholder="Select Status"
+                className="text-black"
+                styles={selectStyles}
+              />
             </div>
           ) : (
             <div>

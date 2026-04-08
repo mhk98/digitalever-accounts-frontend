@@ -586,17 +586,16 @@ const ManufactureTable = () => {
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
             {t.per_page_label || "Per Page"}
           </label>
-          <select
-            value={itemsPerPage}
-            onChange={(e) => setItemsPerPage(Number(e.target.value))}
-            className="h-11 px-4 rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold text-sm appearance-none cursor-pointer"
-          >
-            {[10, 20, 50, 100].map((v) => (
-              <option key={v} value={v}>
-                {v}
-              </option>
-            ))}
-          </select>
+          <Select
+            options={[10, 20, 50, 100].map((v) => ({
+              value: v,
+              label: String(v),
+            }))}
+            value={{ value: itemsPerPage, label: String(itemsPerPage) }}
+            onChange={(selected) => setItemsPerPage(selected?.value || 10)}
+            styles={selectStyles}
+            className="text-black"
+          />
         </div>
 
         <div className="flex flex-col">
@@ -921,23 +920,26 @@ const ManufactureTable = () => {
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               {t.supplier || "Supplier"}
             </label>
-            <select
-              value={currentProduct?.supplierId || ""}
-              onChange={(e) =>
+            <Select
+              options={supplierOptions}
+              value={
+                supplierOptions.find(
+                  (option) =>
+                    String(option.value) ===
+                    String(currentProduct?.supplierId || ""),
+                ) || null
+              }
+              onChange={(selected) =>
                 setCurrentProduct({
                   ...currentProduct,
-                  supplierId: e.target.value,
+                  supplierId: selected?.value || "",
                 })
               }
-              className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-            >
-              <option value="">{t.select_supplier || "Select Supplier"}</option>
-              {suppliers?.map((s) => (
-                <option key={s.Id} value={s.Id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+              placeholder={t.select_supplier || "Select Supplier"}
+              isClearable
+              styles={selectStyles}
+              className="text-black"
+            />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
@@ -1008,24 +1010,24 @@ const ManufactureTable = () => {
                     className="h-11 flex-1 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                   />
 
-                  <select
-                    value={currentProduct?.unit || "Pcs"}
-                    onChange={(e) =>
+                  <Select
+                    options={["Pcs", "Kg", "Ml", "Gram"].map((unit) => ({
+                      value: unit,
+                      label: unit,
+                    }))}
+                    value={{
+                      value: currentProduct?.unit || "Pcs",
+                      label: currentProduct?.unit || "Pcs",
+                    }}
+                    onChange={(selected) =>
                       setCurrentProduct((prev) => ({
                         ...prev,
-                        unit: e.target.value,
+                        unit: selected?.value || "Pcs",
                       }))
                     }
-                    className="h-11 w-32 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition appearance-none cursor-pointer"
-                  >
-                    <option value="Pcs">Pcs</option>
-                    <option value="Kg">Kg</option>
-                    {/* <option value="Liter">Liter</option> */}
-                    <option value="Ml">Ml</option>
-                    <option value="Gram">Gram</option>
-                    {/* <option value="Box">Box</option>
-                    <option value="Dozen">Dozen</option> */}
-                  </select>
+                    styles={selectStyles}
+                    className="w-32 text-black"
+                  />
                 </div>
               </div>
             )}
@@ -1051,20 +1053,34 @@ const ManufactureTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.status || "Status"}
               </label>
-              <select
-                value={currentProduct?.status || ""}
-                onChange={(e) =>
+              <Select
+                options={[
+                  { value: "Pending", label: t.pending || "Pending" },
+                  { value: "Active", label: t.active || "Active" },
+                  { value: "Approved", label: t.approved || "Approved" },
+                ]}
+                value={
+                  currentProduct?.status
+                    ? {
+                        value: currentProduct.status,
+                        label:
+                          currentProduct.status === "Active"
+                            ? t.active || "Active"
+                            : currentProduct.status === "Approved"
+                              ? t.approved || "Approved"
+                              : t.pending || "Pending",
+                      }
+                    : null
+                }
+                onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    status: e.target.value,
+                    status: selected?.value || "",
                   })
                 }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="Pending">{t.pending || "Pending"}</option>
-                <option value="Active">{t.active || "Active"}</option>
-                <option value="Approved">{t.approved || "Approved"}</option>
-              </select>
+                styles={selectStyles}
+                className="text-black"
+              />
             </div>
           ) : (
             <div>
@@ -1161,23 +1177,26 @@ const ManufactureTable = () => {
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               {t.supplier || "Supplier"}
             </label>
-            <select
-              value={createProduct?.supplierId || ""}
-              onChange={(e) =>
+            <Select
+              options={supplierOptions}
+              value={
+                supplierOptions.find(
+                  (option) =>
+                    String(option.value) ===
+                    String(createProduct?.supplierId || ""),
+                ) || null
+              }
+              onChange={(selected) =>
                 setCreateProduct({
                   ...createProduct,
-                  supplierId: e.target.value,
+                  supplierId: selected?.value || "",
                 })
               }
-              className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-            >
-              <option value="">{t.select_supplier || "Select Supplier"}</option>
-              {suppliers?.map((s) => (
-                <option key={s.Id} value={s.Id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+              placeholder={t.select_supplier || "Select Supplier"}
+              isClearable
+              styles={selectStyles}
+              className="text-black"
+            />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
@@ -1248,24 +1267,24 @@ const ManufactureTable = () => {
                     className="h-11 flex-1 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                   />
 
-                  <select
-                    value={createProduct?.unit || "Pcs"}
-                    onChange={(e) =>
+                  <Select
+                    options={["Pcs", "Kg", "Ml", "Gram"].map((unit) => ({
+                      value: unit,
+                      label: unit,
+                    }))}
+                    value={{
+                      value: createProduct?.unit || "Pcs",
+                      label: createProduct?.unit || "Pcs",
+                    }}
+                    onChange={(selected) =>
                       setCreateProduct((prev) => ({
                         ...prev,
-                        unit: e.target.value,
+                        unit: selected?.value || "Pcs",
                       }))
                     }
-                    className="h-11 w-32 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition appearance-none cursor-pointer"
-                  >
-                    <option value="Pcs">Pcs</option>
-                    <option value="Kg">Kg</option>
-                    {/* <option value="Liter">Liter</option> */}
-                    <option value="Ml">Ml</option>
-                    <option value="Gram">Gram</option>
-                    {/* <option value="Box">Box</option>
-                    <option value="Dozen">Dozen</option> */}
-                  </select>
+                    styles={selectStyles}
+                    className="w-32 text-black"
+                  />
                 </div>
               </div>
             )}
@@ -1330,20 +1349,34 @@ const ManufactureTable = () => {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.update_status || "Update Status"}
               </label>
-              <select
-                value={currentProduct?.status || ""}
-                onChange={(e) =>
+              <Select
+                options={[
+                  { value: "Pending", label: t.pending || "Pending" },
+                  { value: "Active", label: t.active || "Active" },
+                  { value: "Approved", label: t.approved || "Approved" },
+                ]}
+                value={
+                  currentProduct?.status
+                    ? {
+                        value: currentProduct.status,
+                        label:
+                          currentProduct.status === "Active"
+                            ? t.active || "Active"
+                            : currentProduct.status === "Approved"
+                              ? t.approved || "Approved"
+                              : t.pending || "Pending",
+                      }
+                    : null
+                }
+                onChange={(selected) =>
                   setCurrentProduct({
                     ...currentProduct,
-                    status: e.target.value,
+                    status: selected?.value || "",
                   })
                 }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="Pending">{t.pending || "Pending"}</option>
-                <option value="Active">{t.active || "Active"}</option>
-                <option value="Approved">{t.approved || "Approved"}</option>
-              </select>
+                styles={selectStyles}
+                className="text-black"
+              />
             </div>
           ) : (
             <div>

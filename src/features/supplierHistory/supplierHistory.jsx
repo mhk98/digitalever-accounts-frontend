@@ -6,9 +6,9 @@ export const supplierHistoryApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getAllSupplierHistory: build.query({
       query: (arg = {}) => {
-        const { page, limit, startDate, endDate, bookId, SupplierId } = arg;
+        const { page, limit, startDate, endDate, bookId, supplierId } = arg;
 
-        const params = { page, limit, startDate, endDate, bookId, SupplierId };
+        const params = { page, limit, startDate, endDate, bookId, supplierId };
         Object.keys(params).forEach((k) => {
           if (params[k] === undefined || params[k] === null || params[k] === "")
             delete params[k];

@@ -1,7 +1,13 @@
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import Select from "react-select";
-import { ShoppingBasket, ChevronLeft, ChevronRight, X, Calendar } from "lucide-react";
+import {
+  ShoppingBasket,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Calendar,
+} from "lucide-react";
 
 import { useGetAllProductWithoutQueryQuery } from "../../features/product/product";
 import { useGetAllInventoryOverviewQuery } from "../../features/inventoryOverview/inventoryOverview";
@@ -110,14 +116,22 @@ const InventoryOverviewTable = () => {
     else if (p > endPage) setStartPage(p - pagesPerSet + 1);
   };
 
-  const handlePreviousSet = () => setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
-  const handleNextSet = () => setStartPage((prev) => Math.min(prev + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)));
+  const handlePreviousSet = () =>
+    setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
+  const handleNextSet = () =>
+    setStartPage((prev) =>
+      Math.min(prev + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)),
+    );
 
-  const { data: allProductsRes, isLoading: isLoadingAllProducts } = useGetAllProductWithoutQueryQuery();
+  const { data: allProductsRes, isLoading: isLoadingAllProducts } =
+    useGetAllProductWithoutQueryQuery();
   const productsData = allProductsRes?.data || [];
 
   const productDropdownOptions = useMemo(() => {
-    return (productsData || []).map((p) => ({ value: String(p.Id), label: p.name }));
+    return (productsData || []).map((p) => ({
+      value: String(p.Id),
+      label: p.name,
+    }));
   }, [productsData]);
 
   const productNameMap = useMemo(() => {
@@ -142,7 +156,9 @@ const InventoryOverviewTable = () => {
       endDate: endDate || undefined,
       name: productName || undefined,
     };
-    Object.keys(args).forEach((k) => { if (!args[k]) delete args[k]; });
+    Object.keys(args).forEach((k) => {
+      if (!args[k]) delete args[k];
+    });
     return args;
   }, [currentPage, itemsPerPage, startDate, endDate, productName]);
 
@@ -151,7 +167,9 @@ const InventoryOverviewTable = () => {
   useEffect(() => {
     if (!isLoading && data) {
       setRows(data.data || []);
-      setTotalPages(Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)));
+      setTotalPages(
+        Math.max(1, Math.ceil((data?.meta?.count || 0) / itemsPerPage)),
+      );
     }
   }, [data, isLoading, itemsPerPage]);
 
@@ -166,14 +184,19 @@ const InventoryOverviewTable = () => {
       backgroundColor: "white",
     }),
     placeholder: (base) => ({ ...base, color: "#94a3b8", fontSize: "14px" }),
-    singleValue: (base) => ({ ...base, color: "#1e293b", fontSize: "14px", fontWeight: "500" }),
+    singleValue: (base) => ({
+      ...base,
+      color: "#1e293b",
+      fontSize: "14px",
+      fontWeight: "500",
+    }),
     menu: (base) => ({
       ...base,
       borderRadius: 14,
       overflow: "hidden",
       border: "1px solid #f1f5f9",
       boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
-      zIndex: 50
+      zIndex: 50,
     }),
   };
 
@@ -186,8 +209,12 @@ const InventoryOverviewTable = () => {
     >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t.inventory_overview_title}</h2>
-          <p className="text-slate-500 text-sm mt-1 font-medium">{t.real_time_stock_levels}</p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            {t.inventory_overview_title}
+          </h2>
+          <p className="text-slate-500 text-sm mt-1 font-medium">
+            {t.real_time_stock_levels}
+          </p>
         </div>
 
         <div className="inline-flex items-center gap-4 bg-indigo-50 border border-indigo-100 px-6 py-3 rounded-2xl shadow-sm shadow-indigo-50">
@@ -195,9 +222,13 @@ const InventoryOverviewTable = () => {
             <ShoppingBasket size={20} />
           </div>
           <div>
-            <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">{t.total_stock}</div>
+            <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">
+              {t.total_stock}
+            </div>
             <div className="text-xl font-black text-indigo-900 tabular-nums">
-              {isLoading ? t.syncing : (data?.meta?.totalQuantity ?? 0).toLocaleString()}
+              {isLoading
+                ? t.syncing
+                : (data?.meta?.totalQuantity ?? 0).toLocaleString()}
             </div>
           </div>
         </div>
@@ -205,21 +236,31 @@ const InventoryOverviewTable = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
         <div className="flex flex-col">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{t.per_page_label}</label>
-          <select
-            value={itemsPerPage}
-            onChange={(e) => setItemsPerPage(Number(e.target.value))}
-            className="h-11 px-4 rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition font-bold text-sm appearance-none cursor-pointer"
-          >
-            {[10, 20, 50, 100].map(v => <option key={v} value={v}>{v}</option>)}
-          </select>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
+            {t.per_page_label}
+          </label>
+          <Select
+            options={[10, 20, 50, 100].map((v) => ({
+              value: v,
+              label: String(v),
+            }))}
+            value={{ value: itemsPerPage, label: String(itemsPerPage) }}
+            onChange={(selected) => setItemsPerPage(selected?.value || 10)}
+            styles={selectStyles}
+            className="text-black"
+          />
         </div>
 
         <div className="flex flex-col sm:col-span-2">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{t.search_product}</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
+            {t.search_product}
+          </label>
           <Select
             options={productDropdownOptions}
-            value={productDropdownOptions.find((o) => o.label === productName) || null}
+            value={
+              productDropdownOptions.find((o) => o.label === productName) ||
+              null
+            }
             onChange={(selected) => setProductName(selected?.label || "")}
             placeholder={isLoadingAllProducts ? t.syncing : t.select_assets}
             isClearable
@@ -231,7 +272,11 @@ const InventoryOverviewTable = () => {
 
         <button
           className="h-11 bg-slate-100 hover:bg-slate-200 text-slate-600 transition rounded-xl px-4 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 border border-slate-200"
-          onClick={() => { setProductName(""); setStartDate(""); setEndDate(""); }}
+          onClick={() => {
+            setProductName("");
+            setStartDate("");
+            setEndDate("");
+          }}
           type="button"
         >
           <X size={16} /> {t.clear_filters}
@@ -243,10 +288,18 @@ const InventoryOverviewTable = () => {
           <table className="min-w-full divide-y divide-slate-100">
             <thead className="bg-slate-50/50">
               <tr>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.last_updated || "Last Updated"}</th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.item_detail || "Item Detail"}</th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.variants || "Variants"}</th>
-                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">{t.in_hand_qty || "In Hand Quantity"}</th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  {t.last_updated || "Last Updated"}
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  {t.item_detail || "Item Detail"}
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  {t.variants || "Variants"}
+                </th>
+                <th className="px-6 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  {t.in_hand_qty || "In Hand Quantity"}
+                </th>
               </tr>
             </thead>
 
@@ -265,11 +318,14 @@ const InventoryOverviewTable = () => {
                       <div className="flex items-center gap-2 text-sm font-medium text-slate-500 group-hover:text-indigo-600">
                         <Calendar size={14} className="opacity-40" />
                         {rp.createdAt
-                          ? new Date(rp.createdAt).toLocaleDateString(undefined, {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })
+                          ? new Date(rp.createdAt).toLocaleDateString(
+                              undefined,
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )
                           : "—"}
                       </div>
                     </td>
@@ -336,14 +392,18 @@ const InventoryOverviewTable = () => {
           {isLoading && (
             <div className="py-24 text-center">
               <div className="inline-block animate-spin rounded-full h-10 w-10 border-[3px] border-indigo-600/20 border-t-indigo-600"></div>
-              <p className="text-slate-500 text-sm mt-4 font-bold tracking-tight">Analyzing Stock Levels...</p>
+              <p className="text-slate-500 text-sm mt-4 font-bold tracking-tight">
+                Analyzing Stock Levels...
+              </p>
             </div>
           )}
 
           {!isLoading && rows.length === 0 && (
             <div className="py-24 text-center text-slate-400">
               <div className="text-4xl mb-4 opacity-20">📦</div>
-              <p className="font-bold text-sm italic">Nothing found in inventory matches your filter</p>
+              <p className="font-bold text-sm italic">
+                Nothing found in inventory matches your filter
+              </p>
             </div>
           )}
         </div>
@@ -351,7 +411,8 @@ const InventoryOverviewTable = () => {
 
       <div className="flex flex-col sm:flex-row items-center justify-between mt-10 gap-6 px-2">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-          Showing Page <span className="text-indigo-600">{currentPage}</span> of <span className="text-slate-900">{totalPages}</span>
+          Showing Page <span className="text-indigo-600">{currentPage}</span> of{" "}
+          <span className="text-slate-900">{totalPages}</span>
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -369,8 +430,11 @@ const InventoryOverviewTable = () => {
                 <button
                   key={pageNum}
                   onClick={() => handlePageChange(pageNum)}
-                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${active ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100" : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
-                    }`}
+                  className={`h-11 w-11 rounded-2xl font-black text-sm transition-all active:scale-90 ${
+                    active
+                      ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100"
+                      : "bg-white text-slate-600 border border-slate-100 hover:bg-indigo-50 hover:text-indigo-600"
+                  }`}
                 >
                   {pageNum}
                 </button>

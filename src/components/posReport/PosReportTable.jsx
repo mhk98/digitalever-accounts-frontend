@@ -1368,6 +1368,32 @@ const PosReportTable = () => {
     setCurrentReport(null);
   };
 
+  const handleEditPaidAmountChange = (value) => {
+    if (!currentReport) return;
+
+    const safeTotal = safeNum(currentReport.total);
+    const nextPaidAmount = Math.min(Math.max(0, safeNum(value)), safeTotal);
+
+    setCurrentReport({
+      ...currentReport,
+      paidAmount: nextPaidAmount,
+      dueAmount: Math.max(0, safeTotal - nextPaidAmount),
+    });
+  };
+
+  const handleEditDueAmountChange = (value) => {
+    if (!currentReport) return;
+
+    const safeTotal = safeNum(currentReport.total);
+    const nextDueAmount = Math.min(Math.max(0, safeNum(value)), safeTotal);
+
+    setCurrentReport({
+      ...currentReport,
+      dueAmount: nextDueAmount,
+      paidAmount: Math.max(0, safeTotal - nextDueAmount),
+    });
+  };
+
   const handleUpdate = async () => {
     if (!currentReport?.Id) return;
 
@@ -1530,20 +1556,20 @@ const PosReportTable = () => {
 
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Per Page</label>
-          <select
-            value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
+          <Select
+            options={[10, 20, 50, 100].map((v) => ({
+              value: v,
+              label: String(v),
+            }))}
+            value={{ value: itemsPerPage, label: String(itemsPerPage) }}
+            onChange={(selected) => {
+              setItemsPerPage(selected?.value || 10);
               setCurrentPage(1);
               setStartPage(1);
             }}
-            className="px-3 py-[10px] rounded-xl bg-white border border-slate-200 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
+            className="text-black"
+            styles={selectStyles}
+          />
         </div>
 
         <button
@@ -1714,166 +1740,166 @@ const PosReportTable = () => {
 
       {/* -------------------- Edit Modal -------------------- */}
       {isEditModalOpen && currentReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 p-3 sm:p-5">
           <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-3/4 lg:w-2/3 border border-slate-200"
+            className="flex min-h-full items-center justify-center"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Edit POS Report
-              </h2>
-              <button
-                type="button"
-                onClick={closeEdit}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-              <Field
-                label="Date"
-                type="date"
-                value={currentReport.date || ""}
-                onChange={(v) =>
-                  setCurrentReport({ ...currentReport, date: v })
-                }
-              />
-
-              <Field
-                label="Customer Name"
-                value={currentReport.name || ""}
-                onChange={(v) =>
-                  setCurrentReport({ ...currentReport, name: v })
-                }
-              />
-
-              <Field
-                label="Mobile"
-                value={currentReport.mobile || ""}
-                onChange={(v) =>
-                  setCurrentReport({ ...currentReport, mobile: v })
-                }
-              />
-
-              <Field
-                label="Address"
-                value={currentReport.address || ""}
-                onChange={(v) =>
-                  setCurrentReport({ ...currentReport, address: v })
-                }
-              />
-
-              <Field
-                label="Subtotal"
-                type="number"
-                value={currentReport.subTotal}
-                onChange={(v) =>
-                  setCurrentReport({ ...currentReport, subTotal: v })
-                }
-              />
-
-              <Field
-                label="Discount"
-                type="number"
-                value={currentReport.discount}
-                onChange={(v) =>
-                  setCurrentReport({ ...currentReport, discount: v })
-                }
-              />
-
-              <Field
-                label="Delivery Charge"
-                type="number"
-                value={currentReport.deliveryCharge}
-                onChange={(v) =>
-                  setCurrentReport({ ...currentReport, deliveryCharge: v })
-                }
-              />
-
-              <Field
-                label="Total"
-                type="number"
-                value={currentReport.total}
-                onChange={(v) =>
-                  setCurrentReport({ ...currentReport, total: v })
-                }
-              />
-
-              <Field
-                label="Paid Amount"
-                type="number"
-                value={currentReport.paidAmount}
-                onChange={(v) =>
-                  setCurrentReport({ ...currentReport, paidAmount: v })
-                }
-              />
-
-              <Field
-                label="Due Amount"
-                type="number"
-                value={currentReport.dueAmount}
-                onChange={(v) =>
-                  setCurrentReport({ ...currentReport, dueAmount: v })
-                }
-              />
-
-              <div className="md:col-span-3">
-                <label className="block text-sm text-slate-700">Note</label>
-                <textarea
-                  value={currentReport.note || ""}
-                  onChange={(e) =>
-                    setCurrentReport({
-                      ...currentReport,
-                      note: e.target.value,
-                    })
-                  }
-                  className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  rows={3}
-                />
+            <div className="flex h-[min(88vh,820px)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.22)]">
+              <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Edit POS Report
+                </h2>
+                <button
+                  type="button"
+                  onClick={closeEdit}
+                  className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
+                  title="Close"
+                >
+                  <X size={18} className="text-slate-600" />
+                </button>
               </div>
 
-              {(role === "superAdmin" || role === "admin") && (
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <Field
+                  label="Date"
+                  type="date"
+                  value={currentReport.date || ""}
+                  onChange={(v) =>
+                    setCurrentReport({ ...currentReport, date: v })
+                  }
+                />
+
+                <Field
+                  label="Customer Name"
+                  value={currentReport.name || ""}
+                  onChange={(v) =>
+                    setCurrentReport({ ...currentReport, name: v })
+                  }
+                />
+
+                <Field
+                  label="Mobile"
+                  value={currentReport.mobile || ""}
+                  onChange={(v) =>
+                    setCurrentReport({ ...currentReport, mobile: v })
+                  }
+                />
+
+                <Field
+                  label="Address"
+                  value={currentReport.address || ""}
+                  onChange={(v) =>
+                    setCurrentReport({ ...currentReport, address: v })
+                  }
+                />
+
+                <Field
+                  label="Subtotal"
+                  type="number"
+                  value={currentReport.subTotal}
+                  onChange={(v) =>
+                    setCurrentReport({ ...currentReport, subTotal: v })
+                  }
+                />
+
+                <Field
+                  label="Discount"
+                  type="number"
+                  value={currentReport.discount}
+                  onChange={(v) =>
+                    setCurrentReport({ ...currentReport, discount: v })
+                  }
+                />
+
+                <Field
+                  label="Delivery Charge"
+                  type="number"
+                  value={currentReport.deliveryCharge}
+                  onChange={(v) =>
+                    setCurrentReport({ ...currentReport, deliveryCharge: v })
+                  }
+                />
+
+                <Field
+                  label="Total"
+                  type="number"
+                  value={currentReport.total}
+                  onChange={(v) =>
+                    setCurrentReport({ ...currentReport, total: v })
+                  }
+                />
+
+                <Field
+                  label="Paid Amount"
+                  type="number"
+                  value={currentReport.paidAmount}
+                  onChange={handleEditPaidAmountChange}
+                />
+
+                <Field
+                  label="Due Amount"
+                  type="number"
+                  value={currentReport.dueAmount}
+                  onChange={handleEditDueAmountChange}
+                />
+
                 <div className="md:col-span-3">
-                  <label className="block text-sm text-slate-700">Status</label>
-                  <select
-                    value={currentReport.status || ""}
+                  <label className="block text-sm text-slate-700">Note</label>
+                  <textarea
+                    value={currentReport.note || ""}
                     onChange={(e) =>
                       setCurrentReport({
                         ...currentReport,
-                        status: e.target.value,
+                        note: e.target.value,
                       })
                     }
                     className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Pending">Pending</option>
-                    <option value="---">---</option>
-                  </select>
+                    rows={3}
+                  />
                 </div>
-              )}
-            </div>
 
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                onClick={handleUpdate}
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                onClick={closeEdit}
-              >
-                Cancel
-              </button>
+                {(role === "superAdmin" || role === "admin") && (
+                  <div className="md:col-span-3">
+                    <label className="block text-sm text-slate-700">Status</label>
+                    <select
+                      value={currentReport.status || ""}
+                      onChange={(e) =>
+                        setCurrentReport({
+                          ...currentReport,
+                          status: e.target.value,
+                        })
+                      }
+                      className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                    >
+                      <option value="">Select Status</option>
+                      <option value="Approved">Approved</option>
+                      <option value="Pending">Pending</option>
+                      <option value="---">---</option>
+                    </select>
+                  </div>
+                )}
+                </div>
+              </div>
+
+              <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-slate-200 bg-white/95 px-4 py-4 backdrop-blur sm:flex-row sm:justify-end sm:px-6">
+                <button
+                  type="button"
+                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
+                  onClick={closeEdit}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
+                  onClick={handleUpdate}
+                >
+                  Save
+                </button>
+              </div>
             </div>
           </motion.div>
         </div>

@@ -492,17 +492,23 @@ const OverviewPage = () => {
                     No low stock products found.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-6 gap-4">
                     {lowStockProducts.map((item, idx) => {
                       const productName =
                         item?.name || item?.product?.name || t.inventory_item;
                       const productId =
                         item?.productId ?? item?.id ?? item?.Id ?? idx;
                       const currentStock = Number(
-                        item?.currentStock ?? item?.stock ?? item?.quantity ?? 0,
+                        item?.currentStock ??
+                          item?.stock ??
+                          item?.quantity ??
+                          0,
                       );
                       const minStock = Number(
-                        item?.minimumStock ?? item?.minStock ?? item?.threshold ?? 0,
+                        item?.minimumStock ??
+                          item?.minStock ??
+                          item?.threshold ??
+                          0,
                       );
 
                       return (

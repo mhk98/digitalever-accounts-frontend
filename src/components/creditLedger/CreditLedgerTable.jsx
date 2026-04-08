@@ -34,8 +34,8 @@ const ENTITY_TYPES = {
     namePlaceholder: "Supplier's Name",
     secondaryLabel: "Phone Number",
     secondaryPlaceholder: "+88 XXXXXXXXXXX",
-    extraLabel: "Company / Address",
-    extraPlaceholder: "Company or Address",
+    // extraLabel: "Company / Address",
+    // extraPlaceholder: "Company or Address",
   },
   employee: {
     label: "Employee",
@@ -43,8 +43,8 @@ const ENTITY_TYPES = {
     namePlaceholder: "Employee's Name",
     secondaryLabel: "Phone Number",
     secondaryPlaceholder: "+88 XXXXXXXXXXX",
-    extraLabel: "Department / Address",
-    extraPlaceholder: "Department or Address",
+    // extraLabel: "Department / Address",
+    // extraPlaceholder: "Department or Address",
   },
 };
 
@@ -278,7 +278,9 @@ const ledgerEntitySelectStyles = {
     fontSize: "14px",
   }),
   placeholder: (base) => ({ ...base, color: "#64748b", fontSize: "14px" }),
-  singleValue: (base) => ({ ...base, color: "#334155", fontSize: "14px" }),
+  singleValue: (base) => ({ ...base, color: "#000000", fontSize: "14px" }),
+  input: (base) => ({ ...base, color: "#000000", fontSize: "14px" }),
+  option: (base) => ({ ...base, color: "#000000", fontSize: "14px" }),
   menu: (base) => ({
     ...base,
     zIndex: 100,
@@ -309,6 +311,17 @@ const formatCurrency = (value) =>
 
 const getBalanceValue = (totalReceived = 0, totalPaid = 0) =>
   getSafeNumber(totalReceived) - getSafeNumber(totalPaid);
+
+const normalizeRole = (value = "") => String(value).trim().toLowerCase();
+
+const extractLedgerRows = (response) => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.Data)) return response.Data;
+  if (Array.isArray(response?.result)) return response.result;
+  if (Array.isArray(response?.rows)) return response.rows;
+  return [];
+};
 
 const openPrintWindow = ({ title, content }) => {
   const printWindow = window.open("", "_blank", "width=960,height=720");
@@ -383,6 +396,12 @@ const normalizeLedgerEntity = (ledger, type, index) => ({
   extra: ledger?.address || ledger?.remarks || "",
   role: ENTITY_TYPES[type]?.label || type,
   type,
+  supplierId: String(
+    ledger?.supplierId ?? ledger?.supplier_id ?? ledger?.SupplierId ?? "",
+  ),
+  employeeId: String(
+    ledger?.employeeId ?? ledger?.employee_id ?? ledger?.EmployeeId ?? "",
+  ),
 });
 
 const CreditLedgerTable = () => {
@@ -476,9 +495,7 @@ const CreditLedgerTable = () => {
         employeeId: String(
           employee?.employee_id ?? employee?.Id ?? employee?.id ?? "",
         ),
-        label: employee?.employee_id
-          ? `${employee?.name || "Unnamed Employee"} (${employee.employee_id})`
-          : employee?.name || "Unnamed Employee",
+        label: employee?.name || "Unnamed Employee",
         name: employee?.name || "",
         phone: employee?.phone || "",
         extra: employee?.employee_id
@@ -605,7 +622,9 @@ const CreditLedgerTable = () => {
 
   const { data, isLoading, isError, error } =
     useGetAllLedgerWithoutQueryQuery();
-  const ledgers = useMemo(() => data?.data || [], [data]);
+  const ledgers = useMemo(() => extractLedgerRows(data), [data]);
+
+  console.log("leaders", ledgers);
 
   const entitiesByType = useMemo(
     () =>
@@ -613,12 +632,20 @@ const CreditLedgerTable = () => {
         const seen = new Set();
 
         acc[tab.key] = ledgers
-          .filter((ledger) => ledger?.role === tab.role)
+          .filter(
+            (ledger) =>
+              normalizeRole(ledger?.role ?? ledger?.Role) ===
+              normalizeRole(tab.role),
+          )
           .map((ledger, index) => normalizeLedgerEntity(ledger, tab.key, index))
           .filter((entity) => {
-            const key = getEntityKey(entity);
-            if (seen.has(key)) return false;
-            seen.add(key);
+            const identityKey =
+              tab.key === "supplier"
+                ? `supplier|${entity.supplierId || getEntityKey(entity)}`
+                : `employee|${entity.employeeId || getEntityKey(entity)}`;
+
+            if (seen.has(identityKey)) return false;
+            seen.add(identityKey);
             return true;
           });
 
@@ -720,16 +747,31 @@ const CreditLedgerTable = () => {
   const selectedLedgerRecords = useMemo(() => {
     if (!selectedEntity) return [];
 
-    const entityKey = getEntityKey(selectedEntity);
+    return ledgers.filter((ledger) => {
+      if (selectedEntity.type === "supplier") {
+        return (
+          String(
+            ledger?.supplierId ??
+              ledger?.supplier_id ??
+              ledger?.SupplierId ??
+              "",
+          ) === String(selectedEntity.supplierId || "")
+        );
+      }
 
-    return ledgers.filter(
-      (ledger) =>
-        getEntityKey({
-          role: ledger?.role,
-          name: ledger?.name,
-          phone: ledger?.phone,
-        }) === entityKey,
-    );
+      if (selectedEntity.type === "employee") {
+        return (
+          String(
+            ledger?.employeeId ??
+              ledger?.employee_id ??
+              ledger?.EmployeeId ??
+              "",
+          ) === String(selectedEntity.employeeId || "")
+        );
+      }
+
+      return false;
+    });
   }, [ledgers, selectedEntity]);
 
   const selectedLedger = selectedLedgerRecords[0] || null;
@@ -759,6 +801,8 @@ const CreditLedgerTable = () => {
     [ledgerHistoryData],
   );
 
+  console.log("ledgerHistoryRecords", ledgerHistoryRecords);
+
   const selectedHistory = useMemo(() => {
     const isSupplierTab = activeTab === "supplier";
     const targetId = isSupplierTab ? selectedSupplierId : selectedEmployeeId;
@@ -769,8 +813,14 @@ const CreditLedgerTable = () => {
       .filter((entry) => {
         const entryTargetId = String(
           isSupplierTab
-            ? entry?.supplierId ?? entry?.supplier_id ?? entry?.SupplierId ?? ""
-            : entry?.employeeId ?? entry?.employee_id ?? entry?.EmployeeId ?? "",
+            ? (entry?.supplierId ??
+                entry?.supplier_id ??
+                entry?.SupplierId ??
+                "")
+            : (entry?.employeeId ??
+                entry?.employee_id ??
+                entry?.EmployeeId ??
+                ""),
         );
 
         return entryTargetId === targetId;
@@ -961,9 +1011,15 @@ const CreditLedgerTable = () => {
   const handleInsertLedgerHistory = async (e) => {
     e.preventDefault();
 
-    const ledgerId = selectedLedger?.Id ?? selectedLedger?.id;
-    if (!ledgerId) {
-      toast.error("Ledger not found.");
+    const rawLedgerId = selectedLedger?.Id ?? selectedLedger?.id;
+    const numericLedgerId = Number(rawLedgerId);
+    const ledgerId =
+      Number.isFinite(numericLedgerId) && numericLedgerId > 0
+        ? numericLedgerId
+        : undefined;
+
+    if (!selectedSupplierId && !selectedEmployeeId) {
+      toast.error("Supplier or employee reference not found.");
       return;
     }
 
@@ -974,7 +1030,9 @@ const CreditLedgerTable = () => {
     }
 
     const payload = {
-      ledgerId,
+      ...(ledgerId ? { ledgerId } : {}),
+      supplierId: selectedSupplierId || undefined,
+      employeeId: selectedEmployeeId || undefined,
       bookId: Number(ledgerHistoryForm.bookId) || undefined,
       date: ledgerHistoryForm.date,
       note: ledgerHistoryForm.note,
@@ -2401,20 +2459,22 @@ const CreditLedgerTable = () => {
                   </div>
 
                   {/* Extra Field */}
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-800">
-                      {activeEntityConfig.extraLabel}
-                    </label>
-                    <input
-                      type="text"
-                      value={createLedger.extra}
-                      onChange={(e) =>
-                        updateCreateLedgerField("extra", e.target.value)
-                      }
-                      placeholder={activeEntityConfig.extraPlaceholder}
-                      className="w-full h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-300"
-                    />
-                  </div>
+                  {activeEntityConfig.extraLabel && (
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-800">
+                        {activeEntityConfig.extraLabel}
+                      </label>
+                      <input
+                        type="text"
+                        value={createLedger.extra}
+                        onChange={(e) =>
+                          updateCreateLedgerField("extra", e.target.value)
+                        }
+                        placeholder={activeEntityConfig.extraPlaceholder}
+                        className="w-full h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-300"
+                      />
+                    </div>
+                  )}
 
                   {/* Note + Refresh */}
                   <div className="flex gap-2">

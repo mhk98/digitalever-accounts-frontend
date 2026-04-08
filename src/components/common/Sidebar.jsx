@@ -19,7 +19,6 @@ import {
   Users,
   UserCog,
   BadgeDollarSign,
-  ShoppingBasket,
   Store,
   Warehouse,
   Package,
@@ -32,16 +31,27 @@ import {
   Megaphone,
   BarChart3,
   Wallet,
-  BookOpen,
   HandCoins,
   Bell,
   Settings,
   Image,
-  DollarSign,
   ShieldCheck,
   Boxes,
-  PackageCheck,
   User,
+  ClipboardCheck,
+  PackagePlus,
+  PackageSearch,
+  PackageX,
+  ScanSearch,
+  SlidersHorizontal,
+  FlaskConical,
+  Cog,
+  RefreshCcw,
+  ReceiptText,
+  BookMarked,
+  BadgePercent,
+  BadgeCheck,
+  CircleDollarSign,
 } from "lucide-react";
 
 const SIDEBAR_ITEMS = [
@@ -88,7 +98,7 @@ const SIDEBAR_ITEMS = [
       {
         name: "Purchase",
         key: "purchase",
-        icon: ShoppingBasket,
+        icon: ClipboardCheck,
         href: "/assets-purchase",
         roles: ["superAdmin", "admin", "inventor"],
       },
@@ -145,35 +155,35 @@ const SIDEBAR_ITEMS = [
       {
         name: "Item",
         key: "item",
-        icon: Package,
+        icon: PackagePlus,
         href: "/item",
         roles: ["superAdmin", "admin"],
       },
       {
         name: "Manufacture Stock",
         key: "manufacture_stock",
-        icon: Factory,
+        icon: Boxes,
         href: "/manufacture-stock",
         roles: ["superAdmin", "admin"],
       },
       {
         name: "Manufacture",
         key: "manufacture",
-        icon: Factory,
+        icon: Cog,
         href: "/manufacture",
         roles: ["superAdmin", "admin"],
       },
       {
         name: "Stock Adjustment",
         key: "stock_adjustment",
-        icon: Factory,
+        icon: SlidersHorizontal,
         href: "/stock-adjustment",
         roles: ["superAdmin", "admin"],
       },
       {
         name: "Mixer",
         key: "mixer",
-        icon: Factory,
+        icon: FlaskConical,
         href: "/mixer",
         roles: ["superAdmin", "admin"],
       },
@@ -197,7 +207,7 @@ const SIDEBAR_ITEMS = [
       {
         name: "Stock Product",
         key: "stock_product",
-        icon: Boxes,
+        icon: PackageSearch,
         href: "/stock-product",
         roles: ["superAdmin", "admin"],
       },
@@ -232,21 +242,21 @@ const SIDEBAR_ITEMS = [
       {
         name: "Received Product",
         key: "received_product",
-        icon: PackageCheck,
+        icon: PackagePlus,
         href: "/purchase-product",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Received Return Product",
         key: "received_return",
-        icon: RotateCcw,
+        icon: RefreshCcw,
         href: "/purchase-return",
         roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Intransit Product",
         key: "intransit_product",
-        icon: Truck,
+        icon: ScanSearch,
         href: "/intransit-product",
         roles: ["superAdmin", "admin", "inventor"],
       },
@@ -270,7 +280,7 @@ const SIDEBAR_ITEMS = [
       {
         name: "Damage stock",
         key: "damage_stock",
-        icon: TriangleAlert,
+        icon: PackageX,
         href: "/damage-stock",
         roles: ["superAdmin", "admin", "inventor"],
       },
@@ -322,7 +332,7 @@ const SIDEBAR_ITEMS = [
       {
         name: "Pos Report",
         key: "pos_report",
-        icon: BarChart3,
+        icon: ReceiptText,
         href: "/pos-report",
         roles: ["superAdmin", "admin", "inventor"],
       },
@@ -345,7 +355,7 @@ const SIDEBAR_ITEMS = [
       {
         name: "Book",
         key: "book",
-        icon: BookOpen,
+        icon: BookMarked,
         href: "/book",
         roles: ["superAdmin", "admin", "accountant"],
       },
@@ -359,33 +369,12 @@ const SIDEBAR_ITEMS = [
       {
         name: "Credit Ledger",
         key: "credit_ledger",
-        icon: HandCoins,
+        icon: ReceiptText,
         href: "/credit-ledger",
         roles: ["superAdmin", "admin", "accountant"],
       },
     ],
   },
-
-  // {
-  //   name: "Due Management",
-  //   icon: CreditCard,
-  //   color: "#3b82f6",
-  //   roles: ["superAdmin", "accountant"],
-  //   children: [
-  //     {
-  //       name: "Receivable",
-  //       icon: ArrowUpRight,
-  //       href: "/receivable",
-  //       roles: ["superAdmin", "accountant"],
-  //     },
-  //     {
-  //       name: "Payable",
-  //       icon: ArrowDownLeft,
-  //       href: "/payable",
-  //       roles: ["superAdmin", "accountant"],
-  //     },
-  //   ],
-  // },
 
   {
     name: "Notifications",
@@ -431,7 +420,7 @@ const SIDEBAR_ITEMS = [
       {
         name: "Employee List",
         key: "employee_list",
-        icon: UserCog,
+        icon: BadgeCheck,
         color: "#22c55e",
         href: "/employee-list",
         roles: ["superAdmin", "admin", "accountant"],
@@ -440,7 +429,7 @@ const SIDEBAR_ITEMS = [
       {
         name: "Payroll",
         key: "payroll",
-        icon: UserCog,
+        icon: CircleDollarSign,
         color: "#22c55e",
         href: "/employee",
         roles: ["superAdmin", "admin", "accountant"],
@@ -448,7 +437,7 @@ const SIDEBAR_ITEMS = [
       {
         name: "Payroll Fine",
         key: "payroll_fine",
-        icon: DollarSign,
+        icon: BadgePercent,
         href: "/salary",
         roles: ["superAdmin", "admin", "accountant"],
       },
@@ -621,7 +610,9 @@ const Sidebar = () => {
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
                   <img
-                    src={logo ? ` http://localhost:5000/${logo}` : ""}
+                    src={
+                      logo ? ` https://apikafela.digitalever.com.bd${logo}` : ""
+                    }
                     alt="Logo"
                     className="h-full w-full object-cover"
                   />
