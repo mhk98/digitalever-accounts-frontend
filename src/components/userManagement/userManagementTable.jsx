@@ -1,7 +1,7 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Plus, Search, Trash2, User, X } from "lucide-react";
+import { Pencil, Plus, Search, Trash2, User } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   useGetAllUserQuery,
@@ -11,7 +11,7 @@ import {
 } from "../../features/auth/auth";
 import Modal from "../common/Modal";
 
-const API_BASE = " https://apikafela.digitalever.com.bd";
+const API_BASE = "https://apikafela.digitalever.com.bd";
 
 const UserManagementTable = () => {
   // Modals
@@ -261,152 +261,154 @@ const UserManagementTable = () => {
     );
 
   return (
-    <motion.div
-      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.15 }}
-    >
-      {/* Top bar */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        {/* Search */}
-        <div className="relative w-full max-w-[520px]">
-          <input
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-              setStartPage(1);
-            }}
-            placeholder="Search by email / phone / name..."
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-12 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-          />
-          <Search
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500"
-            size={18}
-          />
+    <>
+      <motion.div
+        className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+      >
+        {/* Top bar */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          {/* Search */}
+          <div className="relative w-full max-w-[520px]">
+            <input
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+                setStartPage(1);
+              }}
+              placeholder="Search by email / phone / name..."
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-12 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+            />
+            <Search
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500"
+              size={18}
+            />
+          </div>
+
+          {/* Add button */}
+          <button
+            onClick={handleAdd}
+            type="button"
+            className="inline-flex h-11 px-5 mt-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700 shadow-sm"
+          >
+            <Plus size={18} />
+            Add New User
+          </button>
         </div>
 
-        {/* Add button */}
-        <button
-          onClick={handleAdd}
-          type="button"
-          className="inline-flex h-11 px-5 mt-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700 shadow-sm"
-        >
-          <Plus size={18} />
-          Add New User
-        </button>
-      </div>
+        {/* List */}
+        <div className="mt-8">
+          {isLoading && <div className="text-slate-600">Loading...</div>}
 
-      {/* List */}
-      <div className="mt-8">
-        {isLoading && <div className="text-slate-600">Loading...</div>}
+          {!isLoading &&
+            users.map((item) => {
+              const img = item?.image ? `${API_BASE}/${item.image}` : null;
 
-        {!isLoading &&
-          users.map((item) => {
-            const img = item?.image ? `${API_BASE}/${item.image}` : null;
+              return (
+                <div
+                  key={item.Id}
+                  className="flex items-center justify-between border-b border-slate-200 py-5 hover:bg-slate-50 rounded-xl px-3 transition"
+                >
+                  {/* Left */}
+                  <div className="flex items-center gap-5">
+                    <div className="h-11 w-11 rounded-full overflow-hidden bg-indigo-50 flex items-center justify-center border border-slate-200">
+                      {img ? (
+                        <img
+                          src={img}
+                          alt="avatar"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <User className="text-indigo-600" size={18} />
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="text-[16px] font-semibold text-slate-900">
+                        {(item.FirstName || "-") + " " + (item.LastName || "")}
+                      </div>
+                      <div className="mt-1 text-sm text-slate-600">
+                        {item.Email || "-"}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        Role: {item.role || "-"} •{" "}
+                        {item.date
+                          ? new Date(item.date).toLocaleDateString()
+                          : "-"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right */}
+                  <div className="flex items-center gap-2 pr-2">
+                    <button
+                      onClick={() => handleEdit(item)}
+                      type="button"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-indigo-50 transition"
+                      title="Edit"
+                    >
+                      <Pencil className="text-indigo-600" size={18} />
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(item.Id)}
+                      type="button"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
+                      title="Delete"
+                    >
+                      <Trash2 className="text-rose-600" size={18} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+          {!isLoading && users?.length === 0 && (
+            <div className="py-10 text-sm text-slate-600">No user found</div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-center flex-wrap gap-2 mt-6">
+          <button
+            onClick={handlePreviousSet}
+            disabled={startPage === 1}
+            className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
+          >
+            Prev
+          </button>
+
+          {[...Array(endPage - startPage + 1)].map((_, index) => {
+            const pageNum = startPage + index;
+            const active = pageNum === currentPage;
 
             return (
-              <div
-                key={item.Id}
-                className="flex items-center justify-between border-b border-slate-200 py-5 hover:bg-slate-50 rounded-xl px-3 transition"
+              <button
+                key={pageNum}
+                onClick={() => handlePageChange(pageNum)}
+                className={`px-4 py-2 rounded-xl border transition ${
+                  active
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                }`}
               >
-                {/* Left */}
-                <div className="flex items-center gap-5">
-                  <div className="h-11 w-11 rounded-full overflow-hidden bg-indigo-50 flex items-center justify-center border border-slate-200">
-                    {img ? (
-                      <img
-                        src={img}
-                        alt="avatar"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <User className="text-indigo-600" size={18} />
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="text-[16px] font-semibold text-slate-900">
-                      {(item.FirstName || "-") + " " + (item.LastName || "")}
-                    </div>
-                    <div className="mt-1 text-sm text-slate-600">
-                      {item.Email || "-"}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      Role: {item.role || "-"} •{" "}
-                      {item.date
-                        ? new Date(item.date).toLocaleDateString()
-                        : "-"}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right */}
-                <div className="flex items-center gap-2 pr-2">
-                  <button
-                    onClick={() => handleEdit(item)}
-                    type="button"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-indigo-50 transition"
-                    title="Edit"
-                  >
-                    <Pencil className="text-indigo-600" size={18} />
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(item.Id)}
-                    type="button"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
-                    title="Delete"
-                  >
-                    <Trash2 className="text-rose-600" size={18} />
-                  </button>
-                </div>
-              </div>
+                {pageNum}
+              </button>
             );
           })}
 
-        {!isLoading && users?.length === 0 && (
-          <div className="py-10 text-sm text-slate-600">No user found</div>
-        )}
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-center flex-wrap gap-2 mt-6">
-        <button
-          onClick={handlePreviousSet}
-          disabled={startPage === 1}
-          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
-        >
-          Prev
-        </button>
-
-        {[...Array(endPage - startPage + 1)].map((_, index) => {
-          const pageNum = startPage + index;
-          const active = pageNum === currentPage;
-
-          return (
-            <button
-              key={pageNum}
-              onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${
-                active
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              {pageNum}
-            </button>
-          );
-        })}
-
-        <button
-          onClick={handleNextSet}
-          disabled={endPage === totalPages}
-          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
-        >
-          Next
-        </button>
-      </div>
+          <button
+            onClick={handleNextSet}
+            disabled={endPage === totalPages}
+            className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
+          >
+            Next
+          </button>
+        </div>
+      </motion.div>
 
       {/* ✅ Edit Modal */}
       <Modal
@@ -639,7 +641,7 @@ const UserManagementTable = () => {
           </div>
         </form>
       </Modal>
-    </motion.div>
+    </>
   );
 };
 

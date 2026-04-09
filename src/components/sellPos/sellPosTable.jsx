@@ -398,7 +398,7 @@ export default function SellPosTable() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
       >
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Left panel */}
           <div className="col-span-12 lg:col-span-6">
             <div className="rounded-lg shadow-sm border border-gray-200 overflow-hidden bg-white">

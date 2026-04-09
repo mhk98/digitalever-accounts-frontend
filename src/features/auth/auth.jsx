@@ -158,6 +158,31 @@ export const authApi = createApi({
       refetchOnMountOrArgChange: true,
       // pollingInterval: 1000, // heavy; দরকার হলে চালু করুন
     }),
+
+    getRolePermissions: build.query({
+      query: () => ({
+        url: "/role-permissions",
+      }),
+      providesTags: ["auth"],
+      refetchOnMountOrArgChange: true,
+    }),
+
+    getRolePermissionByRole: build.query({
+      query: (role) => ({
+        url: `/role-permissions/${role}`,
+      }),
+      providesTags: ["auth"],
+      refetchOnMountOrArgChange: true,
+    }),
+
+    updateRolePermissions: build.mutation({
+      query: ({ role, menuPermissions }) => ({
+        url: `/role-permissions/${role}`,
+        method: "PUT",
+        body: { menuPermissions },
+      }),
+      invalidatesTags: ["auth"],
+    }),
   }),
 });
 
@@ -168,4 +193,7 @@ export const {
   useUserDeleteMutation,
   useUserUpdateMutation,
   useSingleUserQuery, // ✅ useSingleUserQuery (query hook)
+  useGetRolePermissionsQuery,
+  useGetRolePermissionByRoleQuery,
+  useUpdateRolePermissionsMutation,
 } = authApi;

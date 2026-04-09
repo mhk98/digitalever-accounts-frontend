@@ -15,7 +15,7 @@ import Select from "react-select";
 
 import {
   useGetAllProductWithoutQueryQuery,
-  useGetSingleProductByIdQuery,
+  useGetSingleReceivedProductByIdQuery,
 } from "../../features/product/product";
 import {
   useDeleteReceivedProductMutation,
@@ -345,11 +345,11 @@ const ReceivedProductTable = () => {
   const selectedCreateProductId = createProduct?.productId || undefined;
   const selectedEditProductId = currentProduct?.productId || undefined;
 
-  const { data: selectedCreateProductRes } = useGetSingleProductByIdQuery(
-    selectedCreateProductId,
-    { skip: !selectedCreateProductId },
-  );
-  const { data: selectedEditProductRes } = useGetSingleProductByIdQuery(
+  const { data: selectedCreateProductRes } =
+    useGetSingleReceivedProductByIdQuery(selectedCreateProductId, {
+      skip: !selectedCreateProductId,
+    });
+  const { data: selectedEditProductRes } = useGetSingleReceivedProductByIdQuery(
     selectedEditProductId,
     { skip: !selectedEditProductId },
   );

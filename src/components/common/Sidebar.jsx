@@ -1,6 +1,5 @@
 import {
   ChevronDown,
-  Factory,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
@@ -13,463 +12,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { useGetAllLogoQuery } from "../../features/logo/logo";
 import { translations } from "../../utils/translations";
-
 import {
-  LayoutDashboard,
-  Users,
-  UserCog,
-  BadgeDollarSign,
-  Store,
-  Warehouse,
-  Package,
-  ShoppingBag,
-  RotateCcw,
-  Truck,
-  ClipboardList,
-  TriangleAlert,
-  Wrench,
-  Megaphone,
-  BarChart3,
-  Wallet,
-  HandCoins,
-  Bell,
-  Settings,
-  Image,
-  ShieldCheck,
-  Boxes,
-  User,
-  ClipboardCheck,
-  PackagePlus,
-  PackageSearch,
-  PackageX,
-  ScanSearch,
-  SlidersHorizontal,
-  FlaskConical,
-  Cog,
-  RefreshCcw,
-  ReceiptText,
-  BookMarked,
-  BadgePercent,
-  BadgeCheck,
-  CircleDollarSign,
-} from "lucide-react";
-
-const SIDEBAR_ITEMS = [
-  {
-    name: "Overview",
-    key: "overview",
-    icon: LayoutDashboard,
-    color: "#6366f1",
-    href: "/",
-    roles: [
-      "superAdmin",
-      "admin",
-      "manager",
-      "accountant",
-      "inventor",
-      "marketer",
-      "leader",
-    ],
-  },
-
-  {
-    name: "User Management",
-    key: "user_management",
-    icon: Users,
-    color: "#22c55e",
-    href: "/user-management",
-    roles: ["superAdmin", "admin"],
-  },
-
-  {
-    name: "Assets",
-    key: "assets",
-    icon: ShieldCheck,
-    color: "#ec4899",
-    roles: ["superAdmin", "admin", "inventor"],
-    children: [
-      {
-        name: "Requisition",
-        key: "requisition",
-        icon: ClipboardList,
-        href: "/assets-requisition",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-      {
-        name: "Purchase",
-        key: "purchase",
-        icon: ClipboardCheck,
-        href: "/assets-purchase",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-      {
-        name: "Sale",
-        key: "sale",
-        icon: BadgeDollarSign,
-        href: "/assets-sale",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-      {
-        name: "Damage",
-        key: "damage",
-        icon: TriangleAlert,
-        href: "/assets-damage",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-    ],
-  },
-
-  {
-    name: "Marketing",
-    key: "marketing",
-    icon: Megaphone,
-    color: "#f97316",
-    roles: ["superAdmin", "admin", "marketer"],
-    children: [
-      {
-        name: "DM Expense",
-        key: "dm_expense",
-        icon: Megaphone,
-        color: "#f97316",
-        href: "/marketing-book",
-        roles: ["superAdmin", "admin", "marketer"],
-      },
-      {
-        name: "Daily Profit & Loss",
-        key: "profit_loss",
-        icon: BarChart3,
-        color: "#f97316",
-        href: "/profit-loss",
-        roles: ["superAdmin", "admin", "marketer"],
-      },
-    ],
-  },
-
-  {
-    name: "Manufacture",
-    key: "manufacture",
-    icon: Factory,
-    color: "#8b5cf6",
-    roles: ["superAdmin", "admin", "inventor"],
-    children: [
-      {
-        name: "Item",
-        key: "item",
-        icon: PackagePlus,
-        href: "/item",
-        roles: ["superAdmin", "admin"],
-      },
-      {
-        name: "Manufacture Stock",
-        key: "manufacture_stock",
-        icon: Boxes,
-        href: "/manufacture-stock",
-        roles: ["superAdmin", "admin"],
-      },
-      {
-        name: "Manufacture",
-        key: "manufacture",
-        icon: Cog,
-        href: "/manufacture",
-        roles: ["superAdmin", "admin"],
-      },
-      {
-        name: "Stock Adjustment",
-        key: "stock_adjustment",
-        icon: SlidersHorizontal,
-        href: "/stock-adjustment",
-        roles: ["superAdmin", "admin"],
-      },
-      {
-        name: "Mixer",
-        key: "mixer",
-        icon: FlaskConical,
-        href: "/mixer",
-        roles: ["superAdmin", "admin"],
-      },
-    ],
-  },
-
-  {
-    name: "Inventory",
-    key: "inventory",
-    icon: Boxes,
-    color: "#8b5cf6",
-    roles: ["superAdmin", "admin", "inventor"],
-    children: [
-      {
-        name: "Overview",
-        key: "overview",
-        icon: LayoutDashboard,
-        href: "/inventory-overview",
-        roles: ["superAdmin", "admin"],
-      },
-      {
-        name: "Stock Product",
-        key: "stock_product",
-        icon: PackageSearch,
-        href: "/stock-product",
-        roles: ["superAdmin", "admin"],
-      },
-      {
-        name: "Warehouse",
-        key: "warehouse",
-        icon: Warehouse,
-        href: "/warehouse",
-        roles: ["superAdmin", "admin"],
-      },
-      {
-        name: "Supplier",
-        key: "supplier",
-        icon: Truck,
-        href: "/supplier",
-        roles: ["superAdmin", "admin"],
-      },
-      {
-        name: "Product",
-        key: "product",
-        icon: Package,
-        href: "/products",
-        roles: ["superAdmin", "admin"],
-      },
-      {
-        name: "Purchase Requisition",
-        key: "purchase_requisition",
-        icon: ClipboardList,
-        href: "/purchase-requisition",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-      {
-        name: "Received Product",
-        key: "received_product",
-        icon: PackagePlus,
-        href: "/purchase-product",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-      {
-        name: "Received Return Product",
-        key: "received_return",
-        icon: RefreshCcw,
-        href: "/purchase-return",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-      {
-        name: "Intransit Product",
-        key: "intransit_product",
-        icon: ScanSearch,
-        href: "/intransit-product",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-      {
-        name: "Sales Return",
-        key: "sales_return",
-        icon: RotateCcw,
-        href: "/sales-return",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-    ],
-  },
-
-  {
-    name: "Damage Management",
-    key: "damage_management",
-    icon: Boxes,
-    color: "#8b5cf6",
-    roles: ["superAdmin", "admin", "inventor"],
-    children: [
-      {
-        name: "Damage stock",
-        key: "damage_stock",
-        icon: PackageX,
-        href: "/damage-stock",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-      {
-        name: "Damage Product",
-        key: "damage_product",
-        icon: TriangleAlert,
-        href: "/damage-product",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-      {
-        name: "Damage Repairing Stock",
-        key: "damage_repairing_stock",
-        icon: Wrench,
-        href: "/damage-repairing-stock",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-      {
-        name: "Damage Repairing",
-        key: "damage_repairing",
-        icon: Wrench,
-        href: "/damage-repair",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-      {
-        name: "Damage Repaired",
-        key: "damage_repaired",
-        icon: Wrench,
-        href: "/damage-repaired",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-    ],
-  },
-
-  {
-    name: "Pos",
-    key: "pos_panel",
-    icon: Store,
-    color: "#f97316",
-    roles: ["superAdmin", "admin", "inventor"],
-    children: [
-      {
-        name: "Sell",
-        key: "sell",
-        icon: ShoppingBag,
-        href: "/pos-sell",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-      {
-        name: "Pos Report",
-        key: "pos_report",
-        icon: ReceiptText,
-        href: "/pos-report",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-    ],
-  },
-  {
-    name: "Accounting",
-    key: "accounting",
-    icon: Wallet,
-    color: "#3b82f6",
-    roles: ["superAdmin", "admin", "accountant"],
-    children: [
-      {
-        name: "Supplier",
-        key: "supplier",
-        icon: Truck,
-        href: "/supplier",
-        roles: ["superAdmin", "admin"],
-      },
-      {
-        name: "Book",
-        key: "book",
-        icon: BookMarked,
-        href: "/book",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
-      {
-        name: "Petty Cash",
-        key: "petty_cash",
-        icon: HandCoins,
-        href: "/petty-cash",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
-      {
-        name: "Credit Ledger",
-        key: "credit_ledger",
-        icon: ReceiptText,
-        href: "/credit-ledger",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
-    ],
-  },
-
-  {
-    name: "Notifications",
-    key: "notifications",
-    icon: Bell,
-    color: "#60a5fa",
-    href: "/notifications",
-    roles: [
-      "superAdmin",
-      "admin",
-      "marketer",
-      "leader",
-      "inventor",
-      "accountant",
-      "staff",
-      "user",
-    ],
-  },
-
-  {
-    name: "Settings",
-    key: "settings",
-    icon: Settings,
-    color: "#60a5fa",
-    roles: ["superAdmin", "admin"],
-    children: [
-      {
-        name: "Logo",
-        key: "logo",
-        icon: Image,
-        href: "/logo",
-        roles: ["superAdmin", "admin"],
-      },
-    ],
-  },
-  {
-    name: "HR & Payroll",
-    key: "hr_payroll",
-    icon: UserCog,
-    color: "#ec4899",
-    roles: ["superAdmin", "admin", "accountant"],
-    children: [
-      {
-        name: "Employee List",
-        key: "employee_list",
-        icon: BadgeCheck,
-        color: "#22c55e",
-        href: "/employee-list",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
-
-      {
-        name: "Payroll",
-        key: "payroll",
-        icon: CircleDollarSign,
-        color: "#22c55e",
-        href: "/employee",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
-      {
-        name: "Payroll Fine",
-        key: "payroll_fine",
-        icon: BadgePercent,
-        href: "/salary",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
-    ],
-  },
-  {
-    name: "Expire Product",
-    key: "expired_product",
-    icon: TriangleAlert,
-    color: "#ef4444",
-    href: "/expired-product",
-    roles: ["superAdmin", "admin"],
-  },
-
-  {
-    name: "Profile",
-    key: "profile",
-    icon: User,
-    color: "#60a5fa",
-    href: "/profile",
-    roles: [
-      "superAdmin",
-      "admin",
-      "marketer",
-      "leader",
-      "inventor",
-      "accountant",
-      "staff",
-      "user",
-    ],
-  },
-];
+  filterSidebarItemsByRole,
+  subscribeToPermissionChanges,
+} from "../../utils/navigationPermissions";
 const Tooltip = ({ show, text }) => {
   return (
     <AnimatePresence>
@@ -503,6 +49,10 @@ const Sidebar = () => {
 
   // ✅ menu filter
   const [menuQuery, setMenuQuery] = useState("");
+  const [, setPermissionVersion] = useState(0);
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : true,
+  );
 
   const userRole = localStorage.getItem("role") || "user";
   const { pathname } = useLocation();
@@ -511,9 +61,7 @@ const Sidebar = () => {
   const isActive = (href) => pathname === href;
 
   // ✅ first role filter
-  const roleFiltered = useMemo(() => {
-    return SIDEBAR_ITEMS.filter((item) => item.roles.includes(userRole));
-  }, [userRole]);
+  const roleFiltered = filterSidebarItemsByRole(userRole);
 
   // ✅ then search filter (parent + child)
   const filteredItems = useMemo(() => {
@@ -524,14 +72,12 @@ const Sidebar = () => {
       .map((item) => {
         if (!item.children) return item;
 
-        const childMatches = item.children
-          .filter((c) => c.roles.includes(userRole))
-          .filter((c) => {
-            const translatedChild = (t[c.key] || c.name).toLowerCase();
-            return (
-              c.name.toLowerCase().includes(q) || translatedChild.includes(q)
-            );
-          });
+        const childMatches = item.children.filter((c) => {
+          const translatedChild = (t[c.key] || c.name).toLowerCase();
+          return (
+            c.name.toLowerCase().includes(q) || translatedChild.includes(q)
+          );
+        });
 
         return { ...item, children: childMatches };
       })
@@ -544,7 +90,7 @@ const Sidebar = () => {
         if (parentMatch) return true;
         return item.children.length > 0;
       });
-  }, [roleFiltered, menuQuery, userRole, t]);
+  }, [roleFiltered, menuQuery, t]);
 
   // ✅ auto open first matched parent when searching (no stale state)
   useEffect(() => {
@@ -569,6 +115,22 @@ const Sidebar = () => {
     }
   }, [data, isLoading, isError, error]);
 
+  useEffect(() => {
+    return subscribeToPermissionChanges(() =>
+      setPermissionVersion((prev) => prev + 1),
+    );
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 1024);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const shouldShowExpanded = isDesktop ? isSidebarOpen : true;
+  const drawerWidth = shouldShowExpanded ? 280 : 88;
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -590,21 +152,21 @@ const Sidebar = () => {
             ? "translate-x-0"
             : "-translate-x-full lg:translate-x-0"
         } bg-slate-50 border-r border-slate-200`}
-        animate={{ width: isSidebarOpen ? 280 : 88 }}
+        animate={{ width: drawerWidth }}
         transition={{ type: "spring", stiffness: 260, damping: 24 }}
-        style={{ width: isSidebarOpen ? 280 : 88 }}
+        style={{ width: drawerWidth }}
       >
         {/* ✅ Light dashboard sidebar shell */}
         <div
           className={`h-full border-r border-slate-200 bg-slate-50 flex flex-col ${
-            isSidebarOpen ? "p-4" : "p-2"
+            shouldShowExpanded ? "p-4" : "p-2"
           }`}
         >
           <div className="flex-1 rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] flex flex-col overflow-hidden">
             {/* Header */}
             <div
               className={`border-b border-slate-200 ${
-                isSidebarOpen ? "p-4" : "p-2"
+                shouldShowExpanded ? "p-4" : "p-2"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -619,7 +181,7 @@ const Sidebar = () => {
                 </div>
 
                 <AnimatePresence>
-                  {isSidebarOpen ? (
+                  {shouldShowExpanded ? (
                     <motion.div
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -661,7 +223,7 @@ const Sidebar = () => {
 
               {/* Search input (menu filter) */}
               <AnimatePresence>
-                {isSidebarOpen ? (
+                {shouldShowExpanded ? (
                   <motion.div
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -706,7 +268,7 @@ const Sidebar = () => {
             {/* Nav */}
             <nav
               className={`flex-1 overflow-y-auto py-3 sidebar-scroll min-h-0 ${
-                isSidebarOpen ? "px-2" : "px-1"
+                shouldShowExpanded ? "px-2" : "px-1"
               }`}
             >
               {filteredItems.length === 0 ? (
@@ -729,7 +291,9 @@ const Sidebar = () => {
                   : childActive;
 
                 const parentBase = `w-full group flex items-center rounded-xl transition relative ${
-                  isSidebarOpen ? "gap-3 px-3 py-3" : "justify-center px-2 py-3"
+                  shouldShowExpanded
+                    ? "gap-3 px-3 py-3"
+                    : "justify-center px-2 py-3"
                 }`;
 
                 const parentState = parentActive
@@ -771,7 +335,7 @@ const Sidebar = () => {
                             />
                           </span>
 
-                          {isSidebarOpen ? (
+                          {shouldShowExpanded ? (
                             <>
                               <span className="text-sm font-medium text-slate-800 flex-1 text-left">
                                 {t[item.key] || item.name}
@@ -786,7 +350,7 @@ const Sidebar = () => {
                           ) : null}
 
                           <Tooltip
-                            show={!isSidebarOpen && hovered === item.key}
+                            show={!shouldShowExpanded && hovered === item.key}
                             text={t[item.key] || item.name}
                           />
                         </motion.button>
@@ -822,14 +386,14 @@ const Sidebar = () => {
                               />
                             </span>
 
-                            {isSidebarOpen ? (
+                            {shouldShowExpanded ? (
                               <span className="text-sm font-medium text-slate-800">
                                 {t[item.key] || item.name}
                               </span>
                             ) : null}
 
                             <Tooltip
-                              show={!isSidebarOpen && hovered === item.key}
+                              show={!shouldShowExpanded && hovered === item.key}
                               text={t[item.key] || item.name}
                             />
                           </motion.div>
@@ -839,7 +403,7 @@ const Sidebar = () => {
 
                     {/* Submenu */}
                     <AnimatePresence>
-                      {hasChildren && menuOpen && isSidebarOpen ? (
+                      {hasChildren && menuOpen && shouldShowExpanded ? (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
@@ -848,57 +412,55 @@ const Sidebar = () => {
                           className="mt-2 ml-2 pl-4 border-l border-slate-200"
                         >
                           <div className="space-y-1 pb-2">
-                            {item.children
-                              .filter((sub) => sub.roles.includes(userRole))
-                              .map((sub) => {
-                                const SubIcon = sub.icon;
-                                const activeSub = isActive(sub.href);
+                            {item.children.map((sub) => {
+                              const SubIcon = sub.icon;
+                              const activeSub = isActive(sub.href);
 
-                                return (
-                                  <Link key={sub.href} to={sub.href}>
-                                    <div
-                                      className={`group flex items-center gap-2 px-3 py-2 rounded-xl transition border ${
+                              return (
+                                <Link key={sub.href} to={sub.href}>
+                                  <div
+                                    className={`group flex items-center gap-2 px-3 py-2 rounded-xl transition border ${
+                                      activeSub
+                                        ? "bg-indigo-50 border-indigo-100"
+                                        : "hover:bg-slate-50 border-transparent"
+                                    }`}
+                                  >
+                                    <span
+                                      className={`h-7 w-7 rounded-lg flex items-center justify-center border transition ${
                                         activeSub
-                                          ? "bg-indigo-50 border-indigo-100"
-                                          : "hover:bg-slate-50 border-transparent"
+                                          ? "border-indigo-200 bg-indigo-100"
+                                          : "border-slate-200 bg-white group-hover:bg-slate-50"
                                       }`}
                                     >
-                                      <span
-                                        className={`h-7 w-7 rounded-lg flex items-center justify-center border transition ${
-                                          activeSub
-                                            ? "border-indigo-200 bg-indigo-100"
-                                            : "border-slate-200 bg-white group-hover:bg-slate-50"
-                                        }`}
-                                      >
-                                        {SubIcon ? (
-                                          <SubIcon
-                                            size={14}
-                                            className={
-                                              activeSub
-                                                ? "text-indigo-600"
-                                                : "text-slate-600"
-                                            }
-                                          />
-                                        ) : null}
-                                      </span>
-
-                                      <span
-                                        className={`text-sm ${
-                                          activeSub
-                                            ? "text-indigo-700"
-                                            : "text-slate-700"
-                                        }`}
-                                      >
-                                        {t[sub.key] || sub.name}
-                                      </span>
-
-                                      {activeSub ? (
-                                        <span className="ml-auto h-2 w-2 rounded-full bg-indigo-500" />
+                                      {SubIcon ? (
+                                        <SubIcon
+                                          size={14}
+                                          className={
+                                            activeSub
+                                              ? "text-indigo-600"
+                                              : "text-slate-600"
+                                          }
+                                        />
                                       ) : null}
-                                    </div>
-                                  </Link>
-                                );
-                              })}
+                                    </span>
+
+                                    <span
+                                      className={`text-sm ${
+                                        activeSub
+                                          ? "text-indigo-700"
+                                          : "text-slate-700"
+                                      }`}
+                                    >
+                                      {t[sub.key] || sub.name}
+                                    </span>
+
+                                    {activeSub ? (
+                                      <span className="ml-auto h-2 w-2 rounded-full bg-indigo-500" />
+                                    ) : null}
+                                  </div>
+                                </Link>
+                              );
+                            })}
                           </div>
                         </motion.div>
                       ) : null}

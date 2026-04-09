@@ -368,6 +368,7 @@ export const translations = {
     settings: "Settings",
     payroll_fine: "Payroll Fine",
     logo: "Logo",
+    role_permissions: "Role Permissions",
     expired_product: "Expired Product",
     profile: "Profile",
     control_panel: "Control Panel",
@@ -472,6 +473,7 @@ export const translations = {
     petty_cash: "পেটি ক্যাশ",
     payroll_fine: "পেরোল ফাইন",
     logo: "লোগো",
+    role_permissions: "রোল পারমিশন",
     loading: "লোড হচ্ছে...",
     // Common UI (BN)
     add: "যোগ করুন",

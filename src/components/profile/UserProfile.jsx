@@ -391,6 +391,7 @@ import {
   useSingleUserQuery,
   useUserUpdateMutation,
 } from "../../features/auth/auth";
+import Modal from "../common/Modal";
 
 const API_BASE = "https://apikafela.digitalever.com.bd";
 
@@ -584,160 +585,148 @@ const UserProfile = () => {
           </div>
         </div>
 
-        {/* Modal */}
-        {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30">
-            <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg border border-gray-200">
-              <div className="p-5 md:p-6 border-b border-gray-200 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Edit Profile
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Update your personal information and profile photo.
+        <Modal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          title="Edit Profile"
+          maxWidth="max-w-4xl"
+        >
+          <div className="mb-5">
+            <p className="text-sm text-slate-500">
+              Update your personal information and profile photo.
+            </p>
+          </div>
+
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="First Name"
+                value={currentProfile?.FirstName || ""}
+                onChange={(e) =>
+                  setCurrentProfile((p) => ({
+                    ...p,
+                    FirstName: e.target.value,
+                  }))
+                }
+              />
+              <Input
+                label="Last Name"
+                value={currentProfile?.LastName || ""}
+                onChange={(e) =>
+                  setCurrentProfile((p) => ({
+                    ...p,
+                    LastName: e.target.value,
+                  }))
+                }
+              />
+              <Input
+                label="Email"
+                type="email"
+                value={currentProfile?.Email || ""}
+                onChange={(e) =>
+                  setCurrentProfile((p) => ({
+                    ...p,
+                    Email: e.target.value,
+                  }))
+                }
+              />
+              <Input
+                label="Phone"
+                value={currentProfile?.Phone || ""}
+                onChange={(e) =>
+                  setCurrentProfile((p) => ({
+                    ...p,
+                    Phone: e.target.value,
+                  }))
+                }
+              />
+              <Input
+                label="Country"
+                value={currentProfile?.Country || ""}
+                onChange={(e) =>
+                  setCurrentProfile((p) => ({
+                    ...p,
+                    Country: e.target.value,
+                  }))
+                }
+              />
+              <Input
+                label="City"
+                value={currentProfile?.City || ""}
+                onChange={(e) =>
+                  setCurrentProfile((p) => ({
+                    ...p,
+                    City: e.target.value,
+                  }))
+                }
+              />
+              <Input
+                label="Postal Code"
+                value={currentProfile?.PostalCode || ""}
+                onChange={(e) =>
+                  setCurrentProfile((p) => ({
+                    ...p,
+                    PostalCode: e.target.value,
+                  }))
+                }
+              />
+              <Input
+                label="Address"
+                value={currentProfile?.Address || ""}
+                onChange={(e) =>
+                  setCurrentProfile((p) => ({
+                    ...p,
+                    Address: e.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            {/* Image */}
+            <div className="pt-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Profile Image
+              </label>
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                <img
+                  src={previewUrl || avatarSrc}
+                  alt="Preview"
+                  className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-100 shrink-0"
+                />
+
+                <div className="flex-1 w-full">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleChange}
+                    className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    PNG, JPG allowed. Recommended square image.
                   </p>
                 </div>
-                <button
-                  onClick={closeModal}
-                  className="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100"
-                  type="button"
-                >
-                  ✕
-                </button>
               </div>
-
-              <form onSubmit={handleSave} className="p-5 md:p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="First Name"
-                    value={currentProfile?.FirstName || ""}
-                    onChange={(e) =>
-                      setCurrentProfile((p) => ({
-                        ...p,
-                        FirstName: e.target.value,
-                      }))
-                    }
-                  />
-                  <Input
-                    label="Last Name"
-                    value={currentProfile?.LastName || ""}
-                    onChange={(e) =>
-                      setCurrentProfile((p) => ({
-                        ...p,
-                        LastName: e.target.value,
-                      }))
-                    }
-                  />
-                  <Input
-                    label="Email"
-                    type="email"
-                    value={currentProfile?.Email || ""}
-                    onChange={(e) =>
-                      setCurrentProfile((p) => ({
-                        ...p,
-                        Email: e.target.value,
-                      }))
-                    }
-                  />
-                  <Input
-                    label="Phone"
-                    value={currentProfile?.Phone || ""}
-                    onChange={(e) =>
-                      setCurrentProfile((p) => ({
-                        ...p,
-                        Phone: e.target.value,
-                      }))
-                    }
-                  />
-                  <Input
-                    label="Country"
-                    value={currentProfile?.Country || ""}
-                    onChange={(e) =>
-                      setCurrentProfile((p) => ({
-                        ...p,
-                        Country: e.target.value,
-                      }))
-                    }
-                  />
-                  <Input
-                    label="City"
-                    value={currentProfile?.City || ""}
-                    onChange={(e) =>
-                      setCurrentProfile((p) => ({
-                        ...p,
-                        City: e.target.value,
-                      }))
-                    }
-                  />
-                  <Input
-                    label="Postal Code"
-                    value={currentProfile?.PostalCode || ""}
-                    onChange={(e) =>
-                      setCurrentProfile((p) => ({
-                        ...p,
-                        PostalCode: e.target.value,
-                      }))
-                    }
-                  />
-                  <Input
-                    label="Address"
-                    value={currentProfile?.Address || ""}
-                    onChange={(e) =>
-                      setCurrentProfile((p) => ({
-                        ...p,
-                        Address: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-
-                {/* Image */}
-                <div className="pt-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Profile Image
-                  </label>
-
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={previewUrl || avatarSrc}
-                      alt="Preview"
-                      className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-100"
-                    />
-
-                    <div className="flex-1">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleChange}
-                        className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        PNG, JPG allowed. Recommended square image.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="pt-4 flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </form>
             </div>
-          </div>
-        )}
+
+            {/* Actions */}
+            <div className="pt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </Modal>
       </div>
     </div>
   );

@@ -69,6 +69,13 @@ export const productApi = createApi({
 
     getSingleProductById: build.query({
       query: (id) => ({
+        url: `/product/stock/${id}`,
+      }),
+      providesTags: ["product"], // Provides the 'product' tag for caching and invalidation
+    }),
+
+    getSingleReceivedProductById: build.query({
+      query: (id) => ({
         url: `/product/${id}`,
       }),
       providesTags: ["product"], // Provides the 'product' tag for caching and invalidation
@@ -83,4 +90,5 @@ export const {
   useUpdateProductMutation,
   useGetAllProductWithoutQueryQuery,
   useGetSingleProductByIdQuery,
+  useGetSingleReceivedProductByIdQuery,
 } = productApi;

@@ -1,0 +1,761 @@
+import {
+  LayoutDashboard,
+  Users,
+  UserCog,
+  BadgeDollarSign,
+  Store,
+  Warehouse,
+  Package,
+  ShoppingBag,
+  RotateCcw,
+  Truck,
+  ClipboardList,
+  TriangleAlert,
+  Wrench,
+  Megaphone,
+  BarChart3,
+  Wallet,
+  HandCoins,
+  Bell,
+  Settings,
+  Image,
+  ShieldCheck,
+  Boxes,
+  User,
+  ClipboardCheck,
+  PackagePlus,
+  PackageSearch,
+  PackageX,
+  ScanSearch,
+  SlidersHorizontal,
+  FlaskConical,
+  Cog,
+  RefreshCcw,
+  ReceiptText,
+  BookMarked,
+  BadgePercent,
+  BadgeCheck,
+  CircleDollarSign,
+  Factory,
+} from "lucide-react";
+
+export const ROLE_OPTIONS = [
+  { value: "superAdmin", label: "Super Admin" },
+  { value: "admin", label: "Admin" },
+  { value: "marketer", label: "Marketer" },
+  { value: "leader", label: "Leader" },
+  { value: "inventor", label: "Inventor" },
+  { value: "accountant", label: "Accountant" },
+  { value: "staff", label: "Staff" },
+  { value: "user", label: "User" },
+];
+
+const DEFAULT_ROLE_PERMISSION_MAP = {
+  superAdmin: [
+    "overview",
+    "user_management",
+    "assets",
+    "requisition",
+    "purchase",
+    "sale",
+    "damage",
+    "marketing",
+    "dm_expense",
+    "profit_loss",
+    "manufacture",
+    "item",
+    "manufacture_stock",
+    "manufacture_menu",
+    "stock_adjustment",
+    "mixer",
+    "inventory",
+    "inventory_overview",
+    "stock_product",
+    "warehouse",
+    "supplier",
+    "product",
+    "purchase_requisition",
+    "received_product",
+    "received_return",
+    "intransit_product",
+    "sales_return",
+    "damage_management",
+    "damage_stock",
+    "damage_product",
+    "damage_repairing_stock",
+    "damage_repairing",
+    "damage_repaired",
+    "pos_panel",
+    "sell",
+    "pos_report",
+    "accounting",
+    "accounting_supplier",
+    "book",
+    "petty_cash",
+    "credit_ledger",
+    "notifications",
+    "settings",
+    "logo",
+    "role_permissions",
+    "hr_payroll",
+    "employee_list",
+    "payroll",
+    "payroll_fine",
+    "expired_product",
+    "profile",
+  ],
+  admin: [
+    "overview",
+    "user_management",
+    "assets",
+    "requisition",
+    "purchase",
+    "sale",
+    "damage",
+    "profit_loss",
+    "manufacture",
+    "manufacture_menu",
+    "manufacture_stock",
+    "stock_adjustment",
+    "mixer",
+    "inventory",
+    "inventory_overview",
+    "stock_product",
+    "warehouse",
+    "supplier",
+    "product",
+    "purchase_requisition",
+    "received_product",
+    "received_return",
+    "intransit_product",
+    "sales_return",
+    "damage_management",
+    "damage_stock",
+    "damage_product",
+    "damage_repairing_stock",
+    "damage_repairing",
+    "damage_repaired",
+    "accounting",
+    "accounting_supplier",
+    "book",
+    "petty_cash",
+    "credit_ledger",
+    "notifications",
+    "settings",
+    "logo",
+    "role_permissions",
+    "hr_payroll",
+    "employee_list",
+    "payroll",
+    "payroll_fine",
+    "profile",
+  ],
+  marketer: [
+    "overview",
+    "marketing",
+    "dm_expense",
+    "profit_loss",
+    "notifications",
+    "profile",
+  ],
+  leader: [
+    "overview",
+    "requisition",
+    "purchase",
+    "sale",
+    "profit_loss",
+    "notifications",
+    "profile",
+  ],
+  inventor: [
+    "overview",
+    "inventory",
+    "inventory_overview",
+    "stock_product",
+    "manufacture",
+    "manufacture_menu",
+    "manufacture_stock",
+    "stock_adjustment",
+    "mixer",
+    "product",
+    "item",
+    "purchase_requisition",
+    "received_product",
+    "received_return",
+    "intransit_product",
+    "sales_return",
+    "damage_management",
+    "damage_stock",
+    "damage_product",
+    "damage_repairing_stock",
+    "damage_repairing",
+    "damage_repaired",
+    "warehouse",
+    "supplier",
+    "profit_loss",
+    "notifications",
+    "profile",
+  ],
+  accountant: [
+    "overview",
+    "profit_loss",
+    "accounting",
+    "accounting_supplier",
+    "book",
+    "petty_cash",
+    "credit_ledger",
+    "hr_payroll",
+    "employee_list",
+    "payroll",
+    "payroll_fine",
+    "notifications",
+    "profile",
+  ],
+  staff: ["overview", "notifications", "profile"],
+  user: ["overview", "profile"],
+};
+
+export const SIDEBAR_ITEMS = [
+  {
+    name: "Overview",
+    key: "overview",
+    icon: LayoutDashboard,
+    color: "#6366f1",
+    href: "/",
+    roles: [
+      "superAdmin",
+      "admin",
+      "manager",
+      "accountant",
+      "inventor",
+      "marketer",
+      "leader",
+    ],
+  },
+  {
+    name: "User Management",
+    key: "user_management",
+    icon: Users,
+    color: "#22c55e",
+    href: "/user-management",
+    roles: ["superAdmin", "admin"],
+  },
+  {
+    name: "Assets",
+    key: "assets",
+    icon: ShieldCheck,
+    color: "#ec4899",
+    roles: ["superAdmin", "admin", "inventor"],
+    children: [
+      {
+        name: "Requisition",
+        key: "requisition",
+        icon: ClipboardList,
+        href: "/assets-requisition",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Purchase",
+        key: "purchase",
+        icon: ClipboardCheck,
+        href: "/assets-purchase",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Sale",
+        key: "sale",
+        icon: BadgeDollarSign,
+        href: "/assets-sale",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Damage",
+        key: "damage",
+        icon: TriangleAlert,
+        href: "/assets-damage",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+    ],
+  },
+  {
+    name: "Marketing",
+    key: "marketing",
+    icon: Megaphone,
+    color: "#f97316",
+    roles: ["superAdmin", "admin", "marketer"],
+    children: [
+      {
+        name: "DM Expense",
+        key: "dm_expense",
+        icon: Megaphone,
+        color: "#f97316",
+        href: "/marketing-book",
+        matchPaths: ["/marketing-book"],
+        roles: ["superAdmin", "admin", "marketer"],
+      },
+      {
+        name: "Daily Profit & Loss",
+        key: "profit_loss",
+        icon: BarChart3,
+        color: "#f97316",
+        href: "/profit-loss",
+        roles: ["superAdmin", "admin", "marketer"],
+      },
+    ],
+  },
+  {
+    name: "Manufacture",
+    key: "manufacture",
+    icon: Factory,
+    color: "#8b5cf6",
+    roles: ["superAdmin", "admin", "inventor"],
+    children: [
+      {
+        name: "Item",
+        key: "item",
+        icon: PackagePlus,
+        href: "/item",
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Manufacture Stock",
+        key: "manufacture_stock",
+        icon: Boxes,
+        href: "/manufacture-stock",
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Manufacture",
+        key: "manufacture_menu",
+        icon: Cog,
+        href: "/manufacture",
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Stock Adjustment",
+        key: "stock_adjustment",
+        icon: SlidersHorizontal,
+        href: "/stock-adjustment",
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Mixer",
+        key: "mixer",
+        icon: FlaskConical,
+        href: "/mixer",
+        roles: ["superAdmin", "admin"],
+      },
+    ],
+  },
+  {
+    name: "Inventory",
+    key: "inventory",
+    icon: Boxes,
+    color: "#8b5cf6",
+    roles: ["superAdmin", "admin", "inventor"],
+    children: [
+      {
+        name: "Overview",
+        key: "inventory_overview",
+        icon: LayoutDashboard,
+        href: "/inventory-overview",
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Stock Product",
+        key: "stock_product",
+        icon: PackageSearch,
+        href: "/stock-product",
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Warehouse",
+        key: "warehouse",
+        icon: Warehouse,
+        href: "/warehouse",
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Supplier",
+        key: "supplier",
+        icon: Truck,
+        href: "/supplier",
+        matchPaths: ["/supplier-history"],
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Product",
+        key: "product",
+        icon: Package,
+        href: "/products",
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Purchase Requisition",
+        key: "purchase_requisition",
+        icon: ClipboardList,
+        href: "/purchase-requisition",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Received Product",
+        key: "received_product",
+        icon: PackagePlus,
+        href: "/purchase-product",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Received Return Product",
+        key: "received_return",
+        icon: RefreshCcw,
+        href: "/purchase-return",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Intransit Product",
+        key: "intransit_product",
+        icon: ScanSearch,
+        href: "/intransit-product",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Sales Return",
+        key: "sales_return",
+        icon: RotateCcw,
+        href: "/sales-return",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+    ],
+  },
+  {
+    name: "Damage Management",
+    key: "damage_management",
+    icon: Boxes,
+    color: "#8b5cf6",
+    roles: ["superAdmin", "admin", "inventor"],
+    children: [
+      {
+        name: "Damage stock",
+        key: "damage_stock",
+        icon: PackageX,
+        href: "/damage-stock",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Damage Product",
+        key: "damage_product",
+        icon: TriangleAlert,
+        href: "/damage-product",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Damage Repairing Stock",
+        key: "damage_repairing_stock",
+        icon: Wrench,
+        href: "/damage-repairing-stock",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Damage Repairing",
+        key: "damage_repairing",
+        icon: Wrench,
+        href: "/damage-repair",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Damage Repaired",
+        key: "damage_repaired",
+        icon: Wrench,
+        href: "/damage-repaired",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+    ],
+  },
+  {
+    name: "Pos",
+    key: "pos_panel",
+    icon: Store,
+    color: "#f97316",
+    roles: ["superAdmin", "admin", "inventor"],
+    children: [
+      {
+        name: "Sell",
+        key: "sell",
+        icon: ShoppingBag,
+        href: "/pos-sell",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
+        name: "Pos Report",
+        key: "pos_report",
+        icon: ReceiptText,
+        href: "/pos-report",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+    ],
+  },
+  {
+    name: "Accounting",
+    key: "accounting",
+    icon: Wallet,
+    color: "#3b82f6",
+    roles: ["superAdmin", "admin", "accountant"],
+    children: [
+      {
+        name: "Supplier",
+        key: "accounting_supplier",
+        icon: Truck,
+        href: "/supplier",
+        matchPaths: ["/supplier-history"],
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Book",
+        key: "book",
+        icon: BookMarked,
+        href: "/book",
+        matchPaths: ["/book"],
+        roles: ["superAdmin", "admin", "accountant"],
+      },
+      {
+        name: "Petty Cash",
+        key: "petty_cash",
+        icon: HandCoins,
+        href: "/petty-cash",
+        roles: ["superAdmin", "admin", "accountant"],
+      },
+      {
+        name: "Credit Ledger",
+        key: "credit_ledger",
+        icon: ReceiptText,
+        href: "/credit-ledger",
+        roles: ["superAdmin", "admin", "accountant"],
+      },
+    ],
+  },
+  {
+    name: "Notifications",
+    key: "notifications",
+    icon: Bell,
+    color: "#60a5fa",
+    href: "/notifications",
+    roles: [
+      "superAdmin",
+      "admin",
+      "marketer",
+      "leader",
+      "inventor",
+      "accountant",
+      "staff",
+      "user",
+    ],
+  },
+  {
+    name: "Settings",
+    key: "settings",
+    icon: Settings,
+    color: "#60a5fa",
+    roles: ["superAdmin", "admin"],
+    children: [
+      {
+        name: "Logo",
+        key: "logo",
+        icon: Image,
+        href: "/logo",
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Role Permissions",
+        key: "role_permissions",
+        icon: ShieldCheck,
+        href: "/settings/role-permissions",
+        roles: ["superAdmin", "admin"],
+      },
+    ],
+  },
+  {
+    name: "HR & Payroll",
+    key: "hr_payroll",
+    icon: UserCog,
+    color: "#ec4899",
+    roles: ["superAdmin", "admin", "accountant"],
+    children: [
+      {
+        name: "Employee List",
+        key: "employee_list",
+        icon: BadgeCheck,
+        color: "#22c55e",
+        href: "/employee-list",
+        roles: ["superAdmin", "admin", "accountant"],
+      },
+      {
+        name: "Payroll",
+        key: "payroll",
+        icon: CircleDollarSign,
+        color: "#22c55e",
+        href: "/employee",
+        roles: ["superAdmin", "admin", "accountant"],
+      },
+      {
+        name: "Payroll Fine",
+        key: "payroll_fine",
+        icon: BadgePercent,
+        href: "/salary",
+        roles: ["superAdmin", "admin", "accountant"],
+      },
+    ],
+  },
+  {
+    name: "Expire Product",
+    key: "expired_product",
+    icon: TriangleAlert,
+    color: "#ef4444",
+    href: "/expired-product",
+    roles: ["superAdmin", "admin"],
+  },
+  {
+    name: "Profile",
+    key: "profile",
+    icon: User,
+    color: "#60a5fa",
+    href: "/profile",
+    roles: [
+      "superAdmin",
+      "admin",
+      "marketer",
+      "leader",
+      "inventor",
+      "accountant",
+      "staff",
+      "user",
+    ],
+  },
+];
+
+const STORAGE_KEY = "roleMenuPermissions";
+const PERMISSION_EVENT = "role-permissions-updated";
+
+export const DEFAULT_ROLE_PERMISSIONS = ROLE_OPTIONS.reduce((acc, role) => {
+  acc[role.value] = Array.from(DEFAULT_ROLE_PERMISSION_MAP[role.value] || []);
+  return acc;
+}, {});
+
+const normalizeRolePermissionMap = (value) => {
+  if (!value || typeof value !== "object") return {};
+
+  return Object.entries(value).reduce((acc, [role, keys]) => {
+    if (!Array.isArray(keys)) return acc;
+    const normalizedKeys = new Set(keys.filter(Boolean));
+
+    // Migrate older stored permission sets after the submenu key rename.
+    if (normalizedKeys.has("settings")) {
+      const defaultKeys = DEFAULT_ROLE_PERMISSION_MAP[role] || [];
+      if (defaultKeys.includes("role_permissions")) {
+        normalizedKeys.add("role_permissions");
+      }
+    }
+
+    acc[role] = Array.from(normalizedKeys);
+    return acc;
+  }, {});
+};
+
+export const getStoredRolePermissions = () => {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    return normalizeRolePermissionMap(parsed);
+  } catch (error) {
+    console.error("Failed to parse stored role permissions", error);
+    return {};
+  }
+};
+
+export const saveStoredRolePermissions = (permissionMap) => {
+  if (typeof window === "undefined") return;
+
+  const normalized = normalizeRolePermissionMap(permissionMap);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+  window.dispatchEvent(new CustomEvent(PERMISSION_EVENT));
+};
+
+export const saveRolePermissionsForRole = (role, menuPermissions = []) => {
+  const current = getStoredRolePermissions();
+  saveStoredRolePermissions({
+    ...current,
+    [role]: Array.from(new Set(menuPermissions.filter(Boolean))),
+  });
+};
+
+export const getAllowedKeysForRole = (role) => {
+  const stored = getStoredRolePermissions();
+  return new Set(stored[role] || DEFAULT_ROLE_PERMISSIONS[role] || []);
+};
+
+export const isItemAllowed = (item, allowedKeys) => {
+  if (!allowedKeys.has(item.key)) return false;
+
+  if (!item.children?.length) return true;
+
+  return item.children.some((child) => isItemAllowed(child, allowedKeys));
+};
+
+export const filterSidebarItemsByRole = (role, items = SIDEBAR_ITEMS) => {
+  const allowedKeys = getAllowedKeysForRole(role);
+
+  return items.reduce((acc, item) => {
+    if (!allowedKeys.has(item.key)) return acc;
+
+    if (!item.children?.length) {
+      acc.push(item);
+      return acc;
+    }
+
+    const visibleChildren = item.children.filter((child) =>
+      isItemAllowed(child, allowedKeys),
+    );
+
+    if (visibleChildren.length > 0) {
+      acc.push({ ...item, children: visibleChildren });
+    }
+
+    return acc;
+  }, []);
+};
+
+const flattenItems = (items = SIDEBAR_ITEMS) =>
+  items.flatMap((item) => [
+    item,
+    ...(item.children ? flattenItems(item.children) : []),
+  ]);
+
+const pathMatches = (pathname, targetPath) => {
+  if (!targetPath || !pathname) return false;
+  if (targetPath === "/") return pathname === "/";
+  return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
+};
+
+export const canAccessPath = (role, pathname) => {
+  const allItems = flattenItems();
+  const matchedItem = allItems.find((item) => {
+    const candidates = [item.href, ...(item.matchPaths || [])].filter(Boolean);
+    return candidates.some((candidate) => pathMatches(pathname, candidate));
+  });
+
+  if (!matchedItem) return true;
+
+  return getAllowedKeysForRole(role).has(matchedItem.key);
+};
+
+export const subscribeToPermissionChanges = (callback) => {
+  if (typeof window === "undefined") return () => {};
+
+  window.addEventListener(PERMISSION_EVENT, callback);
+  window.addEventListener("storage", callback);
+
+  return () => {
+    window.removeEventListener(PERMISSION_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+};

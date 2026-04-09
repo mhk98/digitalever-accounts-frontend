@@ -1,9 +1,16 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+const getAuthToken = () => localStorage.getItem("token");
+
 export const notificationApi = createApi({
   reducerPath: "notificationApi",
   baseQuery: fetchBaseQuery({
     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
+    prepareHeaders: (headers) => {
+      const token = getAuthToken();
+      if (token) headers.set("Authorization", `Bearer ${token}`);
+      return headers;
+    },
   }),
 
   tagTypes: ["notification"], // Define the tag type

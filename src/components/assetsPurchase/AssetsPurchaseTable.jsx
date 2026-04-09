@@ -651,7 +651,7 @@ const AssetsPurchaseTable = () => {
             onChange={(v) => setCurrentProduct({ ...currentProduct, name: v })}
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field
               label="Quantity"
               type="number"
@@ -757,7 +757,7 @@ const AssetsPurchaseTable = () => {
             placeholder="e.g. Office Chair, Laptop Battery"
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field
               label="Quantity"
               type="number"

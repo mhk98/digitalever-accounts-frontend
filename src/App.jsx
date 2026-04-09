@@ -36,6 +36,7 @@ import POSPage from "./pages/POSPage";
 import NotificationPage from "./pages/NotificationPage";
 import SalaryPage from "./pages/SalaryPage";
 import LogoPage from "./pages/LogoPage";
+import RolePermissionsPage from "./pages/RolePermissionsPage";
 import DamageRepairPage from "./pages/DamageRepairPage";
 import DamageRepairedPage from "./pages/DamageRepairedPage";
 import PurchaseRequisitionPage from "./pages/purchaseRequisitionPage";
@@ -62,7 +63,7 @@ import DailyProfitLossPage from "./pages/DailyProfitLossPage";
 function App() {
   return (
     <Provider store={store}>
-      <div className="flex h-screen bg-gray-900 text-gray-100 overflow-hidden">
+      <div className="flex min-h-dvh bg-gray-900 text-gray-100 overflow-x-hidden">
         {/* Background */}
         <div className="fixed inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 opacity-80" />
@@ -70,7 +71,7 @@ function App() {
         </div>
 
         {/* Main content area */}
-        <div className="flex-1 overflow-auto relative z-10">
+        <div className="flex-1 relative z-10 min-h-dvh">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -561,6 +562,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <LogoPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/settings/role-permissions"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <RolePermissionsPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

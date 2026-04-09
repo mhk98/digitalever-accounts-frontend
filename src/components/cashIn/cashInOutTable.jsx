@@ -1152,7 +1152,7 @@ const CashInOutTable = () => {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end mb-6 w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-4 items-end mb-6 w-full">
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">{t.from}</label>
           <input
@@ -1288,9 +1288,9 @@ const CashInOutTable = () => {
             className="text-black"
           />
         </div>
-        <div className="hidden md:block">
+        <div className="sm:col-span-2 xl:col-span-7">
           <button
-            className="h-11 md:col-span-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 transition rounded-xl px-4 text-sm font-semibold"
+            className="h-11 w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 transition rounded-xl px-4 text-sm font-semibold"
             onClick={clearFilters}
             type="button"
           >

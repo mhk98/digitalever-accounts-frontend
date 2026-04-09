@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useUserLoginMutation } from "../../features/auth/auth";
 import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
+import { saveRolePermissionsForRole } from "../../utils/navigationPermissions";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -27,6 +28,10 @@ const Login = () => {
       localStorage.setItem("token", res.data.accessToken);
       localStorage.setItem("userId", res.data.user.Id);
       localStorage.setItem("role", res.data.user.role);
+      saveRolePermissionsForRole(
+        res.data.user.role,
+        res.data.menuPermissions || [],
+      );
       // localStorage.setItem('image', res.data.user.image)
       // localStorage.setItem('address', res.data.user.Address)
       // localStorage.setItem('mobile', res.data.user.Mobile)
