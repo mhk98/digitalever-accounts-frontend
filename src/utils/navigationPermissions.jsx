@@ -47,6 +47,7 @@ export const ROLE_OPTIONS = [
   { value: "inventor", label: "Inventor" },
   { value: "accountant", label: "Accountant" },
   { value: "staff", label: "Staff" },
+  { value: "employee", label: "Employee" },
   { value: "user", label: "User" },
 ];
 

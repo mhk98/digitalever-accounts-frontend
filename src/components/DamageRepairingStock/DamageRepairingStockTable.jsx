@@ -556,9 +556,9 @@ const DamageRepairingStockTable = () => {
               {/* <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Status
               </th> */}
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+              {/* <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Actions
-              </th>
+              </th> */}
             </tr>
           </thead>
 
@@ -628,7 +628,9 @@ const DamageRepairingStockTable = () => {
                     {rp.status}
                   </span>
                 </td> */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-3">
+                  {/* Actions
+                
+                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-3">
                     {rp.note ? (
                       <div className="relative">
                         <button
@@ -677,6 +679,8 @@ const DamageRepairingStockTable = () => {
                       </button>
                     )}
                   </td>
+                */}
+
                   {/* ✅ Note Modal (Popup) */}
                   {isNoteModalOpen && (
                     <div className="fixed inset-0 flex items-center justify-center p-4">
