@@ -143,6 +143,19 @@ import { itemMasterApi } from "../features/manufactureStock/manufactureStock";
 import { damageRepairingStockApi } from "../features/damageRepairingStock/damageRepairingStock";
 import { employeeListApi } from "../features/employeeList/employeeList";
 import { profitLossApi } from "../features/profitLoss/profitLoss";
+import { departmentApi } from "../features/department/department";
+import { designationApi } from "../features/designation/designation";
+import { shiftApi } from "../features/shift/shift";
+import { holidayApi } from "../features/holiday/holiday";
+import { attendanceDeviceApi } from "../features/attendanceDevice/attendanceDevice";
+import { attendanceEnrollmentApi } from "../features/attendanceEnrollment/attendanceEnrollment";
+import { attendanceLogApi } from "../features/attendanceLog/attendanceLog";
+import { attendanceSummaryApi } from "../features/attendanceSummary/attendanceSummary";
+import { attendanceRegularizationApi } from "../features/attendanceRegularization/attendanceRegularization";
+import { leaveTypeApi } from "../features/leaveType/leaveType";
+import { leaveRequestApi } from "../features/leaveRequest/leaveRequest";
+import { payrollRunApi } from "../features/payrollRun/payrollRun";
+import { payrollItemApi } from "../features/payrollItem/payrollItem";
 
 // ✅ 1) Collect all apis once
 const apis = [
@@ -182,6 +195,19 @@ const apis = [
   overviewApi,
   employeeApi,
   employeeListApi,
+  departmentApi,
+  designationApi,
+  shiftApi,
+  holidayApi,
+  attendanceDeviceApi,
+  attendanceEnrollmentApi,
+  attendanceLogApi,
+  attendanceSummaryApi,
+  attendanceRegularizationApi,
+  leaveTypeApi,
+  leaveRequestApi,
+  payrollRunApi,
+  payrollItemApi,
   notificationApi,
   salaryApi,
   logoApi,

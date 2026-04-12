@@ -1,15 +1,15 @@
 import Header from "../components/common/Header";
-import EmployeeMasterManager from "../components/hrm/EmployeeMasterManager";
+import PayrollRunManager from "../components/hrm/PayrollRunManager";
 
-const EmployeeListPage = () => {
+const PayrollRunPage = () => {
   return (
     <div className="flex-1 relative z-10">
-      <Header title="Employee Master" />
-
+      <Header title="Payroll Runs" />
       <main className="max-w-8xl mx-auto py-6 px-4 lg:px-8 bg-slate-50 min-h-[calc(100vh-64px)]">
-        <EmployeeMasterManager />
+        <PayrollRunManager />
       </main>
     </div>
   );
 };
-export default EmployeeListPage;
+
+export default PayrollRunPage;

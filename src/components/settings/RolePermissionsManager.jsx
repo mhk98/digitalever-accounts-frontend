@@ -9,7 +9,9 @@ import {
   DEFAULT_ROLE_PERMISSIONS,
   ROLE_OPTIONS,
   SIDEBAR_ITEMS,
+  expandPermissionKeys,
   getStoredRolePermissions,
+  normalizePermissionKeys,
   saveRolePermissionsForRole,
   saveStoredRolePermissions,
 } from "../../utils/navigationPermissions";
@@ -50,11 +52,15 @@ const RolePermissionsManager = () => {
   }, [rolePermissionsRes]);
 
   const selectedRoleDefaultKeys = useMemo(
-    () => DEFAULT_ROLE_PERMISSIONS[selectedPermissionRole] || [],
+    () =>
+      expandPermissionKeys(DEFAULT_ROLE_PERMISSIONS[selectedPermissionRole] || []),
     [selectedPermissionRole],
   );
   const selectedRoleKeys = useMemo(
-    () => rolePermissions[selectedPermissionRole] || selectedRoleDefaultKeys,
+    () =>
+      expandPermissionKeys(
+        rolePermissions[selectedPermissionRole] || selectedRoleDefaultKeys,
+      ),
     [rolePermissions, selectedPermissionRole, selectedRoleDefaultKeys],
   );
 
@@ -62,8 +68,11 @@ const RolePermissionsManager = () => {
     const currentKeys = new Set(selectedRoleKeys);
 
     const applyChildren = (menuItem, value) => {
-      if (value) currentKeys.add(menuItem.key);
-      else currentKeys.delete(menuItem.key);
+      const normalizedKey = normalizePermissionKeys([menuItem.key])[0];
+      const expandedKeys = expandPermissionKeys([menuItem.key]);
+
+      if (value) currentKeys.add(normalizedKey);
+      else expandedKeys.forEach((key) => currentKeys.delete(key));
 
       menuItem.children?.forEach((child) => applyChildren(child, value));
     };
@@ -72,7 +81,7 @@ const RolePermissionsManager = () => {
 
     setRolePermissions((prev) => ({
       ...prev,
-      [selectedPermissionRole]: Array.from(currentKeys),
+      [selectedPermissionRole]: normalizePermissionKeys(Array.from(currentKeys)),
     }));
   };
 

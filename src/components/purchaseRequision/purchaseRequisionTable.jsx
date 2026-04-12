@@ -18,6 +18,7 @@ import {
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 import Modal from "../common/Modal";
+import { useGetAllInventoryOverviewWithoutQueryQuery } from "../../features/inventoryOverview/inventoryOverview";
 
 const parseVariationValue = (value) => {
   if (Array.isArray(value)) {
@@ -264,7 +265,7 @@ const PurchaseRequisionTable = () => {
     isLoading: isLoadingAllProducts,
     isError: isErrorAllProducts,
     error: errorAllProducts,
-  } = useGetAllProductWithoutQueryQuery();
+  } = useGetAllInventoryOverviewWithoutQueryQuery();
 
   const productsData = useMemo(
     () => allProductsRes?.data || [],
@@ -280,7 +281,7 @@ const PurchaseRequisionTable = () => {
 
   const productDropdownOptions = useMemo(() => {
     return (productsData || []).map((p) => ({
-      value: String(p.Id ?? p.id ?? p._id),
+      value: String(p.Id),
       label: p.name,
     }));
   }, [productsData]);

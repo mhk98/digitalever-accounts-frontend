@@ -55,13 +55,12 @@ export const employeeListApi = createApi({
     }),
 
     getAllEmployeeList: build.query({
-      query: ({ page, limit, startDate, endDate, name }) => ({
+      query: (params = {}) => ({
         url: "/employee-list",
-        params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
+        params,
       }),
       providesTags: ["EmployeeList"],
       refetchOnMountOrArgChange: true,
-      pollingInterval: 1000,
     }),
 
     getAllEmployeeListWithoutQuery: build.query({
@@ -69,9 +68,14 @@ export const employeeListApi = createApi({
         url: "/employee-list/all",
       }),
       providesTags: ["EmployeeList"],
-
       refetchOnMountOrArgChange: true,
-      pollingInterval: 1000,
+    }),
+    getMyEmployeeProfile: build.query({
+      query: () => ({
+        url: "/employee-list/me",
+      }),
+      providesTags: ["EmployeeList"],
+      refetchOnMountOrArgChange: true,
     }),
   }),
 });
@@ -83,4 +87,5 @@ export const {
   useUpdateEmployeeListMutation,
   useGetAllEmployeeListWithoutQueryQuery,
   useGetSingleEmployeeListMutation,
+  useGetMyEmployeeProfileQuery,
 } = employeeListApi;

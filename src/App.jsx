@@ -59,6 +59,20 @@ import StockAdjustmentPage from "./pages/StockAdjustmentPage";
 import DamageRepairingStockPage from "./pages/DamageRepairingStockPage";
 import EmployeeListPage from "./pages/EmployeeListPage";
 import DailyProfitLossPage from "./pages/DailyProfitLossPage";
+import DepartmentPage from "./pages/DepartmentPage";
+import DesignationPage from "./pages/DesignationPage";
+import ShiftPage from "./pages/ShiftPage";
+import HolidayPage from "./pages/HolidayPage";
+import AttendanceDevicePage from "./pages/AttendanceDevicePage";
+import AttendanceEnrollmentPage from "./pages/AttendanceEnrollmentPage";
+import AttendanceLogsPage from "./pages/AttendanceLogsPage";
+import AttendanceSummaryPage from "./pages/AttendanceSummaryPage";
+import AttendanceRegularizationPage from "./pages/AttendanceRegularizationPage";
+import LeaveTypePage from "./pages/LeaveTypePage";
+import LeaveRequestPage from "./pages/LeaveRequestPage";
+import PayrollRunPage from "./pages/PayrollRunPage";
+import PayslipPage from "./pages/PayslipPage";
+import EmployeeProfilePage from "./pages/EmployeeProfilePage";
 
 function App() {
   return (
@@ -86,11 +100,151 @@ function App() {
               }
             />
             <Route
+              path="/employee-profile"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <EmployeeProfilePage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
               path="/employee-list"
               element={
                 <RequireAuth>
                   <SidebarLayout>
                     <EmployeeListPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/departments"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <DepartmentPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/designations"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <DesignationPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/shifts"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <ShiftPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/holidays"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <HolidayPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/attendance-devices"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <AttendanceDevicePage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/attendance-enrollments"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <AttendanceEnrollmentPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/attendance-logs"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <AttendanceLogsPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/attendance-summaries"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <AttendanceSummaryPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/attendance-regularizations"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <AttendanceRegularizationPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/leave-types"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <LeaveTypePage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/leave-requests"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <LeaveRequestPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/payroll-runs"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <PayrollRunPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/payslips"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <PayslipPage />
                   </SidebarLayout>
                 </RequireAuth>
               }
