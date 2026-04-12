@@ -3,11 +3,6 @@ import { Edit, Notebook, Plus, ShoppingBasket, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
-
-import {
-  useGetAllProductWithoutQueryQuery,
-  useGetSingleProductByIdQuery,
-} from "../../features/product/product";
 import {
   useDeletePurchaseRequisitionMutation,
   useGetAllPurchaseRequisitionQuery,
@@ -18,7 +13,10 @@ import {
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 import Modal from "../common/Modal";
-import { useGetAllInventoryOverviewWithoutQueryQuery } from "../../features/inventoryOverview/inventoryOverview";
+import {
+  useGetAllProductWithoutQueryQuery,
+  useGetSingleReceivedProductByIdQuery,
+} from "../../features/product/product";
 
 const parseVariationValue = (value) => {
   if (Array.isArray(value)) {
@@ -265,7 +263,7 @@ const PurchaseRequisionTable = () => {
     isLoading: isLoadingAllProducts,
     isError: isErrorAllProducts,
     error: errorAllProducts,
-  } = useGetAllInventoryOverviewWithoutQueryQuery();
+  } = useGetAllProductWithoutQueryQuery();
 
   const productsData = useMemo(
     () => allProductsRes?.data || [],
@@ -289,11 +287,11 @@ const PurchaseRequisionTable = () => {
   const selectedCreateProductId = createProduct?.productId || undefined;
   const selectedEditProductId = currentProduct?.productId || undefined;
 
-  const { data: selectedCreateProductRes } = useGetSingleProductByIdQuery(
-    selectedCreateProductId,
-    { skip: !selectedCreateProductId },
-  );
-  const { data: selectedEditProductRes } = useGetSingleProductByIdQuery(
+  const { data: selectedCreateProductRes } =
+    useGetSingleReceivedProductByIdQuery(selectedCreateProductId, {
+      skip: !selectedCreateProductId,
+    });
+  const { data: selectedEditProductRes } = useGetSingleReceivedProductByIdQuery(
     selectedEditProductId,
     { skip: !selectedEditProductId },
   );
