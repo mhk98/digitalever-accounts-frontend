@@ -3,6 +3,7 @@ import { Edit, Minus, Notebook, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
+  useApprovePettyCashMutation,
   useDeletePettyCashMutation,
   useGetAllPettyCashQuery,
   useInsertPettyCashMutation,
@@ -49,7 +50,8 @@ const STATIC_CATEGORIES = [
   "Utility Bill",
   "Other",
 ];
-const PettyCashTable = () => {
+const PettyCashTable = ({ mode = "default" }) => {
+  const isRequisitionMode = mode === "requisition";
   const [isModalOpen, setIsModalOpen] = useState(false); // edit
   const [isModalOpen1, setIsModalOpen1] = useState(false); // add
   const [currentProduct, setCurrentProduct] = useState(null);
@@ -161,7 +163,10 @@ const PettyCashTable = () => {
       endDate: endDate || undefined,
       category: filterCategory || undefined,
       paymentMode: filterPaymentMode || undefined,
-      paymentStatus: filterPaymentStatus || undefined,
+      paymentStatus: isRequisitionMode
+        ? "CashIn"
+        : filterPaymentStatus || undefined,
+      status: isRequisitionMode ? "Pending" : "Active,Approved",
       searchTerm: searchTerm || undefined, // ensure it's included in the query
     };
 
@@ -180,6 +185,7 @@ const PettyCashTable = () => {
     filterPaymentStatus,
     filterCategory,
     searchTerm,
+    isRequisitionMode,
   ]);
 
   console.log("queryArgs", queryArgs);
@@ -466,6 +472,7 @@ const PettyCashTable = () => {
 
   // insert
   const [insertPettyCash] = useInsertPettyCashMutation();
+  const [approvePettyCash] = useApprovePettyCashMutation();
   const handleCreateProduct = async (e) => {
     e.preventDefault();
 
@@ -493,6 +500,9 @@ const PettyCashTable = () => {
       formData.append("paymentMode", createProduct.paymentMode);
       formData.append("date", createProduct.date);
       formData.append("paymentStatus", "CashIn");
+      if (isRequisitionMode) {
+        formData.append("status", "Pending");
+      }
       formData.append(
         "bankName",
         createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
@@ -523,6 +533,20 @@ const PettyCashTable = () => {
       } else toast.error(res?.message || "Create failed!");
     } catch (err) {
       toast.error(err?.data?.message || "Create failed!");
+    }
+  };
+
+  const handleApproveRequisition = async (rowId) => {
+    try {
+      const res = await approvePettyCash(rowId).unwrap();
+      if (res?.success) {
+        toast.success("Requisition approved successfully!");
+        refetch?.();
+      } else {
+        toast.error(res?.message || "Approval failed!");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Approval failed!");
     }
   };
   const handleCreateProduct1 = async (e) => {
@@ -696,96 +720,102 @@ const PettyCashTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-        {/* CashIn */}
-        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-emerald-50/70 to-transparent" />
-          <div className="relative flex items-start justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500">Total CashIn</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
-                {isLoading
-                  ? "—"
-                  : Number(data?.meta?.totalCashIn || 0).toLocaleString()}
-              </p>
-            </div>
+      {!isRequisitionMode && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+          {/* CashIn */}
+          <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-emerald-50/70 to-transparent" />
+            <div className="relative flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium text-slate-500">
+                  Total CashIn
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                  {isLoading
+                    ? "—"
+                    : Number(data?.meta?.totalCashIn || 0).toLocaleString()}
+                </p>
+              </div>
 
-            <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5 text-emerald-600"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M12 19V5" />
-                <path d="M5 12l7-7 7 7" />
-              </svg>
+              <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5 text-emerald-600"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M12 19V5" />
+                  <path d="M5 12l7-7 7 7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* CashOut */}
+          <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-rose-50/70 to-transparent" />
+            <div className="relative flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium text-slate-500">
+                  Total CashOut
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                  {isLoading
+                    ? "—"
+                    : Number(data?.meta?.totalCashOut || 0).toLocaleString()}
+                </p>
+              </div>
+
+              <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5 text-rose-600"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M12 5v14" />
+                  <path d="M19 12l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Net */}
+          <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-indigo-50/70 to-transparent" />
+            <div className="relative flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium text-slate-500">
+                  Net Balance
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                  {isLoading
+                    ? "—"
+                    : Number(data?.meta?.netBalance || 0).toLocaleString()}
+                </p>
+              </div>
+
+              <div className="h-10 w-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5 text-indigo-600"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M4 19V5" />
+                  <path d="M8 17V7" />
+                  <path d="M12 19V9" />
+                  <path d="M16 15V5" />
+                  <path d="M20 19V11" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* CashOut */}
-        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-rose-50/70 to-transparent" />
-          <div className="relative flex items-start justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500">
-                Total CashOut
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
-                {isLoading
-                  ? "—"
-                  : Number(data?.meta?.totalCashOut || 0).toLocaleString()}
-              </p>
-            </div>
-
-            <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5 text-rose-600"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M12 5v14" />
-                <path d="M19 12l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Net */}
-        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-indigo-50/70 to-transparent" />
-          <div className="relative flex items-start justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500">Net Balance</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
-                {isLoading
-                  ? "—"
-                  : Number(data?.meta?.netBalance || 0).toLocaleString()}
-              </p>
-            </div>
-
-            <div className="h-10 w-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5 text-indigo-600"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M4 19V5" />
-                <path d="M8 17V7" />
-                <path d="M12 19V9" />
-                <path d="M16 15V5" />
-                <path d="M20 19V11" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Header row */}
       {/* <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -819,18 +849,19 @@ const PettyCashTable = () => {
             className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 active:bg-indigo-800 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/30 sm:w-auto"
           >
             <Plus size={18} />
-            Cash In
+            {isRequisitionMode ? "Petty Cash Requisition" : "Cash In"}
           </button>
 
-          {/* Cash Out (Secondary / Neutral) */}
-          <button
-            type="button"
-            onClick={handleAddCashOut}
-            className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-800 border border-slate-200 shadow-md hover:bg-slate-50 active:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/20 sm:w-auto"
-          >
-            <Minus size={18} className="text-slate-700" />
-            Cash Out
-          </button>
+          {!isRequisitionMode && (
+            <button
+              type="button"
+              onClick={handleAddCashOut}
+              className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-800 border border-slate-200 shadow-md hover:bg-slate-50 active:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/20 sm:w-auto"
+            >
+              <Minus size={18} className="text-slate-700" />
+              Cash Out
+            </button>
+          )}
         </div>
 
         {/* Right: Search Input */}
@@ -852,17 +883,19 @@ const PettyCashTable = () => {
         </div>
 
         {/* Right: Report Menu */}
-        <div className="flex w-full justify-end sm:w-auto">
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-md">
-            <ReportMenu
-              isOpen={isReportMenuOpen}
-              setIsOpen={setIsReportMenuOpen}
-              onGoogleSheet={handleReportSheet}
-              onPdf={handleReportPdf}
-              disabled={isLoading}
-            />
+        {!isRequisitionMode && (
+          <div className="flex w-full justify-end sm:w-auto">
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-md">
+              <ReportMenu
+                isOpen={isReportMenuOpen}
+                setIsOpen={setIsReportMenuOpen}
+                onGoogleSheet={handleReportSheet}
+                onPdf={handleReportPdf}
+                disabled={isLoading}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -906,24 +939,28 @@ const PettyCashTable = () => {
           />
         </div>
 
-        <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Payment Status:</label>
-          <Select
-            options={paymentStatusOptions}
-            value={
-              paymentStatusOptions.find(
-                (option) => option.value === filterPaymentStatus,
-              ) || null
-            }
-            onChange={(selected) =>
-              setFilterPaymentStatus(selected?.value || "")
-            }
-            placeholder="All"
-            isClearable
-            styles={selectStyles}
-            className="text-black"
-          />
-        </div>
+        {!isRequisitionMode && (
+          <div className="flex flex-col">
+            <label className="text-sm text-slate-600 mb-1">
+              Payment Status:
+            </label>
+            <Select
+              options={paymentStatusOptions}
+              value={
+                paymentStatusOptions.find(
+                  (option) => option.value === filterPaymentStatus,
+                ) || null
+              }
+              onChange={(selected) =>
+                setFilterPaymentStatus(selected?.value || "")
+              }
+              placeholder="All"
+              isClearable
+              styles={selectStyles}
+              className="text-black"
+            />
+          </div>
+        )}
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Category:</label>
           <Select
@@ -1017,7 +1054,7 @@ const PettyCashTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? ` http://localhost:5000${safePath}`
+                ? ` https://apikafela.digitalever.com.bd${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -1185,6 +1222,17 @@ const PettyCashTable = () => {
                       >
                         <Edit size={18} />
                       </button>
+
+                      {isRequisitionMode &&
+                      (role === "superAdmin" || role === "admin") ? (
+                        <button
+                          onClick={() => handleApproveRequisition(rowId)}
+                          className="rounded-lg bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                          type="button"
+                        >
+                          Approve
+                        </button>
+                      ) : null}
 
                       {role === "superAdmin" || role === "admin" ? (
                         <button
@@ -1471,7 +1519,9 @@ const PettyCashTable = () => {
       <Modal
         isOpen={isModalOpen1}
         onClose={handleModalClose1}
-        title="Add Petty Cash In"
+        title={
+          isRequisitionMode ? "Add Petty Cash Requisition" : "Add Petty Cash In"
+        }
         maxWidth="max-w-2xl"
       >
         <form onSubmit={handleCreateProduct} className="space-y-6">
@@ -1638,7 +1688,7 @@ const PettyCashTable = () => {
               type="submit"
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
             >
-              Confirm Cash In
+              {isRequisitionMode ? "Submit Requisition" : "Confirm Cash In"}
             </button>
           </div>
         </form>

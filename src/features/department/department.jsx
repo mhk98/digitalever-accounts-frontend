@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const departmentApi = createApi({
   reducerPath: "departmentApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1",
+    baseUrl: "https://apikafela.digitalever.com.bd/api/v1",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -31,9 +31,17 @@ export const departmentApi = createApi({
       invalidatesTags: ["Department"],
     }),
     deleteDepartment: build.mutation({
-      query: (id) => ({
+      query: ({ id, note }) => ({
         url: `/department/${id}`,
         method: "DELETE",
+        body: note ? { note } : undefined,
+      }),
+      invalidatesTags: ["Department"],
+    }),
+    approveDepartment: build.mutation({
+      query: (id) => ({
+        url: `/department/${id}/approve`,
+        method: "POST",
       }),
       invalidatesTags: ["Department"],
     }),
@@ -52,5 +60,6 @@ export const {
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,
   useDeleteDepartmentMutation,
+  useApproveDepartmentMutation,
   useGetAllDepartmentsQuery,
 } = departmentApi;

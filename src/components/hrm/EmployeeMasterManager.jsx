@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   BriefcaseBusiness,
+  CheckCircle2,
   Edit,
+  Eye,
   Landmark,
   Mail,
   Plus,
@@ -15,6 +17,7 @@ import toast from "react-hot-toast";
 import Modal from "../common/Modal";
 import HrmWorkspace from "./HrmWorkspace";
 import {
+  useApproveEmployeeListMutation,
   useDeleteEmployeeListMutation,
   useGetAllEmployeeListQuery,
   useInsertEmployeeListMutation,
@@ -45,11 +48,17 @@ const initialForm = {
 };
 
 const EmployeeMasterManager = () => {
+  const currentRole = localStorage.getItem("role");
+  const isPrivilegedUser =
+    currentRole === "superAdmin" || currentRole === "admin";
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteRequestOpen, setIsDeleteRequestOpen] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [currentItem, setCurrentItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteRequestNote, setDeleteRequestNote] = useState("");
 
   const queryArgs = useMemo(
     () => ({
@@ -81,6 +90,8 @@ const EmployeeMasterManager = () => {
   const [updateEmployee, { isLoading: isUpdating }] =
     useUpdateEmployeeListMutation();
   const [deleteEmployee] = useDeleteEmployeeListMutation();
+  const [approveEmployee, { isLoading: isApproving }] =
+    useApproveEmployeeListMutation();
 
   const rows = data?.data || [];
   const managerRows = managerRowsRes?.data || [];
@@ -229,6 +240,17 @@ const EmployeeMasterManager = () => {
     resetForm();
   };
 
+  const closeDeleteRequest = () => {
+    setIsDeleteRequestOpen(false);
+    setCurrentItem(null);
+    setDeleteRequestNote("");
+  };
+
+  const closeReview = () => {
+    setIsReviewOpen(false);
+    setCurrentItem(null);
+  };
+
   const openEdit = (item) => {
     setCurrentItem(item);
     setForm({
@@ -290,7 +312,7 @@ const EmployeeMasterManager = () => {
     try {
       const res = await createEmployee(buildPayload()).unwrap();
       if (res?.success) {
-        toast.success("Employee created successfully");
+        toast.success(res?.message || "Employee created successfully");
         closeCreate();
         refetch?.();
       }
@@ -309,7 +331,7 @@ const EmployeeMasterManager = () => {
         data: buildPayload(),
       }).unwrap();
       if (res?.success) {
-        toast.success("Employee updated successfully");
+        toast.success(res?.message || "Employee updated successfully");
         closeEdit();
         refetch?.();
       }
@@ -319,17 +341,60 @@ const EmployeeMasterManager = () => {
   };
 
   const handleDelete = async (item) => {
+    if (!isPrivilegedUser) {
+      setCurrentItem(item);
+      setDeleteRequestNote("");
+      setIsDeleteRequestOpen(true);
+      return;
+    }
+
     const confirmed = window.confirm(`Delete employee ${item.name}?`);
     if (!confirmed) return;
 
     try {
-      const res = await deleteEmployee(item.Id).unwrap();
+      const res = await deleteEmployee({ id: item.Id }).unwrap();
       if (res?.success) {
-        toast.success("Employee deleted successfully");
+        toast.success(res?.message || "Employee deleted successfully");
         refetch?.();
       }
     } catch (error) {
       toast.error(error?.data?.message || "Failed to delete employee");
+    }
+  };
+
+  const submitDeleteRequest = async (e) => {
+    e.preventDefault();
+    if (!deleteRequestNote.trim()) {
+      toast.error("Please write why you want to delete this employee");
+      return;
+    }
+
+    try {
+      const res = await deleteEmployee({
+        id: currentItem?.Id,
+        note: deleteRequestNote.trim(),
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success(res?.message || "Delete request submitted");
+        closeDeleteRequest();
+        refetch?.();
+      }
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to submit delete request");
+    }
+  };
+
+  const handleApprove = async (item) => {
+    try {
+      const res = await approveEmployee(item.Id).unwrap();
+      if (res?.success) {
+        toast.success(res?.message || "Employee approved successfully");
+        closeReview();
+        refetch?.();
+      }
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to approve employee");
     }
   };
 
@@ -871,6 +936,27 @@ const EmployeeMasterManager = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
+                        {(row.pendingAction || row.approvalNote) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCurrentItem(row);
+                              setIsReviewOpen(true);
+                            }}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-600"
+                          >
+                            <Eye size={16} />
+                          </button>
+                        )}
+                        {isPrivilegedUser && row.status === "Pending" && (
+                            <button
+                              type="button"
+                              onClick={() => handleApprove(row)}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600"
+                            >
+                              <CheckCircle2 size={16} />
+                            </button>
+                          )}
                         <button
                           type="button"
                           onClick={() => openEdit(row)}
@@ -925,6 +1011,93 @@ const EmployeeMasterManager = () => {
         maxWidth="max-w-5xl"
       >
         {renderForm(handleUpdate, isUpdating)}
+      </Modal>
+
+      <Modal
+        isOpen={isDeleteRequestOpen}
+        onClose={closeDeleteRequest}
+        title="Delete Employee"
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={submitDeleteRequest} className="space-y-4">
+          <p className="text-sm text-slate-600">
+            Admin approval is required before this employee can be deleted. Please write the reason for deletion.
+          </p>
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-slate-700">
+              Delete Note
+            </span>
+            <textarea
+              rows={5}
+              value={deleteRequestNote}
+              onChange={(e) => setDeleteRequestNote(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition"
+              placeholder="Why should this employee be deleted?"
+            />
+          </label>
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-600"
+            >
+              Submit Request
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={isReviewOpen}
+        onClose={closeReview}
+        title="Employee Review"
+        maxWidth="max-w-2xl"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                Status
+              </div>
+              <div className="mt-2 text-lg font-bold text-slate-900">
+                {currentItem?.status || "-"}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                Pending Action
+              </div>
+              <div className="mt-2 text-lg font-bold text-slate-900">
+                {currentItem?.pendingAction || "None"}
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Request Note
+            </div>
+            <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+              {currentItem?.approvalNote || "No note added."}
+            </p>
+          </div>
+          {isPrivilegedUser && currentItem?.status === "Pending" && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => handleApprove(currentItem)}
+                  disabled={isApproving}
+                  className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+                >
+                  {isApproving
+                    ? currentItem?.pendingAction === "Delete"
+                      ? "Deleting..."
+                      : "Approving..."
+                    : currentItem?.pendingAction === "Delete"
+                      ? "Approve & Delete"
+                      : "Approve"}
+                </button>
+              </div>
+            )}
+        </div>
       </Modal>
     </HrmWorkspace>
   );

@@ -6,7 +6,9 @@ import HrmWorkspace from "./HrmWorkspace";
 import {
   useCreateAttendanceLogMutation,
   useGetAllAttendanceLogsQuery,
+  useGetAttendanceRealtimeMonitorQuery,
   useProcessDailyAttendanceMutation,
+  useReceiveRealtimeAttendanceLogMutation,
 } from "../../features/attendanceLog/attendanceLog";
 import { useGetAllAttendanceDevicesQuery } from "../../features/attendanceDevice/attendanceDevice";
 import { useGetAllAttendanceEnrollmentsQuery } from "../../features/attendanceEnrollment/attendanceEnrollment";
@@ -23,11 +25,23 @@ const initialForm = {
   note: "",
 };
 
+const initialRealtimeForm = {
+  attendanceDeviceId: "",
+  deviceIdentifier: "",
+  deviceUserId: "",
+  punchTime: new Date().toISOString().slice(0, 16),
+  punchType: "check",
+  verificationMethod: "face",
+  autoProcess: true,
+};
+
 const AttendanceLogsManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isRealtimeOpen, setIsRealtimeOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
+  const [realtimeForm, setRealtimeForm] = useState(initialRealtimeForm);
 
   const queryArgs = useMemo(
     () => ({
@@ -41,6 +55,7 @@ const AttendanceLogsManager = () => {
   );
 
   const { data, isLoading, refetch } = useGetAllAttendanceLogsQuery(queryArgs);
+  const { data: monitorRes } = useGetAttendanceRealtimeMonitorQuery(selectedDate);
   const { data: summariesRes } = useGetAllAttendanceSummariesQuery({
     page: 1,
     limit: 200,
@@ -54,32 +69,53 @@ const AttendanceLogsManager = () => {
   });
 
   const [createLog, { isLoading: isCreating }] = useCreateAttendanceLogMutation();
+  const [receiveRealtimeLog, { isLoading: isRealtimeSending }] =
+    useReceiveRealtimeAttendanceLogMutation();
   const [processDaily, { isLoading: isProcessing }] = useProcessDailyAttendanceMutation();
 
   const rows = data?.data || [];
   const devices = devicesRes?.data || [];
   const enrollments = enrollmentsRes?.data || [];
   const summaries = summariesRes?.data || [];
+  const monitor = monitorRes?.data || {};
 
   const stats = [
     {
       name: "Raw Logs",
-      value: rows.length,
+      value: monitor.totalLogs ?? rows.length,
       icon: Fingerprint,
       iconBg: "#EEF2FF",
       iconColor: "#4338CA",
     },
     {
       name: "Processed Summary Rows",
-      value: summaries.length,
+      value: monitor.processedSummaries ?? summaries.length,
       icon: Cpu,
       iconBg: "#ECFDF5",
       iconColor: "#047857",
+    },
+    {
+      name: "Pending Logs",
+      value: monitor.pendingLogs ?? 0,
+      icon: Play,
+      iconBg: "#FEF3C7",
+      iconColor: "#B45309",
+    },
+    {
+      name: "Unmatched Logs",
+      value: monitor.unmatchedLogs ?? 0,
+      icon: Search,
+      iconBg: "#FEE2E2",
+      iconColor: "#B91C1C",
     },
   ];
 
   const setFieldValue = (name, value) => {
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const setRealtimeFieldValue = (name, value) => {
+    setRealtimeForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleCreate = async (e) => {
@@ -118,6 +154,49 @@ const AttendanceLogsManager = () => {
       toast.success(res?.data?.processedEmployees ? `Processed ${res.data.processedEmployees} employees` : "Attendance processed");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to process attendance");
+    }
+  };
+
+  const handleRealtimeCreate = async (e) => {
+    e.preventDefault();
+    if (!realtimeForm.attendanceDeviceId && !realtimeForm.deviceIdentifier) {
+      return toast.error("Select a device or provide a device identifier");
+    }
+    if (!realtimeForm.deviceUserId) {
+      return toast.error("Device user id is required");
+    }
+    if (!realtimeForm.punchTime) {
+      return toast.error("Punch time is required");
+    }
+
+    try {
+      const res = await receiveRealtimeLog({
+        attendanceDeviceId: realtimeForm.attendanceDeviceId
+          ? Number(realtimeForm.attendanceDeviceId)
+          : null,
+        deviceIdentifier: realtimeForm.deviceIdentifier || null,
+        deviceUserId: realtimeForm.deviceUserId,
+        punchTime: new Date(realtimeForm.punchTime).toISOString(),
+        punchType: realtimeForm.punchType,
+        verificationMethod: realtimeForm.verificationMethod,
+        autoProcess: realtimeForm.autoProcess,
+        sourcePayload: {
+          source: "realtime-test-panel",
+        },
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success(
+          res.data?.duplicate
+            ? "Duplicate punch ignored"
+            : "Realtime punch received",
+        );
+        setIsRealtimeOpen(false);
+        setRealtimeForm(initialRealtimeForm);
+        refetch?.();
+      }
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to send realtime punch");
     }
   };
 
@@ -173,6 +252,68 @@ const AttendanceLogsManager = () => {
               <Plus size={16} />
               Add Raw Log
             </button>
+            <button
+              type="button"
+              onClick={() => setIsRealtimeOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700"
+            >
+              <Cpu size={16} />
+              Realtime Test
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="text-sm font-bold text-slate-900">Realtime Monitor</div>
+          <div className="mt-3 space-y-3 text-sm text-slate-600">
+            <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+              <span>Active Devices</span>
+              <span className="font-bold text-slate-900">{monitor.activeDevices ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+              <span>Stale Devices</span>
+              <span className="font-bold text-slate-900">{monitor.staleDevices ?? 0}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
+          <div className="text-sm font-bold text-slate-900">Latest Punch Snapshot</div>
+          <div className="mt-3 rounded-2xl bg-slate-50 p-4">
+            {monitor.lastLog ? (
+              <div className="grid grid-cols-1 gap-3 text-sm text-slate-600 md:grid-cols-4">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Employee</div>
+                  <div className="mt-1 font-semibold text-slate-900">
+                    {monitor.lastLog.employee?.name || "Unmatched"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Device User</div>
+                  <div className="mt-1 font-semibold text-slate-900">
+                    {monitor.lastLog.deviceUserId}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Device</div>
+                  <div className="mt-1 font-semibold text-slate-900">
+                    {monitor.lastLog.device?.name || "-"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Punch Time</div>
+                  <div className="mt-1 font-semibold text-slate-900">
+                    {monitor.lastLog.punchTime
+                      ? new Date(monitor.lastLog.punchTime).toLocaleString()
+                      : "-"}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-slate-500">No realtime punch received yet.</div>
+            )}
           </div>
         </div>
       </div>
@@ -246,6 +387,144 @@ const AttendanceLogsManager = () => {
           </table>
         </div>
       </div>
+
+      <Modal
+        isOpen={isRealtimeOpen}
+        onClose={() => setIsRealtimeOpen(false)}
+        title="Send Realtime Test Punch"
+        maxWidth="max-w-4xl"
+      >
+        <form onSubmit={handleRealtimeCreate} className="space-y-5">
+          <div className="rounded-2xl border border-sky-200 bg-sky-50/70 px-4 py-3 text-sm text-sky-800">
+            This uses the realtime ingest API. After machine integration, the
+            biometric middleware will send the same style of payload.
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Device</span>
+              <select
+                value={realtimeForm.attendanceDeviceId}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  const selectedDevice = devices.find(
+                    (device) => String(device.Id) === String(nextId),
+                  );
+                  setRealtimeForm((prev) => ({
+                    ...prev,
+                    attendanceDeviceId: nextId,
+                    deviceIdentifier:
+                      selectedDevice?.deviceIdentifier || prev.deviceIdentifier,
+                  }));
+                }}
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              >
+                <option value="">Select Device</option>
+                {devices.map((device) => (
+                  <option key={device.Id} value={device.Id}>
+                    {device.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Device Identifier</span>
+              <input
+                value={realtimeForm.deviceIdentifier}
+                onChange={(e) =>
+                  setRealtimeFieldValue("deviceIdentifier", e.target.value)
+                }
+                placeholder="Optional if device is selected"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Device User ID</span>
+              <input
+                value={realtimeForm.deviceUserId}
+                onChange={(e) =>
+                  setRealtimeFieldValue("deviceUserId", e.target.value)
+                }
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                list="attendance-realtime-device-user-ids"
+              />
+              <datalist id="attendance-realtime-device-user-ids">
+                {enrollments.map((enrollment) => (
+                  <option key={enrollment.Id} value={enrollment.deviceUserId}>
+                    {enrollment.employee?.name}
+                  </option>
+                ))}
+              </datalist>
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Punch Time</span>
+              <input
+                type="datetime-local"
+                value={realtimeForm.punchTime}
+                onChange={(e) =>
+                  setRealtimeFieldValue("punchTime", e.target.value)
+                }
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Verification Method</span>
+              <select
+                value={realtimeForm.verificationMethod}
+                onChange={(e) =>
+                  setRealtimeFieldValue("verificationMethod", e.target.value)
+                }
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              >
+                <option value="face">Face</option>
+                <option value="fingerprint">Fingerprint</option>
+                <option value="card">Card</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Punch Type</span>
+              <select
+                value={realtimeForm.punchType}
+                onChange={(e) =>
+                  setRealtimeFieldValue("punchType", e.target.value)
+                }
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              >
+                <option value="check">Check</option>
+                <option value="in">In</option>
+                <option value="out">Out</option>
+              </select>
+            </label>
+
+            <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 md:col-span-2">
+              <input
+                type="checkbox"
+                checked={realtimeForm.autoProcess}
+                onChange={(e) =>
+                  setRealtimeFieldValue("autoProcess", e.target.checked)
+                }
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              Auto process the day immediately after receiving the punch
+            </label>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={isRealtimeSending}
+              className="rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:opacity-60"
+            >
+              {isRealtimeSending ? "Sending..." : "Send Realtime Punch"}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       <Modal
         isOpen={isCreateOpen}

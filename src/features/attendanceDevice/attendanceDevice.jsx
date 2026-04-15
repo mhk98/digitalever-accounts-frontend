@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const attendanceDeviceApi = createApi({
   reducerPath: "attendanceDeviceApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1",
+    baseUrl: "https://apikafela.digitalever.com.bd/api/v1",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -31,9 +31,17 @@ export const attendanceDeviceApi = createApi({
       invalidatesTags: ["AttendanceDevice"],
     }),
     deleteAttendanceDevice: build.mutation({
-      query: (id) => ({
+      query: ({ id, note }) => ({
         url: `/attendance-device/${id}`,
         method: "DELETE",
+        body: note ? { note } : undefined,
+      }),
+      invalidatesTags: ["AttendanceDevice"],
+    }),
+    approveAttendanceDevice: build.mutation({
+      query: (id) => ({
+        url: `/attendance-device/${id}/approve`,
+        method: "POST",
       }),
       invalidatesTags: ["AttendanceDevice"],
     }),
@@ -52,5 +60,6 @@ export const {
   useCreateAttendanceDeviceMutation,
   useUpdateAttendanceDeviceMutation,
   useDeleteAttendanceDeviceMutation,
+  useApproveAttendanceDeviceMutation,
   useGetAllAttendanceDevicesQuery,
 } = attendanceDeviceApi;

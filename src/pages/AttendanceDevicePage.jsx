@@ -1,6 +1,7 @@
 import Header from "../components/common/Header";
 import HrmCrudManager from "../components/hrm/HrmCrudManager";
 import {
+  useApproveAttendanceDeviceMutation,
   useCreateAttendanceDeviceMutation,
   useDeleteAttendanceDeviceMutation,
   useGetAllAttendanceDevicesQuery,
@@ -23,6 +24,7 @@ const AttendanceDevicePage = () => {
             { name: "model", label: "Model", defaultValue: "SpeedFace-V5L" },
             { name: "serialNumber", label: "Serial Number" },
             { name: "deviceIdentifier", label: "Device Identifier" },
+            { name: "apiKey", label: "Device API Key" },
             { name: "ipAddress", label: "IP Address" },
             { name: "branch", label: "Branch" },
             { name: "location", label: "Location" },
@@ -63,6 +65,7 @@ const AttendanceDevicePage = () => {
           useCreateMutation={useCreateAttendanceDeviceMutation}
           useUpdateMutation={useUpdateAttendanceDeviceMutation}
           useDeleteMutation={useDeleteAttendanceDeviceMutation}
+          useApproveMutation={useApproveAttendanceDeviceMutation}
         />
       </main>
     </div>

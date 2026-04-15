@@ -3,10 +3,10 @@ import { Edit, Notebook, Plus, ShoppingBasket, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
+import { useGetAllAssetsStockWithoutQueryQuery } from "../../features/assetsStock/assetsStock";
 import {
   useDeleteAssetsPurchaseMutation,
   useGetAllAssetsPurchaseQuery,
-  useGetAllAssetsPurchaseWithoutQueryQuery,
   useInsertAssetsPurchaseMutation,
   useUpdateAssetsPurchaseMutation,
 } from "../../features/assetsPurchase/assetsPurchase";
@@ -22,7 +22,7 @@ const AssetsPurchaseTable = () => {
   const [currentProduct, setCurrentProduct] = useState(null);
 
   const [createProduct, setCreateProduct] = useState({
-    name: "",
+    productId: "",
     price: "",
     quantity: "",
     note: "",
@@ -55,7 +55,7 @@ const AssetsPurchaseTable = () => {
     isLoading: isLoading2,
     isError: isError2,
     error: error2,
-  } = useGetAllAssetsPurchaseWithoutQueryQuery();
+  } = useGetAllAssetsStockWithoutQueryQuery();
 
   useEffect(() => {
     if (isError2) {
@@ -133,6 +133,7 @@ const AssetsPurchaseTable = () => {
   const handleEditClick1 = (product) => {
     setCurrentProduct({
       ...product,
+      productId: String(product.productId ?? ""),
       price: product.price ?? "",
       note: product.note ?? "",
       status: product.status ?? "",
@@ -149,7 +150,7 @@ const AssetsPurchaseTable = () => {
 
     try {
       const payload = {
-        name: currentProduct.name.trim(),
+        productId: Number(currentProduct.productId),
         quantity: Number(currentProduct.quantity),
         price: Number(currentProduct.price),
         note: currentProduct.note,
@@ -178,6 +179,7 @@ const AssetsPurchaseTable = () => {
   const handleEditClick = (product) => {
     setCurrentProduct({
       ...product,
+      productId: String(product.productId ?? ""),
       price: product.price ?? "",
       note: product.note ?? "",
       status: product.status ?? "",
@@ -190,7 +192,7 @@ const AssetsPurchaseTable = () => {
 
   const handleUpdateProduct = async () => {
     if (!currentProduct?.Id) return toast.error("Invalid item!");
-    if (!currentProduct?.name?.trim()) return toast.error("Name is required!");
+    if (!currentProduct?.productId) return toast.error("Asset is required!");
     if (currentProduct?.price === "" || currentProduct?.price === null)
       return toast.error("Price is required!");
     if (currentProduct?.quantity === "" || currentProduct?.quantity === null)
@@ -198,7 +200,7 @@ const AssetsPurchaseTable = () => {
 
     try {
       const payload = {
-        name: currentProduct.name.trim(),
+        productId: Number(currentProduct.productId),
         quantity: Number(currentProduct.quantity),
         price: Number(currentProduct.price),
         note: currentProduct.note,
@@ -230,13 +232,13 @@ const AssetsPurchaseTable = () => {
   const handleCreateProduct = async (e) => {
     e.preventDefault();
 
-    if (!createProduct.name?.trim()) return toast.error("Name is required!");
+    if (!createProduct.productId) return toast.error("Asset is required!");
     if (!createProduct.price) return toast.error("Price is required!");
     if (!createProduct.quantity) return toast.error("Quantity is required!");
 
     try {
       const payload = {
-        name: createProduct.name.trim(),
+        productId: Number(createProduct.productId),
         quantity: Number(createProduct.quantity),
         price: Number(createProduct.price),
         date: createProduct.date,
@@ -247,7 +249,7 @@ const AssetsPurchaseTable = () => {
       if (res?.success) {
         toast.success("Successfully created product");
         setIsModalOpen1(false);
-        setCreateProduct({ name: "", price: "", quantity: "", note: "", date: new Date().toISOString().slice(0, 10) });
+        setCreateProduct({ productId: "", price: "", quantity: "", note: "", date: new Date().toISOString().slice(0, 10) });
         refetch?.();
       } else {
         toast.error(res?.message || "Create failed!");
@@ -304,7 +306,7 @@ const AssetsPurchaseTable = () => {
   const productOptions = useMemo(
     () =>
       (productsData || []).map((p) => ({
-        value: p.name,
+        value: String(p.Id),
         label: p.name,
       })),
     [productsData],
@@ -411,9 +413,9 @@ const AssetsPurchaseTable = () => {
         <div className="flex items-center justify-center md:mt-0">
           <Select
             options={productOptions}
-            value={productOptions.find((o) => o.value === name) || null}
+            value={productOptions.find((o) => o.label === name) || null}
             onChange={(selected) =>
-              setName(selected?.value ? String(selected.value) : "")
+              setName(selected?.label ? String(selected.label) : "")
             }
             placeholder="Select Assets"
             isClearable
@@ -645,11 +647,28 @@ const AssetsPurchaseTable = () => {
             onChange={(v) => setCurrentProduct({ ...currentProduct, date: v })}
             required
           />
-          <Field
-            label="Asset Name"
-            value={currentProduct?.name || ""}
-            onChange={(v) => setCurrentProduct({ ...currentProduct, name: v })}
-          />
+          <div>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Asset Name</label>
+            <Select
+              options={productOptions}
+              value={
+                currentProduct?.productId
+                  ? productOptions.find((o) => o.value === String(currentProduct.productId)) || null
+                  : null
+              }
+              onChange={(selected) =>
+                setCurrentProduct({
+                  ...currentProduct,
+                  productId: selected?.value || "",
+                })
+              }
+              placeholder="Select Asset"
+              isClearable
+              isDisabled={isLoading2}
+              styles={selectStyles}
+              className="w-full"
+            />
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field
@@ -704,6 +723,28 @@ const AssetsPurchaseTable = () => {
       {/* Delete/Status Request Modal */}
       <Modal isOpen={isModalOpen2} onClose={handleModalClose2} title="Action Request / Note Update">
         <div className="space-y-5">
+          <div>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Asset Name</label>
+            <Select
+              options={productOptions}
+              value={
+                currentProduct?.productId
+                  ? productOptions.find((o) => o.value === String(currentProduct.productId)) || null
+                  : null
+              }
+              onChange={(selected) =>
+                setCurrentProduct({
+                  ...currentProduct,
+                  productId: selected?.value || "",
+                })
+              }
+              placeholder="Select Asset"
+              isClearable
+              isDisabled={isLoading2}
+              styles={selectStyles}
+              className="w-full"
+            />
+          </div>
           {role === "superAdmin" ? (
             <div>
               <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Status Overwrite</label>
@@ -749,13 +790,28 @@ const AssetsPurchaseTable = () => {
             required
           />
 
-          <Field
-            label="Asset Description"
-            value={createProduct.name}
-            onChange={(v) => setCreateProduct({ ...createProduct, name: v })}
-            required
-            placeholder="e.g. Office Chair, Laptop Battery"
-          />
+          <div>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Asset Name</label>
+            <Select
+              options={productOptions}
+              value={
+                createProduct.productId
+                  ? productOptions.find((o) => o.value === String(createProduct.productId)) || null
+                  : null
+              }
+              onChange={(selected) =>
+                setCreateProduct({
+                  ...createProduct,
+                  productId: selected?.value || "",
+                })
+              }
+              placeholder="Select Asset"
+              isClearable
+              isDisabled={isLoading2}
+              styles={selectStyles}
+              className="w-full"
+            />
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field

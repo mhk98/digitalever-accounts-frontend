@@ -10,7 +10,7 @@ import { baseApi } from "../baseApi/api";
 // export const assetsSaleApi = createApi({
 //   reducerPath: "assetsSaleApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " http://localhost:5000/api/v1/",
+//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 //     prepareHeaders: (headers) => {
 //       const token = getAuthToken(); // Fetch the token
 //       if (token) {
@@ -90,6 +90,7 @@ export const assetsSaleApi = baseApi.injectEndpoints({
       invalidatesTags: [
         { type: "AssetsSale", id: "LIST" },
         { type: "AssetsPurchase", id: "LIST" }, // ✅ stock কমে, তাই purchase refetch
+        { type: "AssetsStock", id: "LIST" },
         { type: "Overview", id: "LIST" }, // ✅ stock কমে, তাই purchase refetch
       ],
     }),
@@ -103,6 +104,7 @@ export const assetsSaleApi = baseApi.injectEndpoints({
         { type: "AssetsSale", id: "LIST" },
         { type: "AssetsSale", id },
         { type: "AssetsPurchase", id: "LIST" }, // ✅ stock ফেরত যায়
+        { type: "AssetsStock", id: "LIST" },
         { type: "Overview", id: "LIST" }, // ✅ stock ফেরত যায়
       ],
     }),
@@ -117,6 +119,7 @@ export const assetsSaleApi = baseApi.injectEndpoints({
         { type: "AssetsSale", id: "LIST" },
         { type: "AssetsSale", id: arg.id },
         { type: "AssetsPurchase", id: "LIST" }, // ✅ stock change
+        { type: "AssetsStock", id: "LIST" },
         { type: "Overview", id: "LIST" }, // ✅ stock change
       ],
     }),

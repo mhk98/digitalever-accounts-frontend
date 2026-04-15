@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const holidayApi = createApi({
   reducerPath: "holidayApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1",
+    baseUrl: "https://apikafela.digitalever.com.bd/api/v1",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -31,9 +31,17 @@ export const holidayApi = createApi({
       invalidatesTags: ["Holiday"],
     }),
     deleteHoliday: build.mutation({
-      query: (id) => ({
+      query: ({ id, note }) => ({
         url: `/holiday/${id}`,
         method: "DELETE",
+        body: note ? { note } : undefined,
+      }),
+      invalidatesTags: ["Holiday"],
+    }),
+    approveHoliday: build.mutation({
+      query: (id) => ({
+        url: `/holiday/${id}/approve`,
+        method: "POST",
       }),
       invalidatesTags: ["Holiday"],
     }),
@@ -52,5 +60,6 @@ export const {
   useCreateHolidayMutation,
   useUpdateHolidayMutation,
   useDeleteHolidayMutation,
+  useApproveHolidayMutation,
   useGetAllHolidaysQuery,
 } = holidayApi;

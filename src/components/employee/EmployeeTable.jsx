@@ -3194,11 +3194,11 @@ const EmployeeTable = () => {
 
   const normalizeOptionalId = (value) => {
     if (value === null || value === undefined || String(value).trim() === "") {
-      return undefined;
+      return null;
     }
 
     const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : undefined;
+    return Number.isFinite(parsed) ? parsed : null;
   };
 
   const getAdvanceBalanceValue = (response) =>
@@ -3397,6 +3397,12 @@ const EmployeeTable = () => {
     if (!createEmployee.name?.trim()) return toast.error("Name is required!");
     if (!createEmployee.employee_id?.toString().trim())
       return toast.error("Employee Id is required!");
+    if (
+      Number(createEmployee.advance) > 0 &&
+      !normalizeOptionalId(createEmployee.bookId)
+    ) {
+      return toast.error("Book is required when advance exists!");
+    }
     try {
       const s = calcSalary(createEmployee);
 
@@ -3442,6 +3448,12 @@ const EmployeeTable = () => {
     if (!currentEmployee.name?.trim()) return toast.error("Name is required!");
     if (!currentEmployee.employee_id?.toString().trim())
       return toast.error("Employee Id is required!");
+    if (
+      Number(currentEmployee.advance) > 0 &&
+      !normalizeOptionalId(currentEmployee.bookId)
+    ) {
+      return toast.error("Book is required when advance exists!");
+    }
     try {
       const s = calcSalary(currentEmployee);
 

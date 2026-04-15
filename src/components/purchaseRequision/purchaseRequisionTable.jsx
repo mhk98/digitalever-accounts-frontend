@@ -17,6 +17,8 @@ import {
   useGetAllProductWithoutQueryQuery,
   useGetSingleReceivedProductByIdQuery,
 } from "../../features/product/product";
+import { useSingleUserQuery } from "../../features/auth/auth";
+import { useGetAllBookWithoutQueryQuery } from "../../features/book/book";
 
 const parseVariationValue = (value) => {
   if (Array.isArray(value)) {
@@ -179,14 +181,37 @@ const hasDuplicateVariantCombination = (rows) => {
   return false;
 };
 
+const purchaseRequisitionStatuses = [
+  "Active",
+  "Pending",
+  "Approved",
+  "Completed",
+];
+
 const PurchaseRequisionTable = () => {
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
+  const [user, setUser] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
   const [isModalOpen1, setIsModalOpen1] = useState(false); // Add modal
   const [isModalOpen2, setIsModalOpen2] = useState(false); // Note / status modal
   const [currentProduct, setCurrentProduct] = useState(null);
+
+  // ✅ Fetch user (query)
+  const {
+    data: userRes,
+    isLoading: isLoadingUser,
+    isError: isErrorUser,
+    error: errorUser,
+  } = useSingleUserQuery(userId, {});
+
+  useEffect(() => {
+    if (isErrorUser) console.error("Error:", errorUser);
+    if (!isLoadingUser && userRes?.data) {
+      setUser(userRes.data);
+    }
+  }, [userRes, isLoadingUser, isErrorUser, errorUser]);
 
   const [warehouse, setWarehouse] = useState("");
   const [supplier, setSupplier] = useState("");
@@ -195,9 +220,11 @@ const PurchaseRequisionTable = () => {
   const [createProduct, setCreateProduct] = useState({
     warehouseId: "",
     supplierId: "",
+    bookId: "",
     productId: "",
     variantRows: [createEmptyVariantRow()],
     quantity: "",
+    amount: "",
     date: new Date().toISOString().slice(0, 10),
     note: "",
     status: "",
@@ -401,9 +428,11 @@ const PurchaseRequisionTable = () => {
     setCreateProduct({
       warehouseId: "",
       supplierId: "",
+      bookId: "",
       productId: "",
       variantRows: [createEmptyVariantRow()],
       quantity: "",
+      amount: "",
       date: new Date().toISOString().slice(0, 10),
       note: "",
       status: "",
@@ -494,11 +523,14 @@ const PurchaseRequisionTable = () => {
 
     setCurrentProduct({
       ...rp,
+      bookId: String(rp.bookId ?? rp.book?.Id ?? rp.book?.id ?? ""),
       productId: pidFromRow || pidFromName, // ✅ selected ঠিক রাখে
       variantRows,
       quantity: String(
         getVariantRowsTotalQuantity(variantRows) || Number(rp.quantity) || 0,
       ),
+      amount:
+        rp.amount !== undefined && rp.amount !== null ? String(rp.amount) : "",
       supplier: rp.supplier ?? "",
       note: rp.note ?? rp.remarks ?? "",
       date: rp.date ?? new Date().toISOString().slice(0, 10),
@@ -532,11 +564,14 @@ const PurchaseRequisionTable = () => {
 
     setCurrentProduct({
       ...rp,
+      bookId: String(rp.bookId ?? rp.book?.Id ?? rp.book?.id ?? ""),
       productId: pidFromRow || pidFromName,
       variantRows,
       quantity: String(
         getVariantRowsTotalQuantity(variantRows) || Number(rp.quantity) || 0,
       ),
+      amount:
+        rp.amount !== undefined && rp.amount !== null ? String(rp.amount) : "",
       supplier: rp.supplier ?? "",
       note: rp.note ?? rp.remarks ?? "",
       userId,
@@ -556,7 +591,9 @@ const PurchaseRequisionTable = () => {
 
       const updatedProduct = {
         productId: Number(currentProduct.productId),
+        bookId: Number(currentProduct.bookId) || undefined,
         quantity: Number(currentProduct.quantity),
+        amount: Number(currentProduct.amount) || 0,
         variants: variantsPayload,
         supplierId: Number(currentProduct.supplierId),
         warehouseId: Number(currentProduct.warehouseId),
@@ -597,7 +634,9 @@ const PurchaseRequisionTable = () => {
 
       const payload = {
         productId: Number(currentProduct.productId),
+        bookId: Number(currentProduct.bookId) || undefined,
         quantity: Number(currentProduct.quantity),
+        amount: Number(currentProduct.amount) || 0,
         variants: variantsPayload,
         status: currentProduct.status,
         note: currentProduct.note,
@@ -640,7 +679,10 @@ const PurchaseRequisionTable = () => {
 
       const payload = {
         productId: Number(createProduct.productId),
+        procurement: `${user.FirstName} ${user.LastName}` || "N/A",
+        bookId: Number(createProduct.bookId) || undefined,
         quantity: Number(createProduct.quantity),
+        amount: Number(createProduct.amount) || 0,
         variants: variantsPayload,
         supplierId: Number(createProduct.supplierId),
         warehouseId: Number(createProduct.warehouseId),
@@ -656,9 +698,11 @@ const PurchaseRequisionTable = () => {
         setCreateProduct({
           warehouseId: "",
           supplierId: "",
+          bookId: "",
           productId: "",
           variantRows: [createEmptyVariantRow()],
           quantity: "",
+          amount: "",
           date: new Date().toISOString().slice(0, 10),
           note: "",
           status: "",
@@ -707,8 +751,17 @@ const PurchaseRequisionTable = () => {
     }),
     valueContainer: (base) => ({ ...base, padding: "0 12px" }),
     placeholder: (base) => ({ ...base, color: "#64748b" }),
-    menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
+    menu: (base) => ({
+      ...base,
+      borderRadius: 14,
+      overflow: "hidden",
+      zIndex: 10050,
+    }),
+    menuPortal: (base) => ({ ...base, zIndex: 10050 }),
   };
+
+  const selectPortalTarget =
+    typeof document !== "undefined" ? document.body : null;
 
   console.log("productsData", productsData);
   console.log("firstRow", rows?.[0]);
@@ -760,6 +813,27 @@ const PurchaseRequisionTable = () => {
         label: w.name,
       })),
     [warehouses],
+  );
+
+  // ✅ books
+  const {
+    data: allBooksRes,
+    isError: isErrorBook,
+    error: errorBook,
+  } = useGetAllBookWithoutQueryQuery();
+  const books = useMemo(() => allBooksRes?.data || [], [allBooksRes]);
+
+  useEffect(() => {
+    if (isErrorBook) console.error("Error fetching books", errorBook);
+  }, [isErrorBook, errorBook]);
+
+  const bookOptions = useMemo(
+    () =>
+      (books || []).map((b) => ({
+        value: b.Id,
+        label: b.name,
+      })),
+    [books],
   );
 
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
@@ -916,6 +990,9 @@ const PurchaseRequisionTable = () => {
                 Date
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Procurement
+              </th>{" "}
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Supplier
               </th>{" "}
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -953,6 +1030,9 @@ const PurchaseRequisionTable = () => {
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     {rp.date}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp?.procurement || "-"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp?.supplier?.name || "-"}
@@ -1005,9 +1085,11 @@ const PurchaseRequisionTable = () => {
                       className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
                         rp.status === "Approved"
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : rp.status === "Active"
-                            ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                            : "bg-amber-50 text-amber-700 border-amber-200"
+                          : rp.status === "Completed"
+                            ? "bg-violet-50 text-violet-700 border-violet-200"
+                            : rp.status === "Active"
+                              ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
+                              : "bg-amber-50 text-amber-700 border-amber-200"
                       }`}
                     >
                       {rp.status}
@@ -1343,6 +1425,31 @@ const PurchaseRequisionTable = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Book
+              </label>
+              <Select
+                options={bookOptions}
+                value={
+                  bookOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(currentProduct?.bookId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    bookId: selected?.value || "",
+                  })
+                }
+                placeholder="Select Book"
+                isClearable
+                className="text-black"
+                styles={selectStyles}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Date
               </label>
               <input
@@ -1373,6 +1480,22 @@ const PurchaseRequisionTable = () => {
                 }`}
               />
             </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Amount
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={currentProduct?.amount || ""}
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({ ...p, amount: e.target.value }))
+                }
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                placeholder="0.00"
+              />
+            </div>
           </div>
 
           {role === "superAdmin" || role === "admin" ? (
@@ -1381,10 +1504,12 @@ const PurchaseRequisionTable = () => {
                 Status
               </label>
               <Select
-                options={["Active", "Approved", "Pending"].map((status) => ({
+                options={purchaseRequisitionStatuses.map((status) => ({
                   value: status,
                   label: status,
                 }))}
+                menuPortalTarget={selectPortalTarget}
+                menuPosition="fixed"
                 value={
                   currentProduct?.status
                     ? {
@@ -1669,6 +1794,31 @@ const PurchaseRequisionTable = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Book
+              </label>
+              <Select
+                options={bookOptions}
+                value={
+                  bookOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(createProduct.bookId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    bookId: selected?.value || "",
+                  })
+                }
+                placeholder="Select Book"
+                isClearable
+                className="text-black"
+                styles={selectStyles}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Quantity
               </label>
               <input
@@ -1685,6 +1835,22 @@ const PurchaseRequisionTable = () => {
                     : "bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 }`}
                 required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Amount
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={createProduct.amount}
+                onChange={(e) =>
+                  setCreateProduct((p) => ({ ...p, amount: e.target.value }))
+                }
+                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                placeholder="0.00"
               />
             </div>
           </div>
@@ -1734,10 +1900,12 @@ const PurchaseRequisionTable = () => {
                 Status
               </label>
               <Select
-                options={["Active", "Approved", "Pending"].map((status) => ({
+                options={purchaseRequisitionStatuses.map((status) => ({
                   value: status,
                   label: status,
                 }))}
+                menuPortalTarget={selectPortalTarget}
+                menuPosition="fixed"
                 value={
                   currentProduct?.status
                     ? {

@@ -103,6 +103,7 @@ import { authApi } from "../features/auth/auth";
 import { inTransitProductApi } from "../features/inTransitProduct/inTransitProduct";
 import { returnProductApi } from "../features/returnProduct/returnProduct";
 import { assetsPurchaseApi } from "../features/assetsPurchase/assetsPurchase";
+import { assetsStockApi } from "../features/assetsStock/assetsStock";
 import { confirmOrderApi } from "../features/confirmOrder/confirmOrder";
 import { pettyCashApi } from "../features/pettyCash/pettyCash";
 import { expenseApi } from "../features/expense/expense";
@@ -171,6 +172,7 @@ const apis = [
   damageRepairingStockApi,
   confirmOrderApi,
   assetsPurchaseApi,
+  assetsStockApi,
   manufactureApi,
   itemMasterApi,
   mixerApi,

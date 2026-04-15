@@ -12,6 +12,7 @@ export const assetsPurchaseApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [
         { type: "AssetsPurchase", id: "LIST" },
+        { type: "AssetsStock", id: "LIST" },
         { type: "AssetsSale", id: "LIST" }, // optional
         { type: "Overview", id: "LIST" }, // optional
       ],
@@ -24,6 +25,7 @@ export const assetsPurchaseApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [
         { type: "AssetsPurchase", id: "LIST" },
+        { type: "AssetsStock", id: "LIST" },
         { type: "AssetsSale", id: "LIST" }, // optional
         { type: "Overview", id: "LIST" }, // optional
       ],
@@ -38,6 +40,7 @@ export const assetsPurchaseApi = baseApi.injectEndpoints({
       invalidatesTags: (res, err, arg) => [
         { type: "AssetsPurchase", id: "LIST" },
         { type: "AssetsPurchase", id: arg.id },
+        { type: "AssetsStock", id: "LIST" },
         { type: "AssetsSale", id: "LIST" }, // optional
         { type: "Overview", id: "LIST" }, // optional
       ],

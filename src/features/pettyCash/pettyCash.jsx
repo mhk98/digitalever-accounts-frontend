@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const pettyCashApi = createApi({
   reducerPath: "pettyCashApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -40,6 +40,14 @@ export const pettyCashApi = createApi({
       invalidatesTags: ["pettyCash"],
     }),
 
+    approvePettyCash: build.mutation({
+      query: (id) => ({
+        url: `/petty-cash/${id}/approve`,
+        method: "POST",
+      }),
+      invalidatesTags: ["pettyCash"],
+    }),
+
     // ✅ FIXED: FILTER PARAMS PASSING
     getAllPettyCash: build.query({
       query: (arg) => {
@@ -51,6 +59,7 @@ export const pettyCashApi = createApi({
           searchTerm,
           paymentMode,
           paymentStatus,
+          status,
         } = arg || {};
 
         const params = {
@@ -61,6 +70,7 @@ export const pettyCashApi = createApi({
           searchTerm,
           paymentMode,
           paymentStatus,
+          status,
         };
 
         // ✅ remove undefined/empty
@@ -101,5 +111,6 @@ export const {
   useInsertPettyCashMutation,
   useUpdatePettyCashMutation,
   useDeletePettyCashMutation,
+  useApprovePettyCashMutation,
   useGetAllPettyCashWithoutQueryQuery,
 } = pettyCashApi;

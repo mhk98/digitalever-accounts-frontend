@@ -1,5 +1,5 @@
 import Header from "../components/common/Header";
-import EmployeeMasterManager from "../components/hrm/EmployeeMasterManager";
+import EmployeeListTable from "../components/employeeList/EmployeeListTable";
 
 const EmployeeListPage = () => {
   return (
@@ -7,7 +7,8 @@ const EmployeeListPage = () => {
       <Header title="Employee Master" />
 
       <main className="max-w-8xl mx-auto py-6 px-4 lg:px-8 bg-slate-50 min-h-[calc(100vh-64px)]">
-        <EmployeeMasterManager />
+        {/* <EmployeeMasterManager /> */}
+        <EmployeeListTable />
       </main>
     </div>
   );

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
-import { useGetAllAssetsPurchaseWithoutQueryQuery } from "../../features/assetsPurchase/assetsPurchase";
+import { useGetAllAssetsStockWithoutQueryQuery } from "../../features/assetsStock/assetsStock";
 import {
   useDeleteAssetsDamageMutation,
   useGetAllAssetsDamageQuery,
@@ -53,7 +53,7 @@ const AssetsDamageTable = () => {
     isLoading: isLoadingAllProducts,
     isError: isErrorAllProducts,
     error: errorAllProducts,
-  } = useGetAllAssetsPurchaseWithoutQueryQuery();
+  } = useGetAllAssetsStockWithoutQueryQuery();
 
   const productsData = allProductsRes?.data || [];
 

@@ -10,6 +10,10 @@ import {
   RefreshCcw,
   TrendingUp,
   Package,
+  Wallet,
+  Boxes,
+  ClipboardList,
+  TriangleAlert,
 } from "lucide-react";
 import { useGetOverviewSummaryQuery } from "../features/overview/overview";
 import { useGetTrendingProductsQuery } from "../features/confirmOrder/confirmOrder";
@@ -17,60 +21,146 @@ import { useLayout } from "../context/LayoutContext";
 import { translations } from "../utils/translations";
 import { useGetInventoryOverviewLowStockQuery } from "../features/inventoryOverview/inventoryOverview";
 
-// ✅ helper: default range (এই মাসের ১ তারিখ → আজ)
-const getDefaultRange = () => {
+const formatDateOnly = (date) => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const getTodayRange = () => {
+  const today = formatDateOnly(new Date());
+  return { from: today, to: today };
+};
+
+const getThisMonthRange = () => {
   const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  const from = `${yyyy}-${mm}-01`;
-  const to = `${yyyy}-${mm}-${dd}`;
-  return { from, to };
+  return {
+    from: formatDateOnly(new Date(now.getFullYear(), now.getMonth(), 1)),
+    to: formatDateOnly(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
+  };
 };
 
 const OverviewPage = () => {
   const { language } = useLayout();
   const t = translations[language] || translations.EN;
-  const defaultRange = useMemo(() => getDefaultRange(), []);
-
-  // ✅ input values
+  const defaultRange = useMemo(() => getThisMonthRange(), []);
+  const [selectedFilter, setSelectedFilter] = useState("");
   const [from, setFrom] = useState(defaultRange.from);
   const [to, setTo] = useState(defaultRange.to);
+  const [appliedFilter, setAppliedFilter] = useState({
+    type: null,
+    from: null,
+    to: null,
+  });
 
-  // ✅ applied range (Apply না চাপা পর্যন্ত API call হবে না)
-  const [applied, setApplied] = useState(defaultRange);
+  const summaryQuery = useMemo(() => {
+    if (appliedFilter.type === "today") {
+      return { filter: "today" };
+    }
+
+    if (appliedFilter.type === "thisMonth") {
+      return { filter: "thisMonth" };
+    }
+
+    if (appliedFilter.type === "custom" && appliedFilter.from && appliedFilter.to) {
+      return {
+        filter: "custom",
+        from: appliedFilter.from,
+        to: appliedFilter.to,
+        applyFilter: true,
+      };
+    }
+
+    return {};
+  }, [appliedFilter]);
 
   const {
     data: summaryRes,
     isLoading,
     isError,
     error,
-  } = useGetOverviewSummaryQuery({ from: applied.from, to: applied.to });
+  } = useGetOverviewSummaryQuery(summaryQuery);
 
   const summary = summaryRes?.data || {};
 
+  const onFilterChange = (value) => {
+    setSelectedFilter(value);
+
+    if (value === "today") {
+      const todayRange = getTodayRange();
+      setFrom(todayRange.from);
+      setTo(todayRange.to);
+      setAppliedFilter({ type: "today", ...todayRange });
+      return;
+    }
+
+    if (value === "thisMonth") {
+      const monthRange = getThisMonthRange();
+      setFrom(monthRange.from);
+      setTo(monthRange.to);
+      setAppliedFilter({ type: "thisMonth", ...monthRange });
+      return;
+    }
+
+    if (value !== "custom") {
+      setAppliedFilter({ type: null, from: null, to: null });
+    }
+  };
+
   const onApply = () => {
-    if (!from || !to) return;
-    setApplied({ from, to });
+    if (selectedFilter !== "custom" || !from || !to) return;
+    setAppliedFilter({ type: "custom", from, to });
   };
 
   const onReset = () => {
-    const d = getDefaultRange();
-    setFrom(d.from);
-    setTo(d.to);
-    setApplied(d);
+    const monthRange = getThisMonthRange();
+    setSelectedFilter("");
+    setFrom(monthRange.from);
+    setTo(monthRange.to);
+    setAppliedFilter({ type: null, from: null, to: null });
   };
 
   if (isError) console.error("Overview Summary error:", error);
 
+  const isCustomFilter = selectedFilter === "custom";
+  const liveSummaryText =
+    summary?.from && summary?.to
+      ? `${t.live_summary}: ${summary.from} → ${summary.to}`
+      : `${t.live_summary}: ALL DATA`;
+
   // ✅ values (fallback 0)
   const totalPurchaseAmount = Number(summary?.totalPurchaseAmount || 0);
+  const totalAssetsBalance = Number(summary?.totalAssetsBalance || 0);
   const inventoryOverview = Number(summary?.totalInventoryOverview || 0);
   const totalMetaAmount = Number(summary?.totalMetaAmount || 0);
   const totalReceiveableAmount = Number(summary?.totalReceiveableAmount || 0);
   const totalPayableAmount = Number(summary?.totalPayableAmount || 0);
   const totalCashInAmount = Number(summary?.totalCashInAmount || 0);
   const totalCashOutAmount = Number(summary?.totalCashOutAmount || 0);
+  const netCashPosition = Number(summary?.netCashPosition || 0);
+  const grossSalesAmount = Number(summary?.grossSalesAmount || 0);
+  const totalInventoryRetailValue = Number(
+    summary?.totalInventoryRetailValue || 0,
+  );
+  const totalDamageStockPrice = Number(summary?.totalDamageStockPrice || 0);
+  const totalRepairingStockPrice = Number(
+    summary?.totalRepairingStockPrice || 0,
+  );
+  const lowStockCount = Number(summary?.lowStockCount || 0);
+  const pendingPurchaseRequisitionCount = Number(
+    summary?.pendingPurchaseRequisitionCount || 0,
+  );
+  const pendingPettyCashRequisitionCount = Number(
+    summary?.pendingPettyCashRequisitionCount || 0,
+  );
+  const pendingAssetsRequisitionCount = Number(
+    summary?.pendingAssetsRequisitionCount || 0,
+  );
+  const totalPendingApprovalCount = Number(
+    summary?.totalPendingApprovalCount || 0,
+  );
 
   // =========================
   // ✅ Trending Products
@@ -160,8 +250,26 @@ const OverviewPage = () => {
             </div>
 
             {/* ✅ Date Range Filter Container */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row items-end gap-3 lg:gap-4 ring-1 ring-slate-100">
-              <div className="flex flex-col flex-1">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 sm:p-5 flex flex-col gap-3 lg:gap-4 ring-1 ring-slate-100 min-w-[320px]">
+              <div className="flex flex-col sm:w-48">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5">
+                  Filter
+                </label>
+                <select
+                  value={selectedFilter}
+                  onChange={(e) => onFilterChange(e.target.value)}
+                  className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                >
+                  <option value="">All Data</option>
+                  <option value="today">Today</option>
+                  <option value="thisMonth">This Month</option>
+                  <option value="custom">Custom Date</option>
+                </select>
+              </div>
+
+              {isCustomFilter ? (
+                <div className="flex flex-col sm:flex-row items-end gap-3 lg:gap-4">
+                  <div className="flex flex-col flex-1 w-full">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 flex items-center gap-1.5">
                   <CalendarDays size={12} className="text-indigo-500" />{" "}
                   {t.start_date}
@@ -174,7 +282,7 @@ const OverviewPage = () => {
                 />
               </div>
 
-              <div className="flex flex-col flex-1">
+                  <div className="flex flex-col flex-1 w-full">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 flex items-center gap-1.5">
                   <CalendarDays size={12} className="text-indigo-500" />{" "}
                   {t.end_date}
@@ -187,22 +295,25 @@ const OverviewPage = () => {
                 />
               </div>
 
-              <div className="flex gap-2 w-full sm:w-auto">
-                <button
-                  onClick={onApply}
-                  className="h-11 px-6 rounded-xl bg-indigo-600 text-white text-sm font-black hover:bg-indigo-700 active:scale-[0.98] transition shadow-lg shadow-indigo-100"
-                >
-                  {t.apply}
-                </button>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={onApply}
+                    disabled={!from || !to}
+                    className="h-11 px-6 rounded-xl bg-indigo-600 text-white text-sm font-black hover:bg-indigo-700 active:scale-[0.98] transition shadow-lg shadow-indigo-100 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed disabled:active:scale-100"
+                  >
+                    {t.apply}
+                  </button>
 
-                <button
-                  onClick={onReset}
-                  className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-slate-600 active:scale-[0.98] transition flex items-center justify-center hover:bg-slate-50"
-                  title="Reset to default range"
-                >
-                  <RefreshCcw size={18} />
-                </button>
-              </div>
+                  <button
+                    onClick={onReset}
+                    className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-slate-600 active:scale-[0.98] transition flex items-center justify-center hover:bg-slate-50"
+                    title="Reset to all data"
+                  >
+                    <RefreshCcw size={18} />
+                  </button>
+                </div>
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -213,104 +324,203 @@ const OverviewPage = () => {
                 className={`h-2 w-2 rounded-full ${isLoading ? "bg-amber-400 animate-pulse" : "bg-emerald-500"}`}
               ></div>
               <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.1em]">
-                {isLoading
-                  ? t.syncing
-                  : `${t.live_summary}: ${applied.from} → ${applied.to}`}
+                {isLoading ? t.syncing : liveSummaryText}
               </span>
             </div>
           </div>
 
           {/* ✅ Stat Cards */}
           <motion.div
-            className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-12"
+            className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 mb-12"
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
           >
             <StatCard
-              name={t.asset_portfolio}
-              icon={Truck}
+              name="Assets Balance"
+              icon={Boxes}
               value={
                 isLoading
                   ? "..."
-                  : `৳${totalPurchaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                  : `৳${totalAssetsBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
               }
               iconBg="#EEF2FF"
               iconColor="#4F46E5"
             />
 
             <StatCard
-              name={t.liquid_stock}
-              icon={Receipt}
-              value={
-                isLoading
-                  ? "..."
-                  : `৳${inventoryOverview.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-              }
-              iconBg="#ECFDF5"
-              iconColor="#059669"
-            />
-
-            <StatCard
               name={t.marketing_investment}
-              icon={TrendingUp}
+              icon={Receipt}
               value={
                 isLoading
                   ? "..."
                   : `৳${totalMetaAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-              }
-              iconBg="#E0F2FE"
-              iconColor="#0284C7"
-            />
-
-            <StatCard
-              name={t.expected_receivables}
-              icon={Receipt}
-              value={
-                isLoading
-                  ? "..."
-                  : `৳${totalReceiveableAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-              }
-              iconBg="#FFF7ED"
-              iconColor="#D97706"
-            />
-
-            <StatCard
-              name={t.liabilities}
-              icon={Receipt}
-              value={
-                isLoading
-                  ? "..."
-                  : `৳${totalPayableAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-              }
-              iconBg="#FFF1F2"
-              iconColor="#E11D48"
-            />
-
-            <StatCard
-              name={t.cash_in}
-              icon={Landmark}
-              value={
-                isLoading
-                  ? "..."
-                  : `৳${totalCashInAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
               }
               iconBg="#F5F3FF"
               iconColor="#7C3AED"
             />
 
             <StatCard
-              name={t.cash_out}
-              icon={Landmark}
-              value={
-                isLoading
-                  ? "..."
-                  : `৳${totalCashOutAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-              }
-              iconBg="#F0FDFA"
-              iconColor="#0D9488"
+              name="Low Stock Alerts"
+              icon={TriangleAlert}
+              value={isLoading ? "..." : lowStockCount.toLocaleString()}
+              iconBg="#FFF1F2"
+              iconColor="#E11D48"
             />
           </motion.div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-10">
+            <motion.div
+              className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.03 }}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-11 h-11 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
+                  <ClipboardList size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    Approval Queue
+                  </h3>
+                  <p className="text-xs font-medium text-slate-400">
+                    Items waiting for admin action
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  ["Purchase Requisition", pendingPurchaseRequisitionCount],
+                  ["Petty Cash Requisition", pendingPettyCashRequisitionCount],
+                  [
+                    "Assets Purchase Requisition",
+                    pendingAssetsRequisitionCount,
+                  ],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3"
+                  >
+                    <span className="text-sm font-semibold text-slate-600">
+                      {label}
+                    </span>
+                    <span className="text-lg font-black text-slate-900">
+                      {isLoading ? "..." : value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.06 }}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
+                  <Wallet size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    Cash Snapshot
+                  </h3>
+                  <p className="text-xs font-medium text-slate-400">
+                    Real-time working cash position
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-2xl bg-emerald-50/60 border border-emerald-100 p-4">
+                  <div className="text-[11px] font-black uppercase tracking-widest text-emerald-600">
+                    Net Position
+                  </div>
+                  <div className="mt-2 text-2xl font-black text-slate-900">
+                    {isLoading
+                      ? "..."
+                      : `৳${netCashPosition.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-slate-100 p-4">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      Cash In
+                    </div>
+                    <div className="mt-2 text-lg font-black text-emerald-600">
+                      {isLoading
+                        ? "..."
+                        : `৳${totalCashInAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-100 p-4">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      Cash Out
+                    </div>
+                    <div className="mt-2 text-lg font-black text-rose-600">
+                      {isLoading
+                        ? "..."
+                        : `৳${totalCashOutAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.09 }}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-11 h-11 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100">
+                  <Receipt size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    Inventory Snapshot
+                  </h3>
+                  <p className="text-xs font-medium text-slate-400">
+                    Receivables, liabilities and stock value
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  [
+                    "Product Stock",
+                    `৳${inventoryOverview.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+                  ],
+                  [
+                    "Damage Stock",
+                    `৳${totalDamageStockPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+                  ],
+                  [
+                    "Repairing Stock",
+                    `৳${totalRepairingStockPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+                  ],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3"
+                  >
+                    <span className="text-sm font-semibold text-slate-600">
+                      {label}
+                    </span>
+                    <span className="text-sm font-black text-slate-900">
+                      {isLoading ? "..." : value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
             {/* ✅ Trending Products (Modern) */}
@@ -456,7 +666,7 @@ const OverviewPage = () => {
             </motion.div>
 
             <motion.div
-              className="lg:col-span-3 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden"
+              className="lg:col-span-1 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden"
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.1 }}
@@ -492,7 +702,7 @@ const OverviewPage = () => {
                     No low stock products found.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-6 gap-4">
+                  <div className="space-y-4 max-h-[520px] overflow-y-auto pr-1">
                     {lowStockProducts.map((item, idx) => {
                       const productName =
                         item?.name || item?.product?.name || t.inventory_item;
@@ -514,41 +724,46 @@ const OverviewPage = () => {
                       return (
                         <motion.div
                           key={productId}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: idx * 0.04 }}
-                          className="rounded-2xl border border-rose-100 bg-rose-50/40 p-5 hover:shadow-lg hover:shadow-rose-100/50 transition-all"
+                          className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-50/50 transition-all group"
                         >
-                          <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-4 min-w-0">
+                            <div className="relative flex-shrink-0">
+                              <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500 group-hover:bg-rose-100 transition-colors">
+                                <Package size={20} />
+                              </div>
+                              <div className="absolute -top-2 -left-2 h-6 min-w-6 px-1 rounded-lg bg-rose-500 border-2 border-white flex items-center justify-center text-[10px] font-black text-white shadow-sm">
+                                {idx + 1}
+                              </div>
+                            </div>
+
                             <div className="min-w-0">
                               <div className="text-sm font-black text-slate-900 truncate tracking-tight">
                                 {productName}
                               </div>
-                              <div className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">
+                              <div className="text-[10px] font-black text-slate-400 mt-0.5 uppercase tracking-widest">
                                 ID: {String(productId).slice(-6).toUpperCase()}
                               </div>
                             </div>
-
-                            <div className="px-2.5 py-1 rounded-full bg-white text-rose-600 text-[10px] font-black uppercase tracking-widest border border-rose-100">
-                              Low
-                            </div>
                           </div>
 
-                          <div className="mt-5 grid grid-cols-2 gap-3">
-                            <div className="rounded-xl bg-white p-3 border border-slate-100">
+                          <div className="flex items-center gap-6">
+                            <div className="text-right">
                               <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                                Current Stock
+                                Current
                               </div>
-                              <div className="text-lg font-black text-rose-600 mt-1">
+                              <div className="text-sm font-black text-rose-600">
                                 {currentStock}
                               </div>
                             </div>
 
-                            <div className="rounded-xl bg-white p-3 border border-slate-100">
+                            <div className="text-right hidden sm:block">
                               <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                                Minimum Stock
+                                Minimum
                               </div>
-                              <div className="text-lg font-black text-slate-700 mt-1">
+                              <div className="text-sm font-black text-slate-700">
                                 {minStock}
                               </div>
                             </div>

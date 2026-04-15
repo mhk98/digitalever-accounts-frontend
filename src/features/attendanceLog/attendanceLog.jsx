@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const attendanceLogApi = createApi({
   reducerPath: "attendanceLogApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1",
+    baseUrl: "https://apikafela.digitalever.com.bd/api/v1",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -21,6 +21,14 @@ export const attendanceLogApi = createApi({
         body: data,
       }),
       invalidatesTags: ["AttendanceLog"],
+    }),
+    receiveRealtimeAttendanceLog: build.mutation({
+      query: (data) => ({
+        url: "/attendance-log/realtime-ingest",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["AttendanceLog", "AttendanceSummary"],
     }),
     updateAttendanceLog: build.mutation({
       query: ({ id, data }) => ({
@@ -45,6 +53,14 @@ export const attendanceLogApi = createApi({
       providesTags: ["AttendanceLog"],
       refetchOnMountOrArgChange: true,
     }),
+    getAttendanceRealtimeMonitor: build.query({
+      query: (date) => ({
+        url: "/attendance-log/monitor",
+        params: { date },
+      }),
+      providesTags: ["AttendanceLog", "AttendanceSummary"],
+      refetchOnMountOrArgChange: true,
+    }),
     processDailyAttendance: build.mutation({
       query: (date) => ({
         url: "/attendance-log/process-daily",
@@ -58,8 +74,10 @@ export const attendanceLogApi = createApi({
 
 export const {
   useCreateAttendanceLogMutation,
+  useReceiveRealtimeAttendanceLogMutation,
   useUpdateAttendanceLogMutation,
   useDeleteAttendanceLogMutation,
   useGetAllAttendanceLogsQuery,
+  useGetAttendanceRealtimeMonitorQuery,
   useProcessDailyAttendanceMutation,
 } = attendanceLogApi;

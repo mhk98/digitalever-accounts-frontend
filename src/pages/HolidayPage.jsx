@@ -1,6 +1,7 @@
 import Header from "../components/common/Header";
 import HrmCrudManager from "../components/hrm/HrmCrudManager";
 import {
+  useApproveHolidayMutation,
   useCreateHolidayMutation,
   useDeleteHolidayMutation,
   useGetAllHolidaysQuery,
@@ -15,10 +16,11 @@ const HolidayPage = () => {
         <HrmCrudManager
           entityLabel="Holiday"
           title="Holiday Calendar"
-          description="Maintain public holidays and company holidays for attendance and leave calculations."
+          description="Maintain single-day and multi-day holiday ranges for attendance and leave calculations."
           fields={[
             { name: "name", label: "Holiday Name", required: true },
-            { name: "holidayDate", label: "Holiday Date", type: "date", required: true },
+            { name: "startDate", label: "Start Date", type: "date", required: true },
+            { name: "endDate", label: "End Date", type: "date", required: true },
             {
               name: "holidayType",
               label: "Type",
@@ -43,7 +45,16 @@ const HolidayPage = () => {
           ]}
           columns={[
             { key: "name", label: "Name" },
-            { key: "holidayDate", label: "Date" },
+            {
+              key: "dateRange",
+              label: "Date Range",
+              render: (row) =>
+                row.startDate && row.endDate
+                  ? row.startDate === row.endDate
+                    ? row.startDate
+                    : `${row.startDate} - ${row.endDate}`
+                  : row.holidayDate || "-",
+            },
             { key: "holidayType", label: "Type" },
             { key: "status", label: "Status" },
           ]}
@@ -51,6 +62,7 @@ const HolidayPage = () => {
           useCreateMutation={useCreateHolidayMutation}
           useUpdateMutation={useUpdateHolidayMutation}
           useDeleteMutation={useDeleteHolidayMutation}
+          useApproveMutation={useApproveHolidayMutation}
         />
       </main>
     </div>

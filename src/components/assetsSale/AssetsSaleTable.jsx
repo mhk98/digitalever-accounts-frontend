@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import Select from "react-select";
 import Modal from "../common/Modal";
 
-import { useGetAllAssetsPurchaseWithoutQueryQuery } from "../../features/assetsPurchase/assetsPurchase";
+import { useGetAllAssetsStockWithoutQueryQuery } from "../../features/assetsStock/assetsStock";
 import {
   useDeleteAssetsSaleMutation,
   useGetAllAssetsSaleQuery,
@@ -62,7 +62,7 @@ const AssetsSaleTable = () => {
     isLoading: isLoadingAllProducts,
     isError: isErrorAllProducts,
     error: errorAllProducts,
-  } = useGetAllAssetsPurchaseWithoutQueryQuery();
+  } = useGetAllAssetsStockWithoutQueryQuery();
 
   const productsData = allProductsRes?.data || [];
 

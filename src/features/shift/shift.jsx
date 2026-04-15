@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const shiftApi = createApi({
   reducerPath: "shiftApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1",
+    baseUrl: "https://apikafela.digitalever.com.bd/api/v1",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -31,9 +31,17 @@ export const shiftApi = createApi({
       invalidatesTags: ["Shift"],
     }),
     deleteShift: build.mutation({
-      query: (id) => ({
+      query: ({ id, note }) => ({
         url: `/shift/${id}`,
         method: "DELETE",
+        body: note ? { note } : undefined,
+      }),
+      invalidatesTags: ["Shift"],
+    }),
+    approveShift: build.mutation({
+      query: (id) => ({
+        url: `/shift/${id}/approve`,
+        method: "POST",
       }),
       invalidatesTags: ["Shift"],
     }),
@@ -52,5 +60,6 @@ export const {
   useCreateShiftMutation,
   useUpdateShiftMutation,
   useDeleteShiftMutation,
+  useApproveShiftMutation,
   useGetAllShiftsQuery,
 } = shiftApi;

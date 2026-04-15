@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const employeeListApi = createApi({
   reducerPath: "employeeListApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken(); // Fetch the token
       if (token) {
@@ -31,9 +31,10 @@ export const employeeListApi = createApi({
     }),
 
     deleteEmployeeList: build.mutation({
-      query: (id) => ({
+      query: ({ id, note }) => ({
         url: `/employee-list/${id}`,
         method: "DELETE",
+        body: note ? { note } : undefined,
       }),
       invalidatesTags: ["EmployeeList"], // Invalidate the EmployeeList tag after deletion
     }),
@@ -52,6 +53,13 @@ export const employeeListApi = createApi({
         body: data,
       }),
       invalidatesTags: ["EmployeeList"], // Invalidate the EmployeeList tag after this mutation
+    }),
+    approveEmployeeList: build.mutation({
+      query: (id) => ({
+        url: `/employee-list/${id}/approve`,
+        method: "POST",
+      }),
+      invalidatesTags: ["EmployeeList"],
     }),
 
     getAllEmployeeList: build.query({
@@ -85,6 +93,7 @@ export const {
   useGetAllEmployeeListQuery,
   useDeleteEmployeeListMutation,
   useUpdateEmployeeListMutation,
+  useApproveEmployeeListMutation,
   useGetAllEmployeeListWithoutQueryQuery,
   useGetSingleEmployeeListMutation,
   useGetMyEmployeeProfileQuery,

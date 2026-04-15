@@ -10,7 +10,7 @@ import { baseApi } from "../baseApi/api";
 // export const assetsDamageApi = createApi({
 //   reducerPath: "assetsDamageApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " http://localhost:5000/api/v1/",
+//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 //     prepareHeaders: (headers) => {
 //       const token = getAuthToken(); // Fetch the token
 //       if (token) {
@@ -90,6 +90,7 @@ export const assetsDamageApi = baseApi.injectEndpoints({
       invalidatesTags: [
         { type: "AssetsDamage", id: "LIST" },
         { type: "AssetsPurchase", id: "LIST" }, // ✅ damage হলে stock কমে (যদি তোমার backend এ purchase qty update হয়)
+        { type: "AssetsStock", id: "LIST" },
         { type: "Overview", id: "LIST" }, // ✅ damage হলে stock কমে (যদি তোমার backend এ purchase qty update হয়)
       ],
     }),
@@ -103,6 +104,7 @@ export const assetsDamageApi = baseApi.injectEndpoints({
         { type: "AssetsDamage", id: "LIST" },
         { type: "AssetsDamage", id },
         { type: "AssetsPurchase", id: "LIST" }, // ✅ delete হলে stock ফেরত যেতে পারে (তোমার logic অনুযায়ী)
+        { type: "AssetsStock", id: "LIST" },
         { type: "Overview", id: "LIST" }, // ✅ delete হলে stock ফেরত যেতে পারে (তোমার logic অনুযায়ী)
       ],
     }),
@@ -117,6 +119,7 @@ export const assetsDamageApi = baseApi.injectEndpoints({
         { type: "AssetsDamage", id: "LIST" },
         { type: "AssetsDamage", id: arg.id },
         { type: "AssetsPurchase", id: "LIST" }, // ✅ update হলে stock adjust হতে পারে
+        { type: "AssetsStock", id: "LIST" },
         { type: "Overview", id: "LIST" }, // ✅ update হলে stock adjust হতে পারে
       ],
     }),

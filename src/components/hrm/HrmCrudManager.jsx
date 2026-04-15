@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Edit, Plus, Search, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock3, Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import Modal from "../common/Modal";
 import HrmWorkspace from "./HrmWorkspace";
@@ -40,15 +40,22 @@ const HrmCrudManager = ({
   useCreateMutation,
   useUpdateMutation,
   useDeleteMutation,
+  useApproveMutation,
   stats = [],
   eyebrow,
 }) => {
   const emptyForm = useMemo(() => buildInitialState(fields), [fields]);
+  const currentRole = localStorage.getItem("role");
+  const isPrivilegedUser = currentRole === "superAdmin" || currentRole === "admin";
+  const approvalWorkflowEnabled = Boolean(useApproveMutation);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteRequestOpen, setIsDeleteRequestOpen] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteRequestNote, setDeleteRequestNote] = useState("");
 
   const queryArgs = useMemo(
     () => ({
@@ -63,6 +70,9 @@ const HrmCrudManager = ({
   const [createItem, { isLoading: isCreating }] = useCreateMutation();
   const [updateItem, { isLoading: isUpdating }] = useUpdateMutation();
   const [deleteItem] = useDeleteMutation();
+  const [approveItem, { isLoading: isApproving }] = useApproveMutation
+    ? useApproveMutation()
+    : [null, { isLoading: false }];
 
   const rows = data?.data || [];
   const derivedStats = useMemo(() => {
@@ -106,6 +116,17 @@ const HrmCrudManager = ({
     setIsEditOpen(false);
     setCurrentItem(null);
     setForm(emptyForm);
+  };
+
+  const closeDeleteRequest = () => {
+    setIsDeleteRequestOpen(false);
+    setCurrentItem(null);
+    setDeleteRequestNote("");
+  };
+
+  const closeReview = () => {
+    setIsReviewOpen(false);
+    setCurrentItem(null);
   };
 
   const openEdit = (item) => {
@@ -180,7 +201,7 @@ const HrmCrudManager = ({
     try {
       const res = await createItem(buildPayload()).unwrap();
       if (res?.success) {
-        toast.success(`${entityLabel} created successfully`);
+        toast.success(res?.message || `${entityLabel} created successfully`);
         closeCreate();
         refetch?.();
       }
@@ -200,7 +221,7 @@ const HrmCrudManager = ({
         data: buildPayload(),
       }).unwrap();
       if (res?.success) {
-        toast.success(`${entityLabel} updated successfully`);
+        toast.success(res?.message || `${entityLabel} updated successfully`);
         closeEdit();
         refetch?.();
       }
@@ -210,17 +231,65 @@ const HrmCrudManager = ({
   };
 
   const handleDelete = async (item) => {
+    if (approvalWorkflowEnabled && !isPrivilegedUser) {
+      setCurrentItem(item);
+      setDeleteRequestNote("");
+      setIsDeleteRequestOpen(true);
+      return;
+    }
+
     const confirmed = window.confirm(`Delete this ${entityLabel}?`);
     if (!confirmed) return;
 
     try {
-      const res = await deleteItem(item.Id).unwrap();
+      const res = await deleteItem(
+        approvalWorkflowEnabled ? { id: item.Id } : item.Id,
+      ).unwrap();
       if (res?.success) {
-        toast.success(`${entityLabel} deleted successfully`);
+        toast.success(res?.message || `${entityLabel} deleted successfully`);
         refetch?.();
       }
     } catch (error) {
       toast.error(error?.data?.message || `Failed to delete ${entityLabel}`);
+    }
+  };
+
+  const submitDeleteRequest = async (e) => {
+    e.preventDefault();
+
+    if (!deleteRequestNote.trim()) {
+      toast.error("Please write why you want to delete this record");
+      return;
+    }
+
+    try {
+      const res = await deleteItem({
+        id: currentItem?.Id,
+        note: deleteRequestNote.trim(),
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success(res?.message || "Delete request submitted");
+        closeDeleteRequest();
+        refetch?.();
+      }
+    } catch (error) {
+      toast.error(error?.data?.message || `Failed to request delete for ${entityLabel}`);
+    }
+  };
+
+  const handleApprove = async (item) => {
+    if (!approveItem) return;
+
+    try {
+      const res = await approveItem(item.Id).unwrap();
+      if (res?.success) {
+        toast.success(res?.message || `${entityLabel} approved successfully`);
+        closeReview();
+        refetch?.();
+      }
+    } catch (error) {
+      toast.error(error?.data?.message || `Failed to approve ${entityLabel}`);
     }
   };
 
@@ -254,6 +323,24 @@ const HrmCrudManager = ({
           placeholder={field.placeholder}
           className={commonClassName}
         />
+      );
+    }
+
+    if (field.type === "time") {
+      return (
+        <div className="relative">
+          <input
+            type="time"
+            value={form[field.name]}
+            onChange={(e) => setFieldValue(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            className={`${commonClassName} cursor-pointer pr-12 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100`}
+          />
+          <Clock3
+            size={18}
+            className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+        </div>
       );
     }
 
@@ -329,7 +416,7 @@ const HrmCrudManager = ({
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
             >
               <Plus size={16} />
-              Add {entityLabel}
+              {isPrivilegedUser ? `Add ${entityLabel}` : `Submit ${entityLabel}`}
             </button>
           </div>
         </div>
@@ -381,6 +468,27 @@ const HrmCrudManager = ({
                     ))}
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
+                        {approvalWorkflowEnabled && (row.pendingAction || row.approvalNote) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCurrentItem(row);
+                              setIsReviewOpen(true);
+                            }}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-600"
+                          >
+                            <Eye size={16} />
+                          </button>
+                        )}
+                        {approvalWorkflowEnabled && isPrivilegedUser && approveItem && row.status === "Pending" && (
+                          <button
+                            type="button"
+                            onClick={() => handleApprove(row)}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600"
+                          >
+                            <CheckCircle2 size={16} />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => openEdit(row)}
@@ -434,6 +542,91 @@ const HrmCrudManager = ({
         maxWidth="max-w-4xl"
       >
         {renderForm(handleUpdate, isUpdating)}
+      </Modal>
+
+      <Modal
+        isOpen={isDeleteRequestOpen}
+        onClose={closeDeleteRequest}
+        title={`Delete ${entityLabel}`}
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={submitDeleteRequest} className="space-y-4">
+          <p className="text-sm text-slate-600">
+            Admin approval is required before this record can be deleted. Please write the reason for deletion.
+          </p>
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-slate-700">Delete Note</span>
+            <textarea
+              rows={5}
+              value={deleteRequestNote}
+              onChange={(e) => setDeleteRequestNote(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition"
+              placeholder={`Why should this ${entityLabel.toLowerCase()} be deleted?`}
+            />
+          </label>
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-600"
+            >
+              Submit Request
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={isReviewOpen}
+        onClose={closeReview}
+        title={`${entityLabel} Review`}
+        maxWidth="max-w-2xl"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                Status
+              </div>
+              <div className="mt-2 text-lg font-bold text-slate-900">
+                {currentItem?.status || "-"}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                Pending Action
+              </div>
+              <div className="mt-2 text-lg font-bold text-slate-900">
+                {currentItem?.pendingAction || "None"}
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Request Note
+            </div>
+            <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+              {currentItem?.approvalNote || "No note added."}
+            </p>
+          </div>
+          {isPrivilegedUser && approveItem && currentItem?.status === "Pending" && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => handleApprove(currentItem)}
+                disabled={isApproving}
+                className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {isApproving
+                  ? currentItem?.pendingAction === "Delete"
+                    ? "Deleting..."
+                    : "Approving..."
+                  : currentItem?.pendingAction === "Delete"
+                    ? "Approve & Delete"
+                    : "Approve"}
+              </button>
+            </div>
+          )}
+        </div>
       </Modal>
     </HrmWorkspace>
   );

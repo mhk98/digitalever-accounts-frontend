@@ -4,9 +4,7 @@ export const overviewApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getOverviewSummary: build.query({
       query: (arg = {}) => {
-        const { from, to } = arg;
-
-        const params = { from, to };
+        const params = { ...arg };
         Object.keys(params).forEach((k) => {
           if (params[k] === undefined || params[k] === null || params[k] === "")
             delete params[k];

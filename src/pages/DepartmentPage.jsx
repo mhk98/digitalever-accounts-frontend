@@ -1,6 +1,7 @@
 import Header from "../components/common/Header";
 import HrmCrudManager from "../components/hrm/HrmCrudManager";
 import {
+  useApproveDepartmentMutation,
   useCreateDepartmentMutation,
   useDeleteDepartmentMutation,
   useGetAllDepartmentsQuery,
@@ -41,6 +42,7 @@ const DepartmentPage = () => {
           useCreateMutation={useCreateDepartmentMutation}
           useUpdateMutation={useUpdateDepartmentMutation}
           useDeleteMutation={useDeleteDepartmentMutation}
+          useApproveMutation={useApproveDepartmentMutation}
         />
       </main>
     </div>

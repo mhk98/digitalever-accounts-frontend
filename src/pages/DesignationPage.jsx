@@ -1,6 +1,7 @@
 import Header from "../components/common/Header";
 import HrmCrudManager from "../components/hrm/HrmCrudManager";
 import {
+  useApproveDesignationMutation,
   useCreateDesignationMutation,
   useDeleteDesignationMutation,
   useGetAllDesignationsQuery,
@@ -58,6 +59,7 @@ const DesignationPage = () => {
           useCreateMutation={useCreateDesignationMutation}
           useUpdateMutation={useUpdateDesignationMutation}
           useDeleteMutation={useDeleteDesignationMutation}
+          useApproveMutation={useApproveDesignationMutation}
         />
       </main>
     </div>

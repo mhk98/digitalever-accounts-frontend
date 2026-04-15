@@ -17,6 +17,7 @@ import GooglePage from "./pages/GooglePage";
 import TiktokPage from "./pages/TiktokPage";
 import SEOPage from "./pages/SEOPage";
 import AssetsPurchasePage from "./pages/AssetsPurchasePage";
+import AssetsStockPage from "./pages/AssetsStockPage";
 import AssetsSalePage from "./pages/AssetsSalePage";
 import ConfirmOrderPage from "./pages/ConfirmOrderPage";
 import CashInPage from "./pages/CashInOutPage";
@@ -28,6 +29,7 @@ import ReceiveablePage from "./pages/ReceiveablePage";
 import PayablePage from "./pages/PayablePage";
 import UsermanagementPage from "./pages/UsermanagementPage";
 import PettyCashPage from "./pages/PettyCashPage";
+import PettyCashRequisitionPage from "./pages/PettyCashRequisitionPage";
 import AssetsDamagePage from "./pages/AssetsDamagePage";
 import SupplierPage from "./pages/SupplierPage";
 import DamageProductPage from "./pages/DamageProductPage";
@@ -59,20 +61,6 @@ import StockAdjustmentPage from "./pages/StockAdjustmentPage";
 import DamageRepairingStockPage from "./pages/DamageRepairingStockPage";
 import EmployeeListPage from "./pages/EmployeeListPage";
 import DailyProfitLossPage from "./pages/DailyProfitLossPage";
-import DepartmentPage from "./pages/DepartmentPage";
-import DesignationPage from "./pages/DesignationPage";
-import ShiftPage from "./pages/ShiftPage";
-import HolidayPage from "./pages/HolidayPage";
-import AttendanceDevicePage from "./pages/AttendanceDevicePage";
-import AttendanceEnrollmentPage from "./pages/AttendanceEnrollmentPage";
-import AttendanceLogsPage from "./pages/AttendanceLogsPage";
-import AttendanceSummaryPage from "./pages/AttendanceSummaryPage";
-import AttendanceRegularizationPage from "./pages/AttendanceRegularizationPage";
-import LeaveTypePage from "./pages/LeaveTypePage";
-import LeaveRequestPage from "./pages/LeaveRequestPage";
-import PayrollRunPage from "./pages/PayrollRunPage";
-import PayslipPage from "./pages/PayslipPage";
-import EmployeeProfilePage from "./pages/EmployeeProfilePage";
 
 function App() {
   return (
@@ -99,7 +87,7 @@ function App() {
                 </RequireAuth>
               }
             />
-            <Route
+            {/* <Route
               path="/employee-profile"
               element={
                 <RequireAuth>
@@ -108,7 +96,7 @@ function App() {
                   </SidebarLayout>
                 </RequireAuth>
               }
-            />
+            /> */}
             <Route
               path="/employee-list"
               element={
@@ -119,7 +107,7 @@ function App() {
                 </RequireAuth>
               }
             />
-            <Route
+            {/* <Route
               path="/hrm/departments"
               element={
                 <RequireAuth>
@@ -248,7 +236,7 @@ function App() {
                   </SidebarLayout>
                 </RequireAuth>
               }
-            />
+            /> */}
             <Route
               path="/employee"
               element={
@@ -520,6 +508,16 @@ function App() {
               }
             />
             <Route
+              path="/petty-cash-requisition"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <PettyCashRequisitionPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
               path="/petty-cash"
               element={
                 <RequireAuth>
@@ -636,6 +634,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <AssetsRequisitionPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/assets-stock"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <AssetsStockPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

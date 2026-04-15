@@ -1,6 +1,7 @@
 import Header from "../components/common/Header";
 import HrmCrudManager from "../components/hrm/HrmCrudManager";
 import {
+  useApproveShiftMutation,
   useCreateShiftMutation,
   useDeleteShiftMutation,
   useGetAllShiftsQuery,
@@ -71,6 +72,7 @@ const ShiftPage = () => {
           useCreateMutation={useCreateShiftMutation}
           useUpdateMutation={useUpdateShiftMutation}
           useDeleteMutation={useDeleteShiftMutation}
+          useApproveMutation={useApproveShiftMutation}
         />
       </main>
     </div>

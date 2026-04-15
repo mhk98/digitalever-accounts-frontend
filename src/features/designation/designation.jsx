@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const designationApi = createApi({
   reducerPath: "designationApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1",
+    baseUrl: "https://apikafela.digitalever.com.bd/api/v1",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -31,9 +31,17 @@ export const designationApi = createApi({
       invalidatesTags: ["Designation"],
     }),
     deleteDesignation: build.mutation({
-      query: (id) => ({
+      query: ({ id, note }) => ({
         url: `/designation/${id}`,
         method: "DELETE",
+        body: note ? { note } : undefined,
+      }),
+      invalidatesTags: ["Designation"],
+    }),
+    approveDesignation: build.mutation({
+      query: (id) => ({
+        url: `/designation/${id}/approve`,
+        method: "POST",
       }),
       invalidatesTags: ["Designation"],
     }),
@@ -52,5 +60,6 @@ export const {
   useCreateDesignationMutation,
   useUpdateDesignationMutation,
   useDeleteDesignationMutation,
+  useApproveDesignationMutation,
   useGetAllDesignationsQuery,
 } = designationApi;
