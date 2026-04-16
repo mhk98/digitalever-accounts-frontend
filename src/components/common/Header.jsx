@@ -3,7 +3,10 @@ import { Bell, ChevronDown, Menu, Languages } from "lucide-react";
 import NotificationDropdown from "./NotificationDropdown";
 import { useGetDataByIdQuery } from "../../features/notification/notification";
 import { Link, useNavigate } from "react-router-dom";
-import { useSingleUserQuery } from "../../features/auth/auth";
+import {
+  useSingleUserQuery,
+  useUserLogoutMutation,
+} from "../../features/auth/auth";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
 
@@ -25,6 +28,7 @@ const Header = ({ title }) => {
   const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   const navigate = useNavigate();
+  const [userLogout, { isLoading: isLoggingOut }] = useUserLogoutMutation();
 
   const userId = useMemo(() => localStorage.getItem("userId"), []);
 
@@ -61,15 +65,24 @@ const Header = ({ title }) => {
     setAvatarLoadError(false);
   }, [user?.image]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.clear();
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await userLogout().unwrap();
+    } catch (error) {
+      console.error("Logout request failed", error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("role");
+      localStorage.removeItem("role_permissions");
+      localStorage.removeItem("rolePermissionsByRole");
+      navigate("/login");
+    }
   };
 
   const avatarSrc =
     user?.image && user?.image !== "null"
-      ? `https://apikafela.digitalever.com.bd${user.image}`
+      ? `https://apishifa.digitalever.com.bd${user.image}`
       : null;
 
   const avatarInitials =
@@ -215,8 +228,9 @@ const Header = ({ title }) => {
                 className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                 onClick={handleLogout}
                 type="button"
+                disabled={isLoggingOut}
               >
-                Logout
+                {isLoggingOut ? "Logging out..." : "Logout"}
               </button>
             </div>
           )}

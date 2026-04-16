@@ -53,6 +53,7 @@ import DamageStockPage from "./pages/DamageStockPage";
 import WarehousePage from "./pages/WarehousePage";
 import SupplierHistoryPage from "./pages/SupplierHistoryPage";
 import CreditLedgerPage from "./pages/CreditLedgerPage";
+import LogHistoryPage from "./pages/LogHistoryPage";
 import ManufacturePage from "./pages/ManufacturePage";
 import ItemsPage from "./pages/ItemsPage";
 import ManufactureStockPage from "./pages/ManufactureStockPage";
@@ -533,6 +534,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <CreditLedgerPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/log-history"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <LogHistoryPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

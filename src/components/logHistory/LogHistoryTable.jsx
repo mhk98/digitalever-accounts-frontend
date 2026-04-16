@@ -1,0 +1,456 @@
+import axios from "axios";
+import { motion } from "framer-motion";
+import {
+  Activity,
+  AlertCircle,
+  CheckCircle2,
+  History,
+  RefreshCcw,
+  Search,
+  UserRound,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import Select from "react-select";
+
+const API_BASE_URL = "https://apishifa.digitalever.com.bd/api/v1";
+
+const selectStyles = {
+  control: (base, state) => ({
+    ...base,
+    minHeight: 44,
+    borderRadius: 14,
+    borderColor: state.isFocused ? "#c7d2fe" : "#e2e8f0",
+    boxShadow: state.isFocused ? "0 0 0 4px rgba(99,102,241,0.12)" : "none",
+    "&:hover": { borderColor: "#cbd5e1" },
+  }),
+  valueContainer: (base) => ({ ...base, padding: "0 12px" }),
+  placeholder: (base) => ({ ...base, color: "#64748b" }),
+  menu: (base) => ({
+    ...base,
+    borderRadius: 14,
+    overflow: "hidden",
+    zIndex: 30,
+  }),
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return date.toLocaleString("en-BD", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const getUserLabel = (user) => {
+  const fullName = `${user?.FirstName || ""} ${user?.LastName || ""}`.trim();
+  return fullName || user?.Email || "Unknown User";
+};
+
+const getStatusBadgeClass = (status) => {
+  const normalized = String(status || "").toLowerCase();
+
+  if (
+    normalized.includes("success") ||
+    normalized.includes("ok") ||
+    normalized.includes("approved")
+  ) {
+    return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  }
+
+  if (
+    normalized.includes("fail") ||
+    normalized.includes("error") ||
+    normalized.includes("denied")
+  ) {
+    return "bg-rose-50 text-rose-700 border-rose-200";
+  }
+
+  return "bg-amber-50 text-amber-700 border-amber-200";
+};
+
+const LogHistoryTable = () => {
+  const [userOptions, setUserOptions] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [logs, setLogs] = useState([]);
+  const [userSearch, setUserSearch] = useState("");
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  const token =
+    localStorage.getItem("token") || localStorage.getItem("accessToken");
+
+  const authHeaders = useMemo(
+    () => ({
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }),
+    [token],
+  );
+
+  const loadUsers = async (inputValue = "") => {
+    try {
+      setLoadingUsers(true);
+
+      const response = await axios.get(
+        `${API_BASE_URL}/user?searchTerm=${encodeURIComponent(inputValue)}&limit=20`,
+        authHeaders,
+      );
+
+      const users = response.data?.data || [];
+
+      setUserOptions(
+        users.map((user) => ({
+          value: user.Id,
+          label: getUserLabel(user),
+          email: user.Email,
+          raw: user,
+        })),
+      );
+    } catch (error) {
+      console.error("Failed to load users", error);
+      setUserOptions([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const loadLogs = async (userId) => {
+    if (!userId) {
+      setLogs([]);
+      return;
+    }
+
+    try {
+      setLoadingLogs(true);
+
+      const response = await axios.get(
+        `${API_BASE_URL}/user-log-history?userId=${userId}&page=1&limit=50`,
+        authHeaders,
+      );
+
+      setLogs(response.data?.data || []);
+    } catch (error) {
+      console.error("Failed to load log history", error);
+      setLogs([]);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers("");
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      loadUsers(userSearch);
+    }, 250);
+
+    return () => clearTimeout(timeoutId);
+  }, [userSearch]);
+
+  const handleUserChange = (selectedOption) => {
+    setSelectedUser(selectedOption);
+    loadLogs(selectedOption?.value);
+  };
+
+  const totalLogs = logs.length;
+  const successLogs = logs.filter((log) =>
+    String(log?.status || "")
+      .toLowerCase()
+      .match(/success|ok|approved/),
+  ).length;
+  const failedLogs = logs.filter((log) =>
+    String(log?.status || "")
+      .toLowerCase()
+      .match(/fail|error|denied/),
+  ).length;
+  const latestActivity = logs[0]?.createdAt || logs[0]?.date || null;
+
+  return (
+    <motion.div
+      className="bg-white/90 backdrop-blur-md shadow-[0_4px_20px_rgba(15,23,42,0.04)] rounded-2xl p-4 sm:p-6 border border-slate-200 mb-8"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+    >
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            Log History
+          </h2>
+          <p className="text-slate-500 text-sm mt-1 font-medium">
+            Review user activity, request outcomes, and recent system actions
+            from one place
+          </p>
+        </div>
+
+        <div className="inline-flex items-center gap-3 bg-indigo-50 border border-indigo-100 px-5 py-2.5 rounded-2xl shadow-sm shadow-indigo-50">
+          <div className="h-8 w-8 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm">
+            <History size={18} />
+          </div>
+          <div>
+            <div className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.2em]">
+              Total Logs
+            </div>
+            <div className="text-base font-black text-indigo-900 tabular-nums leading-none">
+              {loadingLogs ? "..." : totalLogs.toLocaleString()}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 rounded-2xl bg-white text-slate-700 flex items-center justify-center shadow-sm border border-slate-200">
+              <Activity size={18} />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Total Entries
+              </p>
+              <p className="text-xl font-black text-slate-900">
+                {loadingLogs ? "..." : totalLogs.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 rounded-2xl bg-white text-emerald-600 flex items-center justify-center shadow-sm border border-emerald-100">
+              <CheckCircle2 size={18} />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400">
+                Success
+              </p>
+              <p className="text-xl font-black text-emerald-900">
+                {loadingLogs ? "..." : successLogs.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-rose-100 bg-rose-50/80 p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 rounded-2xl bg-white text-rose-600 flex items-center justify-center shadow-sm border border-rose-100">
+              <AlertCircle size={18} />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-rose-400">
+                Failed
+              </p>
+              <p className="text-xl font-black text-rose-900">
+                {loadingLogs ? "..." : failedLogs.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-indigo-100 bg-indigo-50/80 p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 rounded-2xl bg-white text-indigo-600 flex items-center justify-center shadow-sm border border-indigo-100">
+              <UserRound size={18} />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-400">
+                Latest Activity
+              </p>
+              <p className="text-sm font-black text-indigo-900">
+                {loadingLogs ? "Loading..." : formatDateTime(latestActivity)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-4 mb-8 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
+            User
+          </label>
+          <Select
+            options={userOptions}
+            value={selectedUser}
+            isLoading={loadingUsers}
+            onChange={handleUserChange}
+            onInputChange={(value, meta) => {
+              if (meta.action === "input-change") setUserSearch(value);
+              if (meta.action === "menu-close" && !value) setUserSearch("");
+              return value;
+            }}
+            placeholder="Search user..."
+            isClearable
+            styles={selectStyles}
+            className="text-black"
+            noOptionsMessage={() =>
+              loadingUsers ? "Loading users..." : "No user found"
+            }
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedUser(null);
+            setUserSearch("");
+            setLogs([]);
+            loadUsers("");
+          }}
+          className="h-11 px-5 border border-slate-200 rounded-xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 transition active:scale-95 flex items-center justify-center gap-2 shadow-sm"
+        >
+          <RefreshCcw size={16} />
+          Reset
+        </button>
+      </div>
+
+      <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-100">
+            <thead className="bg-slate-50/50">
+              <tr>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Time
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  User
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Action
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Module
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Method
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Route
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Status
+                </th>
+                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                  Message
+                </th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {logs.map((log) => (
+                <motion.tr
+                  key={log.Id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className="hover:bg-slate-50 group"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-semibold text-slate-900">
+                      {formatDateTime(log.createdAt || log.date)}
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-bold text-slate-900">
+                      {getUserLabel(log.user)}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {log.user?.Email || selectedUser?.email || "-"}
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4 text-sm font-semibold text-slate-700">
+                    {log.action || "-"}
+                  </td>
+
+                  <td className="px-6 py-4 text-sm text-slate-700">
+                    {log.module || "-"}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <span className="inline-flex rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700">
+                      {log.method || "-"}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-4 text-sm text-slate-700 max-w-[220px]">
+                    <div className="truncate" title={log.route || "-"}>
+                      {log.route || "-"}
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${getStatusBadgeClass(log.status)}`}
+                    >
+                      {log.status || "Unknown"}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-4 text-sm text-slate-600 max-w-[280px]">
+                    <div
+                      className="line-clamp-2 break-words"
+                      title={log.responseMessage || "-"}
+                    >
+                      {log.responseMessage || "-"}
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+
+          {loadingLogs && (
+            <div className="py-24 text-center">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 border-[3px] border-indigo-600/20 border-t-indigo-600"></div>
+              <p className="mt-4 text-sm font-semibold text-slate-500">
+                Loading log history...
+              </p>
+            </div>
+          )}
+
+          {!loadingLogs && !selectedUser && (
+            <div className="py-24 text-center text-slate-400 px-6">
+              <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center">
+                <Search size={24} />
+              </div>
+              <p className="font-bold text-sm text-slate-600">
+                Select a user to view log history
+              </p>
+              <p className="text-xs mt-2">
+                Search by name or email to load recent activity records
+              </p>
+            </div>
+          )}
+
+          {!loadingLogs && selectedUser && logs.length === 0 && (
+            <div className="py-24 text-center text-slate-400 px-6">
+              <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center">
+                <History size={24} />
+              </div>
+              <p className="font-bold text-sm text-slate-600">
+                No log history found
+              </p>
+              <p className="text-xs mt-2">
+                This user does not have any recent activity records yet
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+export default LogHistoryTable;

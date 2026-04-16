@@ -39,6 +39,7 @@ import {
   Factory,
   Fingerprint,
   CalendarDays,
+  History,
 } from "lucide-react";
 
 export const ROLE_OPTIONS = [
@@ -98,6 +99,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "petty_cash_requisition",
     "petty_cash",
     "credit_ledger",
+    "log_history",
     "notifications",
     "settings",
     "logo",
@@ -158,6 +160,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "petty_cash_requisition",
     "petty_cash",
     "credit_ledger",
+    "log_history",
     "notifications",
     "settings",
     "logo",
@@ -236,6 +239,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "petty_cash_requisition",
     "petty_cash",
     "credit_ledger",
+    "log_history",
     "hrm",
     "employee_management",
     "department_designation",
@@ -583,6 +587,14 @@ export const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin", "accountant"],
       },
     ],
+  },
+  {
+    name: "Log History",
+    key: "log_history",
+    icon: History,
+    color: "#0f766e",
+    href: "/log-history",
+    roles: ["superAdmin", "admin", "accountant"],
   },
   {
     name: "Notifications",

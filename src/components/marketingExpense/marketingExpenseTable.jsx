@@ -889,7 +889,7 @@ const MarketingExpenseTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `https://apikafela.digitalever.com.bd${safePath}`
+                ? `https://apishifa.digitalever.com.bd${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(

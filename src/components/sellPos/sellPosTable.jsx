@@ -788,10 +788,7 @@ function PaymentDrawer({
   isSaving,
 }) {
   const safeTotal = Number(total) || 0;
-  const dueAmount = Math.max(
-    0,
-    safeTotal - (Number(paidAmount) || 0),
-  );
+  const dueAmount = Math.max(0, safeTotal - (Number(paidAmount) || 0));
 
   const handlePaidAmountChange = (value) => {
     const nextPaidAmount = Math.min(Math.max(0, Number(value) || 0), safeTotal);
@@ -1119,7 +1116,7 @@ function InvoiceModal({ open, onClose, invoice, invoiceRef, onPrint }) {
 
                 <div className="text-right">
                   <div className="text-sm font-semibold text-slate-900">
-                    Kafela Mart
+                    Shifa
                   </div>
                   <div className="text-xs text-slate-600">POS Sale Invoice</div>
                 </div>

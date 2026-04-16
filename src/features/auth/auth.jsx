@@ -8,7 +8,7 @@
 // export const authApi = createApi({
 //   reducerPath: "authApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
+//     baseUrl: " https://apishifa.digitalever.com.bd/api/v1/",
 
 //     // This will attach the token to every request that requires authorization
 //     prepareHeaders: (headers) => {
@@ -93,7 +93,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://apikafela.digitalever.com.bd/api/v1",
+    baseUrl: "https://apishifa.digitalever.com.bd/api/v1",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -116,6 +116,14 @@ export const authApi = createApi({
         url: "/user/register",
         method: "POST",
         body: registerData,
+      }),
+      invalidatesTags: ["auth"],
+    }),
+
+    userLogout: build.mutation({
+      query: () => ({
+        url: "/user/logout",
+        method: "POST",
       }),
       invalidatesTags: ["auth"],
     }),
@@ -190,6 +198,7 @@ export const {
   useGetAllUserQuery,
   useUserRegisterMutation,
   useUserLoginMutation,
+  useUserLogoutMutation,
   useUserDeleteMutation,
   useUserUpdateMutation,
   useSingleUserQuery, // ✅ useSingleUserQuery (query hook)

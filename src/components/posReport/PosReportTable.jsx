@@ -791,7 +791,7 @@
 //             >
 //               <div className="flex justify-between items-start">
 //                 <div>
-//                   <h3 className="text-xl font-bold">Kafela Mart</h3>
+//                   <h3 className="text-xl font-bold">Shifa</h3>
 //                   <p className="text-sm text-slate-600">Address line</p>
 //                   <p className="text-sm text-slate-600">
 //                     Phone: +880 9647-555333
@@ -1764,124 +1764,126 @@ const PosReportTable = () => {
 
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <Field
-                  label="Date"
-                  type="date"
-                  value={currentReport.date || ""}
-                  onChange={(v) =>
-                    setCurrentReport({ ...currentReport, date: v })
-                  }
-                />
-
-                <Field
-                  label="Customer Name"
-                  value={currentReport.name || ""}
-                  onChange={(v) =>
-                    setCurrentReport({ ...currentReport, name: v })
-                  }
-                />
-
-                <Field
-                  label="Mobile"
-                  value={currentReport.mobile || ""}
-                  onChange={(v) =>
-                    setCurrentReport({ ...currentReport, mobile: v })
-                  }
-                />
-
-                <Field
-                  label="Address"
-                  value={currentReport.address || ""}
-                  onChange={(v) =>
-                    setCurrentReport({ ...currentReport, address: v })
-                  }
-                />
-
-                <Field
-                  label="Subtotal"
-                  type="number"
-                  value={currentReport.subTotal}
-                  onChange={(v) =>
-                    setCurrentReport({ ...currentReport, subTotal: v })
-                  }
-                />
-
-                <Field
-                  label="Discount"
-                  type="number"
-                  value={currentReport.discount}
-                  onChange={(v) =>
-                    setCurrentReport({ ...currentReport, discount: v })
-                  }
-                />
-
-                <Field
-                  label="Delivery Charge"
-                  type="number"
-                  value={currentReport.deliveryCharge}
-                  onChange={(v) =>
-                    setCurrentReport({ ...currentReport, deliveryCharge: v })
-                  }
-                />
-
-                <Field
-                  label="Total"
-                  type="number"
-                  value={currentReport.total}
-                  onChange={(v) =>
-                    setCurrentReport({ ...currentReport, total: v })
-                  }
-                />
-
-                <Field
-                  label="Paid Amount"
-                  type="number"
-                  value={currentReport.paidAmount}
-                  onChange={handleEditPaidAmountChange}
-                />
-
-                <Field
-                  label="Due Amount"
-                  type="number"
-                  value={currentReport.dueAmount}
-                  onChange={handleEditDueAmountChange}
-                />
-
-                <div className="md:col-span-3">
-                  <label className="block text-sm text-slate-700">Note</label>
-                  <textarea
-                    value={currentReport.note || ""}
-                    onChange={(e) =>
-                      setCurrentReport({
-                        ...currentReport,
-                        note: e.target.value,
-                      })
+                  <Field
+                    label="Date"
+                    type="date"
+                    value={currentReport.date || ""}
+                    onChange={(v) =>
+                      setCurrentReport({ ...currentReport, date: v })
                     }
-                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    rows={3}
                   />
-                </div>
 
-                {(role === "superAdmin" || role === "admin") && (
+                  <Field
+                    label="Customer Name"
+                    value={currentReport.name || ""}
+                    onChange={(v) =>
+                      setCurrentReport({ ...currentReport, name: v })
+                    }
+                  />
+
+                  <Field
+                    label="Mobile"
+                    value={currentReport.mobile || ""}
+                    onChange={(v) =>
+                      setCurrentReport({ ...currentReport, mobile: v })
+                    }
+                  />
+
+                  <Field
+                    label="Address"
+                    value={currentReport.address || ""}
+                    onChange={(v) =>
+                      setCurrentReport({ ...currentReport, address: v })
+                    }
+                  />
+
+                  <Field
+                    label="Subtotal"
+                    type="number"
+                    value={currentReport.subTotal}
+                    onChange={(v) =>
+                      setCurrentReport({ ...currentReport, subTotal: v })
+                    }
+                  />
+
+                  <Field
+                    label="Discount"
+                    type="number"
+                    value={currentReport.discount}
+                    onChange={(v) =>
+                      setCurrentReport({ ...currentReport, discount: v })
+                    }
+                  />
+
+                  <Field
+                    label="Delivery Charge"
+                    type="number"
+                    value={currentReport.deliveryCharge}
+                    onChange={(v) =>
+                      setCurrentReport({ ...currentReport, deliveryCharge: v })
+                    }
+                  />
+
+                  <Field
+                    label="Total"
+                    type="number"
+                    value={currentReport.total}
+                    onChange={(v) =>
+                      setCurrentReport({ ...currentReport, total: v })
+                    }
+                  />
+
+                  <Field
+                    label="Paid Amount"
+                    type="number"
+                    value={currentReport.paidAmount}
+                    onChange={handleEditPaidAmountChange}
+                  />
+
+                  <Field
+                    label="Due Amount"
+                    type="number"
+                    value={currentReport.dueAmount}
+                    onChange={handleEditDueAmountChange}
+                  />
+
                   <div className="md:col-span-3">
-                    <label className="block text-sm text-slate-700">Status</label>
-                    <select
-                      value={currentReport.status || ""}
+                    <label className="block text-sm text-slate-700">Note</label>
+                    <textarea
+                      value={currentReport.note || ""}
                       onChange={(e) =>
                         setCurrentReport({
                           ...currentReport,
-                          status: e.target.value,
+                          note: e.target.value,
                         })
                       }
                       className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                    >
-                      <option value="">Select Status</option>
-                      <option value="Approved">Approved</option>
-                      <option value="Pending">Pending</option>
-                      <option value="---">---</option>
-                    </select>
+                      rows={3}
+                    />
                   </div>
-                )}
+
+                  {(role === "superAdmin" || role === "admin") && (
+                    <div className="md:col-span-3">
+                      <label className="block text-sm text-slate-700">
+                        Status
+                      </label>
+                      <select
+                        value={currentReport.status || ""}
+                        onChange={(e) =>
+                          setCurrentReport({
+                            ...currentReport,
+                            status: e.target.value,
+                          })
+                        }
+                        className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                      >
+                        <option value="">Select Status</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Pending">Pending</option>
+                        <option value="---">---</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -2020,7 +2022,7 @@ function PosInvoiceView({ report }) {
     <>
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="text-xl font-bold">Kafela Mart</h3>
+          <h3 className="text-xl font-bold">Shifa</h3>
           <p className="text-sm text-slate-600">Address line</p>
           <p className="text-sm text-slate-600">Phone: +880 9647-555333</p>
         </div>

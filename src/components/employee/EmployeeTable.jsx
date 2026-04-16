@@ -891,7 +891,7 @@
 //   //       return `
 //   //       <div class="invoice-container invoice-page">
 //   //         <div class="invoice-header">
-//   //           <h1>Kafela Mart</h1>
+//   //           <h1>Shifa</h1>
 //   //           <p>Address line | Phone: +880 9647-555333</p>
 //   //           <p>Invoice Date: ${invoiceDate} | Invoice No: ${invoiceNo}</p>
 //   //         </div>
@@ -1140,7 +1140,7 @@
 //         <div class="invoice-container invoice-page">
 //           <div class="invoice-header">
 //             <div class="left-header">
-//               <h1>Kafela Mart</h1>
+//               <h1>Shifa</h1>
 //               <p class="sub">Official Salary Statement</p>
 //               <p class="phone">Phone: +880 9647-555333</p>
 //             </div>
@@ -1225,7 +1225,7 @@
 //             </div>
 //             <div class="signature-box">
 //               <p class="sig-label">Authorized By</p>
-//               <p class="sig-value">Kafela Mart Management</p>
+//               <p class="sig-value">Shifa Management</p>
 //             </div>
 //           </div>
 //         </div>
@@ -2406,7 +2406,7 @@
 //             <div className="flex justify-between items-start mb-8">
 //               <div>
 //                 <h3 className="text-2xl font-black text-indigo-600 mb-1">
-//                   Kafela Mart
+//                   Shifa
 //                 </h3>
 //                 <p className="text-sm font-bold text-slate-500">
 //                   Official Salary Statement
@@ -2561,7 +2561,7 @@
 //                   {t.authorized_by || "Authorized By"}
 //                 </p>
 //                 <p className="text-sm font-bold text-slate-900">
-//                   Kafela Mart Management
+//                   Shifa Management
 //                 </p>
 //               </div>
 //             </div>
@@ -2666,7 +2666,7 @@
 //                   <div className="flex justify-between items-start mb-8">
 //                     <div>
 //                       <h3 className="text-2xl font-black text-indigo-600 mb-1">
-//                         Kafela Mart
+//                         Shifa
 //                       </h3>
 //                       <p className="text-sm font-bold text-slate-500">
 //                         {t.official_salary_statement ||
@@ -2815,7 +2815,7 @@
 //                         {t.authorized_by || "Authorized By"}
 //                       </p>
 //                       <p className="text-sm font-bold text-slate-900">
-//                         {t.holy_gift_management || "Kafela Mart Management"}
+//                         {t.holy_gift_management || "Shifa Management"}
 //                       </p>
 //                     </div>
 //                   </div>
@@ -3794,7 +3794,7 @@ const EmployeeTable = () => {
   //       return `
   //       <div class="invoice-container invoice-page">
   //         <div class="invoice-header">
-  //           <h1>Kafela Mart</h1>
+  //           <h1>Shifa</h1>
   //           <p>Address line | Phone: +880 9647-555333</p>
   //           <p>Invoice Date: ${invoiceDate} | Invoice No: ${invoiceNo}</p>
   //         </div>
@@ -4043,7 +4043,7 @@ const EmployeeTable = () => {
         <div class="invoice-container invoice-page">
           <div class="invoice-header">
             <div class="left-header">
-              <h1>Kafela Mart</h1>
+              <h1>Shifa</h1>
               <p class="sub">Official Salary Statement</p>
               <p class="phone">Phone: +880 9647-555333</p>
             </div>
@@ -4128,7 +4128,7 @@ const EmployeeTable = () => {
             </div>
             <div class="signature-box">
               <p class="sig-label">Authorized By</p>
-              <p class="sig-value">Kafela Mart Management</p>
+              <p class="sig-value">Shifa Management</p>
             </div>
           </div>
         </div>
@@ -5309,7 +5309,7 @@ const EmployeeTable = () => {
             <div className="flex justify-between items-start mb-8">
               <div>
                 <h3 className="text-2xl font-black text-indigo-600 mb-1">
-                  Kafela Mart
+                  Shifa
                 </h3>
                 <p className="text-sm font-bold text-slate-500">
                   Official Salary Statement
@@ -5464,7 +5464,7 @@ const EmployeeTable = () => {
                   {t.authorized_by || "Authorized By"}
                 </p>
                 <p className="text-sm font-bold text-slate-900">
-                  Kafela Mart Management
+                  Shifa Management
                 </p>
               </div>
             </div>
@@ -5569,7 +5569,7 @@ const EmployeeTable = () => {
                   <div className="flex justify-between items-start mb-8">
                     <div>
                       <h3 className="text-2xl font-black text-indigo-600 mb-1">
-                        Kafela Mart
+                        Shifa
                       </h3>
                       <p className="text-sm font-bold text-slate-500">
                         {t.official_salary_statement ||
@@ -5718,7 +5718,7 @@ const EmployeeTable = () => {
                         {t.authorized_by || "Authorized By"}
                       </p>
                       <p className="text-sm font-bold text-slate-900">
-                        {t.holy_gift_management || "Kafela Mart Management"}
+                        {t.holy_gift_management || "Shifa Management"}
                       </p>
                     </div>
                   </div>
