@@ -60,8 +60,23 @@ import ManufactureStockPage from "./pages/ManufactureStockPage";
 import MixerPage from "./pages/MixerPage";
 import StockAdjustmentPage from "./pages/StockAdjustmentPage";
 import DamageRepairingStockPage from "./pages/DamageRepairingStockPage";
-import EmployeeListPage from "./pages/EmployeeListPage";
 import DailyProfitLossPage from "./pages/DailyProfitLossPage";
+import DailyWorkReportPage from "./pages/DailyWorkReportPage";
+import EmployeeMasterPage from "./pages/EmployeeMasterPage";
+import EmployeeProfilePage from "./pages/EmployeeProfilePage";
+import DepartmentPage from "./pages/DepartmentPage";
+import DesignationPage from "./pages/DesignationPage";
+import ShiftPage from "./pages/ShiftPage";
+import HolidayPage from "./pages/HolidayPage";
+import AttendanceDevicePage from "./pages/AttendanceDevicePage";
+import AttendanceEnrollmentPage from "./pages/AttendanceEnrollmentPage";
+import AttendanceLogsPage from "./pages/AttendanceLogsPage";
+import AttendanceSummaryPage from "./pages/AttendanceSummaryPage";
+import AttendanceRegularizationPage from "./pages/AttendanceRegularizationPage";
+import LeaveTypePage from "./pages/LeaveTypePage";
+import LeaveRequestPage from "./pages/LeaveRequestPage";
+import PayrollRunPage from "./pages/PayrollRunPage";
+import PayslipPage from "./pages/PayslipPage";
 
 function App() {
   return (
@@ -88,7 +103,7 @@ function App() {
                 </RequireAuth>
               }
             />
-            {/* <Route
+            <Route
               path="/employee-profile"
               element={
                 <RequireAuth>
@@ -97,18 +112,18 @@ function App() {
                   </SidebarLayout>
                 </RequireAuth>
               }
-            /> */}
+            />
             <Route
-              path="/employee-list"
+              path="/employee-master"
               element={
                 <RequireAuth>
                   <SidebarLayout>
-                    <EmployeeListPage />
+                    <EmployeeMasterPage />
                   </SidebarLayout>
                 </RequireAuth>
               }
             />
-            {/* <Route
+            <Route
               path="/hrm/departments"
               element={
                 <RequireAuth>
@@ -237,7 +252,17 @@ function App() {
                   </SidebarLayout>
                 </RequireAuth>
               }
-            /> */}
+            />
+            <Route
+              path="/hrm/daily-work-reports"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <DailyWorkReportPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
             <Route
               path="/employee"
               element={

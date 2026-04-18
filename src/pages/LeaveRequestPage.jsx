@@ -11,8 +11,14 @@ import { useGetAllLeaveTypesQuery } from "../features/leaveType/leaveType";
 
 const LeaveRequestPage = () => {
   const currentUserId = localStorage.getItem("userId");
-  const { data: employeesRes } = useGetAllEmployeeListQuery({ page: 1, limit: 500 });
-  const { data: leaveTypesRes } = useGetAllLeaveTypesQuery({ page: 1, limit: 500 });
+  const { data: employeesRes } = useGetAllEmployeeListQuery({
+    page: 1,
+    limit: 500,
+  });
+  const { data: leaveTypesRes } = useGetAllLeaveTypesQuery({
+    page: 1,
+    limit: 500,
+  });
 
   const employeeOptions = (employeesRes?.data || []).map((employee) => ({
     value: employee.Id,
@@ -33,15 +39,55 @@ const LeaveRequestPage = () => {
           title="Leave Requests"
           description="Submit, approve and review leave applications so payroll can respect paid and unpaid absence."
           fields={[
-            { name: "employeeId", label: "Employee", type: "select", options: employeeOptions, required: true },
-            { name: "leaveTypeId", label: "Leave Type", type: "select", options: leaveTypeOptions, required: true },
-            { name: "startDate", label: "Start Date", type: "date", required: true },
-            { name: "endDate", label: "End Date", type: "date", required: true },
+            {
+              name: "employeeId",
+              label: "Employee",
+              type: "select",
+              options: employeeOptions,
+              required: true,
+            },
+            {
+              name: "leaveTypeId",
+              label: "Leave Type",
+              type: "select",
+              options: leaveTypeOptions,
+              required: true,
+            },
+            {
+              name: "startDate",
+              label: "Start Date",
+              type: "date",
+              required: true,
+            },
+            {
+              name: "endDate",
+              label: "End Date",
+              type: "date",
+              required: true,
+            },
             { name: "totalDays", label: "Total Days", type: "number" },
-            { name: "reason", label: "Reason", type: "textarea", required: true },
-            { name: "requestedByUserId", label: "Requested By User ID", type: "number", defaultValue: currentUserId || "" },
-            { name: "approvedByUserId", label: "Approved By User ID", type: "number" },
-            { name: "approvedAt", label: "Approved At", type: "datetime-local" },
+            {
+              name: "reason",
+              label: "Reason",
+              type: "textarea",
+              required: true,
+            },
+            {
+              name: "requestedByUserId",
+              label: "Requested By User ID",
+              type: "number",
+              defaultValue: currentUserId || "",
+            },
+            {
+              name: "approvedByUserId",
+              label: "Approved By User ID",
+              type: "number",
+            },
+            {
+              name: "approvedAt",
+              label: "Approved At",
+              type: "datetime-local",
+            },
             {
               name: "approvalStatus",
               label: "Approval Status",
@@ -56,8 +102,16 @@ const LeaveRequestPage = () => {
             { name: "note", label: "Note", type: "textarea" },
           ]}
           columns={[
-            { key: "employee", label: "Employee", render: (row) => row.employee?.name || "-" },
-            { key: "leaveType", label: "Leave Type", render: (row) => row.leaveType?.name || "-" },
+            {
+              key: "employee",
+              label: "Employee",
+              render: (row) => row.employee?.name || "-",
+            },
+            {
+              key: "leaveType",
+              label: "Leave Type",
+              render: (row) => row.leaveType?.name || "-",
+            },
             { key: "startDate", label: "Start" },
             { key: "endDate", label: "End" },
             { key: "approvalStatus", label: "Approval" },

@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const leaveRequestApi = createApi({
   reducerPath: "leaveRequestApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://apishifa.digitalever.com.bd/api/v1",
+    baseUrl: "https://apikafela.digitalever.com.bd/api/v1",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);

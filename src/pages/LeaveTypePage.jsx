@@ -60,7 +60,11 @@ const LeaveTypePage = () => {
           columns={[
             { key: "name", label: "Name" },
             { key: "code", label: "Code" },
-            { key: "isPaid", label: "Paid", render: (row) => (row.isPaid ? "Paid" : "Unpaid") },
+            {
+              key: "isPaid",
+              label: "Paid",
+              render: (row) => (row.isPaid ? "Paid" : "Unpaid"),
+            },
             { key: "daysPerYear", label: "Days/Year" },
             { key: "status", label: "Status" },
           ]}

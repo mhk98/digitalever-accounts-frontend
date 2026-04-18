@@ -1,7 +1,10 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useUserLoginMutation } from "../../features/auth/auth";
+import {
+  persistAuthSession,
+  useUserLoginMutation,
+} from "../../features/auth/auth";
 import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
 import { saveRolePermissionsForRole } from "../../utils/navigationPermissions";
@@ -25,9 +28,7 @@ const Login = () => {
     try {
       const res = await userLogin(formData).unwrap(); // Unwrap response to handle success or error
       console.log(res);
-      localStorage.setItem("token", res.data.accessToken);
-      localStorage.setItem("userId", res.data.user.Id);
-      localStorage.setItem("role", res.data.user.role);
+      persistAuthSession(res.data);
       saveRolePermissionsForRole(
         res.data.user.role,
         res.data.menuPermissions || [],

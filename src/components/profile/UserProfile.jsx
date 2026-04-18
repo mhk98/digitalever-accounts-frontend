@@ -6,7 +6,7 @@
 // } from "../../features/auth/auth";
 // import Modal from "../common/Modal";
 
-// const API_BASE = "https://apishifa.digitalever.com.bd";
+// const API_BASE = "https://apikafela.digitalever.com.bd";
 
 // const UserProfile = () => {
 //   const [userUpdate] = useUserUpdateMutation();
@@ -370,14 +370,21 @@
 // export default UserProfile;
 
 import toast from "react-hot-toast";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useSingleUserQuery,
   useUserUpdateMutation,
 } from "../../features/auth/auth";
 import Modal from "../common/Modal";
 
-const API_BASE = "https://apishifa.digitalever.com.bd";
+const API_BASE = "https://apikafela.digitalever.com.bd";
+const REQUIRED_DOCUMENT_LABELS = {
+  image: "Profile Photo",
+  idCard: "ID Card",
+  cv: "CV",
+  guardianPhoto: "Guardian Photo",
+  guardianIdCard: "Guardian ID Card",
+};
 
 const UserProfile = () => {
   const [userUpdate] = useUserUpdateMutation();
@@ -387,10 +394,10 @@ const UserProfile = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [previewUrl, setPreviewUrl] = useState("");
-  const [imageFile, setImageFile] = useState(null);
+  const [documentPreviewUrls, setDocumentPreviewUrls] = useState({});
+  const [documentFiles, setDocumentFiles] = useState({});
 
-  const id = useMemo(() => localStorage.getItem("userId"), []);
+  const id = localStorage.getItem("userId");
 
   const {
     data: userRes,
@@ -407,13 +414,23 @@ const UserProfile = () => {
     }
   }, [userRes, isLoading, isError, error]);
 
-  const handleChange = (e) => {
+  useEffect(() => {
+    return () => {
+      Object.values(documentPreviewUrls).forEach(
+        (url) => url && URL.revokeObjectURL(url),
+      );
+    };
+  }, [documentPreviewUrls]);
+
+  const handleChange = (field, e) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
 
-    setImageFile(selected);
-    const url = URL.createObjectURL(selected);
-    setPreviewUrl(url);
+    setDocumentFiles((prev) => ({ ...prev, [field]: selected }));
+    setDocumentPreviewUrls((prev) => {
+      if (prev[field]) URL.revokeObjectURL(prev[field]);
+      return { ...prev, [field]: URL.createObjectURL(selected) };
+    });
   };
 
   const handleEditUser = () => {
@@ -427,8 +444,11 @@ const UserProfile = () => {
             Password: "",
           },
     );
-    setImageFile(null);
-    setPreviewUrl("");
+    setDocumentFiles({});
+    Object.values(documentPreviewUrls).forEach(
+      (url) => url && URL.revokeObjectURL(url),
+    );
+    setDocumentPreviewUrls({});
     setIsModalOpen(true);
   };
 
@@ -457,8 +477,11 @@ const UserProfile = () => {
 
       appendIfNotEmpty(fd, "PostalCode", currentProfile.PostalCode);
       appendIfNotEmpty(fd, "Password", currentProfile.Password);
-
-      if (imageFile) fd.append("image", imageFile);
+      Object.keys(REQUIRED_DOCUMENT_LABELS).forEach((field) => {
+        if (documentFiles[field]) {
+          fd.append(field, documentFiles[field]);
+        }
+      });
 
       const res = await userUpdate({ id, data: fd }).unwrap();
 
@@ -563,6 +586,24 @@ const UserProfile = () => {
               <InfoRow label="Country" value={user?.Country} />
               <InfoRow label="City" value={user?.City} />
               <InfoRow label="Postal Code" value={user?.PostalCode} />
+            </div>
+          </div>
+
+          <div className="rounded-2xl shadow-sm border border-gray-200 bg-white p-5 md:p-7 md:col-span-2">
+            <h3 className="md:text-lg font-semibold text-gray-900">
+              Documents
+            </h3>
+
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(REQUIRED_DOCUMENT_LABELS).map(
+                ([field, label]) => (
+                  <DocumentLinkCard
+                    key={field}
+                    label={label}
+                    path={user?.[field]}
+                  />
+                ),
+              )}
             </div>
           </div>
         </div>
@@ -685,31 +726,11 @@ const UserProfile = () => {
               </div>
             </div>
 
-            <div className="pt-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Profile Image
-              </label>
-
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                <img
-                  src={previewUrl || avatarSrc}
-                  alt="Preview"
-                  className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-100 shrink-0"
-                />
-
-                <div className="flex-1 w-full">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleChange}
-                    className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    PNG, JPG allowed. Recommended square image.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <DocumentUploaderGrid
+              currentProfile={currentProfile}
+              previewUrls={documentPreviewUrls}
+              onChange={handleChange}
+            />
 
             <div className="pt-4 flex items-center justify-end gap-2">
               <button
@@ -755,3 +776,82 @@ const Input = ({ label, type = "text", value, onChange }) => (
 );
 
 export default UserProfile;
+
+const DocumentLinkCard = ({ label, path }) => (
+  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between gap-3">
+    <div>
+      <div className="text-sm font-semibold text-slate-900">{label}</div>
+      <div className="text-xs text-slate-500">
+        {path ? "Uploaded" : "Missing"}
+      </div>
+    </div>
+    {path ? (
+      <a
+        href={`${API_BASE}/${path}`}
+        target="_blank"
+        rel="noreferrer"
+        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-slate-100"
+      >
+        View
+      </a>
+    ) : (
+      <span className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+        Required
+      </span>
+    )}
+  </div>
+);
+
+const DocumentUploaderGrid = ({ currentProfile, previewUrls, onChange }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {Object.entries(REQUIRED_DOCUMENT_LABELS).map(([field, label]) => {
+      const currentPath = currentProfile?.[field];
+      const previewUrl = previewUrls?.[field];
+      const isImageField = field !== "cv";
+      return (
+        <div
+          key={field}
+          className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4"
+        >
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {label} *
+          </label>
+          <input
+            type="file"
+            accept={isImageField ? "image/*,.pdf" : ".pdf,image/*"}
+            onChange={(e) => onChange(field, e)}
+            className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+          />
+          <div className="mt-3">
+            {previewUrl ? (
+              isImageField ? (
+                <img
+                  src={previewUrl}
+                  alt={label}
+                  className="w-16 h-16 rounded-xl object-cover ring-2 ring-gray-100"
+                />
+              ) : (
+                <span className="inline-flex rounded-lg bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700">
+                  New file selected
+                </span>
+              )
+            ) : currentPath ? (
+              <a
+                href={`${API_BASE}/${currentPath}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-slate-100"
+              >
+                View current file
+              </a>
+            ) : (
+              <span className="inline-flex rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+                Missing
+              </span>
+            )}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+);

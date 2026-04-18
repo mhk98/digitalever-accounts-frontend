@@ -1,19 +1,45 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Plus, Search, Trash2, User } from "lucide-react";
-import toast from "react-hot-toast";
 import {
+  LogIn,
+  Pencil,
+  Plus,
+  Search,
+  ToggleLeft,
+  ToggleRight,
+  Trash2,
+  User,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import {
+  persistAuthSession,
   useGetAllUserQuery,
   useUserDeleteMutation,
+  useUserImpersonateMutation,
   useUserRegisterMutation,
+  useUserStatusUpdateMutation,
   useUserUpdateMutation,
 } from "../../features/auth/auth";
+import { saveRolePermissionsForRole } from "../../utils/navigationPermissions";
 import Modal from "../common/Modal";
 
-const API_BASE = "https://apishifa.digitalever.com.bd";
+const API_BASE = "https://apikafela.digitalever.com.bd";
+const REQUIRED_DOCUMENT_LABELS = {
+  image: "Profile Photo",
+  idCard: "ID Card",
+  cv: "CV",
+  guardianPhoto: "Guardian Photo",
+  guardianIdCard: "Guardian ID Card",
+};
 
 const UserManagementTable = () => {
+  const navigate = useNavigate();
+  const actorRole = localStorage.getItem("role");
+  const actorUserId = Number(localStorage.getItem("userId"));
+  const canManageStatus = actorRole === "superAdmin";
+
   // Modals
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -31,8 +57,8 @@ const UserManagementTable = () => {
   // Edit user
   const [currentUser, setCurrentUser] = useState(null);
   const [editPassword, setEditPassword] = useState("");
-  const [editImageFile, setEditImageFile] = useState(null);
-  const [editPreviewUrl, setEditPreviewUrl] = useState("");
+  const [editFiles, setEditFiles] = useState({});
+  const [editPreviewUrls, setEditPreviewUrls] = useState({});
 
   // Create user
   const [createUser, setCreateUser] = useState({
@@ -43,8 +69,8 @@ const UserManagementTable = () => {
     Phone: "",
     role: "",
   });
-  const [createImageFile, setCreateImageFile] = useState(null);
-  const [createPreviewUrl, setCreatePreviewUrl] = useState("");
+  const [createFiles, setCreateFiles] = useState({});
+  const [createPreviewUrls, setCreatePreviewUrls] = useState({});
 
   // Responsive pagination set
   useEffect(() => {
@@ -81,8 +107,12 @@ const UserManagementTable = () => {
   // Cleanup preview URLs
   useEffect(() => {
     return () => {
-      if (createPreviewUrl) URL.revokeObjectURL(createPreviewUrl);
-      if (editPreviewUrl) URL.revokeObjectURL(editPreviewUrl);
+      Object.values(createPreviewUrls).forEach(
+        (url) => url && URL.revokeObjectURL(url),
+      );
+      Object.values(editPreviewUrls).forEach(
+        (url) => url && URL.revokeObjectURL(url),
+      );
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -98,18 +128,22 @@ const UserManagementTable = () => {
       Phone: "",
       role: "",
     });
-    setCreateImageFile(null);
-    if (createPreviewUrl) URL.revokeObjectURL(createPreviewUrl);
-    setCreatePreviewUrl("");
+    setCreateFiles({});
+    Object.values(createPreviewUrls).forEach(
+      (url) => url && URL.revokeObjectURL(url),
+    );
+    setCreatePreviewUrls({});
   };
 
   const closeEdit = () => {
     setIsEditOpen(false);
     setCurrentUser(null);
     setEditPassword("");
-    setEditImageFile(null);
-    if (editPreviewUrl) URL.revokeObjectURL(editPreviewUrl);
-    setEditPreviewUrl("");
+    setEditFiles({});
+    Object.values(editPreviewUrls).forEach(
+      (url) => url && URL.revokeObjectURL(url),
+    );
+    setEditPreviewUrls({});
   };
 
   const handleAdd = () => {
@@ -121,37 +155,45 @@ const UserManagementTable = () => {
       Phone: "",
       role: "",
     });
-    setCreateImageFile(null);
-    if (createPreviewUrl) URL.revokeObjectURL(createPreviewUrl);
-    setCreatePreviewUrl("");
+    setCreateFiles({});
+    Object.values(createPreviewUrls).forEach(
+      (url) => url && URL.revokeObjectURL(url),
+    );
+    setCreatePreviewUrls({});
     setIsAddOpen(true);
   };
 
   const handleEdit = (u) => {
     setCurrentUser({ ...u });
     setEditPassword("");
-    setEditImageFile(null);
-    if (editPreviewUrl) URL.revokeObjectURL(editPreviewUrl);
-    setEditPreviewUrl("");
+    setEditFiles({});
+    Object.values(editPreviewUrls).forEach(
+      (url) => url && URL.revokeObjectURL(url),
+    );
+    setEditPreviewUrls({});
     setIsEditOpen(true);
   };
 
-  const handleCreateImageChange = (e) => {
+  const handleCreateFileChange = (field, e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setCreateImageFile(file);
-    if (createPreviewUrl) URL.revokeObjectURL(createPreviewUrl);
-    setCreatePreviewUrl(URL.createObjectURL(file));
+    setCreateFiles((prev) => ({ ...prev, [field]: file }));
+    setCreatePreviewUrls((prev) => {
+      if (prev[field]) URL.revokeObjectURL(prev[field]);
+      return { ...prev, [field]: URL.createObjectURL(file) };
+    });
   };
 
-  const handleEditImageChange = (e) => {
+  const handleEditFileChange = (field, e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setEditImageFile(file);
-    if (editPreviewUrl) URL.revokeObjectURL(editPreviewUrl);
-    setEditPreviewUrl(URL.createObjectURL(file));
+    setEditFiles((prev) => ({ ...prev, [field]: file }));
+    setEditPreviewUrls((prev) => {
+      if (prev[field]) URL.revokeObjectURL(prev[field]);
+      return { ...prev, [field]: URL.createObjectURL(file) };
+    });
   };
 
   // Create
@@ -164,6 +206,15 @@ const UserManagementTable = () => {
       toast.error("Email, Password এবং Role বাধ্যতামূলক!");
       return;
     }
+    const missingDocs = Object.keys(REQUIRED_DOCUMENT_LABELS).filter(
+      (field) => !createFiles[field],
+    );
+    if (missingDocs.length) {
+      toast.error(
+        `${missingDocs.map((field) => REQUIRED_DOCUMENT_LABELS[field]).join(", ")} required`,
+      );
+      return;
+    }
 
     try {
       const form = new FormData();
@@ -173,7 +224,9 @@ const UserManagementTable = () => {
       form.append("Password", createUser.Password || "");
       form.append("Phone", createUser.Phone || "");
       form.append("role", createUser.role || "");
-      if (createImageFile) form.append("image", createImageFile);
+      Object.entries(createFiles).forEach(([field, file]) => {
+        if (file) form.append(field, file);
+      });
 
       const res = await userRegister(form).unwrap();
 
@@ -207,7 +260,9 @@ const UserManagementTable = () => {
       form.append("Phone", currentUser.Phone || "");
       form.append("role", currentUser.role || "");
       if (editPassword?.trim()) form.append("Password", editPassword.trim());
-      if (editImageFile) form.append("image", editImageFile);
+      Object.entries(editFiles).forEach(([field, file]) => {
+        if (file) form.append(field, file);
+      });
 
       const res = await userUpdate({ id: currentUser.Id, data: form }).unwrap();
 
@@ -225,6 +280,10 @@ const UserManagementTable = () => {
 
   // Delete
   const [userDelete] = useUserDeleteMutation();
+  const [userStatusUpdate, { isLoading: statusUpdating }] =
+    useUserStatusUpdateMutation();
+  const [userImpersonate, { isLoading: impersonating }] =
+    useUserImpersonateMutation();
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm("Do you want to delete this user?");
@@ -240,6 +299,67 @@ const UserManagementTable = () => {
       }
     } catch (err) {
       toast.error(err?.data?.message || "Delete failed!");
+    }
+  };
+
+  const handleStatusToggle = async (item) => {
+    if (!canManageStatus) {
+      toast.error("Only super admin can change user status.");
+      return;
+    }
+
+    const nextStatus = item.status === "Inactive" ? "Active" : "Inactive";
+
+    if (item.Id === actorUserId && nextStatus === "Inactive") {
+      toast.error("নিজের account deactivate করা যাবে না।");
+      return;
+    }
+
+    try {
+      const res = await userStatusUpdate({
+        id: item.Id,
+        status: nextStatus,
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success(`User ${nextStatus.toLowerCase()} successfully!`);
+        refetch?.();
+      } else {
+        toast.error(res?.message || "Status update failed!");
+      }
+    } catch (err) {
+      toast.error(
+        err?.data?.message ||
+          err?.error ||
+          err?.message ||
+          "Status update failed!",
+      );
+    }
+  };
+
+  const handleLoginAsUser = async (item) => {
+    if (!canManageStatus) {
+      toast.error("Only super admin can login as another user.");
+      return;
+    }
+
+    try {
+      const res = await userImpersonate(item.Id).unwrap();
+
+      if (!res?.success || !res?.data?.accessToken || !res?.data?.user) {
+        toast.error(res?.message || "Login as user failed!");
+        return;
+      }
+
+      persistAuthSession(res.data);
+      saveRolePermissionsForRole(
+        res.data.user.role,
+        res.data.menuPermissions || [],
+      );
+      toast.success(`Now logged in as ${item.Email || "selected user"}`);
+      navigate("/profile", { replace: true });
+    } catch (err) {
+      toast.error(err?.data?.message || "Login as user failed!");
     }
   };
 
@@ -306,6 +426,8 @@ const UserManagementTable = () => {
           {!isLoading &&
             users.map((item) => {
               const img = item?.image ? `${API_BASE}/${item.image}` : null;
+              const isInactive = item?.status === "Inactive";
+              const isCurrentUser = item?.Id === actorUserId;
 
               return (
                 <div
@@ -334,7 +456,17 @@ const UserManagementTable = () => {
                         {item.Email || "-"}
                       </div>
                       <div className="mt-1 text-xs text-slate-500">
-                        Role: {item.role || "-"} •{" "}
+                        Role: {item.role || "-"} • Status:{" "}
+                        <span
+                          className={
+                            isInactive
+                              ? "text-rose-600 font-semibold"
+                              : "text-emerald-600 font-semibold"
+                          }
+                        >
+                          {item.status || "Active"}
+                        </span>{" "}
+                        •{" "}
                         {item.date
                           ? new Date(item.date).toLocaleDateString()
                           : "-"}
@@ -343,7 +475,45 @@ const UserManagementTable = () => {
                   </div>
 
                   {/* Right */}
-                  <div className="flex items-center gap-2 pr-2">
+                  <div className="flex items-center gap-2 pr-2 flex-wrap justify-end">
+                    {canManageStatus && (
+                      <>
+                        <button
+                          onClick={() => handleStatusToggle(item)}
+                          type="button"
+                          className={`inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 transition ${
+                            isInactive
+                              ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                              : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                          }`}
+                          title={
+                            isInactive ? "Activate user" : "Deactivate user"
+                          }
+                          disabled={statusUpdating}
+                        >
+                          {isInactive ? (
+                            <ToggleRight size={16} />
+                          ) : (
+                            <ToggleLeft size={16} />
+                          )}
+                          <span className="text-xs font-semibold">
+                            {isInactive ? "Activate" : "Deactivate"}
+                          </span>
+                        </button>
+
+                        <button
+                          onClick={() => handleLoginAsUser(item)}
+                          type="button"
+                          className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-sky-50 px-3 text-sky-700 hover:bg-sky-100 transition disabled:opacity-50"
+                          title="Login as this user"
+                          disabled={impersonating || isCurrentUser}
+                        >
+                          <LogIn size={16} />
+                          <span className="text-xs font-semibold">Login</span>
+                        </button>
+                      </>
+                    )}
+
                     <button
                       onClick={() => handleEdit(item)}
                       type="button"
@@ -472,43 +642,13 @@ const UserManagementTable = () => {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Profile Image
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleEditImageChange}
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200"
+              <DocumentFields
+                mode="edit"
+                files={editFiles}
+                previewUrls={editPreviewUrls}
+                currentValues={currentUser}
+                onFileChange={handleEditFileChange}
               />
-
-              <div className="mt-4 flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-white shadow-sm bg-white flex items-center justify-center shrink-0">
-                  {editPreviewUrl ? (
-                    <img
-                      src={editPreviewUrl}
-                      alt="preview"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : currentUser?.image ? (
-                    <img
-                      src={`${API_BASE}/${currentUser.image}`}
-                      alt="current"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <User className="text-slate-400" size={24} />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">
-                    Image Preview
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    নতুন ছবি সিলেক্ট করলে পুরোনোটা replace হবে।
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -593,33 +733,13 @@ const UserManagementTable = () => {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Profile Image
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleCreateImageChange}
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200"
+              <DocumentFields
+                mode="create"
+                files={createFiles}
+                previewUrls={createPreviewUrls}
+                currentValues={{}}
+                onFileChange={handleCreateFileChange}
               />
-
-              {createPreviewUrl && (
-                <div className="mt-4 flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <img
-                    src={createPreviewUrl}
-                    alt="preview"
-                    className="h-16 w-16 rounded-full object-cover border-2 border-white shadow-sm"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">
-                      Image Preview
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Selected profile picture
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -656,6 +776,71 @@ const Input = ({ label, value, onChange, type = "text" }) => (
       onChange={(e) => onChange(e.target.value)}
       className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
     />
+  </div>
+);
+
+const DocumentFields = ({
+  mode,
+  files,
+  previewUrls,
+  currentValues,
+  onFileChange,
+}) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {Object.entries(REQUIRED_DOCUMENT_LABELS).map(([field, label]) => {
+      const existingPath = currentValues?.[field];
+      const previewUrl = previewUrls?.[field];
+      const isImageField = field !== "cv";
+      return (
+        <div
+          key={field}
+          className="rounded-2xl border border-slate-200 p-4 bg-slate-50/70"
+        >
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            {label} *
+          </label>
+          <input
+            type="file"
+            accept={isImageField ? "image/*,.pdf" : ".pdf,image/*"}
+            onChange={(e) => onFileChange(field, e)}
+            className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200"
+          />
+          <div className="mt-3 text-xs text-slate-500">
+            {mode === "create"
+              ? "Required on user creation."
+              : "Upload only if you want to replace existing file."}
+          </div>
+          <div className="mt-3">
+            {previewUrl ? (
+              isImageField ? (
+                <img
+                  src={previewUrl}
+                  alt={label}
+                  className="h-16 w-16 rounded-xl object-cover border border-slate-200 bg-white"
+                />
+              ) : (
+                <span className="inline-flex rounded-lg bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700">
+                  New file selected
+                </span>
+              )
+            ) : existingPath ? (
+              <a
+                href={`${API_BASE}/${existingPath}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex rounded-lg bg-white px-3 py-2 text-xs font-semibold text-indigo-700 border border-slate-200 hover:bg-slate-100"
+              >
+                View current file
+              </a>
+            ) : (
+              <span className="inline-flex rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+                Missing
+              </span>
+            )}
+          </div>
+        </div>
+      );
+    })}
   </div>
 );
 

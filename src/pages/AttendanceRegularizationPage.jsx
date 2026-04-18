@@ -10,7 +10,10 @@ import { useGetAllEmployeeListQuery } from "../features/employeeList/employeeLis
 
 const AttendanceRegularizationPage = () => {
   const currentUserId = localStorage.getItem("userId");
-  const { data: employeesRes } = useGetAllEmployeeListQuery({ page: 1, limit: 500 });
+  const { data: employeesRes } = useGetAllEmployeeListQuery({
+    page: 1,
+    limit: 500,
+  });
   const employeeOptions = (employeesRes?.data || []).map((employee) => ({
     value: employee.Id,
     label: `${employee.name}${employee.employeeCode ? ` • ${employee.employeeCode}` : ""}`,
@@ -50,16 +53,33 @@ const AttendanceRegularizationPage = () => {
               ],
               defaultValue: "Missing Punch",
             },
-            { name: "requestedIn", label: "Requested In", type: "datetime-local" },
-            { name: "requestedOut", label: "Requested Out", type: "datetime-local" },
-            { name: "reason", label: "Reason", type: "textarea", required: true },
+            {
+              name: "requestedIn",
+              label: "Requested In",
+              type: "datetime-local",
+            },
+            {
+              name: "requestedOut",
+              label: "Requested Out",
+              type: "datetime-local",
+            },
+            {
+              name: "reason",
+              label: "Reason",
+              type: "textarea",
+              required: true,
+            },
             {
               name: "requestedByUserId",
               label: "Requested By User ID",
               type: "number",
               defaultValue: currentUserId || "",
             },
-            { name: "approvedByUserId", label: "Approved By User ID", type: "number" },
+            {
+              name: "approvedByUserId",
+              label: "Approved By User ID",
+              type: "number",
+            },
             {
               name: "approvalStatus",
               label: "Approval Status",
@@ -71,7 +91,11 @@ const AttendanceRegularizationPage = () => {
               ],
               defaultValue: "Pending",
             },
-            { name: "approvedAt", label: "Approved At", type: "datetime-local" },
+            {
+              name: "approvedAt",
+              label: "Approved At",
+              type: "datetime-local",
+            },
             { name: "note", label: "Note", type: "textarea" },
           ]}
           columns={[
@@ -87,7 +111,9 @@ const AttendanceRegularizationPage = () => {
               key: "reason",
               label: "Reason",
               render: (row) =>
-                row.reason?.length > 48 ? `${row.reason.slice(0, 48)}...` : row.reason,
+                row.reason?.length > 48
+                  ? `${row.reason.slice(0, 48)}...`
+                  : row.reason,
             },
           ]}
           useListQuery={useGetAllAttendanceRegularizationsQuery}

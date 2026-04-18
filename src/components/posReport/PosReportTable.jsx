@@ -791,7 +791,7 @@
 //             >
 //               <div className="flex justify-between items-start">
 //                 <div>
-//                   <h3 className="text-xl font-bold">Shifa</h3>
+//                   <h3 className="text-xl font-bold">Kafela Mart</h3>
 //                   <p className="text-sm text-slate-600">Address line</p>
 //                   <p className="text-sm text-slate-600">
 //                     Phone: +880 9647-555333
@@ -2022,7 +2022,7 @@ function PosInvoiceView({ report }) {
     <>
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="text-xl font-bold">Shifa</h3>
+          <h3 className="text-xl font-bold">Kafela Mart</h3>
           <p className="text-sm text-slate-600">Address line</p>
           <p className="text-sm text-slate-600">Phone: +880 9647-555333</p>
         </div>

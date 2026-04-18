@@ -157,6 +157,7 @@ import { leaveTypeApi } from "../features/leaveType/leaveType";
 import { leaveRequestApi } from "../features/leaveRequest/leaveRequest";
 import { payrollRunApi } from "../features/payrollRun/payrollRun";
 import { payrollItemApi } from "../features/payrollItem/payrollItem";
+import { dailyWorkReportApi } from "../features/dailyWorkReport/dailyWorkReport";
 
 // ✅ 1) Collect all apis once
 const apis = [
@@ -210,6 +211,7 @@ const apis = [
   leaveRequestApi,
   payrollRunApi,
   payrollItemApi,
+  dailyWorkReportApi,
   notificationApi,
   salaryApi,
   logoApi,

@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const employeeListApi = createApi({
   reducerPath: "employeeListApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " https://apishifa.digitalever.com.bd/api/v1/",
+    baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
     prepareHeaders: (headers) => {
       const token = getAuthToken(); // Fetch the token
       if (token) {

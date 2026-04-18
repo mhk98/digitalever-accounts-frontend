@@ -12,7 +12,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import Select from "react-select";
 
-const API_BASE_URL = "https://apishifa.digitalever.com.bd/api/v1";
+const API_BASE_URL = "https://apikafela.digitalever.com.bd/api/v1";
 
 const selectStyles = {
   control: (base, state) => ({
@@ -73,6 +73,28 @@ const getStatusBadgeClass = (status) => {
   }
 
   return "bg-amber-50 text-amber-700 border-amber-200";
+};
+
+const getMethodBadgeClass = (method) => {
+  const normalized = String(method || "").toUpperCase();
+
+  if (normalized === "GET") {
+    return "bg-sky-50 text-sky-700 border-sky-200";
+  }
+
+  if (normalized === "POST") {
+    return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  }
+
+  if (normalized === "PUT" || normalized === "PATCH") {
+    return "bg-amber-50 text-amber-700 border-amber-200";
+  }
+
+  if (normalized === "DELETE") {
+    return "bg-rose-50 text-rose-700 border-rose-200";
+  }
+
+  return "bg-slate-50 text-slate-700 border-slate-200";
 };
 
 const LogHistoryTable = () => {
@@ -182,43 +204,43 @@ const LogHistoryTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
-        <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+      <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-center justify-between mb-6 sm:mb-8">
+        <div className="min-w-0">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             Log History
           </h2>
-          <p className="text-slate-500 text-sm mt-1 font-medium">
+          <p className="text-slate-500 text-sm mt-1 font-medium max-w-2xl">
             Review user activity, request outcomes, and recent system actions
             from one place
           </p>
         </div>
 
-        <div className="inline-flex items-center gap-3 bg-indigo-50 border border-indigo-100 px-5 py-2.5 rounded-2xl shadow-sm shadow-indigo-50">
-          <div className="h-8 w-8 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm">
+        <div className="inline-flex w-full sm:w-auto items-center gap-3 bg-indigo-50 border border-indigo-100 px-4 sm:px-5 py-2.5 rounded-2xl shadow-sm shadow-indigo-50 self-start">
+          <div className="h-8 w-8 shrink-0 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm">
             <History size={18} />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.2em]">
               Total Logs
             </div>
-            <div className="text-base font-black text-indigo-900 tabular-nums leading-none">
+            <div className="text-base font-black text-indigo-900 tabular-nums leading-none truncate">
               {loadingLogs ? "..." : totalLogs.toLocaleString()}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-white text-slate-700 flex items-center justify-center shadow-sm border border-slate-200">
+            <div className="h-11 w-11 shrink-0 rounded-2xl bg-white text-slate-700 flex items-center justify-center shadow-sm border border-slate-200">
               <Activity size={18} />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
                 Total Entries
               </p>
-              <p className="text-xl font-black text-slate-900">
+              <p className="text-lg sm:text-xl font-black text-slate-900 truncate">
                 {loadingLogs ? "..." : totalLogs.toLocaleString()}
               </p>
             </div>
@@ -227,14 +249,14 @@ const LogHistoryTable = () => {
 
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4">
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-white text-emerald-600 flex items-center justify-center shadow-sm border border-emerald-100">
+            <div className="h-11 w-11 shrink-0 rounded-2xl bg-white text-emerald-600 flex items-center justify-center shadow-sm border border-emerald-100">
               <CheckCircle2 size={18} />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400">
                 Success
               </p>
-              <p className="text-xl font-black text-emerald-900">
+              <p className="text-lg sm:text-xl font-black text-emerald-900 truncate">
                 {loadingLogs ? "..." : successLogs.toLocaleString()}
               </p>
             </div>
@@ -243,14 +265,14 @@ const LogHistoryTable = () => {
 
         <div className="rounded-2xl border border-rose-100 bg-rose-50/80 p-4">
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-white text-rose-600 flex items-center justify-center shadow-sm border border-rose-100">
+            <div className="h-11 w-11 shrink-0 rounded-2xl bg-white text-rose-600 flex items-center justify-center shadow-sm border border-rose-100">
               <AlertCircle size={18} />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-rose-400">
                 Failed
               </p>
-              <p className="text-xl font-black text-rose-900">
+              <p className="text-lg sm:text-xl font-black text-rose-900 truncate">
                 {loadingLogs ? "..." : failedLogs.toLocaleString()}
               </p>
             </div>
@@ -259,14 +281,14 @@ const LogHistoryTable = () => {
 
         <div className="rounded-2xl border border-indigo-100 bg-indigo-50/80 p-4">
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-white text-indigo-600 flex items-center justify-center shadow-sm border border-indigo-100">
+            <div className="h-11 w-11 shrink-0 rounded-2xl bg-white text-indigo-600 flex items-center justify-center shadow-sm border border-indigo-100">
               <UserRound size={18} />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-400">
                 Latest Activity
               </p>
-              <p className="text-sm font-black text-indigo-900">
+              <p className="text-sm font-black text-indigo-900 break-words">
                 {loadingLogs ? "Loading..." : formatDateTime(latestActivity)}
               </p>
             </div>
@@ -274,7 +296,7 @@ const LogHistoryTable = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-4 mb-8 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 items-end">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-4 mb-6 sm:mb-8 bg-slate-50/50 p-4 sm:p-6 rounded-3xl border border-slate-100 items-end">
         <div className="flex flex-col">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
             User
@@ -307,7 +329,7 @@ const LogHistoryTable = () => {
             setLogs([]);
             loadUsers("");
           }}
-          className="h-11 px-5 border border-slate-200 rounded-xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 transition active:scale-95 flex items-center justify-center gap-2 shadow-sm"
+          className="h-11 w-full lg:w-auto px-5 border border-slate-200 rounded-xl bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 transition active:scale-95 flex items-center justify-center gap-2 shadow-sm"
         >
           <RefreshCcw size={16} />
           Reset
@@ -315,32 +337,115 @@ const LogHistoryTable = () => {
       </div>
 
       <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
-        <div className="overflow-x-auto">
+        <div className="md:hidden space-y-3 p-3 sm:p-4">
+          {logs.map((log) => (
+            <motion.div
+              key={log.Id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-slate-900 break-words">
+                    {log.action || "-"}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-slate-500 break-words">
+                    {formatDateTime(log.createdAt || log.date)}
+                  </p>
+                </div>
+
+                <span
+                  className={`inline-flex shrink-0 items-center rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${getStatusBadgeClass(log.status)}`}
+                >
+                  {log.status || "Unknown"}
+                </span>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    User
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-slate-900 break-words">
+                    {getUserLabel(log.user)}
+                  </p>
+                  <p className="text-xs text-slate-500 break-all">
+                    {log.user?.Email || selectedUser?.email || "-"}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                      Module
+                    </p>
+                    <p className="mt-1 text-sm text-slate-700 break-words">
+                      {log.module || "-"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                      Method
+                    </p>
+                    <span
+                      className={`mt-1 inline-flex rounded-lg border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${getMethodBadgeClass(log.method)}`}
+                    >
+                      {log.method || "-"}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    Route
+                  </p>
+                  <p className="mt-1 text-sm text-slate-700 break-all">
+                    {log.route || "-"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    Message
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600 break-words">
+                    {log.responseMessage || "-"}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-100">
             <thead className="bg-slate-50/50">
               <tr>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                <th className="px-4 lg:px-6 py-4 lg:py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   Time
                 </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                <th className="px-4 lg:px-6 py-4 lg:py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   User
                 </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                <th className="px-4 lg:px-6 py-4 lg:py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   Action
                 </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                <th className="px-4 lg:px-6 py-4 lg:py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   Module
                 </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                <th className="px-4 lg:px-6 py-4 lg:py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   Method
                 </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                <th className="px-4 lg:px-6 py-4 lg:py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   Route
                 </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                <th className="px-4 lg:px-6 py-4 lg:py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   Status
                 </th>
-                <th className="px-6 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                <th className="px-4 lg:px-6 py-4 lg:py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   Message
                 </th>
               </tr>
@@ -355,13 +460,13 @@ const LogHistoryTable = () => {
                   transition={{ duration: 0.2 }}
                   className="hover:bg-slate-50 group"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-semibold text-slate-900">
                       {formatDateTime(log.createdAt || log.date)}
                     </div>
                   </td>
 
-                  <td className="px-6 py-4">
+                  <td className="px-4 lg:px-6 py-4">
                     <div className="text-sm font-bold text-slate-900">
                       {getUserLabel(log.user)}
                     </div>
@@ -370,27 +475,29 @@ const LogHistoryTable = () => {
                     </div>
                   </td>
 
-                  <td className="px-6 py-4 text-sm font-semibold text-slate-700">
+                  <td className="px-4 lg:px-6 py-4 text-sm font-semibold text-slate-700">
                     {log.action || "-"}
                   </td>
 
-                  <td className="px-6 py-4 text-sm text-slate-700">
+                  <td className="px-4 lg:px-6 py-4 text-sm text-slate-700">
                     {log.module || "-"}
                   </td>
 
-                  <td className="px-6 py-4">
-                    <span className="inline-flex rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700">
+                  <td className="px-4 lg:px-6 py-4">
+                    <span
+                      className={`inline-flex rounded-lg border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${getMethodBadgeClass(log.method)}`}
+                    >
                       {log.method || "-"}
                     </span>
                   </td>
 
-                  <td className="px-6 py-4 text-sm text-slate-700 max-w-[220px]">
+                  <td className="px-4 lg:px-6 py-4 text-sm text-slate-700 max-w-[220px]">
                     <div className="truncate" title={log.route || "-"}>
                       {log.route || "-"}
                     </div>
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${getStatusBadgeClass(log.status)}`}
                     >
@@ -398,7 +505,7 @@ const LogHistoryTable = () => {
                     </span>
                   </td>
 
-                  <td className="px-6 py-4 text-sm text-slate-600 max-w-[280px]">
+                  <td className="px-4 lg:px-6 py-4 text-sm text-slate-600 max-w-[280px]">
                     <div
                       className="line-clamp-2 break-words"
                       title={log.responseMessage || "-"}

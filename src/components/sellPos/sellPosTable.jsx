@@ -1116,7 +1116,7 @@ function InvoiceModal({ open, onClose, invoice, invoiceRef, onPrint }) {
 
                 <div className="text-right">
                   <div className="text-sm font-semibold text-slate-900">
-                    Shifa
+                    Kafela Mart
                   </div>
                   <div className="text-xs text-slate-600">POS Sale Invoice</div>
                 </div>

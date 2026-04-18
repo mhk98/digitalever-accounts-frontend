@@ -31,7 +31,9 @@ const PayslipPage = () => {
     },
     {
       name: "Total Net",
-      value: rows.reduce((sum, row) => sum + Number(row.netAmount || 0), 0).toFixed(2),
+      value: rows
+        .reduce((sum, row) => sum + Number(row.netAmount || 0), 0)
+        .toFixed(2),
       icon: Wallet,
       iconBg: "#ECFDF5",
       iconColor: "#047857",
@@ -51,14 +53,20 @@ const PayslipPage = () => {
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Payslip Browser</h3>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Payslip Browser
+                </h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  Filter by month or employee to inspect payroll-ready item rows.
+                  Filter by month or employee to inspect payroll-ready item
+                  rows.
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <label className="relative block">
-                  <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search
+                    size={16}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
                   <input
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -81,17 +89,30 @@ const PayslipPage = () => {
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Employee</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Month</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Base</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Deductions</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Net</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                      Employee
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                      Month
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                      Base
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                      Deductions
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                      Net
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
+                      <td
+                        colSpan={5}
+                        className="px-4 py-10 text-center text-slate-500"
+                      >
                         Loading...
                       </td>
                     </tr>
@@ -99,20 +120,35 @@ const PayslipPage = () => {
                     rows.map((row) => (
                       <tr key={row.Id}>
                         <td className="px-4 py-3">
-                          <div className="font-semibold text-slate-900">{row.employee?.name || "-"}</div>
+                          <div className="font-semibold text-slate-900">
+                            {row.employee?.name || "-"}
+                          </div>
                           <div className="text-xs text-slate-500">
-                            {row.employee?.employeeCode || row.employee?.employee_id || "-"}
+                            {row.employee?.employeeCode ||
+                              row.employee?.employee_id ||
+                              "-"}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-slate-700">{row.payrollRun?.month || "-"}</td>
-                        <td className="px-4 py-3 text-slate-700">{row.baseSalary}</td>
-                        <td className="px-4 py-3 text-slate-700">{row.deductionAmount}</td>
-                        <td className="px-4 py-3 font-semibold text-slate-900">{row.netAmount}</td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {row.payrollRun?.month || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {row.baseSalary}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {row.deductionAmount}
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-slate-900">
+                          {row.netAmount}
+                        </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="px-4 py-12 text-center text-slate-500">
+                      <td
+                        colSpan={5}
+                        className="px-4 py-12 text-center text-slate-500"
+                      >
                         No payslip rows found.
                       </td>
                     </tr>

@@ -1,4 +1,4 @@
-import { Building2, CalendarDays, Fingerprint, Layers3, ShieldCheck, TimerReset, Users2 } from "lucide-react";
+import { Building2, CalendarDays, Fingerprint, Layers3, ShieldCheck, TimerReset, Users2, ClipboardList } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import StatCard from "../common/StatCard";
 
@@ -8,6 +8,12 @@ const SECTION_ITEMS = [
     href: "/employee-profile",
     match: ["/employee-profile"],
     icon: ShieldCheck,
+  },
+  {
+    label: "Daily Work Reports",
+    href: "/hrm/daily-work-reports",
+    match: ["/hrm/daily-work-reports"],
+    icon: ClipboardList,
   },
   {
     label: "Employee Master",

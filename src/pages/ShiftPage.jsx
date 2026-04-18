@@ -22,8 +22,16 @@ const ShiftPage = () => {
             { name: "code", label: "Code" },
             { name: "startTime", label: "Start Time", type: "time" },
             { name: "endTime", label: "End Time", type: "time" },
-            { name: "graceInMinutes", label: "Grace In Minutes", type: "number" },
-            { name: "graceOutMinutes", label: "Grace Out Minutes", type: "number" },
+            {
+              name: "graceInMinutes",
+              label: "Grace In Minutes",
+              type: "number",
+            },
+            {
+              name: "graceOutMinutes",
+              label: "Grace Out Minutes",
+              type: "number",
+            },
             {
               name: "weeklyOffDays",
               label: "Weekly Off Days",
@@ -56,7 +64,8 @@ const ShiftPage = () => {
             {
               key: "timing",
               label: "Timing",
-              render: (row) => `${row.startTime || "-"} - ${row.endTime || "-"}`,
+              render: (row) =>
+                `${row.startTime || "-"} - ${row.endTime || "-"}`,
             },
             {
               key: "weeklyOffDays",

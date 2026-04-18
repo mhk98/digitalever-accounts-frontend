@@ -19,8 +19,18 @@ const HolidayPage = () => {
           description="Maintain single-day and multi-day holiday ranges for attendance and leave calculations."
           fields={[
             { name: "name", label: "Holiday Name", required: true },
-            { name: "startDate", label: "Start Date", type: "date", required: true },
-            { name: "endDate", label: "End Date", type: "date", required: true },
+            {
+              name: "startDate",
+              label: "Start Date",
+              type: "date",
+              required: true,
+            },
+            {
+              name: "endDate",
+              label: "End Date",
+              type: "date",
+              required: true,
+            },
             {
               name: "holidayType",
               label: "Type",

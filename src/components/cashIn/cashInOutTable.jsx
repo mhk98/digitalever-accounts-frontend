@@ -58,6 +58,27 @@ const STATIC_CATEGORIES = [
   "Other",
 ];
 
+const FILE_SERVER_BASE_URL = "https://apikafela.digitalever.com.bd";
+
+const buildFileUrl = (filePath) => {
+  const normalizedPath = String(filePath || "")
+    .trim()
+    .replace(/\\/g, "/");
+
+  if (!normalizedPath) return "";
+
+  if (/^https?:\/\//i.test(normalizedPath)) {
+    return encodeURI(normalizedPath);
+  }
+
+  const safeBaseUrl = FILE_SERVER_BASE_URL.trim().replace(/\/+$/, "");
+  const safePath = normalizedPath.startsWith("/")
+    ? normalizedPath
+    : `/${normalizedPath}`;
+
+  return encodeURI(`${safeBaseUrl}${safePath}`);
+};
+
 const CashInOutTable = () => {
   const { language } = useLayout();
   const t = translations[language] || translations.EN;
@@ -1351,9 +1372,7 @@ const CashInOutTable = () => {
               const rowId = rp.Id ?? rp.id;
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
-              const fileUrl = safePath
-                ? `https://apishifa.digitalever.com.bd${safePath}`
-                : "";
+              const fileUrl = buildFileUrl(rp.file);
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
                 ext,

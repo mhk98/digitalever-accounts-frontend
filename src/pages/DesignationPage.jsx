@@ -10,7 +10,10 @@ import {
 import { useGetAllDepartmentsQuery } from "../features/department/department";
 
 const DesignationPage = () => {
-  const { data: departmentsRes } = useGetAllDepartmentsQuery({ page: 1, limit: 500 });
+  const { data: departmentsRes } = useGetAllDepartmentsQuery({
+    page: 1,
+    limit: 500,
+  });
   const departmentOptions = (departmentsRes?.data || []).map((department) => ({
     value: department.Id,
     label: department.name,

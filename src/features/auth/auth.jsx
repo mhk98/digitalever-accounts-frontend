@@ -8,7 +8,7 @@
 // export const authApi = createApi({
 //   reducerPath: "authApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " https://apishifa.digitalever.com.bd/api/v1/",
+//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
 
 //     // This will attach the token to every request that requires authorization
 //     prepareHeaders: (headers) => {
@@ -90,10 +90,18 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 const getAuthToken = () => localStorage.getItem("token");
 
+export const persistAuthSession = (payload) => {
+  if (!payload?.accessToken || !payload?.user) return;
+
+  localStorage.setItem("token", payload.accessToken);
+  localStorage.setItem("userId", payload.user.Id);
+  localStorage.setItem("role", payload.user.role);
+};
+
 export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://apishifa.digitalever.com.bd/api/v1",
+    baseUrl: "https://apikafela.digitalever.com.bd/api/v1",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -132,6 +140,26 @@ export const authApi = createApi({
       query: (id) => ({
         url: `/user/${id}`,
         method: "DELETE",
+      }),
+      invalidatesTags: ["auth"],
+    }),
+
+    userStatusUpdate: build.mutation({
+      query: ({ id, status }) => ({
+        url: `/user/${id}/status`,
+        method: "PUT",
+        body: { status },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "user", id },
+        "auth",
+      ],
+    }),
+
+    userImpersonate: build.mutation({
+      query: (id) => ({
+        url: `/user/${id}/impersonate`,
+        method: "POST",
       }),
       invalidatesTags: ["auth"],
     }),
@@ -200,6 +228,8 @@ export const {
   useUserLoginMutation,
   useUserLogoutMutation,
   useUserDeleteMutation,
+  useUserStatusUpdateMutation,
+  useUserImpersonateMutation,
   useUserUpdateMutation,
   useSingleUserQuery, // ✅ useSingleUserQuery (query hook)
   useGetRolePermissionsQuery,

@@ -30,7 +30,7 @@ const Header = ({ title }) => {
   const navigate = useNavigate();
   const [userLogout, { isLoading: isLoggingOut }] = useUserLogoutMutation();
 
-  const userId = useMemo(() => localStorage.getItem("userId"), []);
+  const userId = localStorage.getItem("userId");
 
   // ✅ user data
   const {
@@ -82,7 +82,7 @@ const Header = ({ title }) => {
 
   const avatarSrc =
     user?.image && user?.image !== "null"
-      ? `https://apishifa.digitalever.com.bd${user.image}`
+      ? `https://apikafela.digitalever.com.bd${user.image}`
       : null;
 
   const avatarInitials =
@@ -200,7 +200,8 @@ const Header = ({ title }) => {
               <div className="text-slate-900 text-sm font-medium">
                 {userLoading
                   ? "Loading..."
-                  : `${user?.FirstName || ""} ${user?.LastName || ""}`}
+                  : `${user?.FirstName || ""} ${user?.LastName || ""}`.trim() ||
+                    "Unknown"}
               </div>
               <span className="inline-flex items-center h-5 px-2 rounded bg-emerald-600 text-white text-xs font-semibold">
                 {userError ? "Unknown" : user?.role || "Staff"}

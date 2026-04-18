@@ -10,8 +10,14 @@ import { useGetAllAttendanceDevicesQuery } from "../features/attendanceDevice/at
 import { useGetAllEmployeeListQuery } from "../features/employeeList/employeeList";
 
 const AttendanceEnrollmentPage = () => {
-  const { data: devicesRes } = useGetAllAttendanceDevicesQuery({ page: 1, limit: 500 });
-  const { data: employeesRes } = useGetAllEmployeeListQuery({ page: 1, limit: 500 });
+  const { data: devicesRes } = useGetAllAttendanceDevicesQuery({
+    page: 1,
+    limit: 500,
+  });
+  const { data: employeesRes } = useGetAllEmployeeListQuery({
+    page: 1,
+    limit: 500,
+  });
 
   const deviceOptions = (devicesRes?.data || []).map((device) => ({
     value: device.Id,
@@ -73,8 +79,16 @@ const AttendanceEnrollmentPage = () => {
               ],
               defaultValue: "Enrolled",
             },
-            { name: "enrolledAt", label: "Enrolled At", type: "datetime-local" },
-            { name: "lastSyncedAt", label: "Last Synced", type: "datetime-local" },
+            {
+              name: "enrolledAt",
+              label: "Enrolled At",
+              type: "datetime-local",
+            },
+            {
+              name: "lastSyncedAt",
+              label: "Last Synced",
+              type: "datetime-local",
+            },
             { name: "note", label: "Note", type: "textarea" },
             {
               name: "status",

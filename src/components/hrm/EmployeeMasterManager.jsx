@@ -206,7 +206,9 @@ const EmployeeMasterManager = () => {
   };
 
   const handleLinkedUserChange = (value) => {
-    const selectedUser = users.find((user) => String(user.Id) === String(value));
+    const selectedUser = users.find(
+      (user) => String(user.Id) === String(value),
+    );
     const derivedName =
       `${selectedUser?.FirstName || ""} ${selectedUser?.LastName || ""}`.trim() ||
       "";
@@ -949,14 +951,14 @@ const EmployeeMasterManager = () => {
                           </button>
                         )}
                         {isPrivilegedUser && row.status === "Pending" && (
-                            <button
-                              type="button"
-                              onClick={() => handleApprove(row)}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600"
-                            >
-                              <CheckCircle2 size={16} />
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleApprove(row)}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600"
+                          >
+                            <CheckCircle2 size={16} />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => openEdit(row)}
@@ -1021,7 +1023,8 @@ const EmployeeMasterManager = () => {
       >
         <form onSubmit={submitDeleteRequest} className="space-y-4">
           <p className="text-sm text-slate-600">
-            Admin approval is required before this employee can be deleted. Please write the reason for deletion.
+            Admin approval is required before this employee can be deleted.
+            Please write the reason for deletion.
           </p>
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-slate-700">
@@ -1080,23 +1083,23 @@ const EmployeeMasterManager = () => {
             </p>
           </div>
           {isPrivilegedUser && currentItem?.status === "Pending" && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => handleApprove(currentItem)}
-                  disabled={isApproving}
-                  className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
-                >
-                  {isApproving
-                    ? currentItem?.pendingAction === "Delete"
-                      ? "Deleting..."
-                      : "Approving..."
-                    : currentItem?.pendingAction === "Delete"
-                      ? "Approve & Delete"
-                      : "Approve"}
-                </button>
-              </div>
-            )}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => handleApprove(currentItem)}
+                disabled={isApproving}
+                className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {isApproving
+                  ? currentItem?.pendingAction === "Delete"
+                    ? "Deleting..."
+                    : "Approving..."
+                  : currentItem?.pendingAction === "Delete"
+                    ? "Approve & Delete"
+                    : "Approve"}
+              </button>
+            </div>
+          )}
         </div>
       </Modal>
     </HrmWorkspace>
