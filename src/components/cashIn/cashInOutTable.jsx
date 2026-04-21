@@ -49,6 +49,13 @@ const BANKS = [
   "Trust Bank",
 ];
 
+const BANK_ACCOUNTS = [
+  "1291070003250",
+  "1291070001898",
+  "15044412870001",
+  "1291070002677",
+];
+
 const STATIC_CATEGORIES = [
   "Office Expense",
   "Marketing",
@@ -415,6 +422,15 @@ const CashInOutTable = () => {
       BANKS.map((bank) => ({
         value: bank,
         label: bank,
+      })),
+    [],
+  );
+
+  const bankAccountOptions = useMemo(
+    () =>
+      BANK_ACCOUNTS.map((account) => ({
+        value: account,
+        label: account,
       })),
     [],
   );
@@ -1753,8 +1769,7 @@ const CashInOutTable = () => {
                 <label className="block text-sm text-slate-600 mb-1">
                   Bank Account
                 </label>
-                <input
-                  type="text"
+                <select
                   value={currentProduct.bankAccount}
                   onChange={(e) =>
                     setCurrentProduct({
@@ -1765,7 +1780,14 @@ const CashInOutTable = () => {
                   className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
                              focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                   required
-                />
+                >
+                  <option value="">Select Bank Account</option>
+                  {BANK_ACCOUNTS.map((account) => (
+                    <option key={account} value={account}>
+                      {account}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           )}
@@ -2027,17 +2049,23 @@ const CashInOutTable = () => {
                 <label className="block text-sm text-slate-600 mb-1">
                   Bank Account
                 </label>
-                <input
-                  type="text"
-                  value={createProduct.bankAccount}
-                  onChange={(e) =>
+                <Select
+                  options={bankAccountOptions}
+                  value={
+                    bankAccountOptions.find(
+                      (option) => option.value === createProduct.bankAccount,
+                    ) || null
+                  }
+                  onChange={(selectedOption) =>
                     setCreateProduct({
                       ...createProduct,
-                      bankAccount: e.target.value,
+                      bankAccount: selectedOption?.value || "",
                     })
                   }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  placeholder="Select Bank Account"
+                  className="text-sm"
+                  styles={selectStyles}
+                  isClearable
                   required
                 />
               </div>
@@ -2069,7 +2097,7 @@ const CashInOutTable = () => {
                 setCreateProduct((p) => ({ ...p, category: value }));
               }}
               placeholder="Select Category"
-              className="text-sm"
+              className="text-sm text-black"
               styles={selectStyles}
               isClearable
               required
@@ -2082,7 +2110,7 @@ const CashInOutTable = () => {
                   value={newCategoryNameAdd}
                   onChange={(e) => setNewCategoryNameAdd(e.target.value)}
                   placeholder="New category name"
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none"
+                  className="h-11 text-black border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none"
                 />
                 <button
                   type="button"
@@ -2282,17 +2310,23 @@ const CashInOutTable = () => {
                 <label className="block text-sm text-slate-600 mb-1">
                   Bank Account
                 </label>
-                <input
-                  type="text"
-                  value={createProduct.bankAccount}
-                  onChange={(e) =>
+                <Select
+                  options={bankAccountOptions}
+                  value={
+                    bankAccountOptions.find(
+                      (option) => option.value === createProduct.bankAccount,
+                    ) || null
+                  }
+                  onChange={(selectedOption) =>
                     setCreateProduct({
                       ...createProduct,
-                      bankAccount: e.target.value,
+                      bankAccount: selectedOption?.value || "",
                     })
                   }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  placeholder="Select Bank Account"
+                  className="text-sm"
+                  styles={selectStyles}
+                  isClearable
                   required
                 />
               </div>

@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { Edit, Notebook, Plus, ShoppingBasket, Trash2, X } from "lucide-react";
+import { Edit, Notebook, Plus, ShoppingBasket, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
-import { useGetAllAssetsStockWithoutQueryQuery } from "../../features/assetsStock/assetsStock";
+import { useGetAllAssetWithoutQueryQuery } from "../../features/assets/assets";
 import {
   useDeleteAssetsPurchaseMutation,
   useGetAllAssetsPurchaseQuery,
@@ -22,7 +22,7 @@ const AssetsPurchaseTable = () => {
   const [currentProduct, setCurrentProduct] = useState(null);
 
   const [createProduct, setCreateProduct] = useState({
-    productId: "",
+    assetId: "",
     price: "",
     quantity: "",
     note: "",
@@ -35,8 +35,7 @@ const AssetsPurchaseTable = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // store selected name
-  const [name, setName] = useState("");
+  const [assetId, setAssetId] = useState("");
 
   // ✅ Per-page user selectable (EmployeeTable like)
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -47,21 +46,21 @@ const AssetsPurchaseTable = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
 
-  // All products for select
-  const [productsData, setProductsData] = useState([]);
+  // All assets for select
+  const [assetsData, setAssetsData] = useState([]);
 
   const {
     data: data2,
     isLoading: isLoading2,
     isError: isError2,
     error: error2,
-  } = useGetAllAssetsStockWithoutQueryQuery();
+  } = useGetAllAssetWithoutQueryQuery();
 
   useEffect(() => {
     if (isError2) {
-      console.error("Error fetching products", error2);
+      console.error("Error fetching assets", error2);
     } else if (!isLoading2 && data2) {
-      setProductsData(data2.data || []);
+      setAssetsData(data2.data || []);
     }
   }, [data2, isLoading2, isError2, error2]);
 
@@ -82,7 +81,7 @@ const AssetsPurchaseTable = () => {
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate, name, itemsPerPage]);
+  }, [startDate, endDate, assetId, itemsPerPage]);
 
   // startDate > endDate হলে endDate ঠিক করে দেবে
   useEffect(() => {
@@ -98,7 +97,7 @@ const AssetsPurchaseTable = () => {
       limit: itemsPerPage,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      name: name || undefined,
+      assetId: assetId || undefined,
     };
 
     Object.keys(args).forEach((k) => {
@@ -107,7 +106,7 @@ const AssetsPurchaseTable = () => {
     });
 
     return args;
-  }, [currentPage, itemsPerPage, startDate, endDate, name]);
+  }, [currentPage, itemsPerPage, startDate, endDate, assetId]);
 
   const { data, isLoading, isError, error, refetch } =
     useGetAllAssetsPurchaseQuery(queryArgs);
@@ -133,7 +132,7 @@ const AssetsPurchaseTable = () => {
   const handleEditClick1 = (product) => {
     setCurrentProduct({
       ...product,
-      productId: String(product.productId ?? ""),
+      assetId: String(product.assetId ?? product.productId ?? ""),
       price: product.price ?? "",
       note: product.note ?? "",
       status: product.status ?? "",
@@ -145,12 +144,13 @@ const AssetsPurchaseTable = () => {
 
   const handleUpdateProduct1 = async () => {
     if (!currentProduct?.Id) return toast.error("Invalid item!");
+    if (!currentProduct?.assetId) return toast.error("Asset is required!");
     if (currentProduct?.note === "" || currentProduct?.note === null)
       return toast.error("Note is required!");
 
     try {
       const payload = {
-        productId: Number(currentProduct.productId),
+        assetId: Number(currentProduct.assetId),
         quantity: Number(currentProduct.quantity),
         price: Number(currentProduct.price),
         note: currentProduct.note,
@@ -179,7 +179,7 @@ const AssetsPurchaseTable = () => {
   const handleEditClick = (product) => {
     setCurrentProduct({
       ...product,
-      productId: String(product.productId ?? ""),
+      assetId: String(product.assetId ?? product.productId ?? ""),
       price: product.price ?? "",
       note: product.note ?? "",
       status: product.status ?? "",
@@ -192,7 +192,7 @@ const AssetsPurchaseTable = () => {
 
   const handleUpdateProduct = async () => {
     if (!currentProduct?.Id) return toast.error("Invalid item!");
-    if (!currentProduct?.productId) return toast.error("Asset is required!");
+    if (!currentProduct?.assetId) return toast.error("Asset is required!");
     if (currentProduct?.price === "" || currentProduct?.price === null)
       return toast.error("Price is required!");
     if (currentProduct?.quantity === "" || currentProduct?.quantity === null)
@@ -200,7 +200,7 @@ const AssetsPurchaseTable = () => {
 
     try {
       const payload = {
-        productId: Number(currentProduct.productId),
+        assetId: Number(currentProduct.assetId),
         quantity: Number(currentProduct.quantity),
         price: Number(currentProduct.price),
         note: currentProduct.note,
@@ -232,13 +232,13 @@ const AssetsPurchaseTable = () => {
   const handleCreateProduct = async (e) => {
     e.preventDefault();
 
-    if (!createProduct.productId) return toast.error("Asset is required!");
+    if (!createProduct.assetId) return toast.error("Asset is required!");
     if (!createProduct.price) return toast.error("Price is required!");
     if (!createProduct.quantity) return toast.error("Quantity is required!");
 
     try {
       const payload = {
-        productId: Number(createProduct.productId),
+        assetId: Number(createProduct.assetId),
         quantity: Number(createProduct.quantity),
         price: Number(createProduct.price),
         date: createProduct.date,
@@ -249,7 +249,13 @@ const AssetsPurchaseTable = () => {
       if (res?.success) {
         toast.success("Successfully created product");
         setIsModalOpen1(false);
-        setCreateProduct({ productId: "", price: "", quantity: "", note: "", date: new Date().toISOString().slice(0, 10) });
+        setCreateProduct({
+          assetId: "",
+          price: "",
+          quantity: "",
+          note: "",
+          date: new Date().toISOString().slice(0, 10),
+        });
         refetch?.();
       } else {
         toast.error(res?.message || "Create failed!");
@@ -282,7 +288,7 @@ const AssetsPurchaseTable = () => {
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
-    setName("");
+    setAssetId("");
   };
 
   // Pagination calculations
@@ -305,11 +311,11 @@ const AssetsPurchaseTable = () => {
   // Select options (light)
   const productOptions = useMemo(
     () =>
-      (productsData || []).map((p) => ({
+      (assetsData || []).map((p) => ({
         value: String(p.Id),
         label: p.name,
       })),
-    [productsData],
+    [assetsData],
   );
 
   // ✅ React-select styles (light like EmployeeTable)
@@ -413,9 +419,9 @@ const AssetsPurchaseTable = () => {
         <div className="flex items-center justify-center md:mt-0">
           <Select
             options={productOptions}
-            value={productOptions.find((o) => o.label === name) || null}
+            value={productOptions.find((o) => o.value === assetId) || null}
             onChange={(selected) =>
-              setName(selected?.label ? String(selected.label) : "")
+              setAssetId(selected?.value ? String(selected.value) : "")
             }
             placeholder="Select Assets"
             isClearable
@@ -500,12 +506,13 @@ const AssetsPurchaseTable = () => {
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${product.status === "Approved"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : product.status === "Active"
-                        ? "bg-blue-50 text-blue-700 border-blue-200"
-                        : "bg-amber-50 text-amber-700 border-amber-200"
-                      }`}
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                      product.status === "Approved"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : product.status === "Active"
+                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
                   >
                     {product.status}
                   </span>
@@ -611,10 +618,11 @@ const AssetsPurchaseTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition font-bold ${active
-                ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100"
-                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                }`}
+              className={`px-4 py-2 rounded-xl border transition font-bold ${
+                active
+                  ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              }`}
             >
               {pageNum}
             </button>
@@ -631,14 +639,24 @@ const AssetsPurchaseTable = () => {
       </div>
 
       {/* Note Modal */}
-      <Modal isOpen={isNoteModalOpen} onClose={handleNoteModalClose} title="Asset Purchase Note">
+      <Modal
+        isOpen={isNoteModalOpen}
+        onClose={handleNoteModalClose}
+        title="Asset Purchase Note"
+      >
         <div className="p-2">
-          <p className="text-slate-600 leading-relaxed font-medium capitalize prose-slate">{noteContent}</p>
+          <p className="text-slate-600 leading-relaxed font-medium capitalize prose-slate">
+            {noteContent}
+          </p>
         </div>
       </Modal>
 
       {/* Edit Modal */}
-      <Modal isOpen={isModalOpen} onClose={handleModalClose} title="Edit Purchase Asset">
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        title="Edit Purchase Asset"
+      >
         <div className="grid grid-cols-1 gap-5">
           <Field
             label="Date"
@@ -648,18 +666,22 @@ const AssetsPurchaseTable = () => {
             required
           />
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Asset Name</label>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+              Asset Name
+            </label>
             <Select
               options={productOptions}
               value={
-                currentProduct?.productId
-                  ? productOptions.find((o) => o.value === String(currentProduct.productId)) || null
+                currentProduct?.assetId
+                  ? productOptions.find(
+                      (o) => o.value === String(currentProduct.assetId),
+                    ) || null
                   : null
               }
               onChange={(selected) =>
                 setCurrentProduct({
                   ...currentProduct,
-                  productId: selected?.value || "",
+                  assetId: selected?.value || "",
                 })
               }
               placeholder="Select Asset"
@@ -676,23 +698,34 @@ const AssetsPurchaseTable = () => {
               type="number"
               step="0.01"
               value={currentProduct?.quantity || ""}
-              onChange={(v) => setCurrentProduct({ ...currentProduct, quantity: v })}
+              onChange={(v) =>
+                setCurrentProduct({ ...currentProduct, quantity: v })
+              }
             />
             <Field
               label="Unit Price"
               type="number"
               step="0.01"
               value={currentProduct?.price || ""}
-              onChange={(v) => setCurrentProduct({ ...currentProduct, price: v })}
+              onChange={(v) =>
+                setCurrentProduct({ ...currentProduct, price: v })
+              }
             />
           </div>
 
           {role === "superAdmin" ? (
             <div>
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Approval Status</label>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+                Approval Status
+              </label>
               <select
                 value={currentProduct?.status || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, status: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    status: e.target.value,
+                  })
+                }
                 className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               >
@@ -703,10 +736,14 @@ const AssetsPurchaseTable = () => {
             </div>
           ) : (
             <div>
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Internal Note</label>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+                Internal Note
+              </label>
               <textarea
                 value={currentProduct?.note || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, note: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({ ...currentProduct, note: e.target.value })
+                }
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 rows={4}
               />
@@ -715,27 +752,46 @@ const AssetsPurchaseTable = () => {
         </div>
 
         <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
-          <button type="button" onClick={handleModalClose} className="px-6 py-2.5 border border-slate-200 text-slate-500 font-bold text-sm rounded-xl hover:bg-slate-50 transition">Cancel</button>
-          <button onClick={handleUpdateProduct} className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-100">Apply Changes</button>
+          <button
+            type="button"
+            onClick={handleModalClose}
+            className="px-6 py-2.5 border border-slate-200 text-slate-500 font-bold text-sm rounded-xl hover:bg-slate-50 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleUpdateProduct}
+            className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-100"
+          >
+            Apply Changes
+          </button>
         </div>
       </Modal>
 
       {/* Delete/Status Request Modal */}
-      <Modal isOpen={isModalOpen2} onClose={handleModalClose2} title="Action Request / Note Update">
+      <Modal
+        isOpen={isModalOpen2}
+        onClose={handleModalClose2}
+        title="Action Request / Note Update"
+      >
         <div className="space-y-5">
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Asset Name</label>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+              Asset Name
+            </label>
             <Select
               options={productOptions}
               value={
-                currentProduct?.productId
-                  ? productOptions.find((o) => o.value === String(currentProduct.productId)) || null
+                currentProduct?.assetId
+                  ? productOptions.find(
+                      (o) => o.value === String(currentProduct.assetId),
+                    ) || null
                   : null
               }
               onChange={(selected) =>
                 setCurrentProduct({
                   ...currentProduct,
-                  productId: selected?.value || "",
+                  assetId: selected?.value || "",
                 })
               }
               placeholder="Select Asset"
@@ -747,10 +803,17 @@ const AssetsPurchaseTable = () => {
           </div>
           {role === "superAdmin" ? (
             <div>
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Status Overwrite</label>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+                Status Overwrite
+              </label>
               <select
                 value={currentProduct?.status || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, status: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    status: e.target.value,
+                  })
+                }
                 className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               >
@@ -761,10 +824,14 @@ const AssetsPurchaseTable = () => {
             </div>
           ) : (
             <div>
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Request Justification / Note</label>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+                Request Justification / Note
+              </label>
               <textarea
                 value={currentProduct?.note || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, note: e.target.value })}
+                onChange={(e) =>
+                  setCurrentProduct({ ...currentProduct, note: e.target.value })
+                }
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 rows={4}
                 placeholder="Reason for deletion request or updated notes..."
@@ -774,13 +841,28 @@ const AssetsPurchaseTable = () => {
         </div>
 
         <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
-          <button type="button" onClick={handleModalClose2} className="px-6 py-2.5 border border-slate-200 text-slate-500 font-bold text-sm rounded-xl hover:bg-slate-50 transition">Cancel</button>
-          <button onClick={handleUpdateProduct1} className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-100">Submit Request</button>
+          <button
+            type="button"
+            onClick={handleModalClose2}
+            className="px-6 py-2.5 border border-slate-200 text-slate-500 font-bold text-sm rounded-xl hover:bg-slate-50 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleUpdateProduct1}
+            className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-100"
+          >
+            Submit Request
+          </button>
         </div>
       </Modal>
 
       {/* Add Modal */}
-      <Modal isOpen={isModalOpen1} onClose={handleModalClose1} title="Record New Asset Purchase">
+      <Modal
+        isOpen={isModalOpen1}
+        onClose={handleModalClose1}
+        title="Record New Asset Purchase"
+      >
         <form onSubmit={handleCreateProduct} className="grid grid-cols-1 gap-5">
           <Field
             label="Purchase Date"
@@ -791,18 +873,22 @@ const AssetsPurchaseTable = () => {
           />
 
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Asset Name</label>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+              Asset Name
+            </label>
             <Select
               options={productOptions}
               value={
-                createProduct.productId
-                  ? productOptions.find((o) => o.value === String(createProduct.productId)) || null
+                createProduct.assetId
+                  ? productOptions.find(
+                      (o) => o.value === String(createProduct.assetId),
+                    ) || null
                   : null
               }
               onChange={(selected) =>
                 setCreateProduct({
                   ...createProduct,
-                  productId: selected?.value || "",
+                  assetId: selected?.value || "",
                 })
               }
               placeholder="Select Asset"
@@ -819,7 +905,9 @@ const AssetsPurchaseTable = () => {
               type="number"
               step="0.01"
               value={createProduct.quantity}
-              onChange={(v) => setCreateProduct({ ...createProduct, quantity: v })}
+              onChange={(v) =>
+                setCreateProduct({ ...createProduct, quantity: v })
+              }
               required
               placeholder=""
             />
@@ -835,10 +923,14 @@ const AssetsPurchaseTable = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Additional Note</label>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+              Additional Note
+            </label>
             <textarea
               value={createProduct.note}
-              onChange={(v) => setCreateProduct({ ...createProduct, note: v.target.value })}
+              onChange={(v) =>
+                setCreateProduct({ ...createProduct, note: v.target.value })
+              }
               className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               rows={3}
               placeholder="Vendor details or serial numbers..."
@@ -846,8 +938,19 @@ const AssetsPurchaseTable = () => {
           </div>
 
           <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
-            <button type="button" onClick={handleModalClose1} className="px-6 py-2.5 border border-slate-200 text-slate-500 font-bold text-sm rounded-xl hover:bg-slate-50 transition">Cancel</button>
-            <button type="submit" className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-100">Create Record</button>
+            <button
+              type="button"
+              onClick={handleModalClose1}
+              className="px-6 py-2.5 border border-slate-200 text-slate-500 font-bold text-sm rounded-xl hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-100"
+            >
+              Create Record
+            </button>
           </div>
         </form>
       </Modal>
@@ -863,10 +966,12 @@ const Field = ({
   step,
   readOnly,
   required,
-  placeholder
+  placeholder,
 }) => (
   <div>
-    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">{label}</label>
+    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+      {label}
+    </label>
     <input
       type={type}
       step={step}
@@ -875,8 +980,9 @@ const Field = ({
       readOnly={readOnly}
       required={required}
       placeholder={placeholder}
-      className={`h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition ${readOnly ? "opacity-70 cursor-not-allowed" : ""
-        }`}
+      className={`h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition ${
+        readOnly ? "opacity-70 cursor-not-allowed" : ""
+      }`}
     />
   </div>
 );

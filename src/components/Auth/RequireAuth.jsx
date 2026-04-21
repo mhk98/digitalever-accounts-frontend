@@ -3,8 +3,22 @@ import { jwtDecode } from "jwt-decode";
 import { useEffect, useState } from "react";
 import {
   canAccessPath,
+  getFirstAllowedPathForRole,
   subscribeToPermissionChanges,
 } from "../../utils/navigationPermissions";
+import SidebarLayout from "../common/SidebarLayout";
+import Header from "../common/Header";
+
+const AccessDenied = () => (
+  <SidebarLayout>
+    <Header title="Access Denied" />
+    <main className="p-4 sm:p-6">
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-800">
+        You do not have permission to view this page.
+      </div>
+    </main>
+  </SidebarLayout>
+);
 
 const RequireAuth = ({ children }) => {
   const location = useLocation();
@@ -38,7 +52,19 @@ const RequireAuth = ({ children }) => {
     const hasMenuAccess = canAccessPath(userRole, location.pathname);
 
     if (!hasMenuAccess) {
-      return <Navigate to="/" replace state={{ from: location, permissionVersion }} />;
+      const firstAllowedPath = getFirstAllowedPathForRole(userRole);
+
+      if (firstAllowedPath && firstAllowedPath !== location.pathname) {
+        return (
+          <Navigate
+            to={firstAllowedPath}
+            replace
+            state={{ from: location, permissionVersion }}
+          />
+        );
+      }
+
+      return <AccessDenied />;
     }
 
     // Proceed to render the children if token is valid

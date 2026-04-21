@@ -193,7 +193,7 @@ const SupplierTable = () => {
         <button
           onClick={handleAddSupplier}
           type="button"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 transition"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#8400ff] px-4 text-sm font-semibold text-white hover:bg-indigo-700 transition"
         >
           <Plus size={18} />
           Add New Supplier
@@ -269,10 +269,11 @@ const SupplierTable = () => {
             <button
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
-              className={`px-4 py-2 rounded-xl border transition ${active
-                ? "bg-indigo-600 text-white border-indigo-600"
-                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                }`}
+              className={`px-4 py-2 rounded-xl border transition ${
+                active
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              }`}
             >
               {pageNum}
             </button>

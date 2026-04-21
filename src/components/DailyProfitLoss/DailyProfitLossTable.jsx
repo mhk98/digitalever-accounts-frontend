@@ -689,8 +689,8 @@ const DailyProfitLossTable = () => {
               {[
                 "Product",
                 "SKU",
-                "Purchase Price",
-                "Selling Price",
+                // "Purchase Price",
+                // "Selling Price",
                 "Units Sold",
                 "Total Purchase Price",
                 "Total Selling Price",
@@ -754,7 +754,7 @@ const DailyProfitLossTable = () => {
                       {item.sku}
                     </td>
 
-                    <td className="border-b border-slate-100 px-3 py-4">
+                    {/* <td className="border-b border-slate-100 px-3 py-4">
                       <input
                         type="number"
                         min="0"
@@ -769,11 +769,11 @@ const DailyProfitLossTable = () => {
                         }
                         className="h-10 w-[110px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
                       />
-                    </td>
+                    </td> */}
 
-                    <td className="border-b border-slate-100 px-3 py-4 text-[15px] font-semibold text-slate-800">
+                    {/* <td className="border-b border-slate-100 px-3 py-4 text-[15px] font-semibold text-slate-800">
                       {safeNumber(item.sellingPrice).toFixed(2)}
-                    </td>
+                    </td> */}
 
                     <td className="border-b border-slate-100 px-3 py-4">
                       <input
@@ -1136,10 +1136,14 @@ const DailyProfitLossTable = () => {
               {selectedInvoiceRow?.salesType || "Profit/Loss Invoice"}
             </p>
             <p className="mt-1 text-sm text-slate-600">
-              Date: {formatDate(selectedInvoiceRow?.createdAt || selectedInvoiceRow?.date)}
+              Date:{" "}
+              {formatDate(
+                selectedInvoiceRow?.createdAt || selectedInvoiceRow?.date,
+              )}
             </p>
             <p className="mt-1 text-sm text-slate-600">
-              Invoice No: PL-{selectedInvoiceRow?.Id || selectedInvoiceRow?.id || "-"}
+              Invoice No: PL-
+              {selectedInvoiceRow?.Id || selectedInvoiceRow?.id || "-"}
             </p>
           </div>
 

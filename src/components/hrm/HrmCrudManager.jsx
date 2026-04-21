@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Clock3, Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  Clock3,
+  Edit,
+  Eye,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import Modal from "../common/Modal";
 import HrmWorkspace from "./HrmWorkspace";
@@ -296,6 +305,11 @@ const HrmCrudManager = ({
   const renderInput = (field) => {
     const commonClassName =
       "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition";
+    const openPicker = () => {
+      const input = document.getElementById(`hrm-field-${field.name}`);
+      input?.showPicker?.();
+      input?.focus();
+    };
 
     if (field.type === "select") {
       return (
@@ -340,6 +354,30 @@ const HrmCrudManager = ({
             size={18}
             className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
           />
+        </div>
+      );
+    }
+
+    if (field.type === "datetime-local") {
+      return (
+        <div className="relative">
+          <input
+            id={`hrm-field-${field.name}`}
+            type="datetime-local"
+            value={form[field.name]}
+            onChange={(e) => setFieldValue(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            className={`${commonClassName} cursor-pointer pr-12 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0`}
+          />
+          <button
+            type="button"
+            onClick={openPicker}
+            className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-indigo-50 hover:text-indigo-600"
+            title={`Pick ${field.label}`}
+            aria-label={`Pick ${field.label}`}
+          >
+            <CalendarClock size={18} />
+          </button>
         </div>
       );
     }

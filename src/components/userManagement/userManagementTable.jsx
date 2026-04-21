@@ -26,7 +26,7 @@ import { saveRolePermissionsForRole } from "../../utils/navigationPermissions";
 import Modal from "../common/Modal";
 
 const API_BASE = "https://apikafela.digitalever.com.bd";
-const REQUIRED_DOCUMENT_LABELS = {
+const DOCUMENT_LABELS = {
   image: "Profile Photo",
   idCard: "ID Card",
   cv: "CV",
@@ -206,16 +206,6 @@ const UserManagementTable = () => {
       toast.error("Email, Password এবং Role বাধ্যতামূলক!");
       return;
     }
-    const missingDocs = Object.keys(REQUIRED_DOCUMENT_LABELS).filter(
-      (field) => !createFiles[field],
-    );
-    if (missingDocs.length) {
-      toast.error(
-        `${missingDocs.map((field) => REQUIRED_DOCUMENT_LABELS[field]).join(", ")} required`,
-      );
-      return;
-    }
-
     try {
       const form = new FormData();
       form.append("FirstName", createUser.FirstName || "");
@@ -644,7 +634,6 @@ const UserManagementTable = () => {
             <div className="md:col-span-2">
               <DocumentFields
                 mode="edit"
-                files={editFiles}
                 previewUrls={editPreviewUrls}
                 currentValues={currentUser}
                 onFileChange={handleEditFileChange}
@@ -735,7 +724,6 @@ const UserManagementTable = () => {
             <div className="md:col-span-2">
               <DocumentFields
                 mode="create"
-                files={createFiles}
                 previewUrls={createPreviewUrls}
                 currentValues={{}}
                 onFileChange={handleCreateFileChange}
@@ -781,13 +769,12 @@ const Input = ({ label, value, onChange, type = "text" }) => (
 
 const DocumentFields = ({
   mode,
-  files,
   previewUrls,
   currentValues,
   onFileChange,
 }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    {Object.entries(REQUIRED_DOCUMENT_LABELS).map(([field, label]) => {
+    {Object.entries(DOCUMENT_LABELS).map(([field, label]) => {
       const existingPath = currentValues?.[field];
       const previewUrl = previewUrls?.[field];
       const isImageField = field !== "cv";
@@ -797,7 +784,7 @@ const DocumentFields = ({
           className="rounded-2xl border border-slate-200 p-4 bg-slate-50/70"
         >
           <label className="block text-sm font-medium text-slate-700 mb-2">
-            {label} *
+            {label}
           </label>
           <input
             type="file"
@@ -807,7 +794,7 @@ const DocumentFields = ({
           />
           <div className="mt-3 text-xs text-slate-500">
             {mode === "create"
-              ? "Required on user creation."
+              ? "Optional document upload."
               : "Upload only if you want to replace existing file."}
           </div>
           <div className="mt-3">
@@ -833,8 +820,8 @@ const DocumentFields = ({
                 View current file
               </a>
             ) : (
-              <span className="inline-flex rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
-                Missing
+              <span className="inline-flex rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
+                Not uploaded
               </span>
             )}
           </div>

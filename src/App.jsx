@@ -50,6 +50,7 @@ import MarketingBookPage from "./pages/MarketingBookPage";
 import MarketingExpensePage from "./pages/MarketingExpensePage";
 import InventoryDashboardPage from "./pages/InventoryDashboardPage";
 import DamageStockPage from "./pages/DamageStockPage";
+import InTransitStockPage from "./pages/InTransitStockPage";
 import WarehousePage from "./pages/WarehousePage";
 import SupplierHistoryPage from "./pages/SupplierHistoryPage";
 import CreditLedgerPage from "./pages/CreditLedgerPage";
@@ -77,6 +78,7 @@ import LeaveTypePage from "./pages/LeaveTypePage";
 import LeaveRequestPage from "./pages/LeaveRequestPage";
 import PayrollRunPage from "./pages/PayrollRunPage";
 import PayslipPage from "./pages/PayslipPage";
+import EmployeeListPage from "./pages/EmployeeListPage";
 
 function App() {
   return (
@@ -99,6 +101,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <OverviewPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/employee-list"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <EmployeeListPage />
                   </SidebarLayout>
                 </RequireAuth>
               }
@@ -399,6 +411,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <InTransitProductPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/delivered-stock"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <InTransitStockPage />
                   </SidebarLayout>
                 </RequireAuth>
               }

@@ -20,26 +20,11 @@ import {
 } from "../../features/category/category";
 import Select from "react-select";
 
-const BANKS = [
-  "AB Bank",
-  "Al Arafah",
-  "BRAC Bank",
-  "Bank Asia",
-  "City Bank",
-  "Dutch-Bangla Bank",
-  "Dhaka Bank",
-  "Eastern Bank",
-  "Islami Bank",
-  "Janata Bank",
-  "Mutual Trust Bank",
-  "One Bank",
-  "Prime Bank",
-  "Pubali Bank",
-  "Premier Bank",
-  "United Commercial Bank",
-  "Sonali Bank",
-  "Standard Chartered",
-  "Trust Bank",
+const BANK_ACCOUNTS = [
+  "1291070003250",
+  "1291070001898",
+  "15044412870001",
+  "1291070002677",
 ];
 
 const STATIC_CATEGORIES = [
@@ -166,7 +151,10 @@ const PettyCashTable = ({ mode = "default" }) => {
       paymentStatus: isRequisitionMode
         ? "CashIn"
         : filterPaymentStatus || undefined,
-      status: isRequisitionMode ? "Pending" : "Active,Approved",
+      status: isRequisitionMode
+        ? "Pending,Approved"
+        : "Pending,Approved,Active",
+      mode: isRequisitionMode ? "requisition" : undefined,
       searchTerm: searchTerm || undefined, // ensure it's included in the query
     };
 
@@ -277,11 +265,11 @@ const PettyCashTable = ({ mode = "default" }) => {
     [],
   );
 
-  const bankOptions = useMemo(
+  const bankAccountOptions = useMemo(
     () =>
-      BANKS.map((bank) => ({
-        value: bank,
-        label: bank,
+      BANK_ACCOUNTS.map((account) => ({
+        value: account,
+        label: account,
       })),
     [],
   );
@@ -384,6 +372,7 @@ const PettyCashTable = ({ mode = "default" }) => {
       const formData = new FormData();
       formData.append("paymentMode", currentProduct.paymentMode);
       formData.append("paymentStatus", currentProduct.paymentStatus);
+      if (isRequisitionMode) formData.append("mode", "requisition");
       formData.append("note", currentProduct.note);
       formData.append("date", currentProduct.date);
       formData.append("status", currentProduct.status);
@@ -441,6 +430,7 @@ const PettyCashTable = ({ mode = "default" }) => {
       const formData = new FormData();
       formData.append("paymentMode", currentProduct.paymentMode);
       formData.append("paymentStatus", currentProduct.paymentStatus);
+      if (isRequisitionMode) formData.append("mode", "requisition");
       formData.append("note", currentProduct.note);
       formData.append("status", currentProduct.status);
       formData.append("date", currentProduct.date);
@@ -480,7 +470,7 @@ const PettyCashTable = ({ mode = "default" }) => {
     if (!createProduct.paymentMode)
       return toast.error("Payment Mode is required!");
     if (createProduct.paymentMode === "Bank" && !createProduct.bankName)
-      return toast.error("Bank Name is required!");
+      return toast.error("Bank Account is required!");
     // Category check - Make sure categoryName is either selected or added
     if (!createProduct.category && !isNewCategoryAdd) {
       return toast.error("Category is required!");
@@ -502,6 +492,7 @@ const PettyCashTable = ({ mode = "default" }) => {
       formData.append("paymentStatus", "CashIn");
       if (isRequisitionMode) {
         formData.append("status", "Pending");
+        formData.append("mode", "requisition");
       }
       formData.append(
         "bankName",
@@ -556,7 +547,7 @@ const PettyCashTable = ({ mode = "default" }) => {
     if (!createProduct.paymentMode)
       return toast.error("Payment Mode is required!");
     if (createProduct.paymentMode === "Bank" && !createProduct.bankName)
-      return toast.error("Bank Name is required!");
+      return toast.error("Bank Account is required!");
     // Category check - Make sure categoryName is either selected or added
     if (!createProduct.category && !isNewCategoryAdd) {
       return toast.error("Category is required!");
@@ -616,7 +607,10 @@ const PettyCashTable = ({ mode = "default" }) => {
     if (!window.confirm("Do you want to delete this item?")) return;
 
     try {
-      const res = await deletePettyCash(rowId).unwrap();
+      const res = await deletePettyCash({
+        id: rowId,
+        mode: isRequisitionMode ? "requisition" : undefined,
+      }).unwrap();
       if (res?.success) {
         toast.success("Deleted!");
         refetch?.();
@@ -1028,7 +1022,7 @@ const PettyCashTable = ({ mode = "default" }) => {
                 Payment Mode
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Bank
+                Bank Account
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Payment Status
@@ -1132,7 +1126,17 @@ const PettyCashTable = ({ mode = "default" }) => {
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {rp.status}
+                    <span
+                      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${
+                        rp.status === "Approved"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm shadow-emerald-100"
+                          : rp.status === "Active"
+                            ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm shadow-blue-100"
+                            : "bg-amber-50 text-amber-700 border-amber-200 shadow-sm shadow-amber-100"
+                      }`}
+                    >
+                      {rp.status}
+                    </span>
                   </td>
 
                   {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -1374,12 +1378,12 @@ const PettyCashTable = ({ mode = "default" }) => {
             {currentProduct?.paymentMode === "Bank" && (
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                  Bank Name
+                  Bank Account
                 </label>
                 <Select
-                  options={bankOptions}
+                  options={bankAccountOptions}
                   value={
-                    bankOptions.find(
+                    bankAccountOptions.find(
                       (option) => option.value === currentProduct?.bankName,
                     ) || null
                   }
@@ -1580,12 +1584,12 @@ const PettyCashTable = ({ mode = "default" }) => {
             {createProduct.paymentMode === "Bank" && (
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                  Bank Name
+                  Bank Account
                 </label>
                 <Select
-                  options={bankOptions}
+                  options={bankAccountOptions}
                   value={
-                    bankOptions.find(
+                    bankAccountOptions.find(
                       (option) => option.value === createProduct.bankName,
                     ) || null
                   }
@@ -1595,7 +1599,7 @@ const PettyCashTable = ({ mode = "default" }) => {
                       bankName: selected?.value || "",
                     })
                   }
-                  placeholder="Select Bank"
+                  placeholder="Select Bank Account"
                   styles={selectStyles}
                   className="text-black"
                 />
@@ -1757,12 +1761,12 @@ const PettyCashTable = ({ mode = "default" }) => {
             {createProduct.paymentMode === "Bank" && (
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                  Bank Name
+                  Bank Account
                 </label>
                 <Select
-                  options={bankOptions}
+                  options={bankAccountOptions}
                   value={
-                    bankOptions.find(
+                    bankAccountOptions.find(
                       (option) => option.value === createProduct.bankName,
                     ) || null
                   }
@@ -1772,7 +1776,7 @@ const PettyCashTable = ({ mode = "default" }) => {
                       bankName: selected?.value || "",
                     })
                   }
-                  placeholder="Select Bank"
+                  placeholder="Select Bank Account"
                   styles={selectStyles}
                   className="text-black"
                 />

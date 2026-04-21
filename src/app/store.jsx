@@ -158,6 +158,7 @@ import { leaveRequestApi } from "../features/leaveRequest/leaveRequest";
 import { payrollRunApi } from "../features/payrollRun/payrollRun";
 import { payrollItemApi } from "../features/payrollItem/payrollItem";
 import { dailyWorkReportApi } from "../features/dailyWorkReport/dailyWorkReport";
+import { assetsApi } from "../features/assets/assets";
 
 // ✅ 1) Collect all apis once
 const apis = [
@@ -178,6 +179,7 @@ const apis = [
   itemMasterApi,
   mixerApi,
   assetsRequisitionApi,
+  assetsApi,
   assetsSaleApi,
   assetsDamageApi,
   pettyCashApi,

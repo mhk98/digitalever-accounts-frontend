@@ -37,9 +37,9 @@ import {
   BadgeCheck,
   CircleDollarSign,
   Factory,
-  Fingerprint,
-  CalendarDays,
   History,
+  CalendarDays,
+  Fingerprint,
 } from "lucide-react";
 
 export const ROLE_OPTIONS = [
@@ -83,6 +83,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "received_product",
     "received_return",
     "intransit_product",
+    "delivered_stock",
     "sales_return",
     "damage_management",
     "damage_stock",
@@ -106,7 +107,8 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "role_permissions",
     "hrm",
     "employee_management",
-    "department_designation",
+    "department_management",
+    "designation_management",
     "shift_management",
     "holiday_management",
     "attendance",
@@ -148,6 +150,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "received_product",
     "received_return",
     "intransit_product",
+    "delivered_stock",
     "sales_return",
     "damage_management",
     "damage_stock",
@@ -168,7 +171,8 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "role_permissions",
     "hrm",
     "employee_management",
-    "department_designation",
+    "department_management",
+    "designation_management",
     "shift_management",
     "holiday_management",
     "attendance",
@@ -219,6 +223,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "received_product",
     "received_return",
     "intransit_product",
+    "delivered_stock",
     "sales_return",
     "damage_management",
     "damage_stock",
@@ -244,7 +249,8 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "log_history",
     "hrm",
     "employee_management",
-    "department_designation",
+    "department_management",
+    "designation_management",
     "shift_management",
     "holiday_management",
     "attendance",
@@ -468,6 +474,15 @@ export const SIDEBAR_ITEMS = [
         href: "/purchase-return",
         roles: ["superAdmin", "admin", "inventor"],
       },
+
+      {
+        name: "Intransit Stock",
+        key: "delivered_stock",
+        icon: PackageSearch,
+        href: "/delivered-stock",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+
       {
         name: "Intransit Product",
         key: "intransit_product",
@@ -475,6 +490,7 @@ export const SIDEBAR_ITEMS = [
         href: "/intransit-product",
         roles: ["superAdmin", "admin", "inventor"],
       },
+
       {
         name: "Sales Return",
         key: "sales_return",
@@ -654,7 +670,7 @@ export const SIDEBAR_ITEMS = [
     ],
   },
   {
-    name: "HRM & Payroll",
+    name: "HRM",
     key: "hrm",
     icon: UserCog,
     color: "#ec4899",
@@ -675,11 +691,17 @@ export const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin", "accountant"],
       },
       {
-        name: "Departments & Designations",
-        key: "department_designation",
+        name: "Departments",
+        key: "department_management",
         icon: Users,
         href: "/hrm/departments",
-        matchPaths: ["/hrm/designations"],
+        roles: ["superAdmin", "admin", "accountant"],
+      },
+      {
+        name: "Designations",
+        key: "designation_management",
+        icon: BadgeCheck,
+        href: "/hrm/designations",
         roles: ["superAdmin", "admin", "accountant"],
       },
       {
@@ -746,6 +768,22 @@ export const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin", "accountant", "employee"],
       },
       {
+        name: "Daily Work Reports",
+        key: "daily_work_reports",
+        icon: ClipboardList,
+        href: "/hrm/daily-work-reports",
+        roles: ["superAdmin", "admin", "accountant", "employee"],
+      },
+    ],
+  },
+  {
+    name: "Payroll",
+    key: "hr_payroll",
+    icon: CircleDollarSign,
+    color: "#16a34a",
+    roles: ["superAdmin", "admin", "accountant", "employee"],
+    children: [
+      {
         name: "Payroll Runs",
         key: "payroll_management",
         icon: CircleDollarSign,
@@ -760,13 +798,6 @@ export const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin", "accountant", "employee"],
       },
       {
-        name: "Daily Work Reports",
-        key: "daily_work_reports",
-        icon: ClipboardList,
-        href: "/hrm/daily-work-reports",
-        roles: ["superAdmin", "admin", "accountant", "employee"],
-      },
-      {
         name: "Employee List",
         key: "employee_list",
         icon: BadgeCheck,
@@ -774,7 +805,6 @@ export const SIDEBAR_ITEMS = [
         href: "/employee-list",
         roles: ["superAdmin", "admin", "accountant"],
       },
-
       {
         name: "Payroll",
         key: "payroll",
@@ -824,6 +854,10 @@ const PERMISSION_KEY_ALIASES = {
   employee_profile: "employee_list",
 };
 
+const LEGACY_PERMISSION_EXPANSIONS = {
+  department_designation: ["department_management", "designation_management"],
+};
+
 const getCanonicalPermissionKey = (key) => PERMISSION_KEY_ALIASES[key] || key;
 
 const flattenSidebarKeys = (items = []) =>
@@ -837,6 +871,7 @@ export const KNOWN_MENU_PERMISSION_KEYS = new Set([
   ...flattenSidebarKeys(SIDEBAR_ITEMS),
   ...Object.keys(PERMISSION_KEY_ALIASES),
   ...Object.values(PERMISSION_KEY_ALIASES),
+  ...Object.keys(LEGACY_PERMISSION_EXPANSIONS),
 ]);
 
 export const expandPermissionKeys = (keys = []) => {
@@ -849,6 +884,10 @@ export const expandPermissionKeys = (keys = []) => {
 
     const canonicalKey = getCanonicalPermissionKey(key);
     expanded.add(canonicalKey);
+
+    LEGACY_PERMISSION_EXPANSIONS[key]?.forEach((expandedKey) =>
+      expanded.add(expandedKey),
+    );
 
     Object.entries(PERMISSION_KEY_ALIASES).forEach(([aliasKey, targetKey]) => {
       if (targetKey === canonicalKey) {
@@ -893,6 +932,26 @@ const normalizeRolePermissionMap = (value) => {
       }
     }
 
+    if (normalizedKeys.has("department_designation")) {
+      normalizedKeys.add("department_management");
+      normalizedKeys.add("designation_management");
+    }
+
+    if (normalizedKeys.has("intransit_product")) {
+      normalizedKeys.add("delivered_stock");
+    }
+
+    const payrollChildKeys = [
+      "payroll_management",
+      "payslip",
+      "payroll",
+      "payroll_fine",
+    ];
+
+    if (payrollChildKeys.some((key) => normalizedKeys.has(key))) {
+      normalizedKeys.add("hr_payroll");
+    }
+
     acc[role] = Array.from(normalizedKeys);
     return acc;
   }, {});
@@ -928,9 +987,7 @@ export const saveRolePermissionsForRole = (role, menuPermissions = []) => {
 
 export const getAllowedKeysForRole = (role) => {
   const stored = getStoredRolePermissions();
-  return new Set(
-    expandPermissionKeys(stored[role] || DEFAULT_ROLE_PERMISSIONS[role] || []),
-  );
+  return new Set(expandPermissionKeys(stored[role] || []));
 };
 
 export const isItemAllowed = (item, allowedKeys) => {
@@ -986,6 +1043,14 @@ export const canAccessPath = (role, pathname) => {
   if (!matchedItem) return true;
 
   return getAllowedKeysForRole(role).has(matchedItem.key);
+};
+
+export const getFirstAllowedPathForRole = (role) => {
+  const allowedItem = flattenItems(filterSidebarItemsByRole(role)).find(
+    (item) => item.href,
+  );
+
+  return allowedItem?.href || null;
 };
 
 export const subscribeToPermissionChanges = (callback) => {

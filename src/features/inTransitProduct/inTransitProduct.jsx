@@ -10,6 +10,7 @@ export const inTransitProductApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [
         { type: "InTransitProduct", id: "LIST" },
+        { type: "InTransitStock", id: "LIST" },
         { type: "InventoryOverview", id: "LIST" }, // ✅ receive stock affected
         { type: "Overview", id: "LIST" }, // ✅ receive stock affected
       ],
@@ -23,6 +24,7 @@ export const inTransitProductApi = baseApi.injectEndpoints({
       invalidatesTags: (res, err, id) => [
         { type: "InTransitProduct", id },
         { type: "InTransitProduct", id: "LIST" },
+        { type: "InTransitStock", id: "LIST" },
 
         { type: "InventoryOverview", id: "LIST" }, // ✅ stock return/update
         { type: "Overview", id: "LIST" }, // ✅ stock return/update
@@ -38,6 +40,7 @@ export const inTransitProductApi = baseApi.injectEndpoints({
       invalidatesTags: (res, err, arg) => [
         { type: "InTransitProduct", id: arg.id },
         { type: "InTransitProduct", id: "LIST" },
+        { type: "InTransitStock", id: "LIST" },
 
         { type: "InventoryOverview", id: "LIST" }, // ✅ if update changes qty/status
         { type: "Overview", id: "LIST" }, // ✅ if update changes qty/status

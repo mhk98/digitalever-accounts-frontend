@@ -33,10 +33,16 @@ export const pettyCashApi = createApi({
     }),
 
     deletePettyCash: build.mutation({
-      query: (id) => ({
-        url: `/petty-cash/${id}`,
-        method: "DELETE",
-      }),
+      query: (arg) => {
+        const id = typeof arg === "object" ? arg.id : arg;
+        const mode = typeof arg === "object" ? arg.mode : undefined;
+
+        return {
+          url: `/petty-cash/${id}`,
+          method: "DELETE",
+          params: mode ? { mode } : undefined,
+        };
+      },
       invalidatesTags: ["pettyCash"],
     }),
 
@@ -60,6 +66,8 @@ export const pettyCashApi = createApi({
           paymentMode,
           paymentStatus,
           status,
+          category,
+          mode,
         } = arg || {};
 
         const params = {
@@ -71,6 +79,8 @@ export const pettyCashApi = createApi({
           paymentMode,
           paymentStatus,
           status,
+          category,
+          mode,
         };
 
         // ✅ remove undefined/empty

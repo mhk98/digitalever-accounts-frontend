@@ -1,102 +1,157 @@
-import { Building2, CalendarDays, Fingerprint, Layers3, ShieldCheck, TimerReset, Users2, ClipboardList } from "lucide-react";
+import {
+  BadgePercent,
+  Building2,
+  CalendarDays,
+  CircleDollarSign,
+  ClipboardList,
+  Fingerprint,
+  Layers3,
+  ReceiptText,
+  RefreshCcw,
+  ShieldCheck,
+  TimerReset,
+  Users2,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import StatCard from "../common/StatCard";
+import {
+  canAccessPath,
+  subscribeToPermissionChanges,
+} from "../../utils/navigationPermissions";
 
 const SECTION_ITEMS = [
   {
+    group: "HRM",
     label: "Employee Profile",
     href: "/employee-profile",
     match: ["/employee-profile"],
     icon: ShieldCheck,
   },
   {
-    label: "Daily Work Reports",
-    href: "/hrm/daily-work-reports",
-    match: ["/hrm/daily-work-reports"],
-    icon: ClipboardList,
-  },
-  {
+    group: "HRM",
     label: "Employee Master",
-    href: "/employee-list",
-    match: ["/employee-list"],
+    href: "/employee-master",
+    match: ["/employee-master"],
     icon: Users2,
   },
   {
+    group: "HRM",
     label: "Departments",
     href: "/hrm/departments",
     match: ["/hrm/departments"],
     icon: Building2,
   },
   {
+    group: "HRM",
     label: "Designations",
     href: "/hrm/designations",
     match: ["/hrm/designations"],
     icon: Layers3,
   },
   {
+    group: "HRM",
     label: "Shifts",
     href: "/hrm/shifts",
     match: ["/hrm/shifts"],
     icon: TimerReset,
   },
   {
+    group: "HRM",
     label: "Holidays",
     href: "/hrm/holidays",
     match: ["/hrm/holidays"],
     icon: CalendarDays,
   },
   {
+    group: "HRM",
     label: "Attendance Devices",
     href: "/hrm/attendance-devices",
     match: ["/hrm/attendance-devices"],
     icon: Fingerprint,
   },
   {
+    group: "HRM",
     label: "Enrollments",
     href: "/hrm/attendance-enrollments",
     match: ["/hrm/attendance-enrollments"],
     icon: Fingerprint,
   },
   {
+    group: "HRM",
     label: "Raw Logs",
     href: "/hrm/attendance-logs",
     match: ["/hrm/attendance-logs"],
     icon: TimerReset,
   },
   {
+    group: "HRM",
     label: "Summaries",
     href: "/hrm/attendance-summaries",
     match: ["/hrm/attendance-summaries"],
     icon: CalendarDays,
   },
   {
+    group: "HRM",
     label: "Regularizations",
     href: "/hrm/attendance-regularizations",
     match: ["/hrm/attendance-regularizations"],
-    icon: ShieldCheck,
+    icon: RefreshCcw,
   },
   {
+    group: "HRM",
     label: "Leave Types",
     href: "/hrm/leave-types",
     match: ["/hrm/leave-types"],
     icon: CalendarDays,
   },
   {
+    group: "HRM",
     label: "Leave Requests",
     href: "/hrm/leave-requests",
     match: ["/hrm/leave-requests"],
     icon: Layers3,
   },
   {
+    group: "Payroll",
     label: "Payroll Runs",
     href: "/hrm/payroll-runs",
     match: ["/hrm/payroll-runs"],
-    icon: TimerReset,
+    icon: CircleDollarSign,
   },
   {
+    group: "Payroll",
     label: "Payslips",
     href: "/hrm/payslips",
     match: ["/hrm/payslips"],
+    icon: ReceiptText,
+  },
+  {
+    group: "HRM",
+    label: "Daily Work Reports",
+    href: "/hrm/daily-work-reports",
+    match: ["/hrm/daily-work-reports"],
+    icon: ClipboardList,
+  },
+  {
+    group: "Payroll",
+    label: "Employee List",
+    href: "/employee-list",
+    match: ["/employee-list"],
+    icon: ShieldCheck,
+  },
+  {
+    group: "Payroll",
+    label: "Payroll",
+    href: "/employee",
+    match: ["/employee"],
+    icon: CircleDollarSign,
+  },
+  {
+    group: "Payroll",
+    label: "Payroll Fine",
+    href: "/salary",
+    match: ["/salary"],
     icon: Building2,
   },
 ];
@@ -109,6 +164,40 @@ const HrmWorkspace = ({
   children,
 }) => {
   const { pathname } = useLocation();
+  const [permissionVersion, setPermissionVersion] = useState(0);
+  const userRole =
+    typeof window !== "undefined"
+      ? localStorage.getItem("role") || "user"
+      : "user";
+  const visibleSectionItems = useMemo(
+    () => SECTION_ITEMS.filter((item) => canAccessPath(userRole, item.href)),
+    [userRole, permissionVersion],
+  );
+  const activeSectionGroup = useMemo(() => {
+    const activeItem = SECTION_ITEMS.find((item) =>
+      item.match.some((matchPath) => pathname.startsWith(matchPath)),
+    );
+
+    return activeItem?.group || "HRM";
+  }, [pathname]);
+  const visibleSectionGroups = useMemo(
+    () =>
+      ["HRM", "Payroll"]
+        .map((group) => ({
+          group,
+          items: visibleSectionItems.filter(
+            (item) => item.group === group && group === activeSectionGroup,
+          ),
+        }))
+        .filter((section) => section.items.length > 0),
+    [activeSectionGroup, visibleSectionItems],
+  );
+
+  useEffect(() => {
+    return subscribeToPermissionChanges(() =>
+      setPermissionVersion((prev) => prev + 1),
+    );
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -148,42 +237,54 @@ const HrmWorkspace = ({
       </section>
 
       <section className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm">
-        <div className="mb-3 px-2 pt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-          HRM Sections
-        </div>
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-13">
-          {SECTION_ITEMS.map((item) => {
-            const active = item.match.some((matchPath) => pathname.startsWith(matchPath));
-            const Icon = item.icon;
+        <div className="space-y-5">
+          {visibleSectionGroups.map((section) => (
+            <div key={section.group}>
+              <div className="mb-3 px-2 pt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                {section.group} Sections
+              </div>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-13">
+                {section.items.map((item) => {
+                  const active = item.match.some((matchPath) =>
+                    pathname.startsWith(matchPath),
+                  );
+                  const Icon = item.icon;
 
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={`group rounded-2xl border px-4 py-3 transition ${
-                  active
-                    ? "border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm"
-                    : "border-slate-200 bg-slate-50/70 text-slate-600 hover:border-slate-300 hover:bg-slate-100"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                      active ? "bg-white text-indigo-600" : "bg-white text-slate-500"
-                    }`}
-                  >
-                    <Icon size={18} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold">{item.label}</div>
-                    <div className="text-xs text-slate-400 group-hover:text-slate-500">
-                      Open section
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      className={`group flex min-h-[58px] items-center rounded-2xl border px-4 py-3 transition ${
+                        active
+                          ? "border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm"
+                          : "border-slate-200 bg-slate-50/70 text-slate-600 hover:border-slate-300 hover:bg-slate-100"
+                      }`}
+                    >
+                      <div className="flex w-full items-center gap-3">
+                        <div
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                            active
+                              ? "bg-white text-indigo-600"
+                              : "bg-white text-slate-500"
+                          }`}
+                        >
+                          <Icon size={18} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold leading-5 text-current">
+                            {item.label}
+                          </div>
+                          <div className="text-xs leading-4 text-slate-400 group-hover:text-slate-500">
+                            Open section
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

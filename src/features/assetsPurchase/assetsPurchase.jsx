@@ -47,9 +47,9 @@ export const assetsPurchaseApi = baseApi.injectEndpoints({
     }),
 
     getAllAssetsPurchase: build.query({
-      query: ({ page, limit, startDate, endDate, name }) => ({
+      query: ({ page, limit, startDate, endDate, assetId }) => ({
         url: "assets-purchase",
-        params: { page, limit, startDate, endDate, name },
+        params: { page, limit, startDate, endDate, assetId },
       }),
       providesTags: (result) =>
         result?.data?.length

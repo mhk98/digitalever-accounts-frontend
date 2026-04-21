@@ -8,6 +8,30 @@ import {
   useUpdateShiftMutation,
 } from "../features/shift/shift";
 
+const normalizeWeeklyOffDays = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    } catch {
+      // Fall back to comma-separated input below.
+    }
+
+    return trimmed
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
 const ShiftPage = () => {
   return (
     <div className="flex-1 relative z-10">
@@ -36,15 +60,8 @@ const ShiftPage = () => {
               name: "weeklyOffDays",
               label: "Weekly Off Days",
               placeholder: "Friday,Saturday",
-              parse: (value) =>
-                !value
-                  ? []
-                  : value
-                      .split(",")
-                      .map((item) => item.trim())
-                      .filter(Boolean),
-              serialize: (value) =>
-                Array.isArray(value) ? value.join(", ") : value || "",
+              parse: normalizeWeeklyOffDays,
+              serialize: (value) => normalizeWeeklyOffDays(value).join(", "),
             },
             { name: "note", label: "Note", type: "textarea" },
             {
@@ -70,10 +87,12 @@ const ShiftPage = () => {
             {
               key: "weeklyOffDays",
               label: "Weekly Off",
-              render: (row) =>
-                Array.isArray(row.weeklyOffDays) && row.weeklyOffDays.length
-                  ? row.weeklyOffDays.join(", ")
-                  : "-",
+              render: (row) => {
+                const weeklyOffDays = normalizeWeeklyOffDays(
+                  row.weeklyOffDays,
+                );
+                return weeklyOffDays.length ? weeklyOffDays.join(", ") : "-";
+              },
             },
             { key: "status", label: "Status" },
           ]}

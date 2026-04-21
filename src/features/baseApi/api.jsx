@@ -24,6 +24,7 @@ export const baseApi = createApi({
     "ReceivedProduct",
     "PurchaseReturn",
     "InTransitProduct",
+    "InTransitStock",
     "ReturnProduct",
     "DamageProduct",
     "DamageRepair",

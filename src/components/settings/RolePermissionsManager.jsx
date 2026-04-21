@@ -6,7 +6,6 @@ import {
   useUpdateRolePermissionsMutation,
 } from "../../features/auth/auth";
 import {
-  DEFAULT_ROLE_PERMISSIONS,
   ROLE_OPTIONS,
   SIDEBAR_ITEMS,
   expandPermissionKeys,
@@ -51,17 +50,10 @@ const RolePermissionsManager = () => {
     });
   }, [rolePermissionsRes]);
 
-  const selectedRoleDefaultKeys = useMemo(
-    () =>
-      expandPermissionKeys(DEFAULT_ROLE_PERMISSIONS[selectedPermissionRole] || []),
-    [selectedPermissionRole],
-  );
   const selectedRoleKeys = useMemo(
     () =>
-      expandPermissionKeys(
-        rolePermissions[selectedPermissionRole] || selectedRoleDefaultKeys,
-      ),
-    [rolePermissions, selectedPermissionRole, selectedRoleDefaultKeys],
+      expandPermissionKeys(rolePermissions[selectedPermissionRole] || []),
+    [rolePermissions, selectedPermissionRole],
   );
 
   const togglePermission = (item, checked) => {
@@ -105,25 +97,22 @@ const RolePermissionsManager = () => {
     }
   };
 
-  const handleResetRolePermissions = async () => {
+  const handleClearRolePermissions = async () => {
     try {
-      const defaultPermissions =
-        DEFAULT_ROLE_PERMISSIONS[selectedPermissionRole] || [];
       const res = await updateRolePermissions({
         role: selectedPermissionRole,
-        menuPermissions: defaultPermissions,
+        menuPermissions: [],
       }).unwrap();
 
-      const updatedPermissions =
-        res?.data?.menuPermissions || defaultPermissions;
+      const updatedPermissions = res?.data?.menuPermissions || [];
       setRolePermissions((prev) => ({
         ...prev,
         [selectedPermissionRole]: updatedPermissions,
       }));
       saveRolePermissionsForRole(selectedPermissionRole, updatedPermissions);
-      toast.success(`${selectedPermissionRole} permissions reset to default.`);
+      toast.success(`${selectedPermissionRole} permissions cleared.`);
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to reset permissions.");
+      toast.error(err?.data?.message || "Failed to clear permissions.");
     }
   };
 
@@ -216,18 +205,17 @@ const RolePermissionsManager = () => {
 
       <div className="mt-6 flex items-center justify-between gap-3 flex-wrap border-t border-slate-100 pt-5">
         <p className="text-xs text-slate-500">
-          Default menu count: {selectedRoleDefaultKeys.length} | Current
-          allowed count: {selectedRoleKeys.length}
+          Current allowed count: {selectedRoleKeys.length}
         </p>
 
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={handleResetRolePermissions}
+            onClick={handleClearRolePermissions}
             disabled={savingPermissions || isLoading}
             className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition disabled:opacity-60"
           >
-            Reset Default
+            Clear All
           </button>
           <button
             type="button"

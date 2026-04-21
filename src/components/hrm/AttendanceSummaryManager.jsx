@@ -53,7 +53,8 @@ const AttendanceSummaryManager = () => {
           <div>
             <h3 className="text-lg font-bold text-slate-900">Daily Results</h3>
             <p className="mt-1 text-sm text-slate-500">
-              Filter by date range and employee to inspect processed late, overtime and attendance status.
+              Filter by date range and employee to inspect processed late,
+              overtime and attendance status.
             </p>
           </div>
 
@@ -67,20 +68,20 @@ const AttendanceSummaryManager = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search employee"
-                className="h-11 min-w-[220px] rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                className="h-11 text-black min-w-[220px] rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
               />
             </label>
             <input
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              className="h-11 text-black rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
             />
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              className="h-11 text-black rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
             />
           </div>
         </div>
@@ -91,19 +92,36 @@ const AttendanceSummaryManager = () => {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Employee</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Date</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Shift</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Time Window</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Late / Early</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Worked / OT</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-700">Status</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                  Employee
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                  Date
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                  Shift
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                  Time Window
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                  Late / Early
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                  Worked / OT
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
+                  <td
+                    colSpan={7}
+                    className="px-4 py-10 text-center text-slate-500"
+                  >
                     Loading...
                   </td>
                 </tr>
@@ -111,17 +129,31 @@ const AttendanceSummaryManager = () => {
                 rows.map((row) => (
                   <tr key={row.Id} className="hover:bg-slate-50/60">
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-slate-900">{row.employee?.name || "-"}</div>
+                      <div className="font-semibold text-slate-900">
+                        {row.employee?.name || "-"}
+                      </div>
                       <div className="text-xs text-slate-500">
-                        {row.employee?.employeeCode || row.employee?.employee_id || "-"}
+                        {row.employee?.employeeCode ||
+                          row.employee?.employee_id ||
+                          "-"}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{row.attendanceDate}</td>
-                    <td className="px-4 py-3 text-slate-700">{row.shift?.name || "-"}</td>
                     <td className="px-4 py-3 text-slate-700">
-                      <div>{row.firstIn ? new Date(row.firstIn).toLocaleTimeString() : "-"}</div>
+                      {row.attendanceDate}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {row.shift?.name || "-"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      <div>
+                        {row.firstIn
+                          ? new Date(row.firstIn).toLocaleTimeString()
+                          : "-"}
+                      </div>
                       <div className="text-xs text-slate-500">
-                        {row.lastOut ? new Date(row.lastOut).toLocaleTimeString() : "-"}
+                        {row.lastOut
+                          ? new Date(row.lastOut).toLocaleTimeString()
+                          : "-"}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-700">
@@ -132,7 +164,9 @@ const AttendanceSummaryManager = () => {
                     </td>
                     <td className="px-4 py-3 text-slate-700">
                       <div>{row.workedMinutes || 0}m</div>
-                      <div className="text-xs text-slate-500">OT: {row.overtimeMinutes || 0}m</div>
+                      <div className="text-xs text-slate-500">
+                        OT: {row.overtimeMinutes || 0}m
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
@@ -145,9 +179,12 @@ const AttendanceSummaryManager = () => {
                 <tr>
                   <td colSpan={7} className="px-4 py-12">
                     <div className="mx-auto max-w-md rounded-3xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center">
-                      <div className="text-base font-semibold text-slate-800">No summaries found</div>
+                      <div className="text-base font-semibold text-slate-800">
+                        No summaries found
+                      </div>
                       <p className="mt-2 text-sm text-slate-500">
-                        Process a day of attendance logs first to generate daily summaries.
+                        Process a day of attendance logs first to generate daily
+                        summaries.
                       </p>
                     </div>
                   </td>

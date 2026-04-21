@@ -174,7 +174,10 @@ const AssetsStockTable = () => {
           </label>
           <Select
             options={stockOptions}
-            value={stockOptions.find((option) => option.label === productName) || null}
+            value={
+              stockOptions.find((option) => option.label === productName) ||
+              null
+            }
             onChange={(selected) => setProductName(selected?.label || "")}
             placeholder={isLoadingAllStock ? "Syncing..." : "Select asset"}
             isClearable
@@ -239,6 +242,9 @@ const AssetsStockTable = () => {
           <thead className="bg-slate-50">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-slate-500">
+                Date
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-slate-500">
                 Name
               </th>
               <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-slate-500">
@@ -247,12 +253,7 @@ const AssetsStockTable = () => {
               <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-slate-500">
                 Price
               </th>
-              <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-slate-500">
-                Total
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-slate-500">
-                Date
-              </th>
+
               <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-slate-500">
                 Status
               </th>
@@ -263,6 +264,9 @@ const AssetsStockTable = () => {
               rows.map((row) => (
                 <tr key={row.Id} className="hover:bg-slate-50/70">
                   <td className="px-4 py-3 text-sm font-semibold text-slate-700">
+                    {row.date || "---"}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-semibold text-slate-700">
                     {row.name}
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-slate-700">
@@ -271,12 +275,7 @@ const AssetsStockTable = () => {
                   <td className="px-4 py-3 text-sm font-semibold text-slate-700">
                     ৳{Number(row.price || 0).toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-700">
-                    ৳{Number(row.total || 0).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-700">
-                    {row.date || "---"}
-                  </td>
+
                   <td className="px-4 py-3">
                     <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600">
                       {row.status || "Active"}
@@ -290,7 +289,9 @@ const AssetsStockTable = () => {
                   colSpan={6}
                   className="px-4 py-10 text-center text-sm font-semibold text-slate-400"
                 >
-                  {isLoading ? "Syncing assets stock..." : "No assets stock found"}
+                  {isLoading
+                    ? "Syncing assets stock..."
+                    : "No assets stock found"}
                 </td>
               </tr>
             )}
@@ -341,7 +342,10 @@ const AssetsStockTable = () => {
             disabled={endPage >= totalPages}
             onClick={() =>
               setStartPage((prev) =>
-                Math.min(prev + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)),
+                Math.min(
+                  prev + pagesPerSet,
+                  Math.max(1, totalPages - pagesPerSet + 1),
+                ),
               )
             }
           >

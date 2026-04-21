@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useLayout } from "../../context/LayoutContext";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { useGetAllLogoQuery } from "../../features/logo/logo";
@@ -49,7 +49,7 @@ const Sidebar = () => {
 
   // ✅ menu filter
   const [menuQuery, setMenuQuery] = useState("");
-  const [, setPermissionVersion] = useState(0);
+  const [permissionVersion, setPermissionVersion] = useState(0);
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth >= 1024 : true,
   );
@@ -58,10 +58,33 @@ const Sidebar = () => {
   const { pathname } = useLocation();
 
   const toggleMenu = (name) => setOpenMenu((p) => (p === name ? null : name));
-  const isActive = (href) => pathname === href;
+  const pathMatches = useCallback(
+    (targetPath) => {
+      if (!targetPath) return false;
+      if (targetPath === "/") return pathname === "/";
+      return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
+    },
+    [pathname],
+  );
+  const isActive = useCallback(
+    (itemOrHref) => {
+      if (typeof itemOrHref === "string") return pathMatches(itemOrHref);
+
+      const candidates = [
+        itemOrHref?.href,
+        ...(itemOrHref?.matchPaths || []),
+      ].filter(Boolean);
+
+      return candidates.some((candidate) => pathMatches(candidate));
+    },
+    [pathMatches],
+  );
 
   // ✅ first role filter
-  const roleFiltered = filterSidebarItemsByRole(userRole);
+  const roleFiltered = useMemo(
+    () => filterSidebarItemsByRole(userRole),
+    [userRole, permissionVersion],
+  );
 
   // ✅ then search filter (parent + child)
   const filteredItems = useMemo(() => {
@@ -103,6 +126,14 @@ const Sidebar = () => {
 
     if (firstWithChildren) setOpenMenu(firstWithChildren.key);
   }, [menuQuery, filteredItems]);
+
+  useEffect(() => {
+    const activeParent = filteredItems.find((item) =>
+      item.children?.some((child) => isActive(child)),
+    );
+
+    if (activeParent) setOpenMenu(activeParent.key);
+  }, [filteredItems, isActive]);
 
   // ✅ logo
   const [logo, setLogo] = useState("");
@@ -283,11 +314,11 @@ const Sidebar = () => {
                 const menuOpen = openMenu === item.key;
 
                 const childActive = hasChildren
-                  ? item.children.some((c) => isActive(c.href))
+                  ? item.children.some((c) => isActive(c))
                   : false;
 
                 const parentActive = !hasChildren
-                  ? isActive(item.href)
+                  ? isActive(item)
                   : childActive;
 
                 const parentBase = `w-full group flex items-center rounded-xl transition relative ${
@@ -414,7 +445,7 @@ const Sidebar = () => {
                           <div className="space-y-1 pb-2">
                             {item.children.map((sub) => {
                               const SubIcon = sub.icon;
-                              const activeSub = isActive(sub.href);
+                              const activeSub = isActive(sub);
 
                               return (
                                 <Link key={sub.href} to={sub.href}>
