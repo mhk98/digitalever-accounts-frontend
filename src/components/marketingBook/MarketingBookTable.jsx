@@ -143,7 +143,7 @@ const MarketingBookTable = () => {
   // Delete
   const [deleteMarketingBook] = useDeleteMarketingBookMutation();
   const handleDeleteBook = async (id) => {
-    const confirmDelete = window.confirm("Do you want to delete this book?");
+    const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this book?" });
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {

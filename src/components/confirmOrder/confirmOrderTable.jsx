@@ -131,7 +131,7 @@
 //     });
 //     setIsEditOpen(true);
 //   };
-//   const closeEdit = () => {
+//   const closeEdit = async () => {
 //     setIsEditOpen(false);
 //     setCurrentItem(null);
 //   };
@@ -198,7 +198,7 @@
 
 //   // delete
 //   const handleDelete = async (id) => {
-//     if (!window.confirm("Do you want to delete this item?")) return;
+//     if (!await requestDeleteConfirmation({ message: "Do you want to delete this item?" })) return;
 
 //     try {
 //       const res = await deleteConfirmOrder(id).unwrap();
@@ -728,7 +728,7 @@
 //     });
 //     setIsEditOpen1(true);
 //   };
-//   const closeEdit1 = () => {
+//   const closeEdit1 = async () => {
 //     setIsEditOpen1(false);
 //     setCurrentItem(null);
 //   };
@@ -829,7 +829,7 @@
 
 //   // delete
 //   const handleDelete = async (id) => {
-//     if (!window.confirm("Do you want to delete this item?")) return;
+//     if (!await requestDeleteConfirmation({ message: "Do you want to delete this item?" })) return;
 
 //     try {
 //       const res = await deleteConfirmOrder(id).unwrap();
@@ -1610,7 +1610,7 @@ const ConfirmOrderTable = () => {
 
   // delete
   const handleDelete = async (id) => {
-    if (!window.confirm("Do you want to delete this item?")) return;
+    if (!await requestDeleteConfirmation({ message: "Do you want to delete this item?" })) return;
 
     try {
       const res = await deleteConfirmOrder(id).unwrap();

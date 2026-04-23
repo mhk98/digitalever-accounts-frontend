@@ -141,7 +141,7 @@ const PurchaseTable = () => {
 
   const [deletePurchase] = useDeletePurchaseMutation();
   const handleDeletePurchase = async (id) => {
-    if (window.confirm("Are you sure you want to delete this purchase record?")) {
+    if (await requestDeleteConfirmation({ message: "Are you sure you want to delete this purchase record?" })) {
       try {
         const res = await deletePurchase(id).unwrap();
         if (res.success) {

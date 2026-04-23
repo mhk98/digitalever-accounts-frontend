@@ -295,8 +295,7 @@ const PettyCashTable = ({ mode = "default" }) => {
   );
 
   // ✅ Insert category mutation
-  const [insertCategory, { isLoading: isAddingCategory }] =
-    useInsertCategoryMutation();
+  const [insertCategory] = useInsertCategoryMutation();
 
   const addCategoryByName = async (name) => {
     const n = name.trim();
@@ -604,7 +603,12 @@ const PettyCashTable = ({ mode = "default" }) => {
   const [deletePettyCash] = useDeletePettyCashMutation();
   const handleDeleteProduct = async (rowId) => {
     if (!rowId) return toast.error("Invalid item!");
-    if (!window.confirm("Do you want to delete this item?")) return;
+    if (
+      !(await requestDeleteConfirmation({
+        message: "Do you want to delete this item?",
+      }))
+    )
+      return;
 
     try {
       const res = await deletePettyCash({
@@ -671,7 +675,7 @@ const PettyCashTable = ({ mode = "default" }) => {
     }
   };
 
-  const handleReportSheet = async () => {
+  const handleReportSheet = () => {
     try {
       if (!products.length) return toast.error("No data found!");
 
@@ -1227,8 +1231,20 @@ const PettyCashTable = ({ mode = "default" }) => {
                         <Edit size={18} />
                       </button>
 
-                      {isRequisitionMode &&
+                      {/* {isRequisitionMode &&
                       (role === "superAdmin" || role === "admin") ? (
+                        <button
+                          onClick={() => handleApproveRequisition(rowId)}
+                          className="rounded-lg bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                          type="button"
+                        >
+                          Approve
+                        </button>
+                      ) : null} */}
+
+                      {isRequisitionMode &&
+                      (role === "superAdmin" || role === "admin") &&
+                      String(rp.status || "").toLowerCase() !== "approved" ? (
                         <button
                           onClick={() => handleApproveRequisition(rowId)}
                           className="rounded-lg bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"

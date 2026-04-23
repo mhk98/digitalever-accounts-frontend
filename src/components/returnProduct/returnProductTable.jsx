@@ -12,6 +12,7 @@ import {
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import Modal from "../common/Modal";
+import ConfirmDialog from "../common/ConfirmDialog";
 import { useGetSingleProductByIdQuery } from "../../features/product/product";
 import { useGetAllInventoryOverviewWithoutQueryQuery } from "../../features/inventoryOverview/inventoryOverview";
 
@@ -493,7 +494,9 @@ const ReturnProductTable = () => {
   // mutations
   const [insertReturnProduct] = useInsertReturnProductMutation();
   const [updateReturnProduct] = useUpdateReturnProductMutation();
-  const [deleteReturnProduct] = useDeleteReturnProductMutation();
+  const [deleteReturnProduct, { isLoading: isDeletingReturnProduct }] =
+    useDeleteReturnProductMutation();
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   // ✅ create
   const handleCreate = async (e) => {
@@ -611,13 +614,18 @@ const ReturnProductTable = () => {
   };
 
   // delete
-  const handleDelete = async (id) => {
-    if (!window.confirm("Do you want to delete this item?")) return;
+  const handleDelete = (id) => {
+    setDeleteTargetId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
 
     try {
-      const res = await deleteReturnProduct(id).unwrap();
+      const res = await deleteReturnProduct(deleteTargetId).unwrap();
       if (res?.success) {
         toast.success("Deleted!");
+        setDeleteTargetId(null);
         refetch?.();
       } else toast.error(res?.message || "Delete failed!");
     } catch (err) {
@@ -635,7 +643,6 @@ const ReturnProductTable = () => {
   // ✅ suppliers
   const {
     data: allSupplierRes,
-    isLoading: isLoadingSupplier,
     isError: isErrorSupplier,
     error: errorSupplier,
   } = useGetAllSupplierWithoutQueryQuery();
@@ -660,7 +667,6 @@ const ReturnProductTable = () => {
   // ✅ warehouses
   const {
     data: allWarehousesRes,
-    isLoading: isLoadingWarehouse,
     isError: isErrorWarehouse,
     error: errorWarehouse,
   } = useGetAllWirehouseWithoutQueryQuery();
@@ -694,7 +700,7 @@ const ReturnProductTable = () => {
 
   return (
     <motion.div
-      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
+      className="w-full max-w-full min-w-0 bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -721,7 +727,7 @@ const ReturnProductTable = () => {
       </div>
 
       {/* Filters */}
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-4 gap-4 items-end w-full">
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-4 gap-4 items-end w-full [&>*]:min-w-0">
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">From</label>
           <input
@@ -820,8 +826,8 @@ const ReturnProductTable = () => {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto mt-6 rounded-2xl border border-slate-200">
-        <table className="min-w-full divide-y divide-slate-200">
+      <div className="w-full max-w-full overflow-x-auto overscroll-x-contain mt-6 rounded-2xl border border-slate-200">
+        <table className="w-full min-w-[1280px] divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -1729,6 +1735,15 @@ const ReturnProductTable = () => {
           </div>
         </form>
       </Modal>
+      <ConfirmDialog
+        isOpen={Boolean(deleteTargetId)}
+        title="Delete return product?"
+        message="This return product entry will be removed permanently. This action cannot be undone."
+        confirmLabel="Delete"
+        isLoading={isDeletingReturnProduct}
+        onCancel={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </motion.div>
   );
 };

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Download, Edit, FileDown, Plus, Trash2, Search, Calendar, Filter, X } from "lucide-react";
+import { Edit, FileDown, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import {
@@ -8,8 +8,6 @@ import {
   useInsertSaleMutation,
   useUpdateSaleMutation,
 } from "../../features/sale/sale";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import Select from "react-select";
 import { useLayout } from "../../context/LayoutContext";
@@ -39,7 +37,7 @@ const SaleTable = () => {
   const [buyerId, setBuyerId] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(10);
   const [startPage, setStartPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
@@ -129,7 +127,7 @@ const SaleTable = () => {
 
   const [deleteSale] = useDeleteSaleMutation();
   const handleDeleteSale = async (id) => {
-    if (window.confirm("Are you sure you want to delete this sale?")) {
+    if (await requestDeleteConfirmation({ message: "Are you sure you want to delete this sale?" })) {
       try {
         const res = await deleteSale(id).unwrap();
         if (res.success) {

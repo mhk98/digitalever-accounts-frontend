@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2, X, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
+import { Edit, Trash2, X, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -30,7 +30,7 @@ const SuppliersTable = () => {
   const [startPage, setStartPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pagesPerSet, setPagesPerSet] = useState(10);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(10);
 
   const { data: allSupplierRes } = useGetAllSupplierWithoutQueryQuery();
   const suppliersData = allSupplierRes?.data || [];
@@ -46,7 +46,7 @@ const SuppliersTable = () => {
     return () => window.removeEventListener("resize", updatePagesPerSet);
   }, []);
 
-  const { data, isLoading, isError, error, refetch } = useGetAllSupplierQuery({
+  const { data, isLoading, refetch } = useGetAllSupplierQuery({
     startDate,
     endDate,
     supplierId: supplierIdFilter,
@@ -105,7 +105,7 @@ const SuppliersTable = () => {
 
   const [deleteSupplier] = useDeleteSupplierMutation();
   const handleDeleteSupplier = async (id) => {
-    if (window.confirm("Do you want to delete this supplier?")) {
+    if (await requestDeleteConfirmation({ message: "Do you want to delete this supplier?" })) {
       try {
         const res = await deleteSupplier(id).unwrap();
         if (res.success) {

@@ -30,15 +30,24 @@ export const cashInOutApi = baseApi.injectEndpoints({
     }),
 
     deleteCashInOut: build.mutation({
-      query: (id) => ({
-        url: `/cash-in-out/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: (res, err, id) => [
-        { type: "CashInOut", id },
-        { type: "CashInOut", id: "LIST" },
-        { type: "Overview", id: "LIST" },
-      ],
+      query: (arg) => {
+        const id = arg?.id ?? arg;
+        const note = arg?.note;
+
+        return {
+          url: `/cash-in-out/${id}`,
+          method: "DELETE",
+          headers: note ? { "x-delete-note": note } : undefined,
+        };
+      },
+      invalidatesTags: (res, err, arg) => {
+        const id = arg?.id ?? arg;
+        return [
+          { type: "CashInOut", id },
+          { type: "CashInOut", id: "LIST" },
+          { type: "Overview", id: "LIST" },
+        ];
+      },
     }),
 
     getAllCashInOut: build.query({

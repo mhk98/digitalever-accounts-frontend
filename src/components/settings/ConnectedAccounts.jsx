@@ -1,6 +1,6 @@
 import { useState } from "react";
 import SettingSection from "./SettingSection";
-import { HelpCircle, Plus, Share2 } from "lucide-react";
+import { Plus, Share2 } from "lucide-react";
 
 const ConnectedAccounts = () => {
 	const [connectedAccounts, setConnectedAccounts] = useState([

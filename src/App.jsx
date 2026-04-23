@@ -50,7 +50,6 @@ import MarketingBookPage from "./pages/MarketingBookPage";
 import MarketingExpensePage from "./pages/MarketingExpensePage";
 import InventoryDashboardPage from "./pages/InventoryDashboardPage";
 import DamageStockPage from "./pages/DamageStockPage";
-import InTransitStockPage from "./pages/InTransitStockPage";
 import WarehousePage from "./pages/WarehousePage";
 import SupplierHistoryPage from "./pages/SupplierHistoryPage";
 import CreditLedgerPage from "./pages/CreditLedgerPage";
@@ -79,6 +78,9 @@ import LeaveRequestPage from "./pages/LeaveRequestPage";
 import PayrollRunPage from "./pages/PayrollRunPage";
 import PayslipPage from "./pages/PayslipPage";
 import EmployeeListPage from "./pages/EmployeeListPage";
+import EmployeeKPIPage from "./pages/EmployeeKPIPage";
+import ChatPage from "./pages/ChatPage";
+import DeleteConfirmationProvider from "./components/common/DeleteConfirmationProvider";
 
 function App() {
   return (
@@ -91,7 +93,7 @@ function App() {
         </div>
 
         {/* Main content area */}
-        <div className="flex-1 relative z-10 min-h-dvh">
+        <div className="flex-1 min-w-0 relative z-10 min-h-dvh">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -276,6 +278,16 @@ function App() {
               }
             />
             <Route
+              path="/employee-kpi"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <EmployeeKPIPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
               path="/employee"
               element={
                 <RequireAuth>
@@ -411,16 +423,6 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <InTransitProductPage />
-                  </SidebarLayout>
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/delivered-stock"
-              element={
-                <RequireAuth>
-                  <SidebarLayout>
-                    <InTransitStockPage />
                   </SidebarLayout>
                 </RequireAuth>
               }
@@ -807,6 +809,16 @@ function App() {
               }
             />
             <Route
+              path="/chat"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <ChatPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
               path="/profile"
               element={
                 <RequireAuth>
@@ -830,6 +842,7 @@ function App() {
         </div>
       </div>
 
+      <DeleteConfirmationProvider />
       <Toaster position="top-center" reverseOrder={false} />
     </Provider>
   );

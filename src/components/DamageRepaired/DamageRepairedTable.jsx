@@ -610,7 +610,7 @@ const DamageRepairedTable = () => {
 
   // delete
   const handleDelete = async (id) => {
-    if (!window.confirm("Do you want to delete this item?")) return;
+    if (!await requestDeleteConfirmation({ message: "Do you want to delete this item?" })) return;
 
     try {
       const res = await deleteDamageRepaired(id).unwrap();
@@ -650,7 +650,6 @@ const DamageRepairedTable = () => {
   // ✅ suppliers
   const {
     data: allSupplierRes,
-    isLoading: isLoadingSupplier,
     isError: isErrorSupplier,
     error: errorSupplier,
   } = useGetAllSupplierWithoutQueryQuery();
@@ -675,7 +674,6 @@ const DamageRepairedTable = () => {
   // ✅ warehouses
   const {
     data: allWarehousesRes,
-    isLoading: isLoadingWarehouse,
     isError: isErrorWarehouse,
     error: errorWarehouse,
   } = useGetAllWirehouseWithoutQueryQuery();

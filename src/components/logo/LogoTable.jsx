@@ -97,7 +97,12 @@ const LogoTable = () => {
   const [deleteLogo] = useDeleteLogoMutation();
   const handleDeleteProduct = async (rowId) => {
     if (!rowId) return toast.error("Invalid item!");
-    if (!window.confirm("Do you want to delete this item?")) return;
+    if (
+      !(await requestDeleteConfirmation({
+        message: "Do you want to delete this item?",
+      }))
+    )
+      return;
 
     try {
       const res = await deleteLogo(rowId).unwrap();

@@ -22,6 +22,7 @@ import {
   useInsertCategoryMutation,
 } from "../../features/category/category";
 import Modal from "../common/Modal";
+import ConfirmDialog from "../common/ConfirmDialog";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
@@ -93,7 +94,7 @@ const CashInOutTable = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false); // edit
   const [isModalOpen1, setIsModalOpen1] = useState(false); // add
-  const [isModalOpen2, setIsModalOpen2] = useState(false); // delete/note
+  const [, setIsModalOpen2] = useState(false); // delete/note
   const [isModalOpen3, setIsModalOpen3] = useState(false); // delete/note
   const [currentProduct, setCurrentProduct] = useState(null);
   const [filterCategory, setFilterCategory] = useState("");
@@ -576,12 +577,16 @@ const CashInOutTable = () => {
       const formData = new FormData();
       formData.append("paymentMode", currentProduct.paymentMode);
       formData.append("paymentStatus", currentProduct.paymentStatus);
-      formData.append("note", currentProduct.note);
+      formData.append(
+        "note",
+        (currentProduct.note || currentProduct.remarks || "").trim(),
+      );
       formData.append("supplierId", currentProduct?.supplierId || "");
       formData.append("lender", currentProduct?.lender?.trim() || "");
       formData.append("status", currentProduct.status);
       formData.append("date", currentProduct.date);
       formData.append("userId", userId);
+      formData.append("actorRole", role);
       formData.append("bookId", id);
 
       formData.append(
@@ -606,32 +611,6 @@ const CashInOutTable = () => {
         toast.success("Successfully updated!");
 
         setIsModalOpen(false);
-        setCurrentProduct(null);
-        setIsNewCategoryEdit(false);
-        setNewCategoryNameEdit("");
-        refetch?.();
-      } else toast.error(res?.message || "Update failed!");
-    } catch (err) {
-      toast.error(err?.data?.message || "Update failed!");
-    }
-  };
-
-  const handleUpdateProduct1 = async () => {
-    const rowId = currentProduct?.Id ?? currentProduct?.id;
-    if (!rowId) return toast.error("Invalid item!");
-
-    try {
-      const formData = new FormData();
-      formData.append("note", currentProduct.note);
-      formData.append("status", currentProduct.status);
-      formData.append("userId", userId);
-      formData.append("bookId", id);
-      formData.append("supplierId", currentProduct?.supplierId || "");
-      const res = await updateCashInOut({ id: rowId, data: formData }).unwrap();
-      if (res?.success) {
-        toast.success("Successfully updated!");
-
-        setIsModalOpen2(false);
         setCurrentProduct(null);
         setIsNewCategoryEdit(false);
         setNewCategoryNameEdit("");
@@ -687,7 +666,10 @@ const CashInOutTable = () => {
       formData.append("paymentMode", createProduct.paymentMode);
       formData.append("paymentStatus", "CashIn");
       formData.append("date", createProduct.date);
-      formData.append("note", createProduct.note);
+      formData.append(
+        "note",
+        (createProduct.note || createProduct.remarks || "").trim(),
+      );
 
       formData.append(
         "bankName",
@@ -705,6 +687,7 @@ const CashInOutTable = () => {
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
       formData.append("bookId", id);
+      formData.append("actorRole", role);
       formData.append("supplierId", createProduct?.supplierId);
       formData.append("lender", createProduct?.lender?.trim() || "");
       if (createProduct.file) formData.append("file", createProduct.file);
@@ -780,7 +763,10 @@ const CashInOutTable = () => {
       formData.append("paymentMode", createProduct.paymentMode);
       formData.append("paymentStatus", "CashOut");
       formData.append("date", createProduct.date);
-      formData.append("note", createProduct.note);
+      formData.append(
+        "note",
+        (createProduct.note || createProduct.remarks || "").trim(),
+      );
 
       formData.append(
         "bankName",
@@ -798,6 +784,7 @@ const CashInOutTable = () => {
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
       formData.append("bookId", id);
+      formData.append("actorRole", role);
       formData.append("supplierId", createProduct?.supplierId);
       formData.append("lender", createProduct?.lender?.trim() || "");
       if (createProduct.file) formData.append("file", createProduct.file);
@@ -829,15 +816,57 @@ const CashInOutTable = () => {
   };
 
   // delete
-  const [deleteCashInOut] = useDeleteCashInOutMutation();
+  const [deleteCashInOut, { isLoading: isDeletingCashInOut }] =
+    useDeleteCashInOutMutation();
+  const [deleteTargetId, setDeleteTargetId] = useState(null); // admin confirm delete
+  const [deleteRequestId, setDeleteRequestId] = useState(null); // non-admin request delete
+  const [deleteRequestNote, setDeleteRequestNote] = useState("");
+  const [isDeleteRequestOpen, setIsDeleteRequestOpen] = useState(false);
 
-  const handleDeleteProduct = async (rowId) => {
-    if (!window.confirm("Do you want to delete this item?")) return;
+  const isPrivilegedUser = role === "superAdmin" || role === "admin";
+
+  const handleDeleteIconClick = (rowId) => {
+    if (!rowId) return;
+    if (isPrivilegedUser) {
+      setDeleteTargetId(rowId);
+      return;
+    }
+    setDeleteRequestId(rowId);
+    setDeleteRequestNote("");
+    setIsDeleteRequestOpen(true);
+  };
+
+  const closeDeleteRequestModal = () => {
+    setIsDeleteRequestOpen(false);
+    setDeleteRequestId(null);
+    setDeleteRequestNote("");
+  };
+
+  const submitDeleteRequest = async () => {
+    if (!deleteRequestId) return;
+    const note = String(deleteRequestNote || "").trim();
+    if (!note) return toast.error("Delete request note is required!");
 
     try {
-      const res = await deleteCashInOut(rowId).unwrap();
+      const res = await deleteCashInOut({ id: deleteRequestId, note }).unwrap();
+      if (res?.success) {
+        toast.success(res?.message || "Delete request submitted!");
+        closeDeleteRequestModal();
+        refetch?.();
+      } else toast.error(res?.message || "Delete request failed!");
+    } catch (err) {
+      toast.error(err?.data?.message || "Delete request failed!");
+    }
+  };
+
+  const handleConfirmDeleteProduct = async () => {
+    if (!deleteTargetId) return;
+
+    try {
+      const res = await deleteCashInOut({ id: deleteTargetId }).unwrap();
       if (res?.success) {
         toast.success("Deleted!");
+        setDeleteTargetId(null);
         refetch?.();
       } else toast.error(res?.message || "Delete failed!");
     } catch (err) {
@@ -903,7 +932,7 @@ const CashInOutTable = () => {
     }
   };
 
-  const handleReportSheet = async () => {
+  const handleReportSheet = () => {
     try {
       if (!products.length) return toast.error("No data found!");
 
@@ -934,8 +963,16 @@ const CashInOutTable = () => {
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [noteContent, setNoteContent] = useState("");
 
+  const stripWorkflowNote = (value) =>
+    String(value || "")
+      .replace(/\[Approval pending for update\]/g, "")
+      .replace(/\[Update request approved\]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
   const handleNoteClick = (note) => {
-    setNoteContent(note);
+    const cleaned = stripWorkflowNote(note);
+    setNoteContent(cleaned || String(note || ""));
     setIsNoteModalOpen(true); // Open the modal
   };
 
@@ -1032,7 +1069,7 @@ const CashInOutTable = () => {
   };
   return (
     <motion.div
-      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
+      className="w-full max-w-full min-w-0 bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -1189,7 +1226,7 @@ const CashInOutTable = () => {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-4 items-end mb-6 w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-4 items-end mb-6 w-full [&>*]:min-w-0">
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">{t.from}</label>
           <input
@@ -1343,8 +1380,8 @@ const CashInOutTable = () => {
       </datalist>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200">
+      <div className="w-full max-w-full overflow-x-auto overscroll-x-contain">
+        <table className="w-full min-w-[1400px] divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -1488,12 +1525,12 @@ const CashInOutTable = () => {
                       className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
                         rp.status === "Approved"
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : rp.status === "Active"
-                            ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                            : "bg-amber-50 text-amber-700 border-amber-200"
+                          : rp.status === "Pending"
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : "bg-blue-50 text-blue-700 border-blue-200"
                       }`}
                     >
-                      {rp.status}
+                      {rp.status || "Active"}
                     </span>
                   </td>
 
@@ -1535,7 +1572,7 @@ const CashInOutTable = () => {
 
                       {role === "superAdmin" || role === "admin" ? (
                         <button
-                          onClick={() => handleDeleteProduct(rowId)}
+                          onClick={() => handleDeleteIconClick(rowId)}
                           className="text-red-600 hover:text-red-700"
                           type="button"
                         >
@@ -1543,7 +1580,7 @@ const CashInOutTable = () => {
                         </button>
                       ) : (
                         <button
-                          onClick={() => handleEditClick1(rp)}
+                          onClick={() => handleDeleteIconClick(rowId)}
                           className="text-red-600 hover:text-red-700"
                           type="button"
                         >
@@ -1590,7 +1627,7 @@ const CashInOutTable = () => {
 
                       {role === "superAdmin" || role === "admin" ? (
                         <button
-                          onClick={() => handleDeleteProduct(rowId)}
+                          onClick={() => handleDeleteIconClick(rowId)}
                           className="text-red-600 hover:text-red-700"
                           type="button"
                         >
@@ -1598,7 +1635,7 @@ const CashInOutTable = () => {
                         </button>
                       ) : (
                         <button
-                          onClick={() => handleEditClick1(rp)}
+                          onClick={() => handleDeleteIconClick(rowId)}
                           className="text-red-600 hover:text-red-700"
                           type="button"
                         >
@@ -1919,6 +1956,32 @@ const CashInOutTable = () => {
               />
             </div>
           </div>
+
+          {isPrivilegedUser && (
+            <div>
+              <label className="block text-sm text-slate-600 mb-1">
+                {t.status || "Status"}
+              </label>
+              <select
+                value={currentProduct?.status || ""}
+                onChange={(e) =>
+                  setCurrentProduct((p) => ({
+                    ...p,
+                    status: e.target.value,
+                  }))
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
+                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              >
+                <option value="">{t.select_status || "Select Status"}</option>
+                <option value="Active">{t.active_status || "Active"}</option>
+                <option value="Approved">
+                  {t.approved_status || "Approved"}
+                </option>
+                <option value="Pending">{t.pending_status || "Pending"}</option>
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm text-slate-600 mb-1">
@@ -2576,6 +2639,54 @@ const CashInOutTable = () => {
         blobUrl={reportBlobUrl}
         sheetPreview={sheetPreview}
         loading={reportLoading}
+      />
+
+      <Modal
+        isOpen={isDeleteRequestOpen}
+        onClose={closeDeleteRequestModal}
+        title="Request Delete"
+        maxWidth="max-w-lg"
+      >
+        <div className="space-y-5">
+          <div>
+            <label className="block text-sm text-slate-600 mb-1">Note</label>
+            <textarea
+              value={deleteRequestNote}
+              onChange={(e) => setDeleteRequestNote(e.target.value)}
+              rows={3}
+              placeholder="Why do you want to delete this transaction?"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={closeDeleteRequestModal}
+              className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
+              disabled={isDeletingCashInOut}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={submitDeleteRequest}
+              className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl"
+              disabled={isDeletingCashInOut}
+            >
+              {isDeletingCashInOut ? "..." : "Submit"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+      <ConfirmDialog
+        isOpen={Boolean(deleteTargetId)}
+        title="Delete transaction?"
+        message="This transaction will be removed permanently. This action cannot be undone."
+        confirmLabel="Delete"
+        isLoading={isDeletingCashInOut}
+        onCancel={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDeleteProduct}
       />
     </motion.div>
   );

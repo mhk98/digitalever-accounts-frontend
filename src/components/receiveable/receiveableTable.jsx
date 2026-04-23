@@ -26,7 +26,7 @@ import Modal from "../common/Modal";
 const ReceiveableTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
-  const [isModalOpen2, setIsModalOpen2] = useState(false);
+  const [, setIsModalOpen2] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
 
   const role = localStorage.getItem("role");
@@ -153,7 +153,11 @@ const ReceiveableTable = () => {
 
   const [deleteReceiveable] = useDeleteReceiveableMutation();
   const handleDeleteProduct = async (id) => {
-    if (window.confirm("Delete this receivable record?")) {
+    if (
+      await requestDeleteConfirmation({
+        message: "Delete this receivable record?",
+      })
+    ) {
       try {
         const res = await deleteReceiveable(id).unwrap();
         if (res?.success) {

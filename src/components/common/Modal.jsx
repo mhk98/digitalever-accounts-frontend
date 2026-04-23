@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
 
 /**
@@ -22,21 +22,35 @@ const Modal = ({
     maxWidth = "max-w-2xl",
     showCloseButton = true
 }) => {
+    const titleId = useId();
+    const panelRef = useRef(null);
+    const previousFocusRef = useRef(null);
+    const shouldReduceMotion = useReducedMotion();
+
     // Body scroll locking
     useEffect(() => {
-        if (isOpen) {
-            const originalStyle = window.getComputedStyle(document.body).overflow;
-            document.body.style.overflow = "hidden";
-            return () => {
-                document.body.style.overflow = originalStyle;
-            };
+        if (!isOpen || typeof window === "undefined") return undefined;
+
+        const originalOverflow = document.body.style.overflow;
+        const originalPaddingRight = document.body.style.paddingRight;
+        const scrollbarWidth =
+            window.innerWidth - document.documentElement.clientWidth;
+
+        document.body.style.overflow = "hidden";
+        if (scrollbarWidth > 0) {
+            document.body.style.paddingRight = `${scrollbarWidth}px`;
         }
+
+        return () => {
+            document.body.style.overflow = originalOverflow;
+            document.body.style.paddingRight = originalPaddingRight;
+        };
     }, [isOpen]);
 
     // Escape key listener
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (e.key === "Escape") onClose();
+            if (e.key === "Escape") onClose?.();
         };
         if (isOpen) {
             window.addEventListener("keydown", handleKeyDown);
@@ -44,41 +58,72 @@ const Modal = ({
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [isOpen, onClose]);
 
-    if (!isOpen) return null;
+    useEffect(() => {
+        if (!isOpen) return undefined;
+
+        previousFocusRef.current = document.activeElement;
+        const focusTimer = window.setTimeout(() => panelRef.current?.focus(), 0);
+
+        return () => {
+            window.clearTimeout(focusTimer);
+            previousFocusRef.current?.focus?.();
+        };
+    }, [isOpen]);
+
+    if (typeof document === "undefined") return null;
+
+    const backdropTransition = shouldReduceMotion
+        ? { duration: 0 }
+        : { duration: 0.16, ease: "easeOut" };
+
+    const panelTransition = shouldReduceMotion
+        ? { duration: 0 }
+        : { type: "spring", damping: 28, stiffness: 360 };
 
     const modalContent = (
         <AnimatePresence>
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 md:p-8"
+                    className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 md:p-8"
                     role="dialog"
                     aria-modal="true"
+                    aria-labelledby={titleId}
                 >
                     {/* Backdrop Overlay */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        transition={backdropTransition}
                         onClick={onClose}
                         className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9998]"
                     />
 
                     {/* Modal Panel */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        transition={{
-                            type: "spring",
-                            damping: 25,
-                            stiffness: 300
+                        ref={panelRef}
+                        tabIndex={-1}
+                        initial={{
+                            opacity: 0,
+                            scale: shouldReduceMotion ? 1 : 0.96,
+                            y: shouldReduceMotion ? 0 : 16
                         }}
-                        className={`relative w-full ${maxWidth} bg-white rounded-3xl shadow-2xl border border-slate-200 z-[9999] flex flex-col max-h-[90vh] overflow-hidden`}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{
+                            opacity: 0,
+                            scale: shouldReduceMotion ? 1 : 0.98,
+                            y: shouldReduceMotion ? 0 : 12
+                        }}
+                        transition={panelTransition}
+                        className={`relative w-full ${maxWidth} bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 z-[9999] flex flex-col max-h-[calc(100dvh-24px)] sm:max-h-[90vh] overflow-hidden outline-none`}
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
-                            <h2 className="text-xl font-black text-slate-900 tracking-tight leading-none">
+                        <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-slate-50/80">
+                            <h2
+                                id={titleId}
+                                className="min-w-0 text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight"
+                            >
                                 {title}
                             </h2>
                             {showCloseButton && (
@@ -94,7 +139,7 @@ const Modal = ({
                         </div>
 
                         {/* Body Container (Scrollable) */}
-                        <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+                        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                             {children}
                         </div>
                     </motion.div>

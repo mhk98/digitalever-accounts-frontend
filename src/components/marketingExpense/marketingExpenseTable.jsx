@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit, Minus, Notebook, Plus, Search, Trash2, X } from "lucide-react";
+import { Edit, Minus, Notebook, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Modal from "../common/Modal";
@@ -473,7 +473,12 @@ const MarketingExpenseTable = () => {
   const [deleteMarketingExpense] = useDeleteMarketingExpenseMutation();
 
   const handleDeleteProduct = async (rowId) => {
-    if (!window.confirm("Do you want to delete this item?")) return;
+    if (
+      !(await requestDeleteConfirmation({
+        message: "Do you want to delete this item?",
+      }))
+    )
+      return;
 
     try {
       const res = await deleteMarketingExpense(rowId).unwrap();
@@ -542,7 +547,7 @@ const MarketingExpenseTable = () => {
     }
   };
 
-  const handleReportSheet = async () => {
+  const handleReportSheet = () => {
     try {
       if (!products.length) return toast.error("No data found!");
 

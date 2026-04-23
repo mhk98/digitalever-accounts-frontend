@@ -4,7 +4,7 @@ import { isRejectedWithValue } from "@reduxjs/toolkit";
  * Middleware to handle global errors, specifically 401 Unauthorized
  * which indicates an expired or invalid token.
  */
-export const errorMiddleware = (api) => (next) => (action) => {
+export const errorMiddleware = () => (next) => (action) => {
     if (isRejectedWithValue(action)) {
         if (action.payload?.status === 401) {
             // Prevent infinite loop if we're already on the login page

@@ -140,7 +140,7 @@ const BuyersTable = () => {
 
   const [deleteBuyer] = useDeleteBuyerMutation();
   const handleDeleteProduct = async (id) => {
-    const confirmDelete = window.confirm("Do you want to delete this buyer?");
+    const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this buyer?" });
 
     if (confirmDelete) {
       try {

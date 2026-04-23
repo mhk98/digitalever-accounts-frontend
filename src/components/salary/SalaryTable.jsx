@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit, Plus, Trash2, Wallet, Clock, UserMinus, CalendarX, AlertCircle } from "lucide-react";
+import { Edit, Plus, Trash2, Clock, UserMinus, CalendarX, AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -98,7 +98,7 @@ const SalaryTable = () => {
 
   const [deleteSalary] = useDeleteSalaryMutation();
   const handleDeleteProduct = async (id) => {
-    if (window.confirm("Delete these payroll fine parameters?")) {
+    if (await requestDeleteConfirmation({ message: "Delete these payroll fine parameters?" })) {
       try {
         const res = await deleteSalary(id).unwrap();
         if (res?.success) {

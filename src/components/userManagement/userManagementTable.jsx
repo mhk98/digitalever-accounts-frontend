@@ -1,4 +1,3 @@
-/* eslint-disable no-mixed-spaces-and-tabs */
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -276,7 +275,9 @@ const UserManagementTable = () => {
     useUserImpersonateMutation();
 
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm("Do you want to delete this user?");
+    const confirmDelete = await requestDeleteConfirmation({
+      message: "Do you want to delete this user?",
+    });
     if (!confirmDelete) return;
 
     try {
@@ -767,12 +768,7 @@ const Input = ({ label, value, onChange, type = "text" }) => (
   </div>
 );
 
-const DocumentFields = ({
-  mode,
-  previewUrls,
-  currentValues,
-  onFileChange,
-}) => (
+const DocumentFields = ({ mode, previewUrls, currentValues, onFileChange }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
     {Object.entries(DOCUMENT_LABELS).map(([field, label]) => {
       const existingPath = currentValues?.[field];

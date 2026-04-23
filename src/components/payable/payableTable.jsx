@@ -26,7 +26,7 @@ import Modal from "../common/Modal";
 const PayableTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
-  const [isModalOpen2, setIsModalOpen2] = useState(false);
+  const [, setIsModalOpen2] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
 
   const role = localStorage.getItem("role");
@@ -153,7 +153,9 @@ const PayableTable = () => {
 
   const [deletePayable] = useDeletePayableMutation();
   const handleDeleteProduct = async (id) => {
-    if (window.confirm("Delete this payable entry?")) {
+    if (
+      await requestDeleteConfirmation({ message: "Delete this payable entry?" })
+    ) {
       try {
         const res = await deletePayable(id).unwrap();
         if (res?.success) {

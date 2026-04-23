@@ -350,7 +350,7 @@ const EmployeeMasterManager = () => {
       return;
     }
 
-    const confirmed = window.confirm(`Delete employee ${item.name}?`);
+    const confirmed = await requestDeleteConfirmation({ message: `Delete employee ${item.name}?` });
     if (!confirmed) return;
 
     try {

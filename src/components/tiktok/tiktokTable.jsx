@@ -121,7 +121,7 @@
 
 //   // Responsive pagesPerSet
 //   useEffect(() => {
-//     const updatePagesPerSet = () => {
+//     const updatePagesPerSet = async () => {
 //       if (window.innerWidth < 640) setPagesPerSet(5);
 //       else if (window.innerWidth < 1024) setPagesPerSet(7);
 //       else setPagesPerSet(10);
@@ -205,7 +205,7 @@
 //   // ✅ Delete
 //   const [deleteMeta] = useDeleteMetaMutation();
 //   const handleDeleteProduct = async (id) => {
-//     const confirmDelete = window.confirm("Do you want to delete this item?");
+//     const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this item?" });
 //     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
 //     try {
@@ -654,7 +654,7 @@
 // export default TiktokTable;
 
 import { motion } from "framer-motion";
-import { Edit, BarChart3, Plus, Trash2, Notebook, X } from "lucide-react";
+import { Edit, BarChart3, Plus, Trash2, Notebook } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Modal from "../common/Modal";
@@ -892,7 +892,7 @@ const TiktokTable = () => {
   // ✅ Delete
   const [deleteMeta] = useDeleteMetaMutation();
   const handleDeleteProduct = async (id) => {
-    const confirmDelete = window.confirm("Do you want to delete this item?");
+    const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this item?" });
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {

@@ -276,7 +276,7 @@
 //     setIsEditModalOpen(true);
 //   };
 
-//   const closeEdit = () => {
+//   const closeEdit = async () => {
 //     setIsEditModalOpen(false);
 //     setCurrentReport(null);
 //   };
@@ -325,7 +325,7 @@
 //   // Delete
 //   // ----------------------------
 //   const handleDelete = async (id) => {
-//     const ok = window.confirm("Do you want to delete this POS report?");
+//     const ok = await requestDeleteConfirmation({ message: "Do you want to delete this POS report?" });
 //     if (!ok) return toast.info("Delete cancelled.");
 
 //     try {
@@ -1438,7 +1438,7 @@ const PosReportTable = () => {
   // Delete
   // ----------------------------
   const handleDelete = async (id) => {
-    const ok = window.confirm("Do you want to delete this POS report?");
+    const ok = await requestDeleteConfirmation({ message: "Do you want to delete this POS report?" });
     if (!ok) return toast.info("Delete cancelled.");
 
     try {

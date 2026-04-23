@@ -595,15 +595,13 @@ const UserProfile = () => {
             </h3>
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.entries(DOCUMENT_LABELS).map(
-                ([field, label]) => (
-                  <DocumentLinkCard
-                    key={field}
-                    label={label}
-                    path={user?.[field]}
-                  />
-                ),
-              )}
+              {Object.entries(DOCUMENT_LABELS).map(([field, label]) => (
+                <DocumentLinkCard
+                  key={field}
+                  label={label}
+                  path={user?.[field]}
+                />
+              ))}
             </div>
           </div>
         </div>

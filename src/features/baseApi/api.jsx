@@ -24,7 +24,6 @@ export const baseApi = createApi({
     "ReceivedProduct",
     "PurchaseReturn",
     "InTransitProduct",
-    "InTransitStock",
     "ReturnProduct",
     "DamageProduct",
     "DamageRepair",
@@ -38,6 +37,7 @@ export const baseApi = createApi({
     "StockAdjustment",
     "DamageRepairingStock",
     "EmployeeList",
+    "KPI",
     "ProfitLoss",
   ],
 

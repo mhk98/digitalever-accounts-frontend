@@ -16,6 +16,8 @@ import HrmWorkspace from "./HrmWorkspace";
 const DEFAULT_STAT_ICON_BG = "#EEF2FF";
 const DEFAULT_STAT_ICON_COLOR = "#4338CA";
 
+const useNoopApproveMutation = () => [null, { isLoading: false }];
+
 const buildInitialState = (fields = []) =>
   fields.reduce((acc, field) => {
     acc[field.name] =
@@ -79,9 +81,9 @@ const HrmCrudManager = ({
   const [createItem, { isLoading: isCreating }] = useCreateMutation();
   const [updateItem, { isLoading: isUpdating }] = useUpdateMutation();
   const [deleteItem] = useDeleteMutation();
-  const [approveItem, { isLoading: isApproving }] = useApproveMutation
-    ? useApproveMutation()
-    : [null, { isLoading: false }];
+  const useApproveItemMutation =
+    useApproveMutation || useNoopApproveMutation;
+  const [approveItem, { isLoading: isApproving }] = useApproveItemMutation();
 
   const rows = data?.data || [];
   const derivedStats = useMemo(() => {
@@ -247,7 +249,7 @@ const HrmCrudManager = ({
       return;
     }
 
-    const confirmed = window.confirm(`Delete this ${entityLabel}?`);
+    const confirmed = await requestDeleteConfirmation({ message: `Delete this ${entityLabel}?` });
     if (!confirmed) return;
 
     try {

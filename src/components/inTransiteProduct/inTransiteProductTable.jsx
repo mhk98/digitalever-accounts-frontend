@@ -13,6 +13,7 @@ import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wi
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetSingleProductByIdQuery } from "../../features/product/product";
 import Modal from "../common/Modal";
+import ConfirmDialog from "../common/ConfirmDialog";
 import { useGetAllInventoryOverviewWithoutQueryQuery } from "../../features/inventoryOverview/inventoryOverview";
 
 const initialCreateForm = {
@@ -479,7 +480,9 @@ const IntransiteProductTable = () => {
   // mutations
   const [insertInTransitProduct] = useInsertInTransitProductMutation();
   const [updateInTransitProduct] = useUpdateInTransitProductMutation();
-  const [deleteInTransitProduct] = useDeleteInTransitProductMutation();
+  const [deleteInTransitProduct, { isLoading: isDeletingInTransitProduct }] =
+    useDeleteInTransitProductMutation();
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   // ✅ create (send receivedId)
   const handleCreate = async (e) => {
@@ -597,13 +600,18 @@ const IntransiteProductTable = () => {
   };
 
   // delete
-  const handleDelete = async (id) => {
-    if (!window.confirm("Do you want to delete this item?")) return;
+  const handleDelete = (id) => {
+    setDeleteTargetId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
 
     try {
-      const res = await deleteInTransitProduct(id).unwrap();
+      const res = await deleteInTransitProduct(deleteTargetId).unwrap();
       if (res?.success) {
         toast.success("Deleted!");
+        setDeleteTargetId(null);
         refetch?.();
       } else toast.error(res?.message || "Delete failed!");
     } catch (err) {
@@ -703,7 +711,7 @@ const IntransiteProductTable = () => {
 
   return (
     <motion.div
-      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
+      className="w-full max-w-full min-w-0 bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-4 sm:p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -730,7 +738,7 @@ const IntransiteProductTable = () => {
       </div>
 
       {/* Filters */}
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-5 gap-4 items-end w-full">
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-5 gap-4 items-end w-full [&>*]:min-w-0">
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">From</label>
           <input
@@ -835,8 +843,8 @@ const IntransiteProductTable = () => {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto mt-6 rounded-2xl border border-slate-200">
-        <table className="min-w-full divide-y divide-slate-200">
+      <div className="w-full max-w-full overflow-x-auto overscroll-x-contain mt-6 rounded-2xl border border-slate-200">
+        <table className="w-full min-w-[1120px] divide-y divide-slate-200 [&_th]:px-3 lg:[&_th]:px-4 [&_td]:px-3 lg:[&_td]:px-4 [&_th]:py-3 [&_td]:py-3">
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -899,13 +907,13 @@ const IntransiteProductTable = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {Number(rp.quantity || 0).toFixed(2)}
                   </td>
-                  <td className="px-6 py-4 min-w-[260px]">
+                  <td className="px-6 py-4 min-w-[210px]">
                     {variantDisplayRows.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
                         {variantDisplayRows.map((variant, index) => (
                           <div
                             key={`${rp.Id}-variant-${index}`}
-                            className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-3 py-2 shadow-sm"
+                            className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-2.5 py-1.5 shadow-sm"
                           >
                             <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
                               <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">
@@ -950,11 +958,11 @@ const IntransiteProductTable = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       {rp.note ? (
                         <div className="relative">
                           <button
-                            className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                            className="relative h-8 w-8 rounded-md flex items-center justify-center"
                             title={rp.note}
                             type="button"
                             onClick={() => handleNoteClick(rp.note)} // Open modal on click
@@ -968,7 +976,7 @@ const IntransiteProductTable = () => {
                         </div>
                       ) : (
                         <button
-                          className="h-10 w-10 rounded-md flex items-center justify-center"
+                          className="h-8 w-8 rounded-md flex items-center justify-center"
                           title={rp.note}
                           type="button"
                         >
@@ -979,7 +987,7 @@ const IntransiteProductTable = () => {
                       <button
                         type="button"
                         onClick={() => openEdit(rp)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 hover:bg-white transition"
                         title="Edit"
                       >
                         <Edit size={18} className="text-indigo-600" />
@@ -989,7 +997,7 @@ const IntransiteProductTable = () => {
                         <button
                           type="button"
                           onClick={() => handleDelete(rp.Id)}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 hover:bg-white transition"
                           title="Delete"
                         >
                           <Trash2 size={18} className="text-red-600" />
@@ -998,7 +1006,7 @@ const IntransiteProductTable = () => {
                         <button
                           type="button"
                           onClick={() => openEdit1(rp)}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 hover:bg-white transition"
                           title="Request Delete"
                         >
                           <Trash2 size={18} className="text-amber-600" />
@@ -1756,6 +1764,15 @@ const IntransiteProductTable = () => {
           </div>
         </form>
       </Modal>
+      <ConfirmDialog
+        isOpen={Boolean(deleteTargetId)}
+        title="Delete intransit product?"
+        message="This intransit product entry will be removed permanently. This action cannot be undone."
+        confirmLabel="Delete"
+        isLoading={isDeletingInTransitProduct}
+        onCancel={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </motion.div>
   );
 };

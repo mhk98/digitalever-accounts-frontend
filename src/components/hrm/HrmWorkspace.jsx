@@ -1,6 +1,4 @@
-import {
-  BadgePercent,
-  Building2,
+import {  Building2,
   CalendarDays,
   CircleDollarSign,
   ClipboardList,

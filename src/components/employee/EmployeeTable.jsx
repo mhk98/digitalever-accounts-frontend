@@ -475,7 +475,7 @@
 //     setIsEditModalOpen(true);
 //   };
 
-//   const handleEditClick1 = (employee) => {
+//   const handleEditClick1 = async (employee) => {
 //     const normalized = {
 //       ...employee,
 //       name: employee.name ?? "",
@@ -627,9 +627,8 @@
 //   };
 
 //   const handleDeleteEmployee = async (id) => {
-//     const confirmDelete = window.confirm(
-//       "Do you want to delete this employee?",
-//     );
+//     const confirmDelete = await requestDeleteConfirmation({ message: //       "Do you want to delete this employee?",
+// });
 //     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
 //     try {
@@ -3530,9 +3529,7 @@ const EmployeeTable = () => {
   };
 
   const handleDeleteEmployee = async (id) => {
-    const confirmDelete = window.confirm(
-      "Do you want to delete this employee?",
-    );
+    const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this employee?", });
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {

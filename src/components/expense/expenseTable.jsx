@@ -109,7 +109,7 @@ const ExpenseTable = () => {
 
   const [deleteExpense] = useDeleteExpenseMutation();
   const handleDeleteExpenseAction = async (id) => {
-    if (window.confirm("Do you want to delete this item?")) {
+    if (await requestDeleteConfirmation({ message: "Do you want to delete this item?" })) {
       try {
         const res = await deleteExpense(id).unwrap();
         if (res?.success) {

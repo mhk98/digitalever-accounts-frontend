@@ -268,7 +268,7 @@ const AssetsPurchaseTable = () => {
   // Delete
   const [deleteAssetsPurchase] = useDeleteAssetsPurchaseMutation();
   const handleDeleteProduct = async (id) => {
-    const confirmDelete = window.confirm("Do you want to delete this product?");
+    const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this product?" });
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {

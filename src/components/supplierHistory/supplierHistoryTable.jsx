@@ -296,7 +296,9 @@ const SupplierHistoryTable = () => {
   const [deleteSupplierHistory] = useDeleteSupplierHistoryMutation();
 
   const handleDeleteProduct = async (id) => {
-    const confirmDelete = window.confirm("Do you want to delete this product?");
+    const confirmDelete = await requestDeleteConfirmation({
+      message: "Do you want to delete this product?",
+    });
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {
@@ -337,7 +339,6 @@ const SupplierHistoryTable = () => {
   // ✅ suppliers
   const {
     data: allBookRes,
-    isLoading: isLoadingBook,
     isError: isErrorBook,
     error: errorBook,
   } = useGetAllBookWithoutQueryQuery();
@@ -361,7 +362,6 @@ const SupplierHistoryTable = () => {
   // ✅ suppliers
   const {
     data: allSupplierRes,
-    isLoading: isLoadingSupplier,
     isError: isErrorSupplier,
     error: errorSupplier,
   } = useGetAllSupplierWithoutQueryQuery();

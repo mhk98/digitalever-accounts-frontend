@@ -606,7 +606,7 @@ const DamageRepairTable = () => {
 
   // delete
   const handleDelete = async (id) => {
-    if (!window.confirm("Do you want to delete this item?")) return;
+    if (!await requestDeleteConfirmation({ message: "Do you want to delete this item?" })) return;
 
     try {
       const res = await deleteDamageRepair(id).unwrap();

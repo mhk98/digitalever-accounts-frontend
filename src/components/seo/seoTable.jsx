@@ -162,7 +162,7 @@
 //     }
 //   };
 
-//   const handleEditClick = (rp) => {
+//   const handleEditClick = async (rp) => {
 //     setCurrentProduct({
 //       ...rp,
 //       amount: rp.amount ?? "",
@@ -205,7 +205,7 @@
 //   // ✅ Delete
 //   const [deleteMeta] = useDeleteMetaMutation();
 //   const handleDeleteProduct = async (id) => {
-//     const confirmDelete = window.confirm("Do you want to delete this item?");
+//     const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this item?" });
 //     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
 //     try {
@@ -652,7 +652,7 @@
 // export default SEOTable;
 
 import { motion } from "framer-motion";
-import { Edit, BarChart3, Plus, Trash2, Notebook, X } from "lucide-react";
+import { Edit, BarChart3, Plus, Trash2, Notebook } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Modal from "../common/Modal";
@@ -892,7 +892,7 @@ const SEOTable = () => {
   // ✅ Delete
   const [deleteMeta] = useDeleteMetaMutation();
   const handleDeleteProduct = async (id) => {
-    const confirmDelete = window.confirm("Do you want to delete this item?");
+    const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this item?" });
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {

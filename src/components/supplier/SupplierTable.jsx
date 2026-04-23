@@ -126,9 +126,7 @@ const SupplierTable = () => {
   // ✅ Delete
   const [deleteSupplier] = useDeleteSupplierMutation();
   const handleDeleteSupplier = async (id) => {
-    const confirmDelete = window.confirm(
-      "Do you want to delete this supplier?",
-    );
+    const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this supplier?", });
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {

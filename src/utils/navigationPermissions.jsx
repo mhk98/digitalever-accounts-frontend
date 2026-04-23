@@ -83,7 +83,6 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "received_product",
     "received_return",
     "intransit_product",
-    "delivered_stock",
     "sales_return",
     "damage_management",
     "damage_stock",
@@ -120,6 +119,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "payslip",
     "hr_payroll",
     "employee_list",
+    "employee_kpi",
     "payroll",
     "payroll_fine",
     "expired_product",
@@ -150,7 +150,6 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "received_product",
     "received_return",
     "intransit_product",
-    "delivered_stock",
     "sales_return",
     "damage_management",
     "damage_stock",
@@ -184,6 +183,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "payslip",
     "hr_payroll",
     "employee_list",
+    "employee_kpi",
     "payroll",
     "payroll_fine",
     "profile",
@@ -223,7 +223,6 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "received_product",
     "received_return",
     "intransit_product",
-    "delivered_stock",
     "sales_return",
     "damage_management",
     "damage_stock",
@@ -262,6 +261,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "payslip",
     "hr_payroll",
     "employee_list",
+    "employee_kpi",
     "payroll",
     "payroll_fine",
     "notifications",
@@ -472,14 +472,6 @@ export const SIDEBAR_ITEMS = [
         key: "received_return",
         icon: RefreshCcw,
         href: "/purchase-return",
-        roles: ["superAdmin", "admin", "inventor"],
-      },
-
-      {
-        name: "Intransit Stock",
-        key: "delivered_stock",
-        icon: PackageSearch,
-        href: "/delivered-stock",
         roles: ["superAdmin", "admin", "inventor"],
       },
 
@@ -806,6 +798,14 @@ export const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin", "accountant"],
       },
       {
+        name: "Employee KPI",
+        key: "employee_kpi",
+        icon: BadgeCheck,
+        color: "#22c55e",
+        href: "/employee-kpi",
+        roles: ["superAdmin", "admin", "employee"],
+      },
+      {
         name: "Payroll",
         key: "payroll",
         icon: CircleDollarSign,
@@ -935,10 +935,6 @@ const normalizeRolePermissionMap = (value) => {
     if (normalizedKeys.has("department_designation")) {
       normalizedKeys.add("department_management");
       normalizedKeys.add("designation_management");
-    }
-
-    if (normalizedKeys.has("intransit_product")) {
-      normalizedKeys.add("delivered_stock");
     }
 
     const payrollChildKeys = [

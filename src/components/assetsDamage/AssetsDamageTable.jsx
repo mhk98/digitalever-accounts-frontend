@@ -292,7 +292,7 @@ const AssetsDamageTable = () => {
   const [deleteAssetsDamage] = useDeleteAssetsDamageMutation();
 
   const handleDeleteProduct = async (rowId) => {
-    if (!window.confirm("Do you want to delete this row?")) return;
+    if (!await requestDeleteConfirmation({ message: "Do you want to delete this row?" })) return;
 
     try {
       const res = await deleteAssetsDamage(rowId).unwrap();

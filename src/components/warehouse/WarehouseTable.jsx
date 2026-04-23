@@ -93,7 +93,7 @@ const WarehouseTable = () => {
 
   const [deleteWirehouse] = useDeleteWirehouseMutation();
   const handleDeleteWarehouse = async (id) => {
-    if (window.confirm("Do you want to delete this warehouse?")) {
+    if (await requestDeleteConfirmation({ message: "Do you want to delete this warehouse?" })) {
       try {
         const res = await deleteWirehouse(id).unwrap();
         if (res?.success) {

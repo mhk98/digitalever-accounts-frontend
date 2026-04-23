@@ -821,7 +821,7 @@ const ReceivedProductTable = () => {
   const [deleteReceivedProduct] = useDeleteReceivedProductMutation();
 
   const handleDeleteProduct = async (id) => {
-    const confirmDelete = window.confirm("Do you want to delete this product?");
+    const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this product?" });
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {
@@ -961,7 +961,7 @@ const ReceivedProductTable = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            {t.purchase_history || "Purchase History"}
+            {t.received_history || "Received History"}
           </h2>
           <p className="text-slate-500 text-sm mt-1 font-medium">
             {t.incoming_product_acquisitions ||
@@ -991,7 +991,7 @@ const ReceivedProductTable = () => {
             onClick={handleAddProduct}
             className="group relative inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition-all px-6 py-3 rounded-2xl text-sm font-bold shadow-xl shadow-indigo-100 active:scale-95 overflow-hidden w-full sm:w-auto"
           >
-            <Plus size={18} /> {t.add_new_purchase || "Add New Purchase"}
+            <Plus size={18} /> {t.add_new_received || "Add New Received"}
           </button>
         </div>
       </div>
@@ -1429,7 +1429,7 @@ const ReceivedProductTable = () => {
       <Modal
         isOpen={isModalOpen && !!currentProduct}
         onClose={handleModalClose}
-        title={t.edit_purchase || "Edit Purchase"}
+        title={t.edit_received_product || "Edit Received Product"}
       >
         <div
           ref={editModalBodyRef}
@@ -1609,7 +1609,7 @@ const ReceivedProductTable = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                {t.purchase_date || "Purchase Date"}
+                {t.received_date || "Received Date"}
               </label>
               <input
                 type="date"
@@ -1969,7 +1969,7 @@ const ReceivedProductTable = () => {
       <Modal
         isOpen={isModalOpen1}
         onClose={handleModalClose1}
-        title={t.add_new_purchase || "Add New Purchase"}
+        title={t.add_new_received || "Add New Received Product"}
       >
         <form
           onSubmit={handleCreateProduct}
@@ -2190,7 +2190,7 @@ const ReceivedProductTable = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                {t.purchase_date || "Purchase Date"}
+                {t.received_date || "Received Date"}
               </label>
               <input
                 type="date"
@@ -2489,7 +2489,7 @@ const ReceivedProductTable = () => {
               type="submit"
               className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-100 active:scale-95"
             >
-              {t.confirm_purchase || "Confirm Purchase"}
+              {t.confirm_received || "Confirm Received"}
             </button>
           </div>
         </form>

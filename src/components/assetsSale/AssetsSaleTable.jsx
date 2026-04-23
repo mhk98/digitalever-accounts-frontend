@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BadgeDollarSign, Edit, Notebook, Plus, Trash2, X } from "lucide-react";
+import { BadgeDollarSign, Edit, Notebook, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -311,7 +311,7 @@ const AssetsSaleTable = () => {
   // Delete
   // ----------------------------
   const handleDeleteProduct = async (rowId) => {
-    if (!window.confirm("Do you want to delete this sale row?")) return;
+    if (!await requestDeleteConfirmation({ message: "Do you want to delete this sale row?" })) return;
 
     try {
       const res = await deleteAssetsSale(rowId).unwrap();

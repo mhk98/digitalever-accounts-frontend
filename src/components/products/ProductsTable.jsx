@@ -245,7 +245,7 @@ const ProductsTable = () => {
 
   const [deleteProduct] = useDeleteProductMutation();
   const handleDeleteProduct = async (id) => {
-    if (window.confirm("Do you want to delete this product?")) {
+    if (await requestDeleteConfirmation({ message: "Do you want to delete this product?" })) {
       try {
         const res = await deleteProduct(id).unwrap();
         if (res?.success) {
