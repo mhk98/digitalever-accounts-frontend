@@ -18,6 +18,7 @@ import { translations } from "../../utils/translations";
 import { useLayout } from "../../context/LayoutContext";
 import Modal from "../common/Modal";
 import { useGetAllInventoryOverviewWithoutQueryQuery } from "../../features/inventoryOverview/inventoryOverview";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 const initialCreateProduct = {
   warehouseId: "",
@@ -694,7 +695,7 @@ const PurchaseReturnProductTable = () => {
 
     try {
       const res = await deletePurchaseReturn(id).unwrap();
-      if (res?.success) {
+      if (res?.success !== false) {
         toast.success("Deleted!");
         refetch?.();
       } else toast.error(res?.message || "Delete failed!");

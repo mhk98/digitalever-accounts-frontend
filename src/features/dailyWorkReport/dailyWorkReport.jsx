@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const dailyWorkReportApi = createApi({
   reducerPath: "dailyWorkReportApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://apikafela.digitalever.com.bd/api/v1",
+    baseUrl: "http://localhost:5000/api/v1",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) {
@@ -40,6 +40,20 @@ export const dailyWorkReportApi = createApi({
       }),
       invalidatesTags: ["DailyWorkReport"],
     }),
+    deleteDailyWorkReport: build.mutation({
+      query: (id) => ({
+        url: `/daily-work-reports/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["DailyWorkReport"],
+    }),
+    calculateDailyWorkReportScore: build.mutation({
+      query: (id) => ({
+        url: `/daily-work-reports/${id}/calculate-score`,
+        method: "POST",
+      }),
+      invalidatesTags: ["DailyWorkReport"],
+    }),
     sendDailyWorkReportReminders: build.mutation({
       query: (data) => ({
         url: "/daily-work-reports/send-reminders",
@@ -48,9 +62,24 @@ export const dailyWorkReportApi = createApi({
       }),
       invalidatesTags: ["DailyWorkReport"],
     }),
+    uploadDailyWorkReportProof: build.mutation({
+      query: (data) => ({
+        url: "/daily-work-reports/upload-proof",
+        method: "POST",
+        body: data,
+      }),
+    }),
     getMyDailyWorkReports: build.query({
       query: (params = {}) => ({
         url: "/daily-work-reports/me",
+        params,
+      }),
+      providesTags: ["DailyWorkReport"],
+      refetchOnMountOrArgChange: true,
+    }),
+    getAssignedDailyWorkTasks: build.query({
+      query: (params = {}) => ({
+        url: "/daily-work-reports/assigned-tasks",
         params,
       }),
       providesTags: ["DailyWorkReport"],
@@ -71,6 +100,29 @@ export const dailyWorkReportApi = createApi({
       providesTags: ["DailyWorkReport"],
       refetchOnMountOrArgChange: true,
     }),
+    getDailyWorkReportLeaderboard: build.query({
+      query: (params = {}) => ({
+        url: "/daily-work-reports/leaderboard",
+        params,
+      }),
+      providesTags: ["DailyWorkReport"],
+      refetchOnMountOrArgChange: true,
+    }),
+    getDailyWorkEmployeeDashboard: build.query({
+      query: () => ({
+        url: "/daily-work-reports/dashboard/employee",
+      }),
+      providesTags: ["DailyWorkReport"],
+      refetchOnMountOrArgChange: true,
+    }),
+    getDailyWorkAdminDashboard: build.query({
+      query: (params = {}) => ({
+        url: "/daily-work-reports/dashboard/admin",
+        params,
+      }),
+      providesTags: ["DailyWorkReport"],
+      refetchOnMountOrArgChange: true,
+    }),
   }),
 });
 
@@ -78,8 +130,15 @@ export const {
   useCreateDailyWorkReportMutation,
   useUpdateDailyWorkReportMutation,
   useReviewDailyWorkReportMutation,
+  useDeleteDailyWorkReportMutation,
+  useCalculateDailyWorkReportScoreMutation,
   useSendDailyWorkReportRemindersMutation,
+  useUploadDailyWorkReportProofMutation,
   useGetMyDailyWorkReportsQuery,
+  useGetAssignedDailyWorkTasksQuery,
   useGetAllDailyWorkReportsQuery,
   useGetSingleDailyWorkReportQuery,
+  useGetDailyWorkReportLeaderboardQuery,
+  useGetDailyWorkEmployeeDashboardQuery,
+  useGetDailyWorkAdminDashboardQuery,
 } = dailyWorkReportApi;

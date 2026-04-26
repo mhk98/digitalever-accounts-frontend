@@ -13,6 +13,7 @@ import {
   useInsertDamageStockMutation,
   useUpdateDamageStockMutation,
 } from "../../features/damageStock/damageStock";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 const getVariantDisplayRows = (record) => {
   if (Array.isArray(record?.variants)) {
@@ -311,7 +312,7 @@ const DamageStockTable = () => {
 
     try {
       const res = await deleteDamageStock(id).unwrap();
-      if (res?.success) {
+      if (res?.success !== false) {
         toast.success("Deleted!");
         refetch?.();
       } else toast.error(res?.message || "Delete failed!");

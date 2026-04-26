@@ -10,6 +10,7 @@ import {
 } from "../../features/supplier/supplier";
 import Modal from "../common/Modal";
 import { Link } from "react-router-dom";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 const SupplierTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
@@ -131,7 +132,7 @@ const SupplierTable = () => {
 
     try {
       const res = await deleteSupplier(id).unwrap();
-      if (res?.success) {
+      if (res?.success !== false) {
         toast.success("Supplier deleted successfully!");
         refetch?.();
       } else toast.error(res?.message || "Delete failed!");

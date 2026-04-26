@@ -24,7 +24,7 @@ import {
 import { saveRolePermissionsForRole } from "../../utils/navigationPermissions";
 import Modal from "../common/Modal";
 
-const API_BASE = "https://apikafela.digitalever.com.bd";
+const API_BASE = "http://localhost:5000";
 const DOCUMENT_LABELS = {
   image: "Profile Photo",
   idCard: "ID Card",
@@ -620,9 +620,13 @@ const UserManagementTable = () => {
                 className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               >
-                <option value="">Select Role</option>
-                <option value="superAdmin">Super Admin</option>
-                <option value="admin">Admin</option>
+                {actorRole === "superAdmin" && (
+                  <>
+                    <option value="superAdmin">Super Admin</option>
+                    <option value="admin">Admin</option>
+                  </>
+                )}
+
                 <option value="marketer">Marketer</option>
                 <option value="leader">Leader</option>
                 <option value="inventor">Inventor</option>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
 import Modal from "../common/Modal";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 import { useGetAllAssetsStockWithoutQueryQuery } from "../../features/assetsStock/assetsStock";
 import {
@@ -315,7 +316,7 @@ const AssetsSaleTable = () => {
 
     try {
       const res = await deleteAssetsSale(rowId).unwrap();
-      if (res?.success) {
+      if (res?.success !== false) {
         toast.success("Deleted successfully!");
         refetch?.();
       } else {

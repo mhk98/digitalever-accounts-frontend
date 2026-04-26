@@ -11,6 +11,7 @@ import {
   useInsertAssetsDamageMutation,
   useUpdateAssetsDamageMutation,
 } from "../../features/assetsDamage/assetsDamage";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 const AssetsDamageTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -296,7 +297,7 @@ const AssetsDamageTable = () => {
 
     try {
       const res = await deleteAssetsDamage(rowId).unwrap();
-      if (res?.success) {
+      if (res?.success !== false) {
         toast.success("Deleted successfully!");
         refetch?.();
       } else {

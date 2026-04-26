@@ -962,6 +962,7 @@ import {
   useGetAllPosReportWithoutQueryQuery,
   useUpdatePosReportMutation,
 } from "../../features/posReport/posReport";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 const PosReportTable = () => {
   const role = localStorage.getItem("role");

@@ -9,6 +9,7 @@ import {
   useUpdateWirehouseMutation,
 } from "../../features/wirehouse/wirehouse";
 import Modal from "../common/Modal";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 const WarehouseTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
@@ -96,7 +97,7 @@ const WarehouseTable = () => {
     if (await requestDeleteConfirmation({ message: "Do you want to delete this warehouse?" })) {
       try {
         const res = await deleteWirehouse(id).unwrap();
-        if (res?.success) {
+        if (res?.success !== false) {
           toast.success("Warehouse deleted successfully!");
           refetch?.();
         }

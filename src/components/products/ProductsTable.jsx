@@ -15,6 +15,7 @@ import {
 import Modal from "../common/Modal";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 const normalizeAttributeInput = (value) => {
   if (Array.isArray(value)) {
@@ -248,7 +249,7 @@ const ProductsTable = () => {
     if (await requestDeleteConfirmation({ message: "Do you want to delete this product?" })) {
       try {
         const res = await deleteProduct(id).unwrap();
-        if (res?.success) {
+        if (res?.success !== false) {
           toast.success("Product deleted successfully!");
           refetch();
         }

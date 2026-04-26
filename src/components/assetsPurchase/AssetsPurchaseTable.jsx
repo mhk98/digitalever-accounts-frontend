@@ -11,6 +11,7 @@ import {
   useUpdateAssetsPurchaseMutation,
 } from "../../features/assetsPurchase/assetsPurchase";
 import Modal from "../common/Modal";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 const AssetsPurchaseTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -273,7 +274,7 @@ const AssetsPurchaseTable = () => {
 
     try {
       const res = await deleteAssetsPurchase(id).unwrap();
-      if (res?.success) {
+      if (res?.success !== false) {
         toast.success("Product deleted successfully!");
         refetch?.();
       } else {

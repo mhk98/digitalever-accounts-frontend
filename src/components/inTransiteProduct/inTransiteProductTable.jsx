@@ -9,11 +9,11 @@ import {
   useInsertInTransitProductMutation,
   useUpdateInTransitProductMutation,
 } from "../../features/inTransitProduct/inTransitProduct";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetSingleProductByIdQuery } from "../../features/product/product";
 import Modal from "../common/Modal";
-import ConfirmDialog from "../common/ConfirmDialog";
 import { useGetAllInventoryOverviewWithoutQueryQuery } from "../../features/inventoryOverview/inventoryOverview";
 
 const initialCreateForm = {
@@ -480,9 +480,7 @@ const IntransiteProductTable = () => {
   // mutations
   const [insertInTransitProduct] = useInsertInTransitProductMutation();
   const [updateInTransitProduct] = useUpdateInTransitProductMutation();
-  const [deleteInTransitProduct, { isLoading: isDeletingInTransitProduct }] =
-    useDeleteInTransitProductMutation();
-  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [deleteInTransitProduct] = useDeleteInTransitProductMutation();
 
   // ✅ create (send receivedId)
   const handleCreate = async (e) => {
@@ -600,18 +598,18 @@ const IntransiteProductTable = () => {
   };
 
   // delete
-  const handleDelete = (id) => {
-    setDeleteTargetId(id);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteTargetId) return;
+  const handleDelete = async (id) => {
+    const confirmed = await requestDeleteConfirmation({
+      title: "Delete intransit product?",
+      message:
+        "This intransit product entry will be removed permanently. This action cannot be undone.",
+    });
+    if (!confirmed) return;
 
     try {
-      const res = await deleteInTransitProduct(deleteTargetId).unwrap();
-      if (res?.success) {
+      const res = await deleteInTransitProduct(id).unwrap();
+      if (res?.success !== false) {
         toast.success("Deleted!");
-        setDeleteTargetId(null);
         refetch?.();
       } else toast.error(res?.message || "Delete failed!");
     } catch (err) {
@@ -1764,15 +1762,6 @@ const IntransiteProductTable = () => {
           </div>
         </form>
       </Modal>
-      <ConfirmDialog
-        isOpen={Boolean(deleteTargetId)}
-        title="Delete intransit product?"
-        message="This intransit product entry will be removed permanently. This action cannot be undone."
-        confirmLabel="Delete"
-        isLoading={isDeletingInTransitProduct}
-        onCancel={() => setDeleteTargetId(null)}
-        onConfirm={handleConfirmDelete}
-      />
     </motion.div>
   );
 };

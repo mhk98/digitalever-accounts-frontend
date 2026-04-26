@@ -946,6 +946,7 @@ import {
 import Modal from "../common/Modal";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 import {
   useGetAllAssetWithoutQueryQuery,
   useInsertAssetMutation,
@@ -1304,7 +1305,7 @@ const AssetsRequisitionTable = () => {
 
     try {
       const res = await deleteAssetsRequisition(id).unwrap();
-      if (res?.success) {
+      if (res?.success !== false) {
         toast.success("Product deleted successfully!");
         refetch?.();
       } else {

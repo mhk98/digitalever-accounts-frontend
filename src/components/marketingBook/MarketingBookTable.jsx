@@ -18,6 +18,7 @@ import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import Modal from "../common/Modal";
 import { useGetOverviewSummaryQuery } from "../../features/marketingExpense/marketingExpense.jsx";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 // ✅ helper: default range (এই মাসের ১ তারিখ → আজ)
 const getDefaultRange = () => {
@@ -148,7 +149,7 @@ const MarketingBookTable = () => {
 
     try {
       const res = await deleteMarketingBook(id).unwrap();
-      if (res?.success) {
+      if (res?.success !== false) {
         toast.success("Book deleted successfully!");
         refetch?.();
       } else toast.error("Delete failed!");

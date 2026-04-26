@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, ChevronDown, Menu, Languages } from "lucide-react";
+import { Bell, ChevronDown, Menu, Languages, Megaphone } from "lucide-react";
 import NotificationDropdown from "./NotificationDropdown";
 import { useGetDataByIdQuery } from "../../features/notification/notification";
+import { useGetLatestNoticeQuery } from "../../features/notice/notice";
 import { Link, useNavigate } from "react-router-dom";
 import {
   useSingleUserQuery,
@@ -44,6 +45,12 @@ const Header = ({ title }) => {
   });
 
   const user = userRes?.data;
+  const { data: latestNoticeRes } = useGetLatestNoticeQuery(undefined, {
+    pollingInterval: 30000,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
+  const latestNotice = latestNoticeRes?.data;
 
   console.log("user", user);
 
@@ -82,7 +89,7 @@ const Header = ({ title }) => {
 
   const avatarSrc =
     user?.image && user?.image !== "null"
-      ? `https://apikafela.digitalever.com.bd${user.image}`
+      ? `http://localhost:5000${user.image}`
       : null;
 
   const avatarInitials =
@@ -127,6 +134,22 @@ const Header = ({ title }) => {
             </h1>
           </div>
         </div>
+
+        {latestNotice?.message && (
+          <div className="hidden md:flex flex-1 min-w-0 justify-center">
+            <div className="max-w-4xl w-full h-10 px-4 rounded-md bg-amber-50 border border-amber-200 text-amber-900 flex items-center gap-2 overflow-hidden">
+              <Megaphone size={17} className="shrink-0 text-amber-600" />
+              {latestNotice.title && (
+                <span className="shrink-0 text-sm font-semibold">
+                  {latestNotice.title}:
+                </span>
+              )}
+              <p className="min-w-0 truncate text-sm font-medium">
+                {latestNotice.message}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Right */}
         <div

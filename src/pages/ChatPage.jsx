@@ -10,8 +10,8 @@ import {
 import { io } from "socket.io-client";
 import toast from "react-hot-toast";
 
-const API_BASE_URL = "https://apikafela.digitalever.com.bd/api/v1";
-const SOCKET_URL = "https://apikafela.digitalever.com.bd";
+const API_BASE_URL = "http://localhost:5000/api/v1";
+const SOCKET_URL = "http://localhost:5000";
 const CHAT_ALLOWED_ROLES = ["employee", "superAdmin", "admin", "leader"];
 
 const getToken = () => localStorage.getItem("token");

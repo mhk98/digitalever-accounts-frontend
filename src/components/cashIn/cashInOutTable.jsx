@@ -22,11 +22,11 @@ import {
   useInsertCategoryMutation,
 } from "../../features/category/category";
 import Modal from "../common/Modal";
-import ConfirmDialog from "../common/ConfirmDialog";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllSupplierHistoryQuery } from "../../features/supplierHistory/supplierHistory";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 const BANKS = [
   "AB Bank",
@@ -66,7 +66,7 @@ const STATIC_CATEGORIES = [
   "Other",
 ];
 
-const FILE_SERVER_BASE_URL = "https://apikafela.digitalever.com.bd";
+const FILE_SERVER_BASE_URL = "http://localhost:5000";
 
 const buildFileUrl = (filePath) => {
   const normalizedPath = String(filePath || "")
@@ -818,7 +818,6 @@ const CashInOutTable = () => {
   // delete
   const [deleteCashInOut, { isLoading: isDeletingCashInOut }] =
     useDeleteCashInOutMutation();
-  const [deleteTargetId, setDeleteTargetId] = useState(null); // admin confirm delete
   const [deleteRequestId, setDeleteRequestId] = useState(null); // non-admin request delete
   const [deleteRequestNote, setDeleteRequestNote] = useState("");
   const [isDeleteRequestOpen, setIsDeleteRequestOpen] = useState(false);
@@ -828,7 +827,7 @@ const CashInOutTable = () => {
   const handleDeleteIconClick = (rowId) => {
     if (!rowId) return;
     if (isPrivilegedUser) {
-      setDeleteTargetId(rowId);
+      void handleDeleteProduct(rowId);
       return;
     }
     setDeleteRequestId(rowId);
@@ -859,14 +858,18 @@ const CashInOutTable = () => {
     }
   };
 
-  const handleConfirmDeleteProduct = async () => {
-    if (!deleteTargetId) return;
+  const handleDeleteProduct = async (id) => {
+    const confirmed = await requestDeleteConfirmation({
+      title: "Delete transaction?",
+      message:
+        "This transaction will be removed permanently. This action cannot be undone.",
+    });
+    if (!confirmed) return;
 
     try {
-      const res = await deleteCashInOut({ id: deleteTargetId }).unwrap();
-      if (res?.success) {
+      const res = await deleteCashInOut({ id }).unwrap();
+      if (res?.success !== false) {
         toast.success("Deleted!");
-        setDeleteTargetId(null);
         refetch?.();
       } else toast.error(res?.message || "Delete failed!");
     } catch (err) {
@@ -2679,15 +2682,6 @@ const CashInOutTable = () => {
           </div>
         </div>
       </Modal>
-      <ConfirmDialog
-        isOpen={Boolean(deleteTargetId)}
-        title="Delete transaction?"
-        message="This transaction will be removed permanently. This action cannot be undone."
-        confirmLabel="Delete"
-        isLoading={isDeletingCashInOut}
-        onCancel={() => setDeleteTargetId(null)}
-        onConfirm={handleConfirmDeleteProduct}
-      />
     </motion.div>
   );
 };

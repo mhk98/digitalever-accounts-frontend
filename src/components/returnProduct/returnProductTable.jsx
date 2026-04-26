@@ -9,10 +9,10 @@ import {
   useInsertReturnProductMutation,
   useUpdateReturnProductMutation,
 } from "../../features/returnProduct/returnProduct";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import Modal from "../common/Modal";
-import ConfirmDialog from "../common/ConfirmDialog";
 import { useGetSingleProductByIdQuery } from "../../features/product/product";
 import { useGetAllInventoryOverviewWithoutQueryQuery } from "../../features/inventoryOverview/inventoryOverview";
 
@@ -494,9 +494,7 @@ const ReturnProductTable = () => {
   // mutations
   const [insertReturnProduct] = useInsertReturnProductMutation();
   const [updateReturnProduct] = useUpdateReturnProductMutation();
-  const [deleteReturnProduct, { isLoading: isDeletingReturnProduct }] =
-    useDeleteReturnProductMutation();
-  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [deleteReturnProduct] = useDeleteReturnProductMutation();
 
   // ✅ create
   const handleCreate = async (e) => {
@@ -614,18 +612,18 @@ const ReturnProductTable = () => {
   };
 
   // delete
-  const handleDelete = (id) => {
-    setDeleteTargetId(id);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteTargetId) return;
+  const handleDelete = async (id) => {
+    const confirmed = await requestDeleteConfirmation({
+      title: "Delete return product?",
+      message:
+        "This return product entry will be removed permanently. This action cannot be undone.",
+    });
+    if (!confirmed) return;
 
     try {
-      const res = await deleteReturnProduct(deleteTargetId).unwrap();
-      if (res?.success) {
+      const res = await deleteReturnProduct(id).unwrap();
+      if (res?.success !== false) {
         toast.success("Deleted!");
-        setDeleteTargetId(null);
         refetch?.();
       } else toast.error(res?.message || "Delete failed!");
     } catch (err) {
@@ -1735,15 +1733,6 @@ const ReturnProductTable = () => {
           </div>
         </form>
       </Modal>
-      <ConfirmDialog
-        isOpen={Boolean(deleteTargetId)}
-        title="Delete return product?"
-        message="This return product entry will be removed permanently. This action cannot be undone."
-        confirmLabel="Delete"
-        isLoading={isDeletingReturnProduct}
-        onCancel={() => setDeleteTargetId(null)}
-        onConfirm={handleConfirmDelete}
-      />
     </motion.div>
   );
 };

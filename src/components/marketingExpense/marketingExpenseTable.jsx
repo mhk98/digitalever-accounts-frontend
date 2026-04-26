@@ -20,6 +20,7 @@ import {
 } from "../../features/marketingExpense/marketingExpense";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 // const BANKS = [
 //   "Al Arafah",
@@ -482,7 +483,7 @@ const MarketingExpenseTable = () => {
 
     try {
       const res = await deleteMarketingExpense(rowId).unwrap();
-      if (res?.success) {
+      if (res?.success !== false) {
         toast.success("Deleted!");
         refetch?.();
       } else toast.error(res?.message || "Delete failed!");
@@ -894,7 +895,7 @@ const MarketingExpenseTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `https://apikafela.digitalever.com.bd${safePath}`
+                ? `http://localhost:5000${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(

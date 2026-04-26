@@ -1,6 +1,8 @@
-import {  Building2,
+import {
+  Building2,
   CalendarDays,
   CircleDollarSign,
+  ClipboardCheck,
   ClipboardList,
   Fingerprint,
   Layers3,
@@ -130,6 +132,13 @@ const SECTION_ITEMS = [
     href: "/hrm/daily-work-reports",
     match: ["/hrm/daily-work-reports"],
     icon: ClipboardList,
+  },
+  {
+    group: "HRM",
+    label: "CS Work Reports",
+    href: "/hrm/employee-work-reports",
+    match: ["/hrm/employee-work-reports"],
+    icon: ClipboardCheck,
   },
   {
     group: "Payroll",

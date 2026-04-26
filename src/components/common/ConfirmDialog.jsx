@@ -25,20 +25,22 @@ const ConfirmDialog = ({
       maxWidth="max-w-md"
       showCloseButton={!isLoading}
     >
-      <div className="space-y-6">
-        <div className="flex gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
-            <AlertTriangle size={22} />
+      <div className="-mx-4 -mt-4 space-y-0 sm:-mx-6 sm:-mt-6">
+        <div className="border-b border-slate-100 px-4 py-6 sm:px-6">
+          <div className="flex gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+              <AlertTriangle size={22} />
+            </div>
+            <p className="pt-1 text-base leading-8 text-slate-600">{message}</p>
           </div>
-          <p className="pt-1 text-sm leading-6 text-slate-600">{message}</p>
         </div>
 
-        <div className="sticky bottom-0 -mx-4 -mb-4 flex justify-end gap-3 border-t border-slate-100 bg-white/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:-mb-6 sm:px-6">
+        <div className="flex justify-end gap-3 px-4 py-5 sm:px-6 sm:py-6">
           <button
             type="button"
             onClick={onCancel}
             disabled={isLoading}
-            className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-11 rounded-2xl border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {cancelLabel}
           </button>
@@ -46,7 +48,7 @@ const ConfirmDialog = ({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className={`inline-flex h-11 min-w-[112px] items-center justify-center rounded-xl px-4 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-70 ${confirmClasses}`}
+            className={`inline-flex h-11 min-w-[112px] items-center justify-center rounded-2xl px-6 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-70 ${confirmClasses}`}
           >
             {isLoading ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />

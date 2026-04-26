@@ -101,8 +101,10 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "credit_ledger",
     "log_history",
     "notifications",
+    "tasks",
     "settings",
     "logo",
+    "notice",
     "role_permissions",
     "hrm",
     "employee_management",
@@ -115,6 +117,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "attendance",
     "leave_management",
     "daily_work_reports",
+    "cs_work_reports",
     "payroll_management",
     "payslip",
     "hr_payroll",
@@ -165,8 +168,10 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "credit_ledger",
     "log_history",
     "notifications",
+    "tasks",
     "settings",
     "logo",
+    "notice",
     "role_permissions",
     "hrm",
     "employee_management",
@@ -179,6 +184,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "attendance",
     "leave_management",
     "daily_work_reports",
+    "cs_work_reports",
     "payroll_management",
     "payslip",
     "hr_payroll",
@@ -194,6 +200,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "dm_expense",
     "profit_loss",
     "notifications",
+    "tasks",
     "profile",
   ],
   leader: [
@@ -203,6 +210,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "sale",
     "profit_loss",
     "notifications",
+    "tasks",
     "profile",
   ],
   inventor: [
@@ -234,6 +242,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "supplier",
     "profit_loss",
     "notifications",
+    "tasks",
     "profile",
   ],
   accountant: [
@@ -257,6 +266,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "attendance",
     "leave_management",
     "daily_work_reports",
+    "cs_work_reports",
     "payroll_management",
     "payslip",
     "hr_payroll",
@@ -265,17 +275,20 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "payroll",
     "payroll_fine",
     "notifications",
+    "tasks",
     "profile",
   ],
   employee: [
     "hrm",
     "employee_profile",
     "daily_work_reports",
+    "cs_work_reports",
     "notifications",
+    "tasks",
     "profile",
   ],
-  staff: ["overview", "notifications", "profile"],
-  user: ["overview", "profile"],
+  staff: ["overview", "notifications", "tasks", "profile"],
+  user: ["overview", "tasks", "profile"],
 };
 
 export const SIDEBAR_ITEMS = [
@@ -631,6 +644,24 @@ export const SIDEBAR_ITEMS = [
     ],
   },
   {
+    name: "Tasks",
+    key: "tasks",
+    icon: ClipboardList,
+    color: "#4f46e5",
+    href: "/tasks",
+    roles: [
+      "superAdmin",
+      "admin",
+      "marketer",
+      "leader",
+      "inventor",
+      "accountant",
+      "staff",
+      "employee",
+      "user",
+    ],
+  },
+  {
     name: "Settings",
     key: "settings",
     icon: Settings,
@@ -642,6 +673,13 @@ export const SIDEBAR_ITEMS = [
         key: "logo",
         icon: Image,
         href: "/logo",
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Notice",
+        key: "notice",
+        icon: Megaphone,
+        href: "/settings/notice",
         roles: ["superAdmin", "admin"],
       },
       {
@@ -764,6 +802,13 @@ export const SIDEBAR_ITEMS = [
         key: "daily_work_reports",
         icon: ClipboardList,
         href: "/hrm/daily-work-reports",
+        roles: ["superAdmin", "admin", "accountant", "employee"],
+      },
+      {
+        name: "CS Work Reports",
+        key: "cs_work_reports",
+        icon: ClipboardCheck,
+        href: "/hrm/employee-work-reports",
         roles: ["superAdmin", "admin", "accountant", "employee"],
       },
     ],
@@ -930,6 +975,18 @@ const normalizeRolePermissionMap = (value) => {
       if (defaultKeys.includes("role_permissions")) {
         normalizedKeys.add("role_permissions");
       }
+      if (defaultKeys.includes("notice")) {
+        normalizedKeys.add("notice");
+      }
+    }
+
+    const defaultKeys = DEFAULT_ROLE_PERMISSION_MAP[role] || [];
+    if (defaultKeys.includes("tasks")) {
+      normalizedKeys.add("tasks");
+    }
+
+    if (defaultKeys.includes("cs_work_reports")) {
+      normalizedKeys.add("cs_work_reports");
     }
 
     if (normalizedKeys.has("department_designation")) {

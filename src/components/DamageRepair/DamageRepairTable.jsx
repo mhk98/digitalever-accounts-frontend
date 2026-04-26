@@ -15,6 +15,7 @@ import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wi
 import { useGetAllDamageStockWithoutQueryQuery } from "../../features/damageStock/damageStock";
 import { useGetSingleProductByIdQuery } from "../../features/product/product";
 import Modal from "../common/Modal";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 const initialCreateForm = {
   warehouseId: "",
@@ -610,7 +611,7 @@ const DamageRepairTable = () => {
 
     try {
       const res = await deleteDamageRepair(id).unwrap();
-      if (res?.success) {
+      if (res?.success !== false) {
         toast.success("Deleted!");
         refetch?.();
       } else toast.error(res?.message || "Delete failed!");

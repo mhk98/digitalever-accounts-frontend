@@ -12,6 +12,7 @@ import {
   useUpdateSupplierMutation,
 } from "../../features/supplier/supplier";
 import Modal from "../common/Modal";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 const SuppliersTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -108,7 +109,7 @@ const SuppliersTable = () => {
     if (await requestDeleteConfirmation({ message: "Do you want to delete this supplier?" })) {
       try {
         const res = await deleteSupplier(id).unwrap();
-        if (res.success) {
+        if (res?.success !== false) {
           toast.success("Successfully deleted supplier!");
           refetch();
         }

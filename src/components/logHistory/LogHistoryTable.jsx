@@ -12,7 +12,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import Select from "react-select";
 
-const API_BASE_URL = "https://apikafela.digitalever.com.bd/api/v1";
+const API_BASE_URL = "http://localhost:5000/api/v1";
 
 const selectStyles = {
   control: (base, state) => ({

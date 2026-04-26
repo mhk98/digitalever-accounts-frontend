@@ -322,6 +322,7 @@ export const translations = {
     payroll_fine: "Payroll Fine",
     logo: "Logo",
     role_permissions: "Role Permissions",
+    cs_work_reports: "CS Work Reports",
     expired_product: "Expired Product",
     profile: "Profile",
     control_panel: "Control Panel",
@@ -393,6 +394,7 @@ export const translations = {
     // Submenus
     product: "পণ্য",
     role_permissions: "রোল পারমিশন",
+    cs_work_reports: "CS Work Reports",
     loading: "লোড হচ্ছে...",
     // Common UI (BN)
     add: "যোগ করুন",

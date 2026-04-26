@@ -158,7 +158,10 @@ import { leaveRequestApi } from "../features/leaveRequest/leaveRequest";
 import { payrollRunApi } from "../features/payrollRun/payrollRun";
 import { payrollItemApi } from "../features/payrollItem/payrollItem";
 import { dailyWorkReportApi } from "../features/dailyWorkReport/dailyWorkReport";
+import { employeeWorkReportApi } from "../features/employeeWorkReport/employeeWorkReport";
 import { assetsApi } from "../features/assets/assets";
+import { noticeApi } from "../features/notice/notice";
+import { taskApi } from "../features/task/task";
 
 // ✅ 1) Collect all apis once
 const apis = [
@@ -214,7 +217,10 @@ const apis = [
   payrollRunApi,
   payrollItemApi,
   dailyWorkReportApi,
+  employeeWorkReportApi,
   notificationApi,
+  noticeApi,
+  taskApi,
   salaryApi,
   logoApi,
   posReportApi,

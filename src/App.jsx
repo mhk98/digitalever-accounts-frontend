@@ -36,6 +36,8 @@ import DamageProductPage from "./pages/DamageProductPage";
 import EmployeePage from "./pages/EmployeePage";
 import POSPage from "./pages/POSPage";
 import NotificationPage from "./pages/NotificationPage";
+import NoticePage from "./pages/NoticePage";
+import TaskPage from "./pages/TaskPage";
 import SalaryPage from "./pages/SalaryPage";
 import LogoPage from "./pages/LogoPage";
 import RolePermissionsPage from "./pages/RolePermissionsPage";
@@ -62,6 +64,7 @@ import StockAdjustmentPage from "./pages/StockAdjustmentPage";
 import DamageRepairingStockPage from "./pages/DamageRepairingStockPage";
 import DailyProfitLossPage from "./pages/DailyProfitLossPage";
 import DailyWorkReportPage from "./pages/DailyWorkReportPage";
+import EmployeeWorkReportPage from "./pages/EmployeeWorkReportPage";
 import EmployeeMasterPage from "./pages/EmployeeMasterPage";
 import EmployeeProfilePage from "./pages/EmployeeProfilePage";
 import DepartmentPage from "./pages/DepartmentPage";
@@ -273,6 +276,16 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <DailyWorkReportPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/hrm/employee-work-reports"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <EmployeeWorkReportPage />
                   </SidebarLayout>
                 </RequireAuth>
               }
@@ -784,6 +797,26 @@ function App() {
                 <RequireAuth>
                   <SidebarLayout>
                     <LogoPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/tasks"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <TaskPage />
+                  </SidebarLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/settings/notice"
+              element={
+                <RequireAuth>
+                  <SidebarLayout>
+                    <NoticePage />
                   </SidebarLayout>
                 </RequireAuth>
               }

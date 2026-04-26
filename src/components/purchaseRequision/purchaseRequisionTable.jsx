@@ -19,6 +19,7 @@ import {
 } from "../../features/product/product";
 import { useSingleUserQuery } from "../../features/auth/auth";
 import { useGetAllBookWithoutQueryQuery } from "../../features/book/book";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 const parseVariationValue = (value) => {
   if (Array.isArray(value)) {
@@ -723,7 +724,7 @@ const PurchaseRequisionTable = () => {
 
     try {
       const res = await deletePurchaseRequisition(id).unwrap();
-      if (res?.success) {
+      if (res?.success !== false) {
         toast.success("Product deleted successfully!");
         refetch?.();
       } else toast.error(res?.message || "Delete failed!");

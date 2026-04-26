@@ -8,7 +8,7 @@
 // export const authApi = createApi({
 //   reducerPath: "authApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " https://apikafela.digitalever.com.bd/api/v1/",
+//     baseUrl: " http://localhost:5000/api/v1/",
 
 //     // This will attach the token to every request that requires authorization
 //     prepareHeaders: (headers) => {
@@ -101,7 +101,7 @@ export const persistAuthSession = (payload) => {
 export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://apikafela.digitalever.com.bd/api/v1",
+    baseUrl: "http://localhost:5000/api/v1",
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);

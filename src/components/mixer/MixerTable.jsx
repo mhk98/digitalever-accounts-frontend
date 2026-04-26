@@ -16,6 +16,7 @@ import Select from "react-select";
 import Modal from "../common/Modal";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 import {
   useDeleteMixerMutation,
   useGetAllMixerQuery,
@@ -592,7 +593,7 @@ const MixerTable = () => {
     try {
       const res = await deleteMixer(id).unwrap();
 
-      if (res?.success) {
+      if (res?.success !== false) {
         toast.success("Product deleted successfully!");
         refetch?.();
       } else {

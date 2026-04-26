@@ -29,6 +29,7 @@ import Modal from "../common/Modal";
 import { useGetAllBookWithoutQueryQuery } from "../../features/book/book";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 const initialCreateProduct = {
   warehouseId: "",
@@ -821,12 +822,16 @@ const ReceivedProductTable = () => {
   const [deleteReceivedProduct] = useDeleteReceivedProductMutation();
 
   const handleDeleteProduct = async (id) => {
-    const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this product?" });
+    const confirmDelete = await requestDeleteConfirmation({
+      title: "Delete received product?",
+      message:
+        "This received product entry will be removed permanently. This action cannot be undone.",
+    });
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {
       const res = await deleteReceivedProduct(id).unwrap();
-      if (res?.success) {
+      if (res?.success !== false) {
         toast.success("Product deleted successfully!");
         refetch?.();
       } else {
