@@ -67,6 +67,7 @@ export const pettyCashApi = createApi({
           paymentStatus,
           status,
           category,
+          bookId,
           mode,
         } = arg || {};
 
@@ -80,6 +81,7 @@ export const pettyCashApi = createApi({
           paymentStatus,
           status,
           category,
+          bookId,
           mode,
         };
 

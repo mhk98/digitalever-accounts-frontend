@@ -19,6 +19,9 @@ import {
   useInsertCategoryMutation,
 } from "../../features/category/category";
 import Select from "react-select";
+import { useGetAllBookWithoutQueryQuery } from "../../features/book/book";
+import { translations } from "../../utils/translations";
+import { useLayout } from "../../context/LayoutContext";
 
 const BANK_ACCOUNTS = [
   "1291070003250",
@@ -41,6 +44,9 @@ const PettyCashTable = ({ mode = "default" }) => {
   const [isModalOpen1, setIsModalOpen1] = useState(false); // add
   const [currentProduct, setCurrentProduct] = useState(null);
   const [filterCategory, setFilterCategory] = useState("");
+  const [filterBook, setFilterBook] = useState("");
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
 
   const [createProduct, setCreateProduct] = useState({
     paymentMode: "",
@@ -51,6 +57,7 @@ const PettyCashTable = ({ mode = "default" }) => {
     amount: "",
     date: new Date().toISOString().slice(0, 10),
     file: null,
+    bookId: "",
   });
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -147,6 +154,7 @@ const PettyCashTable = ({ mode = "default" }) => {
       startDate: startDate || undefined,
       endDate: endDate || undefined,
       category: filterCategory || undefined,
+      bookId: filterBook || undefined,
       paymentMode: filterPaymentMode || undefined,
       paymentStatus: isRequisitionMode
         ? "CashIn"
@@ -172,6 +180,7 @@ const PettyCashTable = ({ mode = "default" }) => {
     filterPaymentMode,
     filterPaymentStatus,
     filterCategory,
+    filterBook,
     searchTerm,
     isRequisitionMode,
   ]);
@@ -244,7 +253,13 @@ const PettyCashTable = ({ mode = "default" }) => {
     }),
     valueContainer: (base) => ({ ...base, padding: "0 12px" }),
     placeholder: (base) => ({ ...base, color: "#64748b" }),
-    menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
+    menu: (base) => ({
+      ...base,
+      borderRadius: 14,
+      overflow: "hidden",
+      zIndex: 9999,
+    }),
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
   };
 
   const paymentModeOptions = useMemo(
@@ -349,6 +364,7 @@ const PettyCashTable = ({ mode = "default" }) => {
       userId: userId,
       file: null,
       category: rp.category,
+      bookId: rp.bookId ?? "",
     });
     setIsModalOpen2(true);
   };
@@ -386,6 +402,8 @@ const PettyCashTable = ({ mode = "default" }) => {
       formData.append("remarks", currentProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(currentProduct.amount)));
       if (currentProduct.file) formData.append("file", currentProduct.file);
+      if (currentProduct.bookId)
+        formData.append("bookId", currentProduct.bookId);
 
       const res = await updatePettyCash({ id: rowId, data: formData }).unwrap();
 
@@ -417,6 +435,7 @@ const PettyCashTable = ({ mode = "default" }) => {
       userId: userId,
       file: null,
       category: rp.category,
+      bookId: rp.bookId ?? "",
     });
     setIsModalOpen(true);
   };
@@ -442,6 +461,8 @@ const PettyCashTable = ({ mode = "default" }) => {
       formData.append("remarks", currentProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(currentProduct.amount)));
       if (currentProduct.file) formData.append("file", currentProduct.file);
+      if (currentProduct.bookId)
+        formData.append("bookId", currentProduct.bookId);
 
       const res = await updatePettyCash({ id: rowId, data: formData }).unwrap();
 
@@ -502,6 +523,7 @@ const PettyCashTable = ({ mode = "default" }) => {
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
       if (createProduct.file) formData.append("file", createProduct.file);
+      if (createProduct.bookId) formData.append("bookId", createProduct.bookId);
 
       const res = await insertPettyCash(formData).unwrap();
 
@@ -518,6 +540,7 @@ const PettyCashTable = ({ mode = "default" }) => {
           category: "", // Reset the category name
           date: "",
           file: null,
+          bookId: "",
         });
         refetch?.();
       } else toast.error(res?.message || "Create failed!");
@@ -539,6 +562,7 @@ const PettyCashTable = ({ mode = "default" }) => {
       toast.error(err?.data?.message || "Approval failed!");
     }
   };
+
   const handleCreateProduct1 = async (e) => {
     e.preventDefault();
 
@@ -547,40 +571,44 @@ const PettyCashTable = ({ mode = "default" }) => {
       return toast.error("Payment Mode is required!");
     if (createProduct.paymentMode === "Bank" && !createProduct.bankName)
       return toast.error("Bank Account is required!");
-    // Category check - Make sure categoryName is either selected or added
+
     if (!createProduct.category && !isNewCategoryAdd) {
       return toast.error("Category is required!");
     }
+
     try {
-      // Handling new category creation
       let finalCategoryName = createProduct.category;
 
-      // If the category is new and being added dynamically
       if (isNewCategoryAdd) {
         const createdCategoryName = await addCategoryByName(newCategoryNameAdd);
         if (!createdCategoryName) return;
-        finalCategoryName = createdCategoryName; // Using the newly created category name
+        finalCategoryName = createdCategoryName;
       }
 
       const formData = new FormData();
+
       formData.append("paymentMode", createProduct.paymentMode);
       formData.append("date", createProduct.date);
       formData.append("paymentStatus", "CashOut");
+
       formData.append(
         "bankName",
         createProduct.paymentMode === "Bank" ? createProduct.bankName : "",
       );
-      formData.append("category", finalCategoryName); // Using category name here
 
+      formData.append("category", finalCategoryName);
       formData.append("remarks", createProduct.remarks?.trim() || "");
       formData.append("amount", String(Number(createProduct.amount)));
+
       if (createProduct.file) formData.append("file", createProduct.file);
+      if (createProduct.bookId) formData.append("bookId", createProduct.bookId);
 
       const res = await insertPettyCash(formData).unwrap();
 
       if (res?.success) {
         toast.success("Successfully created!");
         setIsModalOpen3(false);
+
         setCreateProduct({
           paymentMode: "",
           paymentStatus: "",
@@ -588,12 +616,19 @@ const PettyCashTable = ({ mode = "default" }) => {
           bankAccount: "",
           remarks: "",
           amount: "",
-          category: "", // Reset the category name
-          date: "",
+          category: "",
+          date: new Date().toISOString().slice(0, 10),
           file: null,
+          bookId: "",
         });
+
+        setIsNewCategoryAdd(false);
+        setNewCategoryNameAdd("");
+
         refetch?.();
-      } else toast.error(res?.message || "Create failed!");
+      } else {
+        toast.error(res?.message || "Create failed!");
+      }
     } catch (err) {
       toast.error(err?.data?.message || "Create failed!");
     }
@@ -629,6 +664,8 @@ const PettyCashTable = ({ mode = "default" }) => {
     setEndDate("");
     setFilterPaymentMode("");
     setFilterPaymentStatus("");
+    setFilterCategory("");
+    setFilterBook("");
   };
 
   // report states
@@ -710,6 +747,36 @@ const PettyCashTable = ({ mode = "default" }) => {
   const handleNoteModalClose = () => {
     setIsNoteModalOpen(false); // Close the modal
   };
+
+  const selectMenuProps = {
+    menuPortalTarget: typeof document !== "undefined" ? document.body : null,
+    menuPosition: "fixed",
+  };
+
+  // ✅ Books
+  const {
+    data: allBookRes,
+    isError: isErrorBook,
+    error: errorBook,
+  } = useGetAllBookWithoutQueryQuery();
+  const books = allBookRes?.data || [];
+
+  console.log("books", books);
+
+  useEffect(() => {
+    if (isErrorBook) console.error("Error fetching Books", errorBook);
+  }, [isErrorBook, errorBook]);
+
+  const bookOptions = useMemo(
+    () =>
+      (books || []).map((s) => ({
+        value: String(s?.Id ?? ""),
+        label: s?.name || "Unnamed Book",
+      })),
+    [books],
+  );
+
+  console.log("bookOptions", bookOptions);
 
   return (
     <motion.div
@@ -897,7 +964,7 @@ const PettyCashTable = ({ mode = "default" }) => {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center mb-6 w-full justify-center mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center mb-6 w-full justify-center mx-auto">
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">From</label>
           <input
@@ -933,6 +1000,26 @@ const PettyCashTable = ({ mode = "default" }) => {
             placeholder="All"
             isClearable
             styles={selectStyles}
+            className="text-black"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">
+            {t.book || "Book"}:
+          </label>
+          <Select
+            options={bookOptions}
+            value={
+              bookOptions.find(
+                (option) => String(option.value) === String(filterBook),
+              ) || null
+            }
+            onChange={(selected) => setFilterBook(selected?.value || "")}
+            placeholder="All"
+            isClearable
+            styles={selectStyles}
+            {...selectMenuProps}
             className="text-black"
           />
         </div>
@@ -1017,6 +1104,9 @@ const PettyCashTable = ({ mode = "default" }) => {
                 Date
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Book
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Document
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -1070,6 +1160,9 @@ const PettyCashTable = ({ mode = "default" }) => {
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp.date || "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp.book?.name || "-"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {!safePath ? (
@@ -1280,7 +1373,7 @@ const PettyCashTable = ({ mode = "default" }) => {
             {!isLoading && products.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={11}
                   className="px-6 py-6 text-center text-sm text-slate-600"
                 >
                   No data found
@@ -1368,6 +1461,32 @@ const PettyCashTable = ({ mode = "default" }) => {
                   })
                 }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                {t.book || "Book"}
+              </label>
+              <Select
+                options={bookOptions}
+                value={
+                  bookOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(currentProduct?.bookId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    bookId: selected?.value || "",
+                  })
+                }
+                placeholder={t.select_book || "Select Book"}
+                isClearable
+                styles={selectStyles}
+                {...selectMenuProps}
+                className="text-black bg-white"
               />
             </div>
             <div>
@@ -1560,6 +1679,7 @@ const PettyCashTable = ({ mode = "default" }) => {
                 required
               />
             </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Amount
@@ -1573,6 +1693,33 @@ const PettyCashTable = ({ mode = "default" }) => {
                 }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                {t.book || "Book"}
+              </label>
+              <Select
+                options={bookOptions}
+                value={
+                  bookOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(createProduct?.bookId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    bookId: selected?.value || "",
+                  })
+                }
+                placeholder={t.select_book || "Select Book"}
+                isClearable
+                styles={selectStyles}
+                {...selectMenuProps}
+                className="text-black bg-white"
               />
             </div>
             <div>
@@ -1750,6 +1897,32 @@ const PettyCashTable = ({ mode = "default" }) => {
                 }
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                {t.book || "Book"}
+              </label>
+              <Select
+                options={bookOptions}
+                value={
+                  bookOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(createProduct?.bookId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    bookId: selected?.value || "",
+                  })
+                }
+                placeholder={t.select_book || "Select Book"}
+                isClearable
+                styles={selectStyles}
+                {...selectMenuProps}
+                className="text-black bg-white"
               />
             </div>
             <div>

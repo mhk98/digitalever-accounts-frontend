@@ -588,6 +588,13 @@ export const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin"],
       },
       {
+        name: "Purchase Requisition",
+        key: "purchase_requisition",
+        icon: ClipboardList,
+        href: "/purchase-requisition",
+        roles: ["superAdmin", "admin", "inventor"],
+      },
+      {
         name: "Book",
         key: "book",
         icon: BookMarked,

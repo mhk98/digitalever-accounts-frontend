@@ -8,6 +8,7 @@ import {
   useInsertSupplierMutation,
   useUpdateSupplierMutation,
 } from "../../features/supplier/supplier";
+import { useGetAllSupplierHistoryWithoutQueryQuery } from "../../features/supplierHistory/supplierHistory";
 import Modal from "../common/Modal";
 import { Link } from "react-router-dom";
 import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
@@ -48,6 +49,10 @@ const SupplierTable = () => {
     limit: itemsPerPage,
     searchTerm: name || undefined,
   });
+
+  // ✅ Get all suppliers summary (total paid, unpaid, net balance)
+  const { data: summaryData, isLoading: summaryLoading } =
+    useGetAllSupplierHistoryWithoutQueryQuery();
 
   const suppliers = data?.data ?? [];
 
@@ -127,7 +132,9 @@ const SupplierTable = () => {
   // ✅ Delete
   const [deleteSupplier] = useDeleteSupplierMutation();
   const handleDeleteSupplier = async (id) => {
-    const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this supplier?", });
+    const confirmDelete = await requestDeleteConfirmation({
+      message: "Do you want to delete this supplier?",
+    });
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {
@@ -160,6 +167,7 @@ const SupplierTable = () => {
       Math.min(p + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)),
     );
 
+  console.log("summaryData", summaryData);
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
@@ -167,6 +175,102 @@ const SupplierTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mb-6">
+        {/* Total Paid */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-emerald-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">Total Paid</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {summaryLoading
+                  ? "—"
+                  : Number(
+                      summaryData?.data?.meta?.totalPaid || 0,
+                    ).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-emerald-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 19V5" />
+                <path d="M5 12l7-7 7 7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Total Unpaid */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-rose-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">Total Unpaid</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {summaryLoading
+                  ? "—"
+                  : Number(
+                      summaryData?.data?.meta?.totalUnpaid || 0,
+                    ).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-rose-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 5v14" />
+                <path d="M19 12l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Net Balance */}
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-indigo-50/70 to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">Net Balance</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
+                {summaryLoading
+                  ? "—"
+                  : Number(
+                      summaryData?.data?.meta?.netBalance || 0,
+                    ).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-indigo-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 19V5" />
+                <path d="M8 17V7" />
+                <path d="M12 19V9" />
+                <path d="M16 15V5" />
+                <path d="M20 19V11" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Top bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Search */}

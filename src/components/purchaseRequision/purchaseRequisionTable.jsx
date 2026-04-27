@@ -1,6 +1,17 @@
 import { motion } from "framer-motion";
-import { Edit, Notebook, Plus, ShoppingBasket, Trash2, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import {
+  Edit,
+  Notebook,
+  Plus,
+  Printer,
+  ShoppingBasket,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useReactToPrint } from "react-to-print";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import toast from "react-hot-toast";
 import Select from "react-select";
 import {
@@ -719,7 +730,9 @@ const PurchaseRequisionTable = () => {
   const [deletePurchaseRequisition] = useDeletePurchaseRequisitionMutation();
 
   const handleDeleteProduct = async (id) => {
-    const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this product?" });
+    const confirmDelete = await requestDeleteConfirmation({
+      message: "Do you want to delete this product?",
+    });
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {
@@ -847,6 +860,99 @@ const PurchaseRequisionTable = () => {
 
   const handleNoteModalClose = () => {
     setIsNoteModalOpen(false); // Close the modal
+  };
+
+  // ✅ Invoice state & refs
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [invoiceData, setInvoiceData] = useState(null);
+  const invoiceRef = useRef(null);
+
+  const handlePrint = useReactToPrint({
+    content: () => invoiceRef.current,
+    contentRef: invoiceRef,
+    documentTitle: invoiceData?.invoiceNo
+      ? String(invoiceData.invoiceNo)
+      : "purchase-requisition-invoice",
+    removeAfterPrint: true,
+  });
+
+  const handleDownloadPdf = async () => {
+    try {
+      if (!invoiceRef.current) return;
+
+      const el = invoiceRef.current;
+
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgWidth = pageWidth;
+      const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const filename = invoiceData?.invoiceNo
+        ? `${invoiceData.invoiceNo}.pdf`
+        : `purchase-requisition-${Date.now()}.pdf`;
+
+      const blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("PDF download failed:", e);
+      toast.error("PDF generate করতে সমস্যা হচ্ছে।");
+    }
+  };
+
+  const handleInvoiceClick = (rp) => {
+    const invoiceNo = `PRQ-${rp.Id}-${String(Date.now()).slice(-6)}`;
+    const variantDisplayRows = getVariantDisplayRows(rp);
+
+    const invoice = {
+      invoiceNo,
+      date: rp.date || new Date().toISOString().slice(0, 10),
+      procurement: rp?.procurement || "N/A",
+      supplier: rp?.supplier?.name || "N/A",
+      warehouse: rp?.warehouse?.name || "N/A",
+      product: rp.name || resolveProductName(rp),
+      quantity: Number(rp.quantity || 0),
+      amount: Number(rp.amount || 0),
+      variants: variantDisplayRows,
+      note: rp.note || "—",
+      status: rp.status,
+    };
+
+    setInvoiceData(invoice);
+    setInvoiceOpen(true);
   };
 
   return (
@@ -1098,6 +1204,17 @@ const PurchaseRequisionTable = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-2">
+                      {rp.status === "Approved" && (
+                        <button
+                          type="button"
+                          onClick={() => handleInvoiceClick(rp)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 hover:bg-white transition"
+                          title="Print Invoice"
+                        >
+                          <Printer size={18} className="text-emerald-600" />
+                        </button>
+                      )}
+
                       {rp.note ? (
                         <div className="relative">
                           <button
@@ -1982,8 +2099,252 @@ const PurchaseRequisionTable = () => {
           </div>
         </div>
       </Modal>
+
+      {/* ✅ Invoice Modal */}
+      <RequisitionInvoiceModal
+        open={invoiceOpen}
+        onClose={() => setInvoiceOpen(false)}
+        invoice={invoiceData}
+        invoiceRef={invoiceRef}
+        onPrint={handlePrint}
+        onDownload={handleDownloadPdf}
+      />
     </motion.div>
   );
 };
+
+function RequisitionInvoiceModal({
+  open,
+  onClose,
+  invoice,
+  invoiceRef,
+  onPrint,
+  onDownload,
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[120]">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <div className="text-lg font-semibold text-slate-900">
+              Purchase Requisition Invoice
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onPrint}
+                className="h-10 px-4 rounded-xl bg-black text-white font-semibold hover:bg-black/90"
+                type="button"
+                disabled={!invoice}
+              >
+                Print
+              </button>
+
+              <button
+                type="button"
+                onClick={onDownload}
+                disabled={!invoice}
+                className="h-10 px-4 rounded-xl border border-slate-200 text-slate-900 font-semibold hover:bg-slate-50 disabled:opacity-60"
+              >
+                Download PDF
+              </button>
+
+              <button
+                onClick={onClose}
+                className="h-10 w-10 rounded-xl hover:bg-slate-100 text-slate-700"
+                type="button"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="p-6 max-h-[75vh] overflow-auto bg-slate-50">
+            <div
+              ref={invoiceRef}
+              className="pdf-safe bg-white rounded-xl p-6 border border-slate-200"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-2xl font-bold text-slate-900">
+                    PURCHASE REQUISITION
+                  </div>
+
+                  <div className="text-sm text-slate-600 mt-1">
+                    Invoice No:{" "}
+                    <span className="font-semibold text-slate-900">
+                      {invoice?.invoiceNo || "N/A"}
+                    </span>
+                  </div>
+
+                  <div className="text-sm text-slate-600">
+                    Date:{" "}
+                    <span className="font-semibold text-slate-900">
+                      {invoice?.date || "N/A"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-sm font-semibold text-slate-900">
+                    Kafela Mart
+                  </div>
+                  <div className="text-xs text-slate-600">
+                    Purchase Requisition Invoice
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-lg border border-slate-200 p-4">
+                  <div className="text-sm font-semibold text-slate-900 mb-2">
+                    Requisition Details
+                  </div>
+                  <div className="text-sm text-slate-700">
+                    <span className="font-semibold">Procurement:</span>{" "}
+                    {invoice?.procurement || "N/A"}
+                  </div>
+                  <div className="text-sm text-slate-700 mt-1">
+                    <span className="font-semibold">Supplier:</span>{" "}
+                    {invoice?.supplier || "N/A"}
+                  </div>
+                  <div className="text-sm text-slate-700 mt-1">
+                    <span className="font-semibold">Warehouse:</span>{" "}
+                    {invoice?.warehouse || "N/A"}
+                  </div>
+                  <div className="text-sm text-slate-700 mt-1">
+                    <span className="font-semibold">Status:</span>{" "}
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
+                      {invoice?.status || "N/A"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 p-4">
+                  <div className="text-sm font-semibold text-slate-900 mb-2">
+                    Product Summary
+                  </div>
+
+                  <div className="flex justify-between text-sm text-slate-700">
+                    <span>Product</span>
+                    <span className="font-semibold text-slate-900">
+                      {invoice?.product || "N/A"}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between text-sm text-slate-700 mt-1">
+                    <span>Quantity</span>
+                    <span className="font-semibold text-slate-900">
+                      {Number(invoice?.quantity || 0).toFixed(0)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between text-sm text-slate-700 mt-1">
+                    <span>Amount</span>
+                    <span className="font-semibold text-slate-900">
+                      {Number(invoice?.amount || 0).toFixed(0)} ৳
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Variants Table */}
+              {(invoice?.variants || []).length > 0 && (
+                <div className="mt-5 overflow-x-auto">
+                  <div className="text-sm font-semibold text-slate-900 mb-2">
+                    Product Variants
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left bg-slate-100">
+                        <th className="px-3 py-2 border border-slate-200">
+                          Size
+                        </th>
+                        <th className="px-3 py-2 border border-slate-200">
+                          Color
+                        </th>
+                        <th className="px-3 py-2 border border-slate-200 text-right">
+                          Quantity
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(invoice?.variants || []).map((variant, idx) => (
+                        <tr key={idx}>
+                          <td className="px-3 py-2 border border-slate-200">
+                            {variant?.size || "N/A"}
+                          </td>
+                          <td className="px-3 py-2 border border-slate-200">
+                            {variant?.color || "N/A"}
+                          </td>
+                          <td className="px-3 py-2 border border-slate-200 text-right">
+                            {Number(variant?.quantity || 0).toFixed(0)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="text-sm text-slate-700">
+                  <div className="font-semibold text-slate-900 mb-1">Note</div>
+                  <div className="rounded-lg border border-slate-200 p-3 min-h-[56px]">
+                    {invoice?.note || "—"}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 p-4">
+                  <div className="flex justify-between text-sm text-slate-700">
+                    <span>Total Quantity</span>
+                    <span className="font-semibold text-slate-900">
+                      {Number(invoice?.quantity || 0).toFixed(0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-700 mt-1">
+                    <span>Total Amount</span>
+                    <span className="font-semibold text-slate-900">
+                      {Number(invoice?.amount || 0).toFixed(0)} ৳
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-700 mt-2 pt-2 border-t border-slate-200">
+                    <span className="font-semibold text-slate-900">
+                      Grand Total
+                    </span>
+                    <span className="font-bold text-slate-900">
+                      {Number(invoice?.amount || 0).toFixed(0)} ৳
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 text-center text-xs text-slate-500">
+                Thank you for your business.
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-2">
+            <button
+              onClick={onClose}
+              className="h-10 px-4 rounded-xl border border-slate-200 text-slate-900 font-semibold hover:bg-slate-50"
+              type="button"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default PurchaseRequisionTable;
