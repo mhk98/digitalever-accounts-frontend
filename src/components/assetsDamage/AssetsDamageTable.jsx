@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Edit, Notebook, Plus, Trash2, Wrench, X } from "lucide-react";
+import { Edit, Notebook, Plus, Trash2, Wrench } from "lucide-react";
+import Modal from "../common/Modal";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -716,29 +717,9 @@ const AssetsDamageTable = () => {
       </div>
 
       {/* -------------------- Edit Modal -------------------- */}
-      {isModalOpen && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-2/3 lg:w-1/2 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Edit Damage
-              </h2>
-
-              <button
-                type="button"
-                onClick={handleModalClose}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
-
+      <Modal isOpen={isModalOpen && !!currentProduct} onClose={handleModalClose} title="Edit Damage">
+        {currentProduct && (
+          <>
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Product:</label>
               <Select
@@ -838,144 +819,100 @@ const AssetsDamageTable = () => {
                 Cancel
               </button>
             </div>
-          </motion.div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
 
       {/* -------------------- Add Modal -------------------- */}
-      {isModalOpen1 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-2/3 lg:w-1/2 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Add Damage
-              </h2>
+      <Modal isOpen={isModalOpen1} onClose={handleModalClose1} title="Add Damage">
+        <form onSubmit={handleCreateProduct} className="mt-4">
+          <label className="block text-sm text-slate-700">Product:</label>
+          <Select
+            styles={selectStyles}
+            options={productDropdownOptions}
+            value={
+              createProduct.productId
+                ? productDropdownOptions.find(
+                  (o) => o.value === String(createProduct.productId),
+                )
+                : null
+            }
+            onChange={(selected) =>
+              setCreateProduct((p) => ({
+                ...p,
+                productId: selected?.value || "",
+              }))
+            }
+            placeholder="Select Product"
+            isClearable
+            className="w-full"
+            isDisabled={isLoadingAllProducts}
+          />
 
-              <button
-                type="button"
-                onClick={handleModalClose1}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
+          <div className="grid grid-cols-1 gap-3 mt-4">
+            <Field
+              label="Date:"
+              type="date"
+              value={createProduct.date}
+              onChange={(v) =>
+                setCreateProduct({ ...createProduct, date: v })
+              }
+              required
+            />
+            <Field
+              label="Quantity:"
+              type="number"
+              step="0.01"
+              value={createProduct.quantity}
+              onChange={(v) =>
+                setCreateProduct((p) => ({ ...p, quantity: v }))
+              }
+              required
+            />
+            <Field
+              label="Price:"
+              type="number"
+              step="0.01"
+              value={createProduct.price}
+              onChange={(v) =>
+                setCreateProduct((p) => ({ ...p, price: v }))
+              }
+              required
+            />
+            <Field
+              label="Note:"
+              type="text"
+              value={createProduct.note}
+              onChange={(v) =>
+                setCreateProduct({ ...createProduct, note: v })
+              }
+              className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
+                         focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+            />
+          </div>
 
-            <form onSubmit={handleCreateProduct} className="mt-4">
-              <label className="block text-sm text-slate-700">Product:</label>
-              <Select
-                styles={selectStyles}
-                options={productDropdownOptions}
-                value={
-                  createProduct.productId
-                    ? productDropdownOptions.find(
-                      (o) => o.value === String(createProduct.productId),
-                    )
-                    : null
-                }
-                onChange={(selected) =>
-                  setCreateProduct((p) => ({
-                    ...p,
-                    productId: selected?.value || "",
-                  }))
-                }
-                placeholder="Select Product"
-                isClearable
-                className="w-full"
-                isDisabled={isLoadingAllProducts}
-              />
-
-              <div className="grid grid-cols-1 gap-3 mt-4">
-                <Field
-                  label="Date:"
-                  type="date"
-                  value={createProduct.date}
-                  onChange={(v) =>
-                    setCreateProduct({ ...createProduct, date: v })
-                  }
-                  required
-                />
-                <Field
-                  label="Quantity:"
-                  type="number"
-                  step="0.01"
-                  value={createProduct.quantity}
-                  onChange={(v) =>
-                    setCreateProduct((p) => ({ ...p, quantity: v }))
-                  }
-                  required
-                />
-                <Field
-                  label="Price:"
-                  type="number"
-                  step="0.01"
-                  value={createProduct.price}
-                  onChange={(v) =>
-                    setCreateProduct((p) => ({ ...p, price: v }))
-                  }
-                  required
-                />
-                <Field
-                  label="Note:"
-                  type="text"
-                  value={createProduct.note}
-                  onChange={(v) =>
-                    setCreateProduct({ ...createProduct, note: v })
-                  }
-                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                  onClick={handleModalClose1}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+          <div className="mt-6 flex justify-end gap-2">
+            <button
+              type="submit"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
+              onClick={handleModalClose1}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* -------------------- Edit Delete (note/status update) -------------------- */}
-      {isModalOpen2 && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-[0_20px_60px_rgba(15,23,42,0.2)] w-full md:w-2/3 lg:w-1/2 border border-slate-200"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Delete Request / Note
-              </h2>
-
-              <button
-                type="button"
-                onClick={handleDeleteClose}
-                className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                title="Close"
-              >
-                <X size={18} className="text-slate-600" />
-              </button>
-            </div>
-
+      <Modal isOpen={isModalOpen2 && !!currentProduct} onClose={handleDeleteClose} title="Delete Request / Note">
+        {currentProduct && (
+          <>
             {role === "superAdmin" ? (
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">Status</label>
@@ -1022,9 +959,9 @@ const AssetsDamageTable = () => {
                 Cancel
               </button>
             </div>
-          </motion.div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </motion.div>
   );
 };

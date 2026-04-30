@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const buyerApi = createApi({
   reducerPath: "buyerApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: `${import.meta.env.VITE_API_URL}/api/v1/`,
 
     // Attach Authorization header to all requests
     prepareHeaders: (headers) => {

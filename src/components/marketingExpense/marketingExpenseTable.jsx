@@ -21,6 +21,8 @@ import {
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
 import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
+import useDebounce from "../../hooks/useDebounce";
+
 
 // const BANKS = [
 //   "Al Arafah",
@@ -71,8 +73,8 @@ const MarketingExpenseTable = () => {
     date: new Date().toISOString().slice(0, 10),
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
-  console.log("searchTerm", searchTerm);
   const [products, setProducts] = useState([]);
 
   // filters
@@ -163,7 +165,7 @@ const MarketingExpenseTable = () => {
       paymentMode: filterPaymentMode || undefined,
       paymentStatus: filterPaymentStatus || undefined,
       category: filterCategory || undefined,
-      searchTerm: searchTerm || undefined, // ensure it's included in the query
+      searchTerm: debouncedSearchTerm || undefined, // ensure it's included in the query
     };
 
     Object.keys(args).forEach((k) => {
@@ -379,7 +381,6 @@ const MarketingExpenseTable = () => {
       formData.append("amount", String(Number(createProduct.amount)));
       formData.append("bookId", id);
       if (createProduct.file) formData.append("file", createProduct.file);
-      console.log("cash in data", formData);
 
       const res = await insertMarketingExpense(formData).unwrap();
 
@@ -895,7 +896,7 @@ const MarketingExpenseTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `http://localhost:5000${safePath}`
+                ? `${import.meta.env.VITE_API_URL}${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -1096,28 +1097,6 @@ const MarketingExpenseTable = () => {
                     </div>
                   </td>
 
-                  {/* ✅ Note Modal (Popup) */}
-                  {isNoteModalOpen && (
-                    <div className="fixed inset-0 flex items-center justify-center p-4">
-                      <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
-                        <h2 className="text-xl font-semibold text-slate-900">
-                          Note
-                        </h2>
-                        <p className="mt-4 text-sm text-slate-700">
-                          {noteContent}
-                        </p>
-
-                        <div className="mt-6 flex justify-end gap-2">
-                          <button
-                            onClick={handleModalClose}
-                            className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                          >
-                            Close
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </motion.tr>
               );
             })}
@@ -1135,6 +1114,19 @@ const MarketingExpenseTable = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Note Modal */}
+      <Modal isOpen={isNoteModalOpen} onClose={handleModalClose} title="Note">
+        <p className="mt-4 text-sm text-slate-700">{noteContent}</p>
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            onClick={handleModalClose}
+            className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+          >
+            Close
+          </button>
+        </div>
+      </Modal>
 
       {/* Pagination + Page Jump Dropdown */}
       <div className="flex items-center justify-center flex-wrap gap-2 mt-6">

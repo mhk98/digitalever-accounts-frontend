@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import Select from "react-select";
-import { Boxes, Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Boxes, Calendar, X } from "lucide-react";
 import {
   useGetAllAssetsStockQuery,
   useGetAllAssetsStockWithoutQueryQuery,
@@ -299,59 +299,53 @@ const AssetsStockTable = () => {
         </table>
       </div>
 
-      <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="text-sm font-semibold text-slate-500">
-          Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-          {Math.min(currentPage * itemsPerPage, data?.meta?.count || 0)} of{" "}
-          {data?.meta?.count || 0}
-        </div>
+      <div className="flex items-center justify-center flex-wrap gap-2 mt-6">
+        <button
+          onClick={() =>
+            setStartPage((prev) => Math.max(prev - pagesPerSet, 1))
+          }
+          disabled={startPage === 1}
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
+          type="button"
+        >
+          Prev
+        </button>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="h-10 w-10 rounded-xl border border-slate-200 bg-white text-slate-500 flex items-center justify-center disabled:opacity-40"
-            disabled={startPage === 1}
-            onClick={() =>
-              setStartPage((prev) => Math.max(prev - pagesPerSet, 1))
-            }
-          >
-            <ChevronLeft size={16} />
-          </button>
+        {[...Array(endPage - startPage + 1)].map((_, index) => {
+          const pageNum = startPage + index;
+          const active = pageNum === currentPage;
 
-          {Array.from(
-            { length: endPage - startPage + 1 },
-            (_, index) => startPage + index,
-          ).map((page) => (
+          return (
             <button
-              key={page}
-              type="button"
-              onClick={() => handlePageChange(page)}
-              className={`h-10 min-w-10 px-3 rounded-xl text-sm font-bold transition ${
-                currentPage === page
-                  ? "bg-indigo-600 text-white"
-                  : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              key={pageNum}
+              onClick={() => handlePageChange(pageNum)}
+              className={`px-4 py-2 rounded-xl border transition ${
+                active
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               }`}
+              type="button"
             >
-              {page}
+              {pageNum}
             </button>
-          ))}
+          );
+        })}
 
-          <button
-            type="button"
-            className="h-10 w-10 rounded-xl border border-slate-200 bg-white text-slate-500 flex items-center justify-center disabled:opacity-40"
-            disabled={endPage >= totalPages}
-            onClick={() =>
-              setStartPage((prev) =>
-                Math.min(
-                  prev + pagesPerSet,
-                  Math.max(1, totalPages - pagesPerSet + 1),
-                ),
-              )
-            }
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
+        <button
+          onClick={() =>
+            setStartPage((prev) =>
+              Math.min(
+                prev + pagesPerSet,
+                Math.max(1, totalPages - pagesPerSet + 1),
+              ),
+            )
+          }
+          disabled={endPage === totalPages}
+          className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 hover:bg-slate-50 transition"
+          type="button"
+        >
+          Next
+        </button>
       </div>
     </motion.div>
   );

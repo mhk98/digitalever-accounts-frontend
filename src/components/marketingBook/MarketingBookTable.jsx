@@ -8,6 +8,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import Pagination from "../common/Pagination";
 import {
   useDeleteMarketingBookMutation,
   useGetAllMarketingBookQuery,
@@ -19,6 +20,8 @@ import { Link } from "react-router-dom";
 import Modal from "../common/Modal";
 import { useGetOverviewSummaryQuery } from "../../features/marketingExpense/marketingExpense.jsx";
 import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
+import useDebounce from "../../hooks/useDebounce";
+
 
 // ✅ helper: default range (এই মাসের ১ তারিখ → আজ)
 const getDefaultRange = () => {
@@ -42,7 +45,8 @@ const MarketingBookTable = () => {
   const [currentProduct, setCurrentProduct] = useState(null);
 
   const [createProduct, setCreateProduct] = useState({ name: "" });
-  const [name, setName] = useState(""); // search state
+  const [name, setName] = useState("");
+  const debouncedName = useDebounce(name, 400); // search state
 
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
@@ -65,12 +69,11 @@ const MarketingBookTable = () => {
     useGetAllMarketingBookQuery({
       page: currentPage,
       limit: itemsPerPage,
-      searchTerm: name || undefined,
+      searchTerm: debouncedName || undefined,
     });
 
   const books = data?.data ?? [];
 
-  console.log("mBooks", books);
 
   useEffect(() => {
     if (isError) {
@@ -191,7 +194,6 @@ const MarketingBookTable = () => {
 
   const summary = summaryRes?.data || {};
 
-  console.log("summary", summary);
 
   const onApply = () => {
     if (!from || !to) return;
@@ -212,9 +214,6 @@ const MarketingBookTable = () => {
   const totalCashOut = Number(summary?.totalCashOutAmount || 0);
   const netBalance = totalCashIn - totalCashOut;
 
-  console.log("totalCashIn", totalCashIn);
-  console.log("totalCashOut", totalCashOut);
-  console.log("netBalance", netBalance);
 
   return (
     <motion.div
@@ -490,40 +489,11 @@ const MarketingBookTable = () => {
         )}
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-center space-x-2 mt-6">
-        <button
-          onClick={handlePreviousSet}
-          disabled={startPage === 1}
-          className="px-3 py-2 text-sm rounded-md border border-gray-200 bg-white text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-        >
-          Prev
-        </button>
-
-        {[...Array(endPage - startPage + 1)].map((_, index) => {
-          const pageNum = startPage + index;
-          return (
-            <button
-              key={pageNum}
-              onClick={() => handlePageChange(pageNum)}
-              className={`px-3 py-2 text-sm rounded-md border transition ${pageNum === currentPage
-                  ? "bg-indigo-600 border-indigo-600 text-white"
-                  : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                }`}
-            >
-              {pageNum}
-            </button>
-          );
-        })}
-
-        <button
-          onClick={handleNextSet}
-          disabled={endPage === totalPages}
-          className="px-3 py-2 text-sm rounded-md border border-gray-200 bg-white text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-        >
-          Next
-        </button>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
 
       {/* Edit Modal */}
       <Modal

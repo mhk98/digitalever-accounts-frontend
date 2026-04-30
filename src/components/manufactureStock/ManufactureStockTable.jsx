@@ -100,7 +100,6 @@ const ManufactureStockTable = () => {
 
   const { data, isLoading } = useGetAllItemMasterQuery(queryArgs);
 
-  console.log("manuStock", data);
 
   useEffect(() => {
     if (!isLoading && data) {

@@ -27,6 +27,8 @@ import { useGetAllUserQuery } from "../../features/auth/auth";
 import { useGetAllDepartmentsQuery } from "../../features/department/department";
 import { useGetAllDesignationsQuery } from "../../features/designation/designation";
 import { useGetAllShiftsQuery } from "../../features/shift/shift";
+import useDebounce from "../../hooks/useDebounce";
+
 
 const initialForm = {
   name: "",
@@ -58,13 +60,14 @@ const EmployeeMasterManager = () => {
   const [form, setForm] = useState(initialForm);
   const [currentItem, setCurrentItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const [deleteRequestNote, setDeleteRequestNote] = useState("");
 
   const queryArgs = useMemo(
     () => ({
       page: 1,
       limit: 200,
-      searchTerm: searchTerm || undefined,
+      searchTerm: debouncedSearchTerm || undefined,
     }),
     [searchTerm],
   );

@@ -103,6 +103,42 @@ export const cashInOutApi = baseApi.injectEndpoints({
       refetchOnMountOrArgChange: true,
     }),
 
+    getLoanSummaries: build.query({
+      query: (arg = {}) => {
+        const { page, limit, searchTerm, startDate, endDate } = arg;
+        const params = { page, limit, searchTerm, startDate, endDate };
+
+        Object.keys(params).forEach((k) => {
+          if (params[k] === undefined || params[k] === null || params[k] === "")
+            delete params[k];
+        });
+
+        return { url: "/cash-in-out/loans", params };
+      },
+      providesTags: [{ type: "CashInOut", id: "LOANS" }],
+      refetchOnMountOrArgChange: true,
+    }),
+
+    getLoanHistory: build.query({
+      query: ({ lender, page, limit, searchTerm, startDate, endDate }) => {
+        const params = { page, limit, searchTerm, startDate, endDate };
+
+        Object.keys(params).forEach((k) => {
+          if (params[k] === undefined || params[k] === null || params[k] === "")
+            delete params[k];
+        });
+
+        return {
+          url: `/cash-in-out/loans/${encodeURIComponent(lender)}`,
+          params,
+        };
+      },
+      providesTags: (result, err, arg) => [
+        { type: "CashInOut", id: `LOAN-${arg?.lender || ""}` },
+      ],
+      refetchOnMountOrArgChange: true,
+    }),
+
     getSingleCashInOut: build.query({
       query: (id) => ({ url: `/cash-in-out/${id}` }),
 
@@ -126,5 +162,7 @@ export const {
   useInsertCashInOutMutation,
   useUpdateCashInOutMutation,
   useDeleteCashInOutMutation,
+  useGetLoanSummariesQuery,
+  useGetLoanHistoryQuery,
   useGetAllCashInOutWithoutQueryQuery,
 } = cashInOutApi;

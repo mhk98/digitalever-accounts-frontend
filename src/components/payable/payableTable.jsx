@@ -22,6 +22,8 @@ import {
   useUpdatePayableMutation,
 } from "../../features/payable/payable";
 import Modal from "../common/Modal";
+import useDebounce from "../../hooks/useDebounce";
+
 
 const PayableTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -47,6 +49,7 @@ const PayableTable = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [filterName, setFilterName] = useState("");
+  const debouncedFilterName = useDebounce(filterName, 400);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
@@ -76,7 +79,7 @@ const PayableTable = () => {
       limit: itemsPerPage,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      searchTerm: filterName?.trim() || undefined,
+      searchTerm: debouncedFilterName?.trim() || undefined,
     }),
     [currentPage, startDate, endDate, filterName],
   );
@@ -302,7 +305,7 @@ const PayableTable = () => {
                 const rowId = rp.Id || rp.id;
                 const safePath = String(rp.file || "").replace(/\\/g, "/");
                 const fileUrl = safePath
-                  ? `http://localhost:5000${safePath}`
+                  ? `${import.meta.env.VITE_API_URL}${safePath}`
                   : "";
                 const ext = safePath.split(".").pop()?.toLowerCase();
                 const isImage = ["jpg", "jpeg", "png", "webp"].includes(ext);

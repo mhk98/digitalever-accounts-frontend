@@ -172,7 +172,7 @@ const Sidebar = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={toggleMobileMenu}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"
+            className="fixed inset-0 bg-slate-900/40 z-40 lg:hidden"
           />
         )}
       </AnimatePresence>
@@ -193,7 +193,7 @@ const Sidebar = () => {
             shouldShowExpanded ? "p-4" : "p-2"
           }`}
         >
-          <div className="flex-1 rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] flex flex-col overflow-hidden">
+          <div className="flex-1 rounded-2xl border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] flex flex-col overflow-hidden">
             {/* Header */}
             <div
               className={`border-b border-slate-200 ${
@@ -201,12 +201,22 @@ const Sidebar = () => {
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
-                  <img
-                    src={logo ? ` http://localhost:5000${logo}` : ""}
-                    alt="Logo"
-                    className="h-full w-full object-cover"
-                  />
+                <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white flex items-center justify-center">
+                  {isLoading ? (
+                    <div className="h-full w-full animate-pulse bg-slate-100 rounded-xl" />
+                  ) : logo ? (
+                    <img
+                      src={`${import.meta.env.VITE_API_URL}/${logo}`}
+                      alt="Logo"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-indigo-50 rounded-xl flex items-center justify-center">
+                      <span className="text-indigo-400 text-xs font-bold">
+                        K
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <AnimatePresence>
@@ -218,7 +228,7 @@ const Sidebar = () => {
                       className="flex-1"
                     >
                       <div className="text-slate-900 font-semibold leading-tight">
-                        Accounting
+                        Business Solution
                       </div>
                       <div className="text-xs text-slate-500">
                         {t.control_panel}
@@ -446,7 +456,7 @@ const Sidebar = () => {
                               const activeSub = isActive(sub);
 
                               return (
-                                <Link key={sub.href} to={sub.href}>
+                                <Link key={sub.key} to={sub.href}>
                                   <div
                                     className={`group flex items-center gap-2 px-3 py-2 rounded-xl transition border ${
                                       activeSub

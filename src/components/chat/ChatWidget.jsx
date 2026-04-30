@@ -10,8 +10,8 @@ import {
 import { io } from "socket.io-client";
 import toast from "react-hot-toast";
 
-const API_BASE_URL = "http://localhost:5000/api/v1";
-const SOCKET_URL = "http://localhost:5000";
+const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api/v1`;
+const SOCKET_URL = import.meta.env.VITE_API_URL;
 const CHAT_ALLOWED_ROLES = ["employee", "superAdmin", "admin", "leader"];
 
 const getToken = () => localStorage.getItem("token");

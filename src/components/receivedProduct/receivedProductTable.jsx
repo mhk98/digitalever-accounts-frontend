@@ -1581,7 +1581,11 @@ const ReceivedProductTable = () => {
                             e.target.value,
                           )
                         }
-                        className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                        disabled={
+                          !currentProduct?.productId ||
+                          editSizeOptions.length === 0
+                        }
+                        className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                         placeholder="0"
                       />
                     </div>
@@ -1655,7 +1659,7 @@ const ReceivedProductTable = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+            {/* <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.book || "Book"}
               </label>
@@ -1680,7 +1684,7 @@ const ReceivedProductTable = () => {
                 {...selectMenuProps}
                 className="text-black"
               />
-            </div>
+            </div> */}
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
@@ -2125,7 +2129,11 @@ const ReceivedProductTable = () => {
                             e.target.value,
                           )
                         }
-                        className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                        disabled={
+                          !createProduct?.productId ||
+                          createSizeOptions.length === 0
+                        }
+                        className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                         placeholder="0"
                       />
                     </div>
@@ -2236,7 +2244,7 @@ const ReceivedProductTable = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+            {/* <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.book || "Book"}
               </label>
@@ -2261,7 +2269,7 @@ const ReceivedProductTable = () => {
                 {...selectMenuProps}
                 className="text-black"
               />
-            </div>
+            </div> */}
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">

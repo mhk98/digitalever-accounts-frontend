@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import {
   Activity,
   AlertCircle,
+  Calendar,
   CheckCircle2,
   History,
   RefreshCcw,
@@ -12,7 +13,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import Select from "react-select";
 
-const API_BASE_URL = "http://localhost:5000/api/v1";
+const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api/v1`;
 
 const selectStyles = {
   control: (base, state) => ({
@@ -51,6 +52,26 @@ const formatDateTime = (value) => {
 const getUserLabel = (user) => {
   const fullName = `${user?.FirstName || ""} ${user?.LastName || ""}`.trim();
   return fullName || user?.Email || "Unknown User";
+};
+
+const isWithinDateRange = (value, startDate, endDate) => {
+  if (!startDate && !endDate) return true;
+  if (!value) return false;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+
+  if (startDate) {
+    const start = new Date(`${startDate}T00:00:00`);
+    if (date < start) return false;
+  }
+
+  if (endDate) {
+    const end = new Date(`${endDate}T23:59:59.999`);
+    if (date > end) return false;
+  }
+
+  return true;
 };
 
 const getStatusBadgeClass = (status) => {
@@ -102,6 +123,8 @@ const LogHistoryTable = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [logs, setLogs] = useState([]);
   const [userSearch, setUserSearch] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
@@ -144,7 +167,7 @@ const LogHistoryTable = () => {
     }
   };
 
-  const loadLogs = async (userId) => {
+  const loadLogs = async (userId, filters = {}) => {
     if (!userId) {
       setLogs([]);
       return;
@@ -153,12 +176,30 @@ const LogHistoryTable = () => {
     try {
       setLoadingLogs(true);
 
+      const params = new URLSearchParams({
+        userId: String(userId),
+        page: "1",
+        limit: "200",
+      });
+
+      if (filters.startDate) params.set("startDate", filters.startDate);
+      if (filters.endDate) params.set("endDate", filters.endDate);
+
       const response = await axios.get(
-        `${API_BASE_URL}/user-log-history?userId=${userId}&page=1&limit=50`,
+        `${API_BASE_URL}/user-log-history?${params.toString()}`,
         authHeaders,
       );
 
-      setLogs(response.data?.data || []);
+      const nextLogs = response.data?.data || [];
+      setLogs(
+        nextLogs.filter((log) =>
+          isWithinDateRange(
+            log?.createdAt || log?.date,
+            filters.startDate,
+            filters.endDate,
+          ),
+        ),
+      );
     } catch (error) {
       console.error("Failed to load log history", error);
       setLogs([]);
@@ -179,9 +220,23 @@ const LogHistoryTable = () => {
     return () => clearTimeout(timeoutId);
   }, [userSearch]);
 
+  useEffect(() => {
+    if (startDate && endDate && startDate > endDate) {
+      setEndDate(startDate);
+    }
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    if (!selectedUser?.value) return;
+
+    loadLogs(selectedUser.value, { startDate, endDate });
+  }, [selectedUser?.value, startDate, endDate]);
+
   const handleUserChange = (selectedOption) => {
     setSelectedUser(selectedOption);
-    loadLogs(selectedOption?.value);
+    if (!selectedOption?.value) {
+      setLogs([]);
+    }
   };
 
   const totalLogs = logs.length;
@@ -296,7 +351,7 @@ const LogHistoryTable = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-4 mb-6 sm:mb-8 bg-slate-50/50 p-4 sm:p-6 rounded-3xl border border-slate-100 items-end">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(180px,0.45fr)_minmax(180px,0.45fr)_auto] gap-4 mb-6 sm:mb-8 bg-slate-50/50 p-4 sm:p-6 rounded-3xl border border-slate-100 items-end">
         <div className="flex flex-col">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
             User
@@ -321,11 +376,50 @@ const LogHistoryTable = () => {
           />
         </div>
 
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
+            From
+          </label>
+          <label className="relative">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(event) => setStartDate(event.target.value)}
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-indigo-200 focus:ring-4 focus:ring-indigo-100"
+            />
+            <Calendar
+              size={16}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+          </label>
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
+            To
+          </label>
+          <label className="relative">
+            <input
+              type="date"
+              value={endDate}
+              min={startDate || undefined}
+              onChange={(event) => setEndDate(event.target.value)}
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-indigo-200 focus:ring-4 focus:ring-indigo-100"
+            />
+            <Calendar
+              size={16}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+          </label>
+        </div>
+
         <button
           type="button"
           onClick={() => {
             setSelectedUser(null);
             setUserSearch("");
+            setStartDate("");
+            setEndDate("");
             setLogs([]);
             loadUsers("");
           }}

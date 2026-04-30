@@ -12,6 +12,8 @@ import toast from "react-hot-toast";
 import Select from "react-select";
 import Modal from "../common/Modal";
 import { useGetAllInventoryOverviewWithoutQueryQuery } from "../../features/inventoryOverview/inventoryOverview";
+import useDebounce from "../../hooks/useDebounce";
+
 import {
   useGetAllProfitLossQuery,
   useInsertProfitLossMutation,
@@ -176,7 +178,6 @@ const DailyProfitLossTable = () => {
 
   const receivedData = useMemo(() => receivedRes?.data || [], [receivedRes]);
 
-  console.log("receivedRes", receivedRes);
 
   useEffect(() => {
     if (receivedError) console.error("Received fetch error:", receivedErrObj);
@@ -193,6 +194,7 @@ const DailyProfitLossTable = () => {
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const [marketingSpends, setMarketingSpends] = useState(0);
   const [otherExpenses, setOtherExpenses] = useState(0);
   const [returnPercentage, setReturnPercentage] = useState(0);
@@ -206,7 +208,6 @@ const DailyProfitLossTable = () => {
   const [clientEmail, setClientEmail] = useState("");
   const itemsPerPage = 10;
 
-  console.log("salesTypeSearch", salesTypeSearch);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -220,6 +221,7 @@ const DailyProfitLossTable = () => {
       endDate: historyEndDate || undefined,
       name: salesTypeSearch || undefined,
       searchTerm: salesTypeSearch || undefined,
+      mode: "product",
     }),
     [currentPage, historyEndDate, historyStartDate, salesTypeSearch],
   );
@@ -266,7 +268,6 @@ const DailyProfitLossTable = () => {
     });
   }, [normalizedProducts]);
 
-  console.log("profitLossRes", profitLossRes);
 
   const productOptions = useMemo(
     () =>
@@ -415,6 +416,7 @@ const DailyProfitLossTable = () => {
     }
 
     const payload = {
+      mode: "product",
       products: selectedRows.length,
       purchase: Math.round(summary.totalCost),
       revenue: Math.round(summary.totalRevenue),
@@ -438,42 +440,139 @@ const DailyProfitLossTable = () => {
   };
 
   const handlePrintInvoice = (row) => {
-    const printWindow = window.open("", "_blank", "width=900,height=700");
+    const printWindow = window.open("", "_blank", "width=1050,height=820");
     if (!printWindow) {
       toast.error("Please allow popups to print the invoice");
       return;
     }
 
     const invoiceDate = formatDate(row?.createdAt || row?.date);
-    const salesTypeLabel = escapeHtml(row?.salesType || "-");
+    const invoiceNo = `PL-${row?.Id || row?.id || Date.now()}`;
+    const invoiceSalesType = escapeHtml(row?.salesType || salesType?.value || "-");
+
+    const productRowsHtml =
+      selectedRows.length > 0
+        ? selectedRows
+            .map((item) => {
+              const unitsSold = safeNumber(item.unitsSold);
+              const sellingPrice = safeNumber(item.sellingPrice);
+              const costPrice = safeNumber(item.costPrice);
+              const totalRevenue = sellingPrice * unitsSold;
+              const totalCost = costPrice * unitsSold;
+              const profit = totalRevenue - totalCost;
+              const profitColor = profit >= 0 ? "#059669" : "#dc2626";
+              return `<tr>
+                <td>${escapeHtml(item.name)}</td>
+                <td style="color:#64748b">${escapeHtml(item.sku)}</td>
+                <td>${unitsSold.toLocaleString()}</td>
+                <td class="amount">${escapeHtml(formatCurrency(totalCost))}</td>
+                <td class="amount">${escapeHtml(formatCurrency(totalRevenue))}</td>
+                <td class="amount" style="color:${profitColor}">${escapeHtml(formatCurrency(profit))}</td>
+              </tr>`;
+            })
+            .join("")
+        : `<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;">কোনো product select করা হয়নি</td></tr>`;
+
+    const historyRowsHtml =
+      profitLossRows.length > 0
+        ? profitLossRows
+            .map((hr) => {
+              const pl = safeNumber(hr?.profitLoss);
+              const plColor = pl >= 0 ? "#059669" : "#dc2626";
+              return `<tr>
+                <td>${escapeHtml(formatDate(hr?.createdAt || hr?.date))}</td>
+                <td>${escapeHtml(hr?.salesType || "-")}</td>
+                <td>${safeNumber(hr?.products)}</td>
+                <td class="amount">${escapeHtml(formatCurrency(hr?.purchase))}</td>
+                <td class="amount">${escapeHtml(formatCurrency(hr?.revenue))}</td>
+                <td class="amount">${escapeHtml(formatCurrency(hr?.return))}</td>
+                <td class="amount">${escapeHtml(formatCurrency(hr?.cost))}</td>
+                <td class="amount" style="color:${plColor}">${escapeHtml(formatCurrency(hr?.profitLoss))}</td>
+              </tr>`;
+            })
+            .join("")
+        : `<tr><td colspan="8" style="text-align:center;padding:20px;color:#94a3b8;">কোনো saved history নেই</td></tr>`;
 
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Profit Loss Invoice</title>
+          <title>Profit Loss Invoice - ${escapeHtml(invoiceNo)}</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 32px; color: #0f172a; }
-            .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
-            .title { font-size: 28px; font-weight: 700; margin: 0 0 8px; }
-            .meta { color: #475569; font-size: 14px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #cbd5e1; padding: 12px; text-align: left; }
-            th { background: #f8fafc; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; }
+            * { box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; padding: 32px; color: #0f172a; font-size: 13px; }
+            h1 { font-size: 24px; font-weight: 700; margin: 0 0 4px; }
+            h2 { font-size: 15px; font-weight: 700; margin: 28px 0 10px; color: #1e293b; padding-bottom: 6px; border-bottom: 2px solid #e2e8f0; }
+            .meta { color: #475569; font-size: 12px; margin-bottom: 3px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+            th, td { border: 1px solid #e2e8f0; padding: 9px 11px; text-align: left; }
+            th { background: #f8fafc; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-size: 10px; color: #475569; }
             .amount { font-weight: 700; }
+            .breakdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px; }
+            .breakdown-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; }
+            .breakdown-item .lbl { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+            .breakdown-item .val { font-size: 15px; font-weight: 700; margin-top: 5px; }
+            .profit { color: #059669; }
+            .loss { color: #dc2626; }
+            .span2 { grid-column: span 2; }
+            @media print { body { padding: 16px; } }
           </style>
         </head>
         <body>
-          <div class="header">
-            <div>
-              <h1 class="title">Profit/Loss Invoice</h1>
-              <div class="meta">Date: ${escapeHtml(invoiceDate)}</div>
-              <div class="meta">Sales Type: ${salesTypeLabel}</div>
-            </div>
-          </div>
+          <h1>Profit/Loss Invoice</h1>
+          <div class="meta">Invoice No: ${escapeHtml(invoiceNo)}</div>
+          <div class="meta">Date: ${escapeHtml(invoiceDate)}</div>
+          <div class="meta">Sales Type: ${invoiceSalesType}</div>
+
+          <h2>Product Variants</h2>
           <table>
             <thead>
               <tr>
+                <th>Product</th>
+                <th>SKU</th>
+                <th>Units Sold</th>
+                <th>Total Purchase</th>
+                <th>Total Sale</th>
+                <th>Profit/Loss</th>
+              </tr>
+            </thead>
+            <tbody>${productRowsHtml}</tbody>
+          </table>
+
+          <h2>Calculation Breakdown</h2>
+          <div class="breakdown">
+            <div class="breakdown-item">
+              <div class="lbl">Gross Profit</div>
+              <div class="val">${escapeHtml(formatCurrency(summary.totalProfit))}</div>
+            </div>
+            <div class="breakdown-item">
+              <div class="lbl">Marketing Spends</div>
+              <div class="val">${escapeHtml(formatCurrency(summary.marketingCost))}</div>
+            </div>
+            <div class="breakdown-item">
+              <div class="lbl">Other Expenses</div>
+              <div class="val">${escapeHtml(formatCurrency(summary.otherCost))}</div>
+            </div>
+            <div class="breakdown-item">
+              <div class="lbl">Return (${safeNumber(summary.returnRate).toFixed(2)}%)</div>
+              <div class="val">${escapeHtml(formatCurrency(summary.returnDeduction))}</div>
+            </div>
+            <div class="breakdown-item span2">
+              <div class="lbl">Total Purchase</div>
+              <div class="val">${escapeHtml(formatCurrency(summary.totalCost))}</div>
+            </div>
+            <div class="breakdown-item span2">
+              <div class="lbl">Net Profit/Loss</div>
+              <div class="val ${summary.finalProfit >= 0 ? "profit" : "loss"}">${escapeHtml(formatCurrency(summary.finalProfit))}</div>
+            </div>
+          </div>
+
+          <h2>Saved Profit/Loss History</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Sales Type</th>
                 <th>Products</th>
                 <th>Purchase</th>
                 <th>Sale</th>
@@ -482,16 +581,7 @@ const DailyProfitLossTable = () => {
                 <th>Profit/Loss</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td>${escapeHtml(safeNumber(row?.products))}</td>
-                <td class="amount">${escapeHtml(formatCurrency(row?.purchase))}</td>
-                <td class="amount">${escapeHtml(formatCurrency(row?.revenue))}</td>
-                <td class="amount">${escapeHtml(formatCurrency(row?.return))}</td>
-                <td class="amount">${escapeHtml(formatCurrency(row?.cost))}</td>
-                <td class="amount">${escapeHtml(formatCurrency(row?.profitLoss))}</td>
-              </tr>
-            </tbody>
+            <tbody>${historyRowsHtml}</tbody>
           </table>
         </body>
       </html>
@@ -525,6 +615,33 @@ const DailyProfitLossTable = () => {
       return;
     }
 
+    const productDetails = selectedRows.map((item) => {
+      const unitsSold = safeNumber(item.unitsSold);
+      const sellingPrice = safeNumber(item.sellingPrice);
+      const costPrice = safeNumber(item.costPrice);
+      const totalRevenue = sellingPrice * unitsSold;
+      const totalCost = costPrice * unitsSold;
+      return {
+        name: item.name,
+        sku: item.sku,
+        unitsSold,
+        totalCost,
+        totalRevenue,
+        profit: totalRevenue - totalCost,
+      };
+    });
+
+    const savedHistoryDetails = profitLossRows.map((hr) => ({
+      date: formatDate(hr?.createdAt || hr?.date),
+      salesType: hr?.salesType || "-",
+      products: safeNumber(hr?.products),
+      purchase: safeNumber(hr?.purchase),
+      revenue: safeNumber(hr?.revenue),
+      return: safeNumber(hr?.return),
+      cost: safeNumber(hr?.cost),
+      profitLoss: safeNumber(hr?.profitLoss),
+    }));
+
     const payload = {
       clientEmail: clientEmail.trim(),
       invoiceNumber: `PL-${selectedInvoiceRow?.Id || selectedInvoiceRow?.id || Date.now()}`,
@@ -539,6 +656,18 @@ const DailyProfitLossTable = () => {
       return: safeNumber(selectedInvoiceRow?.return),
       cost: safeNumber(selectedInvoiceRow?.cost),
       profitLoss: safeNumber(selectedInvoiceRow?.profitLoss),
+      selectedProducts: productDetails,
+      calculationSummary: {
+        totalCost: summary.totalCost,
+        totalRevenue: summary.totalRevenue,
+        grossProfit: summary.totalProfit,
+        marketingCost: summary.marketingCost,
+        otherCost: summary.otherCost,
+        returnRate: summary.returnRate,
+        returnDeduction: summary.returnDeduction,
+        finalProfit: summary.finalProfit,
+      },
+      savedHistory: savedHistoryDetails,
     };
 
     try {

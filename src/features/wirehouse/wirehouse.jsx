@@ -8,7 +8,7 @@ const getAuthToken = () => {
 export const wirehouseApi = createApi({
   reducerPath: "wirehouseApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: " http://localhost:5000/api/v1/",
+    baseUrl: `${import.meta.env.VITE_API_URL}/api/v1/`,
 
     // Prepare headers to include Authorization token if present
     prepareHeaders: (headers) => {

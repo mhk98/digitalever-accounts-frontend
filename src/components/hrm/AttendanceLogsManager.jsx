@@ -13,6 +13,8 @@ import {
 import { useGetAllAttendanceDevicesQuery } from "../../features/attendanceDevice/attendanceDevice";
 import { useGetAllAttendanceEnrollmentsQuery } from "../../features/attendanceEnrollment/attendanceEnrollment";
 import { useGetAllAttendanceSummariesQuery } from "../../features/attendanceSummary/attendanceSummary";
+import useDebounce from "../../hooks/useDebounce";
+
 
 const initialForm = {
   attendanceDeviceId: "",
@@ -37,6 +39,7 @@ const initialRealtimeForm = {
 
 const AttendanceLogsManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().slice(0, 10),
   );
@@ -49,7 +52,7 @@ const AttendanceLogsManager = () => {
     () => ({
       page: 1,
       limit: 200,
-      searchTerm: searchTerm || undefined,
+      searchTerm: debouncedSearchTerm || undefined,
       from: selectedDate || undefined,
       to: selectedDate || undefined,
     }),

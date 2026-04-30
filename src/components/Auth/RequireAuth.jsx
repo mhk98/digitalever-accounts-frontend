@@ -38,14 +38,17 @@ const RequireAuth = ({ children }) => {
       return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // Decode the token to check if it is valid and not expired
     const decoded = jwtDecode(token);
 
-    // Check if the token is expired
+    // If access token expired, check if we have a refresh token
+    // The API layer (baseQueryWithReauth) will handle the actual refresh
     if (decoded.exp * 1000 < Date.now()) {
-      localStorage.removeItem("token");
-      localStorage.clear();
-      return <Navigate to="/login" state={{ from: location }} replace />;
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (!refreshToken) {
+        localStorage.clear();
+        return <Navigate to="/login" state={{ from: location }} replace />;
+      }
+      // refresh token exists — let the API call handle the refresh silently
     }
 
     const userRole = localStorage.getItem("role") || "user";

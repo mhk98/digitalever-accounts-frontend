@@ -8,7 +8,7 @@
 // export const authApi = createApi({
 //   reducerPath: "authApi",
 //   baseQuery: fetchBaseQuery({
-//     baseUrl: " http://localhost:5000/api/v1/",
+//     baseUrl: `${import.meta.env.VITE_API_URL}/api/v1/`,
 
 //     // This will attach the token to every request that requires authorization
 //     prepareHeaders: (headers) => {
@@ -96,12 +96,16 @@ export const persistAuthSession = (payload) => {
   localStorage.setItem("token", payload.accessToken);
   localStorage.setItem("userId", payload.user.Id);
   localStorage.setItem("role", payload.user.role);
+  localStorage.setItem("authUser", JSON.stringify(payload.user));
+  if (payload.refreshToken) {
+    localStorage.setItem("refreshToken", payload.refreshToken);
+  }
 };
 
 export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1",
+    baseUrl: `${import.meta.env.VITE_API_URL}/api/v1/`,
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -134,6 +138,14 @@ export const authApi = createApi({
         method: "POST",
       }),
       invalidatesTags: ["auth"],
+    }),
+
+    refreshToken: build.mutation({
+      query: (refreshToken) => ({
+        url: "/user/refresh-token",
+        method: "POST",
+        body: { refreshToken },
+      }),
     }),
 
     userDelete: build.mutation({
@@ -231,8 +243,9 @@ export const {
   useUserStatusUpdateMutation,
   useUserImpersonateMutation,
   useUserUpdateMutation,
-  useSingleUserQuery, // ✅ useSingleUserQuery (query hook)
+  useSingleUserQuery,
   useGetRolePermissionsQuery,
   useGetRolePermissionByRoleQuery,
   useUpdateRolePermissionsMutation,
+  useRefreshTokenMutation,
 } = authApi;

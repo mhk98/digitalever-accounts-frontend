@@ -236,7 +236,6 @@ const StockAdjustmentTable = () => {
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
 
-  console.log("Stock Adjustment data", data);
 
   const [insertStockAdjustment] = useInsertStockAdjustmentMutation();
   const [updateStockAdjustment] = useUpdateStockAdjustmentMutation();

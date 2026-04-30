@@ -96,7 +96,7 @@ const Modal = ({
                         exit={{ opacity: 0 }}
                         transition={backdropTransition}
                         onClick={onClose}
-                        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9998]"
+                        className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9998]"
                     />
 
                     {/* Modal Panel */}

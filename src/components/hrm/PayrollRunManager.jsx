@@ -3,6 +3,8 @@ import { FileText, PlayCircle, Search, Wallet } from "lucide-react";
 import toast from "react-hot-toast";
 import Modal from "../common/Modal";
 import HrmWorkspace from "./HrmWorkspace";
+import useDebounce from "../../hooks/useDebounce";
+
 import {
   useCreatePayrollRunMutation,
   useGetAllPayrollRunsQuery,
@@ -14,6 +16,7 @@ const currentMonth = new Date().toISOString().slice(0, 7);
 
 const PayrollRunManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const [selectedRunId, setSelectedRunId] = useState(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [form, setForm] = useState({
@@ -26,7 +29,7 @@ const PayrollRunManager = () => {
     () => ({
       page: 1,
       limit: 100,
-      searchTerm: searchTerm || undefined,
+      searchTerm: debouncedSearchTerm || undefined,
     }),
     [searchTerm],
   );

@@ -19,7 +19,6 @@ export default function SellPosTable() {
   const [productName, setProductName] = useState("");
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
-  console.log("posItems", cart);
 
   // ✅ Drawer state
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -337,7 +336,6 @@ export default function SellPosTable() {
 
       const payload = buildPosPayload();
 
-      console.log("payload", payload);
       const res = await insertPosReport(payload).unwrap();
 
       const invoice = res?.data ||

@@ -448,7 +448,6 @@ const MixerTable = () => {
         createProduct.note || "",
       );
 
-      console.log("finalNote", finalNote);
 
       const payload = {
         productId: Number(createProduct.productId) || "",

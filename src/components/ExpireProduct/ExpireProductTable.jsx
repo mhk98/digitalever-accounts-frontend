@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { RotateCcw, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useGetAllWarrantyProductQuery } from "../../features/warrantyProduct/warrantyProduct";
+import useDebounce from "../../hooks/useDebounce";
+
 
 // ✅ তোমার query hook
 
@@ -15,6 +17,7 @@ const ExpireProductTable = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   // pagination
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -53,7 +56,7 @@ const ExpireProductTable = () => {
       limit: itemsPerPage,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      searchTerm: searchTerm?.trim() || undefined,
+      searchTerm: debouncedSearchTerm?.trim() || undefined,
     };
 
     Object.keys(args).forEach((k) => {
@@ -199,8 +202,6 @@ const ExpireProductTable = () => {
       Math.min(p + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
-  console.log("rows", rows);
-  console.log("computedRows", computedRows);
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"

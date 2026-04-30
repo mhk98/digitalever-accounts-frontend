@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bell, ChevronDown, Menu, Languages, Megaphone } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import NotificationDropdown from "./NotificationDropdown";
 import { useGetDataByIdQuery } from "../../features/notification/notification";
 import { useGetLatestNoticeQuery } from "../../features/notice/notice";
@@ -10,6 +11,35 @@ import {
 } from "../../features/auth/auth";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
+
+const readStoredUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("authUser") || "null");
+  } catch {
+    return null;
+  }
+};
+
+const formatRole = (role) => {
+  if (!role) return "";
+  return role
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const getUserDisplayName = (user, fallbackRole) => {
+  const fullName = `${user?.FirstName || ""} ${user?.LastName || ""}`.trim();
+  return (
+    fullName ||
+    user?.Name ||
+    user?.name ||
+    user?.Email ||
+    user?.email ||
+    formatRole(fallbackRole) ||
+    "Unknown"
+  );
+};
 
 const Header = ({ title }) => {
   const { toggleMobileMenu, language, toggleLanguage } = useLayout();
@@ -32,19 +62,22 @@ const Header = ({ title }) => {
   const [userLogout, { isLoading: isLoggingOut }] = useUserLogoutMutation();
 
   const userId = localStorage.getItem("userId");
+  const storedRole = localStorage.getItem("role");
+  const storedUser = useMemo(readStoredUser, [userId]);
 
   // ✅ user data
   const {
     data: userRes,
     isLoading: userLoading,
-    isError: userError,
   } = useSingleUserQuery(userId, {
     skip: !userId,
     refetchOnFocus: true,
     refetchOnReconnect: true,
   });
 
-  const user = userRes?.data;
+  const user = userRes?.data || storedUser;
+  const displayRole = user?.role || storedRole || "Staff";
+  const displayName = getUserDisplayName(user, displayRole);
   const { data: latestNoticeRes } = useGetLatestNoticeQuery(undefined, {
     pollingInterval: 30000,
     refetchOnFocus: true,
@@ -52,12 +85,10 @@ const Header = ({ title }) => {
   });
   const latestNotice = latestNoticeRes?.data;
 
-  console.log("user", user);
-
   // ✅ notifications
   const { data, isLoading, isError, error } = useGetDataByIdQuery(
     { page: 1, limit: 10, userId },
-    { pollingInterval: 1000 },
+    { pollingInterval: 30000 },
   );
 
   useEffect(() => {
@@ -81,6 +112,7 @@ const Header = ({ title }) => {
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
       localStorage.removeItem("role");
+      localStorage.removeItem("authUser");
       localStorage.removeItem("role_permissions");
       localStorage.removeItem("rolePermissionsByRole");
       navigate("/login");
@@ -89,13 +121,18 @@ const Header = ({ title }) => {
 
   const avatarSrc =
     user?.image && user?.image !== "null"
-      ? `http://localhost:5000${user.image}`
+      ? `${import.meta.env.VITE_API_URL}/${user.image}`
       : null;
 
-  const avatarInitials =
-    `${user?.FirstName?.[0] || ""}${user?.LastName?.[0] || ""}`
+  const avatarInitials = (
+    `${user?.FirstName?.[0] || ""}${user?.LastName?.[0] || ""}`.trim() ||
+    displayName
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0] || "")
+      .join("")
       .trim()
-      .toUpperCase();
+  ).toUpperCase();
 
   // ✅ outside click close (dropdown + notif)
   const rightAreaRef = useRef(null);
@@ -188,11 +225,19 @@ const Header = ({ title }) => {
           </button>
 
           {/* ✅ Notification Dropdown responsive position */}
-          {isNotifOpen && (
-            <div className="absolute right-0 top-12 z-50 w-[92vw] max-w-sm sm:w-96">
-              <NotificationDropdown />
-            </div>
-          )}
+          <AnimatePresence>
+            {isNotifOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                className="absolute right-0 top-12 z-50 w-[92vw] max-w-sm sm:w-96"
+              >
+                <NotificationDropdown />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* User */}
           <button
@@ -221,13 +266,10 @@ const Header = ({ title }) => {
             {/* ✅ Hide name/role on small devices */}
             <div className="hidden sm:block text-left leading-tight">
               <div className="text-slate-900 text-sm font-medium">
-                {userLoading
-                  ? "Loading..."
-                  : `${user?.FirstName || ""} ${user?.LastName || ""}`.trim() ||
-                    "Unknown"}
+                {userLoading && !user ? "Loading..." : displayName}
               </div>
               <span className="inline-flex items-center h-5 px-2 rounded bg-emerald-600 text-white text-xs font-semibold">
-                {userError ? "Unknown" : user?.role || "Staff"}
+                {formatRole(displayRole)}
               </span>
             </div>
 
@@ -236,28 +278,36 @@ const Header = ({ title }) => {
           </button>
 
           {/* ✅ Dropdown responsive width */}
-          {open && (
-            <div className="absolute right-0 top-12 w-44 sm:w-48 rounded-md bg-white border border-slate-200 shadow-lg overflow-hidden z-50">
-              <Link
-                to="/profile"
-                className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                onClick={() => setOpen(false)}
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                className="absolute right-0 top-12 w-44 sm:w-48 rounded-xl bg-white border border-slate-200 shadow-lg overflow-hidden z-50"
               >
-                Profile
-              </Link>
+                <Link
+                  to="/profile"
+                  className="block w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                  onClick={() => setOpen(false)}
+                >
+                  Profile
+                </Link>
 
-              <div className="h-px bg-slate-200" />
+                <div className="h-px bg-slate-100" />
 
-              <button
-                className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                onClick={handleLogout}
-                type="button"
-                disabled={isLoggingOut}
-              >
-                {isLoggingOut ? "Logging out..." : "Logout"}
-              </button>
-            </div>
-          )}
+                <button
+                  className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  onClick={handleLogout}
+                  type="button"
+                  disabled={isLoggingOut}
+                >
+                  {isLoggingOut ? "Logging out..." : "Logout"}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </header>

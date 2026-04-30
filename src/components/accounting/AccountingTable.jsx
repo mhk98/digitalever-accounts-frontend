@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { BookOpen, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import Pagination from "../common/Pagination";
 import {
   useDeleteBookMutation,
   useGetAllBookQuery,
@@ -10,6 +11,8 @@ import {
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import Modal from "../common/Modal";
+import useDebounce from "../../hooks/useDebounce";
+
 
 const AccountingTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
@@ -19,7 +22,8 @@ const AccountingTable = () => {
   const [currentProduct, setCurrentProduct] = useState(null);
 
   const [createProduct, setCreateProduct] = useState({ name: "" });
-  const [name, setName] = useState(""); // search state
+  const [name, setName] = useState("");
+  const debouncedName = useDebounce(name, 400); // search state
 
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
@@ -41,12 +45,11 @@ const AccountingTable = () => {
   const { data, isLoading, isError, error, refetch } = useGetAllBookQuery({
     page: currentPage,
     limit: itemsPerPage,
-    searchTerm: name || undefined,
+    searchTerm: debouncedName || undefined,
   });
 
   const books = data?.data ?? [];
 
-  console.log("accounting books", books);
 
   useEffect(() => {
     if (isError) {
@@ -241,40 +244,11 @@ const AccountingTable = () => {
         )}
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-center space-x-2 mt-6">
-        <button
-          onClick={handlePreviousSet}
-          disabled={startPage === 1}
-          className="px-3 py-2 text-sm rounded-md border border-gray-200 bg-white text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-        >
-          Prev
-        </button>
-
-        {[...Array(endPage - startPage + 1)].map((_, index) => {
-          const pageNum = startPage + index;
-          return (
-            <button
-              key={pageNum}
-              onClick={() => handlePageChange(pageNum)}
-              className={`px-3 py-2 text-sm rounded-md border transition ${pageNum === currentPage
-                  ? "bg-indigo-600 border-indigo-600 text-white"
-                  : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                }`}
-            >
-              {pageNum}
-            </button>
-          );
-        })}
-
-        <button
-          onClick={handleNextSet}
-          disabled={endPage === totalPages}
-          className="px-3 py-2 text-sm rounded-md border border-gray-200 bg-white text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-        >
-          Next
-        </button>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
 
       {/* Edit Modal */}
       <Modal

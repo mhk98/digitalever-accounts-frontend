@@ -67,6 +67,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "marketing",
     "dm_expense",
     "profit_loss",
+    "profit_loss_user",
     "manufacture",
     "item",
     "manufacture_stock",
@@ -98,6 +99,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "book",
     "petty_cash_requisition",
     "petty_cash",
+    "loan",
     "credit_ledger",
     "log_history",
     "notifications",
@@ -138,6 +140,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "sale",
     "damage",
     "profit_loss",
+    "profit_loss_user",
     "manufacture",
     "manufacture_menu",
     "manufacture_stock",
@@ -165,6 +168,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "book",
     "petty_cash_requisition",
     "petty_cash",
+    "loan",
     "credit_ledger",
     "log_history",
     "notifications",
@@ -199,6 +203,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "marketing",
     "dm_expense",
     "profit_loss",
+    "profit_loss_user",
     "notifications",
     "tasks",
     "profile",
@@ -209,6 +214,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "purchase",
     "sale",
     "profit_loss",
+    "profit_loss_user",
     "notifications",
     "tasks",
     "profile",
@@ -241,6 +247,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "warehouse",
     "supplier",
     "profit_loss",
+    "profit_loss_user",
     "notifications",
     "tasks",
     "profile",
@@ -248,11 +255,13 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
   accountant: [
     "overview",
     "profit_loss",
+    "profit_loss_user",
     "accounting",
     "accounting_supplier",
     "book",
     "petty_cash_requisition",
     "petty_cash",
+    "loan",
     "credit_ledger",
     "log_history",
     "hrm",
@@ -274,6 +283,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "employee_kpi",
     "payroll",
     "payroll_fine",
+    "profit_loss_user",
     "notifications",
     "tasks",
     "profile",
@@ -370,11 +380,19 @@ export const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin", "marketer"],
       },
       {
-        name: "Daily Profit & Loss",
+        name: "Daily Profit & Loss By Product",
         key: "profit_loss",
         icon: BarChart3,
         color: "#f97316",
         href: "/profit-loss",
+        roles: ["superAdmin", "admin", "marketer"],
+      },
+      {
+        name: "Daily Profit & Loss By User",
+        key: "profit_loss_user",
+        icon: BarChart3,
+        color: "#f97316",
+        href: "/profit-loss-user",
         roles: ["superAdmin", "admin", "marketer"],
       },
     ],
@@ -614,6 +632,14 @@ export const SIDEBAR_ITEMS = [
         key: "petty_cash",
         icon: HandCoins,
         href: "/petty-cash",
+        roles: ["superAdmin", "admin", "accountant"],
+      },
+      {
+        name: "Loan",
+        key: "loan",
+        icon: HandCoins,
+        href: "/loan",
+        matchPaths: ["/loan/"],
         roles: ["superAdmin", "admin", "accountant"],
       },
       {
@@ -990,6 +1016,10 @@ const normalizeRolePermissionMap = (value) => {
     const defaultKeys = DEFAULT_ROLE_PERMISSION_MAP[role] || [];
     if (defaultKeys.includes("tasks")) {
       normalizedKeys.add("tasks");
+    }
+
+    if (defaultKeys.includes("loan")) {
+      normalizedKeys.add("loan");
     }
 
     if (defaultKeys.includes("cs_work_reports")) {

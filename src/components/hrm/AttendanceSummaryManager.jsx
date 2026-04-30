@@ -2,10 +2,13 @@ import { useMemo, useState } from "react";
 import { CalendarRange, ClipboardCheck, Search } from "lucide-react";
 import HrmWorkspace from "./HrmWorkspace";
 import { useGetAllAttendanceSummariesQuery } from "../../features/attendanceSummary/attendanceSummary";
+import useDebounce from "../../hooks/useDebounce";
+
 
 const AttendanceSummaryManager = () => {
   const today = new Date().toISOString().slice(0, 10);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const [from, setFrom] = useState(today);
   const [to, setTo] = useState(today);
 
@@ -13,7 +16,7 @@ const AttendanceSummaryManager = () => {
     () => ({
       page: 1,
       limit: 200,
-      searchTerm: searchTerm || undefined,
+      searchTerm: debouncedSearchTerm || undefined,
       from: from || undefined,
       to: to || undefined,
     }),

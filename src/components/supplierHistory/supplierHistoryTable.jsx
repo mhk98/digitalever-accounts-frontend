@@ -43,7 +43,6 @@ const SupplierHistoryTable = () => {
 
   const [rows, setRows] = useState([]);
 
-  console.log("params", id);
 
   // ✅ Filters: start/end + product NAME
   const [startDate, setStartDate] = useState("");
@@ -142,7 +141,6 @@ const SupplierHistoryTable = () => {
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
 
-  console.log("supplierhistory", data);
 
   // ✅ Modals
   const handleAddProduct = () => setIsModalOpen1(true);
@@ -334,7 +332,6 @@ const SupplierHistoryTable = () => {
     menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
   };
 
-  console.log("firstRow", rows?.[0]);
 
   // ✅ suppliers
   const {
@@ -395,7 +392,6 @@ const SupplierHistoryTable = () => {
     setIsNoteModalOpen(false); // Close the modal
   };
 
-  console.log("shistory", data);
 
   return (
     <motion.div
@@ -770,7 +766,7 @@ const SupplierHistoryTable = () => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? `http://localhost:5000${safePath}`
+                ? `${import.meta.env.VITE_API_URL}${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(

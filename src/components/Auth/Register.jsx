@@ -22,7 +22,6 @@ const Register = () => {
     e.preventDefault();
     try {
       const res = await userRegister(formData).unwrap(); // Unwrap response to handle success or error
-      console.log(res);
 
       if (res.success === true) {
         toast.success("Registration Successfully");

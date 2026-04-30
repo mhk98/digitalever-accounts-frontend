@@ -26,6 +26,8 @@ import {
   useInsertLedgerHistoryMutation,
 } from "../../features/ledgerHistory/ledgerHistory";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
+import useDebounce from "../../hooks/useDebounce";
+
 
 const ENTITY_TYPES = {
   supplier: {
@@ -412,6 +414,7 @@ const CreditLedgerTable = () => {
   const dueHistoryItemsPerPage = 10;
   const [activeTab, setActiveTab] = useState("supplier");
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const [selectedEntityId, setSelectedEntityId] = useState("");
   const [mainHistoryStartDate, setMainHistoryStartDate] = useState("");
   const [mainHistoryEndDate, setMainHistoryEndDate] = useState("");
@@ -624,7 +627,6 @@ const CreditLedgerTable = () => {
     useGetAllLedgerWithoutQueryQuery();
   const ledgers = useMemo(() => extractLedgerRows(data), [data]);
 
-  console.log("leaders", ledgers);
 
   const entitiesByType = useMemo(
     () =>
@@ -801,7 +803,6 @@ const CreditLedgerTable = () => {
     [ledgerHistoryData],
   );
 
-  console.log("ledgerHistoryRecords", ledgerHistoryRecords);
 
   const selectedHistory = useMemo(() => {
     const isSupplierTab = activeTab === "supplier";
@@ -1295,13 +1296,13 @@ const CreditLedgerTable = () => {
 
   return (
     <motion.div
-      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
+      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 flex-1 min-h-0 flex flex-col overflow-hidden"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
       {/* Header */}
-      <div className="flex flex-col gap-3 border-b border-slate-200 p-3 sm:p-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 p-3 sm:p-4 lg:flex-row lg:items-center lg:justify-between">
         <h1 className="text-lg font-bold text-slate-800 sm:text-xl">
           Credit Ledger
         </h1>
@@ -1334,9 +1335,9 @@ const CreditLedgerTable = () => {
       </div>
 
       {/* Main content */}
-      <div className="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)]">
+      <div className="grid flex-1 min-h-0 grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)]">
         {/* Left Panel */}
-        <aside className="border-b border-slate-200 xl:border-b-0 xl:border-r">
+        <aside className="overflow-y-auto border-b border-slate-200 xl:border-b-0 xl:border-r">
           <div className="p-3 sm:p-4">
             {/* Tabs */}
             {/* <div className="flex flex-wrap gap-5 border-b border-slate-200 text-sm font-medium text-slate-500">
@@ -1486,9 +1487,9 @@ const CreditLedgerTable = () => {
         </aside>
 
         {/* Right Panel */}
-        <section className="flex min-h-[500px] flex-col">
+        <section className="flex min-h-0 flex-col overflow-hidden">
           {/* Top info */}
-          <div className="border-b border-slate-200 p-3 sm:p-4">
+          <div className="shrink-0 border-b border-slate-200 p-3 sm:p-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700">
@@ -1729,7 +1730,7 @@ const CreditLedgerTable = () => {
           </div>
 
           {/* Bottom action buttons */}
-          <div className="mt-auto grid grid-cols-1 gap-3 border-t border-slate-200 p-3 sm:grid-cols-2 sm:p-4">
+          <div className="mt-auto shrink-0 grid grid-cols-1 gap-3 border-t border-slate-200 p-3 sm:grid-cols-2 sm:p-4">
             <button
               type="button"
               onClick={() => openLedgerHistoryDrawer("Unpaid")}
@@ -2291,7 +2292,7 @@ const CreditLedgerTable = () => {
                   {/* Cash Type */}
                   <div>
                     <label className="block text-sm font-medium text-slate-800 mb-2">
-                      Cash
+                      লেনদেনের ধরন
                     </label>
 
                     <div className="grid grid-cols-2 gap-2">
@@ -2302,24 +2303,24 @@ const CreditLedgerTable = () => {
                         }
                         className={`rounded-lg px-3 py-3 text-left ${
                           createLedger.cashType === "Unpaid"
-                            ? "border-2 border-red-400"
+                            ? "border-2 border-red-400 bg-red-50"
                             : "border border-slate-300"
                         }`}
                       >
                         <div className="flex items-start gap-2">
                           {createLedger.cashType === "Unpaid" ? (
-                            <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-black">
-                              <div className="h-2.5 w-2.5 rounded-full bg-black" />
+                            <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-red-500">
+                              <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
                             </div>
                           ) : (
-                            <div className="mt-0.5 h-5 w-5 rounded-full border-2 border-slate-500" />
+                            <div className="mt-0.5 h-5 w-5 rounded-full border-2 border-slate-400" />
                           )}
                           <div>
-                            <div className="text-sm font-semibold text-slate-700">
-                              Giving
+                            <div className="text-sm font-semibold text-red-600">
+                              বাকি যোগ
                             </div>
-                            <div className="text-sm text-slate-500">
-                              You are giving credit
+                            <div className="text-xs text-slate-500">
+                              Supplier credit দিল, বাকি বাড়বে
                             </div>
                           </div>
                         </div>
@@ -2332,24 +2333,24 @@ const CreditLedgerTable = () => {
                         }
                         className={`rounded-lg px-3 py-3 text-left ${
                           createLedger.cashType === "Paid"
-                            ? "border-2 border-green-400"
+                            ? "border-2 border-green-400 bg-green-50"
                             : "border border-slate-300"
                         }`}
                       >
                         <div className="flex items-start gap-2">
                           {createLedger.cashType === "Paid" ? (
-                            <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-black">
-                              <div className="h-2.5 w-2.5 rounded-full bg-black" />
+                            <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-green-500">
+                              <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
                             </div>
                           ) : (
-                            <div className="mt-0.5 h-5 w-5 rounded-full border-2 border-slate-500" />
+                            <div className="mt-0.5 h-5 w-5 rounded-full border-2 border-slate-400" />
                           )}
                           <div>
-                            <div className="text-sm font-semibold text-slate-700">
-                              Taking
+                            <div className="text-sm font-semibold text-green-600">
+                              পরিশোধ
                             </div>
-                            <div className="text-sm text-slate-500">
-                              You are taking credit
+                            <div className="text-xs text-slate-500">
+                              Supplier কে টাকা দিলাম, বাকি কমবে
                             </div>
                           </div>
                         </div>

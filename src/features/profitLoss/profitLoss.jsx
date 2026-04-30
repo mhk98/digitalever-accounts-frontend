@@ -42,9 +42,9 @@ export const profitLossApi = baseApi.injectEndpoints({
     }),
 
     getAllProfitLoss: build.query({
-      query: ({ page, limit, startDate, endDate, name, searchTerm }) => ({
+      query: ({ page, limit, startDate, endDate, name, searchTerm, mode }) => ({
         url: "profit-loss",
-        params: { page, limit, startDate, endDate, name, searchTerm },
+        params: { page, limit, startDate, endDate, name, searchTerm, mode },
       }),
       providesTags: (result) =>
         result?.data?.length

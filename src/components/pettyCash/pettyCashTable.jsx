@@ -22,13 +22,13 @@ import Select from "react-select";
 import { useGetAllBookWithoutQueryQuery } from "../../features/book/book";
 import { translations } from "../../utils/translations";
 import { useLayout } from "../../context/LayoutContext";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
+import useDebounce from "../../hooks/useDebounce";
 
-const BANK_ACCOUNTS = [
-  "1291070003250",
-  "1291070001898",
-  "15044412870001",
-  "1291070002677",
-];
+import {
+  useGetAllBankAccountWithoutQueryQuery,
+  useInsertBankAccountMutation,
+} from "../../features/bankAccount/bankAccount";
 
 const STATIC_CATEGORIES = [
   "Office Expense",
@@ -42,6 +42,9 @@ const PettyCashTable = ({ mode = "default" }) => {
   const isRequisitionMode = mode === "requisition";
   const [isModalOpen, setIsModalOpen] = useState(false); // edit
   const [isModalOpen1, setIsModalOpen1] = useState(false); // add
+  const [cashInFormMode, setCashInFormMode] = useState(
+    isRequisitionMode ? "requisition" : "cashIn",
+  );
   const [currentProduct, setCurrentProduct] = useState(null);
   const [filterCategory, setFilterCategory] = useState("");
   const [filterBook, setFilterBook] = useState("");
@@ -61,6 +64,7 @@ const PettyCashTable = ({ mode = "default" }) => {
   });
 
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   const [products, setProducts] = useState([]);
 
@@ -77,6 +81,13 @@ const PettyCashTable = ({ mode = "default" }) => {
   const [newCategoryNameAdd, setNewCategoryNameAdd] = useState("");
   const [isNewCategoryEdit, setIsNewCategoryEdit] = useState(false);
   const [newCategoryNameEdit, setNewCategoryNameEdit] = useState("");
+
+  const [isNewBankAccountAdd, setIsNewBankAccountAdd] = useState(false);
+  const [newBankNameAdd, setNewBankNameAdd] = useState("");
+  const [newAccountNumberAdd, setNewAccountNumberAdd] = useState("");
+  const [isNewBankAccountEdit, setIsNewBankAccountEdit] = useState(false);
+  const [newBankNameEdit, setNewBankNameEdit] = useState("");
+  const [newAccountNumberEdit, setNewAccountNumberEdit] = useState("");
 
   //Pagination calculation start
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -163,7 +174,7 @@ const PettyCashTable = ({ mode = "default" }) => {
         ? "Pending,Approved"
         : "Pending,Approved,Active",
       mode: isRequisitionMode ? "requisition" : undefined,
-      searchTerm: searchTerm || undefined, // ensure it's included in the query
+      searchTerm: debouncedSearchTerm || undefined, // ensure it's included in the query
     };
 
     Object.keys(args).forEach((k) => {
@@ -185,7 +196,6 @@ const PettyCashTable = ({ mode = "default" }) => {
     isRequisitionMode,
   ]);
 
-  console.log("queryArgs", queryArgs);
 
   const { data, isLoading, isError, error, refetch } =
     useGetAllPettyCashQuery(queryArgs);
@@ -197,6 +207,7 @@ const PettyCashTable = ({ mode = "default" }) => {
       setTotalPages(Math.ceil((data?.meta?.count || 0) / itemsPerPage) || 1);
     }
   }, [data, isLoading, isError, error, itemsPerPage]);
+
 
   // ✅ Category: fetch all
   const {
@@ -280,13 +291,25 @@ const PettyCashTable = ({ mode = "default" }) => {
     [],
   );
 
+  const { data: bankAccountRes } = useGetAllBankAccountWithoutQueryQuery();
+  const bankAccountsFromDB = bankAccountRes?.data || [];
+  const [insertBankAccount] = useInsertBankAccountMutation();
+
   const bankAccountOptions = useMemo(
     () =>
-      BANK_ACCOUNTS.map((account) => ({
-        value: account,
-        label: account,
+      bankAccountsFromDB.map((ba) => ({
+        value: ba.accountNumber,
+        label: `${ba.accountNumber} (${ba.bankName})`,
       })),
-    [],
+    [bankAccountsFromDB],
+  );
+
+  const bankAccountSelectOptions = useMemo(
+    () => [
+      ...bankAccountOptions,
+      { value: "__new_bank__", label: "+ New Bank Account" },
+    ],
+    [bankAccountOptions],
   );
 
   const categorySelectOptions = useMemo(
@@ -334,11 +357,41 @@ const PettyCashTable = ({ mode = "default" }) => {
     }
   };
 
+  const addBankAccount = async (bankName, accountNumber) => {
+    if (!bankName?.trim() || !accountNumber?.trim()) {
+      toast.error("Bank name and account number are required!");
+      return null;
+    }
+    try {
+      const res = await insertBankAccount({
+        bankName: bankName.trim(),
+        accountNumber: accountNumber.trim(),
+      }).unwrap();
+      if (res?.success) {
+        toast.success("Bank account added!");
+        return res?.data;
+      }
+      toast.error(res?.message || "Bank account add failed!");
+      return null;
+    } catch (err) {
+      toast.error(err?.data?.message || "Bank account add failed!");
+      return null;
+    }
+  };
+
   // modals
-  const handleAddCashIn = () => setIsModalOpen1(true);
+  const handleAddCashIn = () => {
+    setCashInFormMode("cashIn");
+    setIsModalOpen1(true);
+  };
+  const handleAddRequisition = () => {
+    setCashInFormMode("requisition");
+    setIsModalOpen1(true);
+  };
   const handleAddCashOut = () => setIsModalOpen3(true);
   const handleModalClose1 = () => {
     setIsModalOpen1(false);
+    setCashInFormMode(isRequisitionMode ? "requisition" : "cashIn");
     setIsNewCategoryAdd(false);
     setNewCategoryNameAdd("");
   };
@@ -510,9 +563,14 @@ const PettyCashTable = ({ mode = "default" }) => {
       formData.append("paymentMode", createProduct.paymentMode);
       formData.append("date", createProduct.date);
       formData.append("paymentStatus", "CashIn");
-      if (isRequisitionMode) {
+      const shouldCreateRequisition =
+        isRequisitionMode && cashInFormMode === "requisition";
+
+      if (shouldCreateRequisition) {
         formData.append("status", "Pending");
         formData.append("mode", "requisition");
+      } else {
+        formData.append("mode", "cashIn");
       }
       formData.append(
         "bankName",
@@ -761,7 +819,6 @@ const PettyCashTable = ({ mode = "default" }) => {
   } = useGetAllBookWithoutQueryQuery();
   const books = allBookRes?.data || [];
 
-  console.log("books", books);
 
   useEffect(() => {
     if (isErrorBook) console.error("Error fetching Books", errorBook);
@@ -776,7 +833,6 @@ const PettyCashTable = ({ mode = "default" }) => {
     [books],
   );
 
-  console.log("bookOptions", bookOptions);
 
   return (
     <motion.div
@@ -908,22 +964,26 @@ const PettyCashTable = ({ mode = "default" }) => {
         {/* Left: Actions */}
         <div className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-5">
           {/* Cash In (Primary) */}
-          <button
-            type="button"
-            onClick={handleAddCashIn}
-            className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 active:bg-indigo-800 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/30 sm:w-auto"
-          >
-            <Plus size={18} />
-            {isRequisitionMode ? "Petty Cash Requisition" : "Cash In"}
-          </button>
+
+          {isRequisitionMode && (
+            <button
+              type="button"
+              onClick={
+                isRequisitionMode ? handleAddRequisition : handleAddCashIn
+              }
+              className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 active:bg-indigo-800 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/30 sm:w-auto"
+            >
+              Petty Cash Requisition
+            </button>
+          )}
 
           {!isRequisitionMode && (
             <button
               type="button"
               onClick={handleAddCashOut}
-              className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-800 border border-slate-200 shadow-md hover:bg-slate-50 active:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/20 sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-indigo-600  px-5 py-3 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 active:bg-indigo-800 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/30 sm:w-auto"
             >
-              <Minus size={18} className="text-slate-700" />
+              <Minus size={18} className="text-white" />
               Cash Out
             </button>
           )}
@@ -1142,7 +1202,7 @@ const PettyCashTable = ({ mode = "default" }) => {
 
               const safePath = String(rp.file || "").replace(/\\/g, "/");
               const fileUrl = safePath
-                ? ` http://localhost:5000${safePath}`
+                ? `${import.meta.env.VITE_API_URL}${safePath}`
                 : "";
               const ext = safePath.split(".").pop()?.toLowerCase();
               const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
@@ -1463,7 +1523,7 @@ const PettyCashTable = ({ mode = "default" }) => {
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
             </div>
-            <div>
+            {/* <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.book || "Book"}
               </label>
@@ -1488,7 +1548,7 @@ const PettyCashTable = ({ mode = "default" }) => {
                 {...selectMenuProps}
                 className="text-black bg-white"
               />
-            </div>
+            </div> */}
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Payment Mode
@@ -1516,21 +1576,67 @@ const PettyCashTable = ({ mode = "default" }) => {
                   Bank Account
                 </label>
                 <Select
-                  options={bankAccountOptions}
+                  options={bankAccountSelectOptions}
                   value={
-                    bankAccountOptions.find(
-                      (option) => option.value === currentProduct?.bankName,
-                    ) || null
+                    isNewBankAccountEdit
+                      ? { value: "__new_bank__", label: "+ New Bank Account" }
+                      : bankAccountOptions.find(
+                          (option) => option.value === currentProduct?.bankName,
+                        ) || null
                   }
-                  onChange={(selected) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      bankName: selected?.value || "",
-                    })
-                  }
+                  onChange={(selected) => {
+                    if (selected?.value === "__new_bank__") {
+                      setIsNewBankAccountEdit(true);
+                    } else {
+                      setIsNewBankAccountEdit(false);
+                      setCurrentProduct({
+                        ...currentProduct,
+                        bankName: selected?.value || "",
+                      });
+                    }
+                  }}
                   styles={selectStyles}
                   className="text-black"
                 />
+                {isNewBankAccountEdit && (
+                  <div className="flex gap-2 mt-2 items-end">
+                    <input
+                      type="text"
+                      value={newBankNameEdit}
+                      onChange={(e) => setNewBankNameEdit(e.target.value)}
+                      placeholder="Bank Name"
+                      className="flex-1 h-11 border border-slate-200 rounded-2xl px-4 text-sm text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10"
+                    />
+                    <input
+                      type="text"
+                      value={newAccountNumberEdit}
+                      onChange={(e) => setNewAccountNumberEdit(e.target.value)}
+                      placeholder="Account Number"
+                      className="flex-1 h-11 border border-slate-200 rounded-2xl px-4 text-sm text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const created = await addBankAccount(
+                          newBankNameEdit,
+                          newAccountNumberEdit,
+                        );
+                        if (created) {
+                          setCurrentProduct({
+                            ...currentProduct,
+                            bankName: created.accountNumber,
+                          });
+                          setIsNewBankAccountEdit(false);
+                          setNewBankNameEdit("");
+                          setNewAccountNumberEdit("");
+                        }
+                      }}
+                      className="h-11 px-5 rounded-2xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1659,7 +1765,9 @@ const PettyCashTable = ({ mode = "default" }) => {
         isOpen={isModalOpen1}
         onClose={handleModalClose1}
         title={
-          isRequisitionMode ? "Add Petty Cash Requisition" : "Add Petty Cash In"
+          isRequisitionMode && cashInFormMode === "requisition"
+            ? "Add Petty Cash Requisition"
+            : "Add Petty Cash In"
         }
         maxWidth="max-w-2xl"
       >
@@ -1750,22 +1858,68 @@ const PettyCashTable = ({ mode = "default" }) => {
                   Bank Account
                 </label>
                 <Select
-                  options={bankAccountOptions}
+                  options={bankAccountSelectOptions}
                   value={
-                    bankAccountOptions.find(
-                      (option) => option.value === createProduct.bankName,
-                    ) || null
+                    isNewBankAccountAdd
+                      ? { value: "__new_bank__", label: "+ New Bank Account" }
+                      : bankAccountOptions.find(
+                          (option) => option.value === createProduct.bankName,
+                        ) || null
                   }
-                  onChange={(selected) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      bankName: selected?.value || "",
-                    })
-                  }
+                  onChange={(selected) => {
+                    if (selected?.value === "__new_bank__") {
+                      setIsNewBankAccountAdd(true);
+                    } else {
+                      setIsNewBankAccountAdd(false);
+                      setCreateProduct({
+                        ...createProduct,
+                        bankName: selected?.value || "",
+                      });
+                    }
+                  }}
                   placeholder="Select Bank Account"
                   styles={selectStyles}
                   className="text-black"
                 />
+                {isNewBankAccountAdd && (
+                  <div className="flex gap-2 mt-2 items-end">
+                    <input
+                      type="text"
+                      value={newBankNameAdd}
+                      onChange={(e) => setNewBankNameAdd(e.target.value)}
+                      placeholder="Bank Name"
+                      className="flex-1 h-11 border border-slate-200 rounded-2xl px-4 text-sm text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10"
+                    />
+                    <input
+                      type="text"
+                      value={newAccountNumberAdd}
+                      onChange={(e) => setNewAccountNumberAdd(e.target.value)}
+                      placeholder="Account Number"
+                      className="flex-1 h-11 border border-slate-200 rounded-2xl px-4 text-sm text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const created = await addBankAccount(
+                          newBankNameAdd,
+                          newAccountNumberAdd,
+                        );
+                        if (created) {
+                          setCreateProduct({
+                            ...createProduct,
+                            bankName: created.accountNumber,
+                          });
+                          setIsNewBankAccountAdd(false);
+                          setNewBankNameAdd("");
+                          setNewAccountNumberAdd("");
+                        }
+                      }}
+                      className="h-11 px-5 rounded-2xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1855,7 +2009,9 @@ const PettyCashTable = ({ mode = "default" }) => {
               type="submit"
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition shadow-xl shadow-indigo-100"
             >
-              {isRequisitionMode ? "Submit Requisition" : "Confirm Cash In"}
+              {isRequisitionMode && cashInFormMode === "requisition"
+                ? "Submit Requisition"
+                : "Confirm Cash In"}
             </button>
           </div>
         </form>
@@ -1953,22 +2109,68 @@ const PettyCashTable = ({ mode = "default" }) => {
                   Bank Account
                 </label>
                 <Select
-                  options={bankAccountOptions}
+                  options={bankAccountSelectOptions}
                   value={
-                    bankAccountOptions.find(
-                      (option) => option.value === createProduct.bankName,
-                    ) || null
+                    isNewBankAccountAdd
+                      ? { value: "__new_bank__", label: "+ New Bank Account" }
+                      : bankAccountOptions.find(
+                          (option) => option.value === createProduct.bankName,
+                        ) || null
                   }
-                  onChange={(selected) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      bankName: selected?.value || "",
-                    })
-                  }
+                  onChange={(selected) => {
+                    if (selected?.value === "__new_bank__") {
+                      setIsNewBankAccountAdd(true);
+                    } else {
+                      setIsNewBankAccountAdd(false);
+                      setCreateProduct({
+                        ...createProduct,
+                        bankName: selected?.value || "",
+                      });
+                    }
+                  }}
                   placeholder="Select Bank Account"
                   styles={selectStyles}
                   className="text-black"
                 />
+                {isNewBankAccountAdd && (
+                  <div className="flex gap-2 mt-2 items-end">
+                    <input
+                      type="text"
+                      value={newBankNameAdd}
+                      onChange={(e) => setNewBankNameAdd(e.target.value)}
+                      placeholder="Bank Name"
+                      className="flex-1 h-11 border border-slate-200 rounded-2xl px-4 text-sm text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10"
+                    />
+                    <input
+                      type="text"
+                      value={newAccountNumberAdd}
+                      onChange={(e) => setNewAccountNumberAdd(e.target.value)}
+                      placeholder="Account Number"
+                      className="flex-1 h-11 border border-slate-200 rounded-2xl px-4 text-sm text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const created = await addBankAccount(
+                          newBankNameAdd,
+                          newAccountNumberAdd,
+                        );
+                        if (created) {
+                          setCreateProduct({
+                            ...createProduct,
+                            bankName: created.accountNumber,
+                          });
+                          setIsNewBankAccountAdd(false);
+                          setNewBankNameAdd("");
+                          setNewAccountNumberAdd("");
+                        }
+                      }}
+                      className="h-11 px-5 rounded-2xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

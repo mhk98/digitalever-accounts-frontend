@@ -19,6 +19,8 @@ import {
   useUpdateEmployeeWorkReportMutation,
 } from "../../features/employeeWorkReport/employeeWorkReport";
 import { useGetAllEmployeeListWithoutQueryQuery } from "../../features/employeeList/employeeList";
+import useDebounce from "../../hooks/useDebounce";
+
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -30,8 +32,8 @@ const REPORT_FIELDS = [
   { key: "pendingReturnReceived", label: "Pending Return থেকে আসছে" },
   { key: "canceledReceived", label: "Canceled থেকে আসছে" },
   { key: "holdReceived", label: "Hold থেকে আসছে" },
-  { key: "ideskGiven", label: "Idesk দেওয়া হয়েছে" },
-  { key: "ideskReceived", label: "Idesk থেকে আসছে" },
+  { key: "ideskGiven", label: "Inbox দেওয়া হয়েছে" },
+  { key: "ideskReceived", label: "Inbox থেকে আসছে" },
   { key: "callDone", label: "Call করা হয়েছে" },
   { key: "callReceived", label: "Call থেকে আসছে" },
   { key: "whatsappDone", label: "WhatsApp করা হয়েছে" },
@@ -55,6 +57,7 @@ const EmployeeWorkReportManager = () => {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
@@ -69,7 +72,7 @@ const EmployeeWorkReportManager = () => {
     () => ({
       page: currentPage,
       limit: pageSize,
-      searchTerm: searchTerm || undefined,
+      searchTerm: debouncedSearchTerm || undefined,
       employeeId: selectedEmployee?.value || undefined,
       startDate: fromDate || undefined,
       endDate: toDate || undefined,

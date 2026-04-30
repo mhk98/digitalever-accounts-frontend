@@ -1246,7 +1246,11 @@ const ReturnProductTable = () => {
                             e.target.value,
                           )
                         }
-                        className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                        disabled={
+                          !currentItem?.receivedId ||
+                          editSizeOptions.length === 0
+                        }
+                        className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                         placeholder="0"
                       />
                     </div>
@@ -1603,7 +1607,11 @@ const ReturnProductTable = () => {
                           e.target.value,
                         )
                       }
-                      className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                      disabled={
+                        !createForm?.receivedId ||
+                        createSizeOptions.length === 0
+                      }
+                      className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                       placeholder="0"
                     />
                   </div>

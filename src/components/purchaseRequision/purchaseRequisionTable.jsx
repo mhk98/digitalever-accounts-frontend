@@ -31,6 +31,8 @@ import {
 import { useSingleUserQuery } from "../../features/auth/auth";
 import { useGetAllBookWithoutQueryQuery } from "../../features/book/book";
 import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
+import { translations } from "../../utils/translations";
+import { useLayout } from "../../context/LayoutContext";
 
 const parseVariationValue = (value) => {
   if (Array.isArray(value)) {
@@ -197,10 +199,13 @@ const purchaseRequisitionStatuses = [
   "Active",
   "Pending",
   "Approved",
+  "Pay For Purchase",
   "Completed",
 ];
 
 const PurchaseRequisionTable = () => {
+  const { language } = useLayout();
+  const t = translations[language] || translations.EN;
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
   const [user, setUser] = useState(null);
@@ -601,24 +606,27 @@ const PurchaseRequisionTable = () => {
         return toast.error("Duplicate size and color combination found");
       }
 
-      const updatedProduct = {
-        productId: Number(currentProduct.productId),
-        bookId: Number(currentProduct.bookId) || undefined,
-        quantity: Number(currentProduct.quantity),
-        amount: Number(currentProduct.amount) || 0,
-        variants: variantsPayload,
-        supplierId: Number(currentProduct.supplierId),
-        warehouseId: Number(currentProduct.warehouseId),
-        note: currentProduct.note,
-        status: currentProduct.status,
-        date: currentProduct.date,
-        userId: userId,
-        actorRole: role,
-      };
+      const formData = new FormData();
+      formData.append("productId", Number(currentProduct.productId));
+      if (Number(currentProduct.bookId))
+        formData.append("bookId", Number(currentProduct.bookId));
+      formData.append("quantity", Number(currentProduct.quantity));
+      formData.append("amount", Number(currentProduct.amount) || 0);
+      formData.append("variants", JSON.stringify(variantsPayload));
+      if (Number(currentProduct.supplierId))
+        formData.append("supplierId", Number(currentProduct.supplierId));
+      if (Number(currentProduct.warehouseId))
+        formData.append("warehouseId", Number(currentProduct.warehouseId));
+      formData.append("note", currentProduct.note || "");
+      formData.append("status", currentProduct.status || "");
+      formData.append("date", currentProduct.date || "");
+      formData.append("userId", userId);
+      formData.append("actorRole", role);
+      if (currentProduct.file) formData.append("file", currentProduct.file);
 
       const res = await updatePurchaseRequisition({
         id: currentProduct.Id,
-        data: updatedProduct,
+        data: formData,
       }).unwrap();
 
       if (res?.success) {
@@ -644,21 +652,22 @@ const PurchaseRequisionTable = () => {
         return toast.error("Duplicate size and color combination found");
       }
 
-      const payload = {
-        productId: Number(currentProduct.productId),
-        bookId: Number(currentProduct.bookId) || undefined,
-        quantity: Number(currentProduct.quantity),
-        amount: Number(currentProduct.amount) || 0,
-        variants: variantsPayload,
-        status: currentProduct.status,
-        note: currentProduct.note,
-        userId: userId,
-        actorRole: role,
-      };
+      const formData = new FormData();
+      formData.append("productId", Number(currentProduct.productId));
+      if (Number(currentProduct.bookId))
+        formData.append("bookId", Number(currentProduct.bookId));
+      formData.append("quantity", Number(currentProduct.quantity));
+      formData.append("amount", Number(currentProduct.amount) || 0);
+      formData.append("variants", JSON.stringify(variantsPayload));
+      formData.append("status", currentProduct.status || "");
+      formData.append("note", currentProduct.note || "");
+      formData.append("userId", userId);
+      formData.append("actorRole", role);
+      if (currentProduct.file) formData.append("file", currentProduct.file);
 
       const res = await updatePurchaseRequisition({
         id: currentProduct.Id,
-        data: payload,
+        data: formData,
       }).unwrap();
 
       if (res?.success) {
@@ -689,21 +698,27 @@ const PurchaseRequisionTable = () => {
         return toast.error("Duplicate size and color combination found");
       }
 
-      const payload = {
-        productId: Number(createProduct.productId),
-        procurement: `${user.FirstName} ${user.LastName}` || "N/A",
-        bookId: Number(createProduct.bookId) || undefined,
-        quantity: Number(createProduct.quantity),
-        amount: Number(createProduct.amount) || 0,
-        variants: variantsPayload,
-        supplierId: Number(createProduct.supplierId),
-        warehouseId: Number(createProduct.warehouseId),
-        note: createProduct.note,
-        date: createProduct.date,
-        userId: userId,
-      };
+      const formData = new FormData();
+      formData.append("productId", Number(createProduct.productId));
+      formData.append(
+        "procurement",
+        `${user.FirstName} ${user.LastName}` || "N/A",
+      );
+      if (Number(createProduct.bookId))
+        formData.append("bookId", Number(createProduct.bookId));
+      formData.append("quantity", Number(createProduct.quantity));
+      formData.append("amount", Number(createProduct.amount) || 0);
+      formData.append("variants", JSON.stringify(variantsPayload));
+      if (Number(createProduct.supplierId))
+        formData.append("supplierId", Number(createProduct.supplierId));
+      if (Number(createProduct.warehouseId))
+        formData.append("warehouseId", Number(createProduct.warehouseId));
+      formData.append("note", createProduct.note || "");
+      formData.append("date", createProduct.date);
+      formData.append("userId", userId);
+      if (createProduct.file) formData.append("file", createProduct.file);
 
-      const res = await insertPurchaseRequisition(payload).unwrap();
+      const res = await insertPurchaseRequisition(formData).unwrap();
       if (res?.success) {
         toast.success("Successfully created received product");
         setIsModalOpen1(false);
@@ -777,8 +792,6 @@ const PurchaseRequisionTable = () => {
   const selectPortalTarget =
     typeof document !== "undefined" ? document.body : null;
 
-  console.log("productsData", productsData);
-  console.log("firstRow", rows?.[0]);
 
   // ✅ suppliers
   const {
@@ -957,7 +970,7 @@ const PurchaseRequisionTable = () => {
 
   return (
     <motion.div
-      className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
+      className="bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -1106,10 +1119,16 @@ const PurchaseRequisionTable = () => {
                 Warehouse
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Book
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Product
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Quantity
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Amount
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Variants
@@ -1147,11 +1166,17 @@ const PurchaseRequisionTable = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp?.warehouse?.name || "-"}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {rp?.book?.name || "-"}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                     {rp.name || resolveProductName(rp)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {Number(rp.quantity || 0)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {Number(rp.amount || 0).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 min-w-[240px]">
                     {variantDisplayRows.length > 0 ? (
@@ -1470,7 +1495,11 @@ const PurchaseRequisionTable = () => {
                               e.target.value,
                             )
                           }
-                          className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                          disabled={
+                            !currentProduct?.productId ||
+                            editSizeOptions.length === 0
+                          }
+                          className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                           placeholder="0"
                         />
                       </div>
@@ -1663,6 +1692,35 @@ const PurchaseRequisionTable = () => {
             </div>
           )}
 
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              {t.document || "Document"}
+            </label>
+            <div className="relative group/file">
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf"
+                onChange={(e) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    file: e.target.files?.[0] || null,
+                  })
+                }
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+              <div className="w-full h-12 border-2 border-dashed border-slate-200 rounded-xl flex items-center px-4 gap-3 bg-slate-50 group-hover/file:border-indigo-400 group-hover/file:bg-indigo-50 transition">
+                <div className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover/file:text-indigo-600 transition">
+                  <Plus size={16} />
+                </div>
+                <span className="text-sm font-medium text-slate-500 group-hover/file:text-indigo-600">
+                  {currentProduct?.file
+                    ? currentProduct?.file.name
+                    : t.select_drop_file || "Select or drop file..."}
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
             <button
               onClick={handleModalClose}
@@ -1825,7 +1883,11 @@ const PurchaseRequisionTable = () => {
                               e.target.value,
                             )
                           }
-                          className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                          disabled={
+                            !createProduct?.productId ||
+                            createSizeOptions.length === 0
+                          }
+                          className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                           placeholder="0"
                         />
                       </div>
@@ -1985,6 +2047,35 @@ const PurchaseRequisionTable = () => {
               className="w-full border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               rows={3}
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              {t.document || "Document"}
+            </label>
+            <div className="relative group/file">
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf"
+                onChange={(e) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    file: e.target.files?.[0] || null,
+                  })
+                }
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+              <div className="w-full h-12 border-2 border-dashed border-slate-200 rounded-xl flex items-center px-4 gap-3 bg-slate-50 group-hover/file:border-indigo-400 group-hover/file:bg-indigo-50 transition">
+                <div className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover/file:text-indigo-600 transition">
+                  <Plus size={16} />
+                </div>
+                <span className="text-sm font-medium text-slate-500 group-hover/file:text-indigo-600">
+                  {createProduct.file
+                    ? createProduct.file.name
+                    : t.select_drop_file || "Select or drop file..."}
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">

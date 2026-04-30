@@ -27,7 +27,6 @@ const Login = () => {
     e.preventDefault();
     try {
       const res = await userLogin(formData).unwrap(); // Unwrap response to handle success or error
-      console.log(res);
       persistAuthSession(res.data);
       saveRolePermissionsForRole(
         res.data.user.role,

@@ -23,8 +23,10 @@ import {
 } from "../../features/auth/auth";
 import { saveRolePermissionsForRole } from "../../utils/navigationPermissions";
 import Modal from "../common/Modal";
+import useDebounce from "../../hooks/useDebounce";
 
-const API_BASE = "http://localhost:5000";
+
+const API_BASE = import.meta.env.VITE_API_URL;
 const DOCUMENT_LABELS = {
   image: "Profile Photo",
   idCard: "ID Card",
@@ -45,6 +47,7 @@ const UserManagementTable = () => {
 
   // Search
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,7 +90,7 @@ const UserManagementTable = () => {
   const { data, isLoading, isError, error, refetch } = useGetAllUserQuery({
     page: currentPage,
     limit: itemsPerPage,
-    searchTerm: searchTerm || undefined,
+    searchTerm: debouncedSearchTerm || undefined,
   });
 
   const users = useMemo(() => data?.data ?? [], [data]);

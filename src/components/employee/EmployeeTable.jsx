@@ -353,8 +353,6 @@
 //     { skip: !currentEmployeeInternalId },
 //   );
 
-//   console.log("createLedgerHistoryData", createLedgerHistoryData);
-//   console.log("currentLedgerHistoryData", currentLedgerHistoryData);
 
 //   const createNetBalance = toNumber(
 //     getAdvanceBalanceValue(createLedgerHistoryData),
@@ -3243,8 +3241,6 @@ const EmployeeTable = () => {
     { skip: !currentEmployeeInternalId },
   );
 
-  console.log("createLedgerHistoryData", createLedgerHistoryData);
-  console.log("currentLedgerHistoryData", currentLedgerHistoryData);
 
   const createNetBalance = toNumber(
     getAdvanceBalanceValue(createLedgerHistoryData),

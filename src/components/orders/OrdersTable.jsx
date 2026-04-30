@@ -89,7 +89,7 @@ const OrdersTable = () => {
 								<td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100'>
 									${order.total.toFixed(2)}
 								</td>
-								<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>
+								<td className='px-6 py-4 whitespace-nowrap text-sm text-slate-600'>
 									<span
 										className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
 											order.status === "Delivered"
@@ -104,8 +104,8 @@ const OrdersTable = () => {
 										{order.status}
 									</span>
 								</td>
-								<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>{order.date}</td>
-								<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>
+								<td className='px-6 py-4 whitespace-nowrap text-sm text-slate-600'>{order.date}</td>
+								<td className='px-6 py-4 whitespace-nowrap text-sm text-slate-600'>
 									<button className='text-indigo-400 hover:text-indigo-300 mr-2'>
 										<Eye size={18} />
 									</button>

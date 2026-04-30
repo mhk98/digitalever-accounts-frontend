@@ -5,7 +5,7 @@ const getAuthToken = () => localStorage.getItem("token");
 export const employeeWorkReportApi = createApi({
   reducerPath: "employeeWorkReportApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1",
+    baseUrl: `${import.meta.env.VITE_API_URL}/api/v1/`,
     prepareHeaders: (headers) => {
       const token = getAuthToken();
       if (token) {

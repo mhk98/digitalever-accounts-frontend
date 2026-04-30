@@ -1170,20 +1170,10 @@ const PurchaseReturnProductTable = () => {
       </div>
 
       {/* Edit Modal */}
-      {isEditOpen && currentItem && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 p-4 backdrop-blur-sm">
-          <div className="flex min-h-full items-start justify-center py-6 sm:items-center">
-            <motion.div
-              className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-4xl border border-slate-200 max-h-[90vh] overflow-y-auto"
-              initial={{ opacity: 0, y: -16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <h2 className="text-lg font-semibold text-slate-900">
-                Edit Product
-              </h2>
-
-              {/* <div className="mt-4">
+      <Modal isOpen={isEditOpen && !!currentItem} onClose={closeEdit} title="Edit Product" maxWidth="max-w-4xl">
+        {currentItem && (
+          <>
+            {/* <div className="mt-4">
               <label className="block text-sm text-slate-700">Product</label>
               <Select
                 options={receivedDropdownOptions}
@@ -1206,330 +1196,288 @@ const PurchaseReturnProductTable = () => {
               />
             </div> */}
 
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                {t.select_product || "Select Product"}
+              </label>
+              <Select
+                options={receivedDropdownOptions}
+                value={
+                  receivedDropdownOptions.find(
+                    (o) => o.value === String(currentItem?.receivedId),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCurrentItem({
+                    ...currentItem,
+                    productId: selected?.value || "",
+                    receivedId: selected?.value || "",
+                    variantRows: [createEmptyVariantRow()],
+                    quantity: "",
+                  })
+                }
+                placeholder={t.search_product || "Search product..."}
+                isClearable
+                styles={selectStyles}
+                className="text-sm font-medium"
+                isDisabled={receivedLoading}
+              />
+            </div>
+
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                  {t.select_product || "Select Product"}
-                </label>
-                <Select
-                  options={receivedDropdownOptions}
-                  value={
-                    receivedDropdownOptions.find(
-                      (o) => o.value === String(currentItem?.receivedId),
-                    ) || null
-                  }
-                  onChange={(selected) =>
-                    setCurrentItem({
-                      ...currentItem,
-                      productId: selected?.value || "",
-                      receivedId: selected?.value || "",
-                      variantRows: [createEmptyVariantRow()],
-                      quantity: "",
-                    })
-                  }
-                  placeholder={t.search_product || "Search product..."}
-                  isClearable
-                  styles={selectStyles}
-                  className="text-sm font-medium"
-                  isDisabled={receivedLoading}
-                />
-              </div>
-
-              <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
                 <div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Product Variants
-                    </p>
-                    <p className="text-[11px] text-slate-400">
-                      Add size, color and quantity combinations
-                    </p>
-                  </div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Product Variants
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    Add size, color and quantity combinations
+                  </p>
                 </div>
-                <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
-                  <button
-                    type="button"
-                    onClick={() => addVariantRow("edit")}
-                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                    disabled={!currentItem?.receivedId}
-                  >
-                    <Plus size={14} />
-                    Add Variant
-                  </button>
-                </div>
+              </div>
+              <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
+                <button
+                  type="button"
+                  onClick={() => addVariantRow("edit")}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  disabled={!currentItem?.receivedId}
+                >
+                  <Plus size={14} />
+                  Add Variant
+                </button>
+              </div>
 
-                {normalizeVariantRows(currentItem?.variantRows).map(
-                  (row, index) => {
-                    const colorOptions = row.size
-                      ? getVariationColorsForSize(
-                          selectedEditProductData,
-                          row.size,
-                        )
-                      : editColorOptions;
+              {normalizeVariantRows(currentItem?.variantRows).map(
+                (row, index) => {
+                  const colorOptions = row.size
+                    ? getVariationColorsForSize(
+                        selectedEditProductData,
+                        row.size,
+                      )
+                    : editColorOptions;
 
-                    return (
-                      <div
-                        key={`edit-variant-${index}`}
-                        className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
-                      >
-                        <div>
-                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                            Size / Code
-                          </label>
-                          <Select
-                            options={editSizeOptions}
-                            value={
-                              editSizeOptions.find(
-                                (option) => option.value === row.size,
-                              ) || null
-                            }
-                            onChange={(selected) =>
-                              updateVariantRow(
-                                "edit",
-                                index,
-                                "size",
-                                selected?.value || "",
-                              )
-                            }
-                            placeholder="Select size..."
-                            isClearable
-                            styles={selectStyles}
-                            className="text-sm font-medium"
-                            isDisabled={
-                              !currentItem?.receivedId ||
-                              editSizeOptions.length === 0
-                            }
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                            Color
-                          </label>
-                          <Select
-                            options={colorOptions}
-                            value={
-                              colorOptions.find(
-                                (option) => option.value === row.color,
-                              ) || null
-                            }
-                            onChange={(selected) =>
-                              updateVariantRow(
-                                "edit",
-                                index,
-                                "color",
-                                selected?.value || "",
-                              )
-                            }
-                            placeholder="Select color..."
-                            isClearable
-                            styles={selectStyles}
-                            className="text-sm font-medium"
-                            isDisabled={!row.size || colorOptions.length === 0}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                            Quantity
-                          </label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={row.quantity}
-                            onChange={(e) =>
-                              updateVariantRow(
-                                "edit",
-                                index,
-                                "quantity",
-                                e.target.value,
-                              )
-                            }
-                            className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                            placeholder="0"
-                          />
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => removeVariantRow("edit", index)}
-                          className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
-                          disabled={
-                            normalizeVariantRows(currentItem?.variantRows)
-                              .length === 1
+                  return (
+                    <div
+                      key={`edit-variant-${index}`}
+                      className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
+                    >
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Size / Code
+                        </label>
+                        <Select
+                          options={editSizeOptions}
+                          value={
+                            editSizeOptions.find(
+                              (option) => option.value === row.size,
+                            ) || null
                           }
-                        >
-                          <X size={16} className="mx-auto" />
-                        </button>
+                          onChange={(selected) =>
+                            updateVariantRow(
+                              "edit",
+                              index,
+                              "size",
+                              selected?.value || "",
+                            )
+                          }
+                          placeholder="Select size..."
+                          isClearable
+                          styles={selectStyles}
+                          className="text-sm font-medium"
+                          isDisabled={
+                            !currentItem?.receivedId ||
+                            editSizeOptions.length === 0
+                          }
+                        />
                       </div>
-                    );
-                  },
-                )}
-              </div>
 
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Date</label>
-                <input
-                  type="date"
-                  value={currentItem?.date || ""}
-                  onChange={(e) =>
-                    setCurrentItem((p) => ({ ...p, date: e.target.value }))
-                  }
-                  className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
-                           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">
-                  Warehouse
-                </label>
-                <Select
-                  options={warehouseOptions}
-                  value={
-                    warehouseOptions.find(
-                      (option) =>
-                        String(option.value) ===
-                        String(currentItem?.warehouseId || ""),
-                    ) || null
-                  }
-                  onChange={(selected) =>
-                    setCurrentItem({
-                      ...currentItem,
-                      warehouseId: selected?.value || "",
-                    })
-                  }
-                  placeholder={
-                    isLoadingWarehouse ? "Loading..." : "Select Warehouse"
-                  }
-                  isClearable
-                  styles={selectStyles}
-                  className="text-black mt-1"
-                  isDisabled={isLoadingWarehouse}
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Supplier</label>
-                <Select
-                  options={supplierOptions}
-                  value={
-                    supplierOptions.find(
-                      (option) =>
-                        String(option.value) ===
-                        String(currentItem?.supplierId || ""),
-                    ) || null
-                  }
-                  onChange={(selected) =>
-                    setCurrentItem({
-                      ...currentItem,
-                      supplierId: selected?.value || "",
-                    })
-                  }
-                  placeholder={
-                    isLoadingSupplier ? "Loading..." : "Select Supplier"
-                  }
-                  isClearable
-                  styles={selectStyles}
-                  className="text-black mt-1"
-                  isDisabled={isLoadingSupplier}
-                />
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-slate-700">Quantity</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={currentItem.quantity ?? ""}
-                  onChange={(e) =>
-                    setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
-                  }
-                  readOnly={hasConfiguredVariants(currentItem?.variantRows)}
-                  className={`h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none ${
-                    hasConfiguredVariants(currentItem?.variantRows)
-                      ? "bg-slate-50"
-                      : "bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  }`}
-                />
-              </div>
-
-              {role === "superAdmin" || role === "admin" ? (
-                <div className="mt-4">
-                  <label className="block text-sm text-slate-700">Status</label>
-                  <Select
-                    options={["Active", "Approved", "Pending"].map(
-                      (status) => ({
-                        value: status,
-                        label: status,
-                      }),
-                    )}
-                    value={
-                      currentItem?.status
-                        ? {
-                            value: currentItem.status,
-                            label: currentItem.status,
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Color
+                        </label>
+                        <Select
+                          options={colorOptions}
+                          value={
+                            colorOptions.find(
+                              (option) => option.value === row.color,
+                            ) || null
                           }
-                        : null
-                    }
-                    onChange={(selected) =>
-                      setCurrentItem((p) => ({
-                        ...p,
-                        status: selected?.value || "",
-                      }))
-                    }
-                    placeholder="Select Status"
-                    styles={selectStyles}
-                    className="text-black mt-1"
-                  />
-                </div>
-              ) : (
-                <div className="mt-4">
-                  <label className="block text-sm text-slate-700">Note</label>
-                  <textarea
-                    value={currentItem?.note || ""}
-                    onChange={(e) =>
-                      setCurrentItem((p) => ({ ...p, note: e.target.value }))
-                    }
-                    className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  />
-                </div>
+                          onChange={(selected) =>
+                            updateVariantRow(
+                              "edit",
+                              index,
+                              "color",
+                              selected?.value || "",
+                            )
+                          }
+                          placeholder="Select color..."
+                          isClearable
+                          styles={selectStyles}
+                          className="text-sm font-medium"
+                          isDisabled={!row.size || colorOptions.length === 0}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Quantity
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={row.quantity}
+                          onChange={(e) =>
+                            updateVariantRow(
+                              "edit",
+                              index,
+                              "quantity",
+                              e.target.value,
+                            )
+                          }
+                          disabled={
+                            !currentItem?.receivedId ||
+                            editSizeOptions.length === 0
+                          }
+                          className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeVariantRow("edit", index)}
+                        className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
+                        disabled={
+                          normalizeVariantRows(currentItem?.variantRows)
+                            .length === 1
+                        }
+                      >
+                        <X size={16} className="mx-auto" />
+                      </button>
+                    </div>
+                  );
+                },
               )}
+            </div>
 
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
-                  onClick={handleUpdate}
-                  type="button"
-                >
-                  Save
-                </button>
-                <button
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                  onClick={closeEdit}
-                  type="button"
-                >
-                  Cancel
-                </button>
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Date</label>
+              <input
+                type="date"
+                value={currentItem?.date || ""}
+                onChange={(e) =>
+                  setCurrentItem((p) => ({ ...p, date: e.target.value }))
+                }
+                className="border bg-white border-slate-200 rounded-xl p-2 w-full mt-1 text-slate-900 outline-none
+                         focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">
+                Warehouse
+              </label>
+              <Select
+                options={warehouseOptions}
+                value={
+                  warehouseOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(currentItem?.warehouseId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCurrentItem({
+                    ...currentItem,
+                    warehouseId: selected?.value || "",
+                  })
+                }
+                placeholder={
+                  isLoadingWarehouse ? "Loading..." : "Select Warehouse"
+                }
+                isClearable
+                styles={selectStyles}
+                className="text-black mt-1"
+                isDisabled={isLoadingWarehouse}
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Supplier</label>
+              <Select
+                options={supplierOptions}
+                value={
+                  supplierOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(currentItem?.supplierId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCurrentItem({
+                    ...currentItem,
+                    supplierId: selected?.value || "",
+                  })
+                }
+                placeholder={
+                  isLoadingSupplier ? "Loading..." : "Select Supplier"
+                }
+                isClearable
+                styles={selectStyles}
+                className="text-black mt-1"
+                isDisabled={isLoadingSupplier}
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Quantity</label>
+              <input
+                type="number"
+                step="0.01"
+                value={currentItem.quantity ?? ""}
+                onChange={(e) =>
+                  setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
+                }
+                readOnly={hasConfiguredVariants(currentItem?.variantRows)}
+                className={`h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none ${
+                  hasConfiguredVariants(currentItem?.variantRows)
+                    ? "bg-slate-50"
+                    : "bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                }`}
+              />
+            </div>
+
+            {role === "superAdmin" || role === "admin" ? (
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Status</label>
+                <Select
+                  options={["Active", "Approved", "Pending"].map(
+                    (status) => ({
+                      value: status,
+                      label: status,
+                    }),
+                  )}
+                  value={
+                    currentItem?.status
+                      ? {
+                          value: currentItem.status,
+                          label: currentItem.status,
+                        }
+                      : null
+                  }
+                  onChange={(selected) =>
+                    setCurrentItem((p) => ({
+                      ...p,
+                      status: selected?.value || "",
+                    }))
+                  }
+                  placeholder="Select Status"
+                  styles={selectStyles}
+                  className="text-black mt-1"
+                />
               </div>
-            </motion.div>
-          </div>
-        </div>
-      )}
-
-      {/* Note / Delete Request Modal */}
-      {isEditOpen1 && currentItem && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 p-4 backdrop-blur-sm">
-          <div className="flex min-h-full items-start justify-center py-6 sm:items-center">
-            <motion.div
-              className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg border border-slate-200 max-h-[90vh] overflow-y-auto"
-              initial={{ opacity: 0, y: -16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <h2 className="text-lg font-semibold text-slate-900">Note</h2>
-
+            ) : (
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">Note</label>
                 <textarea
@@ -1537,31 +1485,67 @@ const PurchaseReturnProductTable = () => {
                   onChange={(e) =>
                     setCurrentItem((p) => ({ ...p, note: e.target.value }))
                   }
-                  className="min-h-[110px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
+                  className="min-h-[90px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
                            focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
                 />
               </div>
+            )}
 
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
-                  onClick={handleUpdate1}
-                  type="button"
-                >
-                  Save
-                </button>
-                <button
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                  onClick={closeEdit1}
-                  type="button"
-                >
-                  Cancel
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      )}
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
+                onClick={handleUpdate}
+                type="button"
+              >
+                Save
+              </button>
+              <button
+                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
+                onClick={closeEdit}
+                type="button"
+              >
+                Cancel
+              </button>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      {/* Note / Delete Request Modal */}
+      <Modal isOpen={isEditOpen1 && !!currentItem} onClose={closeEdit1} title="Note" maxWidth="max-w-lg">
+        {currentItem && (
+          <>
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">Note</label>
+              <textarea
+                value={currentItem?.note || ""}
+                onChange={(e) =>
+                  setCurrentItem((p) => ({ ...p, note: e.target.value }))
+                }
+                className="min-h-[110px] border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none
+                         focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl"
+                onClick={handleUpdate1}
+                type="button"
+              >
+                Save
+              </button>
+              <button
+                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
+                onClick={closeEdit1}
+                type="button"
+              >
+                Cancel
+              </button>
+            </div>
+          </>
+        )}
+      </Modal>
 
       <Modal
         isOpen={isAddOpen}
@@ -1708,7 +1692,11 @@ const PurchaseReturnProductTable = () => {
                           e.target.value,
                         )
                       }
-                      className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                      disabled={
+                        !createForm?.receivedId ||
+                        createSizeOptions.length === 0
+                      }
+                      className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                       placeholder="0"
                     />
                   </div>

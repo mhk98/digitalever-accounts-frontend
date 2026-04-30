@@ -12,6 +12,8 @@ import {
 import toast from "react-hot-toast";
 import Modal from "../common/Modal";
 import HrmWorkspace from "./HrmWorkspace";
+import useDebounce from "../../hooks/useDebounce";
+
 
 const DEFAULT_STAT_ICON_BG = "#EEF2FF";
 const DEFAULT_STAT_ICON_COLOR = "#4338CA";
@@ -66,13 +68,14 @@ const HrmCrudManager = ({
   const [currentItem, setCurrentItem] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const [deleteRequestNote, setDeleteRequestNote] = useState("");
 
   const queryArgs = useMemo(
     () => ({
       page: 1,
       limit: 200,
-      searchTerm: searchTerm || undefined,
+      searchTerm: debouncedSearchTerm || undefined,
     }),
     [searchTerm],
   );

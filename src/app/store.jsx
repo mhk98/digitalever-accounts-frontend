@@ -116,6 +116,7 @@ import { assetsSaleApi } from "../features/assetsSale/assetsSale";
 import { assetsDamageApi } from "../features/assetsDamage/assetsDamage";
 import { supplierApi } from "../features/supplier/supplier";
 import { categoryApi } from "../features/category/category";
+import { bankAccountApi } from "../features/bankAccount/bankAccount";
 import { damageProductApi } from "../features/damageProduct/damageProduct";
 import { productApi } from "../features/product/product";
 import { employeeApi } from "../features/employee/employee";
@@ -198,6 +199,7 @@ const apis = [
   wirehouseApi,
   warrantyroductApi,
   categoryApi,
+  bankAccountApi,
   receiveableApi,
   payableApi,
   overviewApi,

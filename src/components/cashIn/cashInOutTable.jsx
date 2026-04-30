@@ -27,35 +27,12 @@ import { translations } from "../../utils/translations";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllSupplierHistoryQuery } from "../../features/supplierHistory/supplierHistory";
 import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
+import useDebounce from "../../hooks/useDebounce";
 
-const BANKS = [
-  "AB Bank",
-  "Al Arafah",
-  "BRAC Bank",
-  "Bank Asia",
-  "City Bank",
-  "Dutch-Bangla Bank",
-  "Dhaka Bank",
-  "Eastern Bank",
-  "Islami Bank",
-  "Janata Bank",
-  "Mutual Trust Bank",
-  "One Bank",
-  "Prime Bank",
-  "Pubali Bank",
-  "Premier Bank",
-  "United Commercial Bank",
-  "Sonali Bank",
-  "Standard Chartered",
-  "Trust Bank",
-];
-
-const BANK_ACCOUNTS = [
-  "1291070003250",
-  "1291070001898",
-  "15044412870001",
-  "1291070002677",
-];
+import {
+  useGetAllBankAccountWithoutQueryQuery,
+  useInsertBankAccountMutation,
+} from "../../features/bankAccount/bankAccount";
 
 const STATIC_CATEGORIES = [
   "Office Expense",
@@ -66,7 +43,7 @@ const STATIC_CATEGORIES = [
   "Other",
 ];
 
-const FILE_SERVER_BASE_URL = "http://localhost:5000";
+const FILE_SERVER_BASE_URL = import.meta.env.VITE_API_URL;
 
 const buildFileUrl = (filePath) => {
   const normalizedPath = String(filePath || "")
@@ -118,8 +95,8 @@ const CashInOutTable = () => {
     date: new Date().toISOString().slice(0, 10),
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
-  console.log("searchTerm", searchTerm);
   const [products, setProducts] = useState([]);
 
   // filters
@@ -137,7 +114,13 @@ const CashInOutTable = () => {
   const [newCategoryNameEdit, setNewCategoryNameEdit] = useState("");
   const [supplier, setSupplier] = useState("");
 
-  console.log("supplier", supplier);
+  const [isNewBankAccountAdd, setIsNewBankAccountAdd] = useState(false);
+  const [newBankNameAdd, setNewBankNameAdd] = useState("");
+  const [newAccountNumberAdd, setNewAccountNumberAdd] = useState("");
+  const [isNewBankAccountEdit, setIsNewBankAccountEdit] = useState(false);
+  const [newBankNameEdit, setNewBankNameEdit] = useState("");
+  const [newAccountNumberEdit, setNewAccountNumberEdit] = useState("");
+
 
   //Pagination calculation start
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -244,7 +227,7 @@ const CashInOutTable = () => {
   //     paymentMode: filterPaymentMode || undefined,
   //     paymentStatus: filterPaymentStatus || undefined,
   //     category: filterCategory || undefined,
-  //     searchTerm: searchTerm || undefined, // ensure it's included in the query
+  //     searchTerm: debouncedSearchTerm || undefined, // ensure it's included in the query
   //   };
 
   //   Object.keys(args).forEach((k) => {
@@ -278,7 +261,7 @@ const CashInOutTable = () => {
       lender: filterLender || undefined,
       paymentMode: filterPaymentMode || undefined,
       paymentStatus: filterPaymentStatus || undefined,
-      searchTerm: searchTerm || undefined, // ensure it's included in the query
+      searchTerm: debouncedSearchTerm || undefined, // ensure it's included in the query
     };
 
     Object.keys(args).forEach((k) => {
@@ -418,22 +401,37 @@ const CashInOutTable = () => {
     [],
   );
 
-  const bankOptions = useMemo(
-    () =>
-      BANKS.map((bank) => ({
-        value: bank,
-        label: bank,
-      })),
-    [],
-  );
+  const { data: bankAccountRes } = useGetAllBankAccountWithoutQueryQuery();
+  const bankAccountsFromDB = bankAccountRes?.data || [];
+  const [insertBankAccount] = useInsertBankAccountMutation();
+
+  const bankOptions = useMemo(() => {
+    const seen = new Set();
+    return bankAccountsFromDB
+      .filter((ba) => {
+        const key = (ba.bankName || "").toLowerCase().trim();
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map((ba) => ({ value: ba.bankName, label: ba.bankName }));
+  }, [bankAccountsFromDB]);
 
   const bankAccountOptions = useMemo(
     () =>
-      BANK_ACCOUNTS.map((account) => ({
-        value: account,
-        label: account,
+      bankAccountsFromDB.map((ba) => ({
+        value: ba.accountNumber,
+        label: `${ba.accountNumber} (${ba.bankName})`,
       })),
-    [],
+    [bankAccountsFromDB],
+  );
+
+  const bankAccountSelectOptions = useMemo(
+    () => [
+      ...bankAccountOptions,
+      { value: "__new_bank__", label: "+ New Bank Account" },
+    ],
+    [bankAccountOptions],
   );
 
   const categoryFilterOptions = useMemo(
@@ -482,18 +480,75 @@ const CashInOutTable = () => {
     }
   };
 
+  const addBankAccount = async (bankName, accountNumber) => {
+    if (!bankName?.trim() || !accountNumber?.trim()) {
+      toast.error("Bank name and account number are required!");
+      return null;
+    }
+    try {
+      const res = await insertBankAccount({
+        bankName: bankName.trim(),
+        accountNumber: accountNumber.trim(),
+      }).unwrap();
+      if (res?.success) {
+        toast.success("Bank account added!");
+        return res?.data;
+      }
+      toast.error(res?.message || "Bank account add failed!");
+      return null;
+    } catch (err) {
+      toast.error(err?.data?.message || "Bank account add failed!");
+      return null;
+    }
+  };
+
+  const resetCreateProduct = () => {
+    setCreateProduct({
+      paymentMode: "",
+      paymentStatus: "",
+      bankName: "",
+      bankAccount: "",
+      supplierId: "",
+      lender: "",
+      note: "",
+      status: "",
+      category: "",
+      remarks: "",
+      amount: "",
+      file: null,
+      date: new Date().toISOString().slice(0, 10),
+    });
+    setIsNewCategoryAdd(false);
+    setNewCategoryNameAdd("");
+    setIsNewBankAccountAdd(false);
+    setNewBankNameAdd("");
+    setNewAccountNumberAdd("");
+  };
+
   // modals
-  const handleAddCashIn = () => setIsModalOpen1(true);
-  const handleAddCashOut = () => setIsModalOpen3(true);
+  const handleAddCashIn = () => {
+    resetCreateProduct();
+    setIsModalOpen1(true);
+  };
+  const handleAddCashOut = () => {
+    resetCreateProduct();
+    setIsModalOpen3(true);
+  };
   const handleModalClose1 = () => {
     setIsModalOpen1(false);
     setIsNewCategoryAdd(false);
     setNewCategoryNameAdd("");
+    setIsNewBankAccountAdd(false);
+    setNewBankNameAdd("");
+    setNewAccountNumberAdd("");
   };
   const handleModalClose3 = () => {
     setIsModalOpen3(false);
     setIsNewCategoryAdd(false);
     setNewCategoryNameAdd("");
+    setIsNewBankAccountAdd(false);
+    setNewBankNameAdd("");
+    setNewAccountNumberAdd("");
   };
 
   const handleEditClick = (rp) => {
@@ -520,6 +575,9 @@ const CashInOutTable = () => {
     });
     setIsNewCategoryEdit(false);
     setNewCategoryNameEdit("");
+    setIsNewBankAccountEdit(false);
+    setNewBankNameEdit("");
+    setNewAccountNumberEdit("");
     setIsModalOpen(true);
   };
 
@@ -546,6 +604,9 @@ const CashInOutTable = () => {
     });
     setIsNewCategoryEdit(false);
     setNewCategoryNameEdit("");
+    setIsNewBankAccountEdit(false);
+    setNewBankNameEdit("");
+    setNewAccountNumberEdit("");
     setIsModalOpen2(true);
   };
 
@@ -614,6 +675,9 @@ const CashInOutTable = () => {
         setCurrentProduct(null);
         setIsNewCategoryEdit(false);
         setNewCategoryNameEdit("");
+        setIsNewBankAccountEdit(false);
+        setNewBankNameEdit("");
+        setNewAccountNumberEdit("");
         refetch?.();
       } else toast.error(res?.message || "Update failed!");
     } catch (err) {
@@ -691,7 +755,6 @@ const CashInOutTable = () => {
       formData.append("supplierId", createProduct?.supplierId);
       formData.append("lender", createProduct?.lender?.trim() || "");
       if (createProduct.file) formData.append("file", createProduct.file);
-      console.log("cash in data", formData);
 
       const res = await insertCashIn(formData).unwrap();
 
@@ -1055,7 +1118,6 @@ const CashInOutTable = () => {
     supplierHistoryError,
   ]);
 
-  console.log("supplierhistory", suppliersDue);
 
   const selectStyles = {
     control: (base, state) => ({
@@ -1709,6 +1771,9 @@ const CashInOutTable = () => {
           setCurrentProduct(null);
           setIsNewCategoryEdit(false);
           setNewCategoryNameEdit("");
+          setIsNewBankAccountEdit(false);
+          setNewBankNameEdit("");
+          setNewAccountNumberEdit("");
         }}
         title={t.edit_item || "Edit Item"}
         maxWidth="max-w-2xl"
@@ -1779,57 +1844,105 @@ const CashInOutTable = () => {
           </div>
 
           {currentProduct?.paymentMode === "Bank" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">
-                  Bank Name
-                </label>
-                <select
-                  value={currentProduct.bankName}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      bankName: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">{t.select_bank || "Select Bank"}</option>
-                  {BANKS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">
+                    Bank Name
+                  </label>
+                  <Select
+                    options={bankOptions}
+                    value={
+                      bankOptions.find(
+                        (option) => option.value === currentProduct.bankName,
+                      ) || null
+                    }
+                    onChange={(selected) =>
+                      setCurrentProduct({
+                        ...currentProduct,
+                        bankName: selected?.value || "",
+                      })
+                    }
+                    placeholder={t.select_bank || "Select Bank"}
+                    className="text-sm"
+                    styles={selectStyles}
+                    isClearable
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">
-                  Bank Account
-                </label>
-                <select
-                  value={currentProduct.bankAccount}
-                  onChange={(e) =>
-                    setCurrentProduct({
-                      ...currentProduct,
-                      bankAccount: e.target.value,
-                    })
-                  }
-                  className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none
-                             focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                  required
-                >
-                  <option value="">Select Bank Account</option>
-                  {BANK_ACCOUNTS.map((account) => (
-                    <option key={account} value={account}>
-                      {account}
-                    </option>
-                  ))}
-                </select>
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">
+                    Bank Account
+                  </label>
+                  <Select
+                    options={bankAccountSelectOptions}
+                    value={
+                      isNewBankAccountEdit
+                        ? { value: "__new_bank__", label: "+ New Bank Account" }
+                        : bankAccountOptions.find(
+                            (option) =>
+                              option.value === currentProduct.bankAccount,
+                          ) || null
+                    }
+                    onChange={(selected) => {
+                      if (selected?.value === "__new_bank__") {
+                        setIsNewBankAccountEdit(true);
+                      } else {
+                        setIsNewBankAccountEdit(false);
+                        setCurrentProduct({
+                          ...currentProduct,
+                          bankAccount: selected?.value || "",
+                        });
+                      }
+                    }}
+                    placeholder="Select Bank Account"
+                    className="text-sm"
+                    styles={selectStyles}
+                    isClearable
+                  />
+                </div>
               </div>
-            </div>
+              {isNewBankAccountEdit && (
+                <div className="flex gap-2 mt-2 items-end">
+                  <input
+                    type="text"
+                    value={newBankNameEdit}
+                    onChange={(e) => setNewBankNameEdit(e.target.value)}
+                    placeholder="Bank Name"
+                    className="flex-1 h-11 border border-slate-200 rounded-xl px-3 text-sm text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                  <input
+                    type="text"
+                    value={newAccountNumberEdit}
+                    onChange={(e) => setNewAccountNumberEdit(e.target.value)}
+                    placeholder="Account Number"
+                    className="flex-1 h-11 border border-slate-200 rounded-xl px-3 text-sm text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const created = await addBankAccount(
+                        newBankNameEdit,
+                        newAccountNumberEdit,
+                      );
+                      if (created) {
+                        setCurrentProduct({
+                          ...currentProduct,
+                          bankName: created.bankName,
+                          bankAccount: created.accountNumber,
+                        });
+                        setIsNewBankAccountEdit(false);
+                        setNewBankNameEdit("");
+                        setNewAccountNumberEdit("");
+                      }
+                    }}
+                    className="h-11 px-5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition"
+                  >
+                    Add
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           <div>
@@ -1878,9 +1991,9 @@ const CashInOutTable = () => {
           {isLoanCategory(currentProduct?.category) && (
             <div>
               <label className="block text-sm text-slate-600 mb-1">
-                {currentProduct?.paymentStatus === "CashOut"
+                {/* {currentProduct?.paymentStatus === "CashOut"
                   ? "Loan Given To"
-                  : "Loan Taken From"}
+                  : "Loan Taken From"} */}
               </label>
               <input
                 type="text"
@@ -2015,6 +2128,9 @@ const CashInOutTable = () => {
                 setCurrentProduct(null);
                 setIsNewCategoryEdit(false);
                 setNewCategoryNameEdit("");
+                setIsNewBankAccountEdit(false);
+                setNewBankNameEdit("");
+                setNewAccountNumberEdit("");
               }}
               className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition"
             >
@@ -2085,57 +2201,105 @@ const CashInOutTable = () => {
           </div>
 
           {createProduct.paymentMode === "Bank" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">
-                  Bank Name
-                </label>
-                <Select
-                  options={bankOptions}
-                  value={
-                    bankOptions.find(
-                      (option) => option.value === createProduct.bankName,
-                    ) || null
-                  }
-                  onChange={(selectedOption) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      bankName: selectedOption?.value || "",
-                    })
-                  }
-                  placeholder="Select Bank"
-                  className="text-sm"
-                  styles={selectStyles}
-                  isClearable
-                  required
-                />
-              </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">
+                    Bank Name
+                  </label>
+                  <Select
+                    options={bankOptions}
+                    value={
+                      bankOptions.find(
+                        (option) => option.value === createProduct.bankName,
+                      ) || null
+                    }
+                    onChange={(selectedOption) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        bankName: selectedOption?.value || "",
+                      })
+                    }
+                    placeholder="Select Bank"
+                    className="text-sm"
+                    styles={selectStyles}
+                    isClearable
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">
-                  Bank Account
-                </label>
-                <Select
-                  options={bankAccountOptions}
-                  value={
-                    bankAccountOptions.find(
-                      (option) => option.value === createProduct.bankAccount,
-                    ) || null
-                  }
-                  onChange={(selectedOption) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      bankAccount: selectedOption?.value || "",
-                    })
-                  }
-                  placeholder="Select Bank Account"
-                  className="text-sm"
-                  styles={selectStyles}
-                  isClearable
-                  required
-                />
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">
+                    Bank Account
+                  </label>
+                  <Select
+                    options={bankAccountSelectOptions}
+                    value={
+                      isNewBankAccountAdd
+                        ? { value: "__new_bank__", label: "+ New Bank Account" }
+                        : bankAccountOptions.find(
+                            (option) =>
+                              option.value === createProduct.bankAccount,
+                          ) || null
+                    }
+                    onChange={(selected) => {
+                      if (selected?.value === "__new_bank__") {
+                        setIsNewBankAccountAdd(true);
+                      } else {
+                        setIsNewBankAccountAdd(false);
+                        setCreateProduct({
+                          ...createProduct,
+                          bankAccount: selected?.value || "",
+                        });
+                      }
+                    }}
+                    placeholder="Select Bank Account"
+                    className="text-sm"
+                    styles={selectStyles}
+                    isClearable
+                  />
+                </div>
               </div>
-            </div>
+              {isNewBankAccountAdd && (
+                <div className="flex gap-2 mt-2 items-end">
+                  <input
+                    type="text"
+                    value={newBankNameAdd}
+                    onChange={(e) => setNewBankNameAdd(e.target.value)}
+                    placeholder="Bank Name"
+                    className="flex-1 h-11 border border-slate-200 rounded-xl px-3 text-sm text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                  <input
+                    type="text"
+                    value={newAccountNumberAdd}
+                    onChange={(e) => setNewAccountNumberAdd(e.target.value)}
+                    placeholder="Account Number"
+                    className="flex-1 h-11 border border-slate-200 rounded-xl px-3 text-sm text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const created = await addBankAccount(
+                        newBankNameAdd,
+                        newAccountNumberAdd,
+                      );
+                      if (created) {
+                        setCreateProduct({
+                          ...createProduct,
+                          bankName: created.bankName,
+                          bankAccount: created.accountNumber,
+                        });
+                        setIsNewBankAccountAdd(false);
+                        setNewBankNameAdd("");
+                        setNewAccountNumberAdd("");
+                      }
+                    }}
+                    className="h-11 px-5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition"
+                  >
+                    Add
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           <div>
@@ -2346,57 +2510,105 @@ const CashInOutTable = () => {
           </div>
 
           {createProduct.paymentMode === "Bank" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">
-                  Bank Name
-                </label>
-                <Select
-                  options={bankOptions}
-                  value={
-                    bankOptions.find(
-                      (option) => option.value === createProduct.bankName,
-                    ) || null
-                  }
-                  onChange={(selectedOption) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      bankName: selectedOption?.value || "",
-                    })
-                  }
-                  placeholder="Select Bank"
-                  className="text-sm"
-                  styles={selectStyles}
-                  isClearable
-                  required
-                />
-              </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">
+                    Bank Name
+                  </label>
+                  <Select
+                    options={bankOptions}
+                    value={
+                      bankOptions.find(
+                        (option) => option.value === createProduct.bankName,
+                      ) || null
+                    }
+                    onChange={(selectedOption) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        bankName: selectedOption?.value || "",
+                      })
+                    }
+                    placeholder="Select Bank"
+                    className="text-sm"
+                    styles={selectStyles}
+                    isClearable
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">
-                  Bank Account
-                </label>
-                <Select
-                  options={bankAccountOptions}
-                  value={
-                    bankAccountOptions.find(
-                      (option) => option.value === createProduct.bankAccount,
-                    ) || null
-                  }
-                  onChange={(selectedOption) =>
-                    setCreateProduct({
-                      ...createProduct,
-                      bankAccount: selectedOption?.value || "",
-                    })
-                  }
-                  placeholder="Select Bank Account"
-                  className="text-sm"
-                  styles={selectStyles}
-                  isClearable
-                  required
-                />
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">
+                    Bank Account
+                  </label>
+                  <Select
+                    options={bankAccountSelectOptions}
+                    value={
+                      isNewBankAccountAdd
+                        ? { value: "__new_bank__", label: "+ New Bank Account" }
+                        : bankAccountOptions.find(
+                            (option) =>
+                              option.value === createProduct.bankAccount,
+                          ) || null
+                    }
+                    onChange={(selected) => {
+                      if (selected?.value === "__new_bank__") {
+                        setIsNewBankAccountAdd(true);
+                      } else {
+                        setIsNewBankAccountAdd(false);
+                        setCreateProduct({
+                          ...createProduct,
+                          bankAccount: selected?.value || "",
+                        });
+                      }
+                    }}
+                    placeholder="Select Bank Account"
+                    className="text-sm"
+                    styles={selectStyles}
+                    isClearable
+                  />
+                </div>
               </div>
-            </div>
+              {isNewBankAccountAdd && (
+                <div className="flex gap-2 mt-2 items-end">
+                  <input
+                    type="text"
+                    value={newBankNameAdd}
+                    onChange={(e) => setNewBankNameAdd(e.target.value)}
+                    placeholder="Bank Name"
+                    className="flex-1 h-11 border border-slate-200 rounded-xl px-3 text-sm text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                  <input
+                    type="text"
+                    value={newAccountNumberAdd}
+                    onChange={(e) => setNewAccountNumberAdd(e.target.value)}
+                    placeholder="Account Number"
+                    className="flex-1 h-11 border border-slate-200 rounded-xl px-3 text-sm text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const created = await addBankAccount(
+                        newBankNameAdd,
+                        newAccountNumberAdd,
+                      );
+                      if (created) {
+                        setCreateProduct({
+                          ...createProduct,
+                          bankName: created.bankName,
+                          bankAccount: created.accountNumber,
+                        });
+                        setIsNewBankAccountAdd(false);
+                        setNewBankNameAdd("");
+                        setNewAccountNumberAdd("");
+                      }
+                    }}
+                    className="h-11 px-5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition"
+                  >
+                    Add
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -10,8 +10,34 @@ import {
 } from "../../features/supplier/supplier";
 import { useGetAllSupplierHistoryWithoutQueryQuery } from "../../features/supplierHistory/supplierHistory";
 import Modal from "../common/Modal";
+import TableSkeleton from "../common/TableSkeleton";
 import { Link } from "react-router-dom";
 import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
+import useDebounce from "../../hooks/useDebounce";
+
+
+const formatAmount = (value) => Number(value || 0).toLocaleString();
+
+const NetBadge = ({ value }) => {
+  const n = Number(value || 0);
+  if (n > 0)
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600 border border-emerald-200">
+        পাবেন ৳{formatAmount(n)}
+      </span>
+    );
+  if (n < 0)
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-600 border border-rose-200">
+        দিবেন ৳{formatAmount(Math.abs(n))}
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500 border border-slate-200">
+      সমতুল্য
+    </span>
+  );
+};
 
 const SupplierTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
@@ -23,7 +49,8 @@ const SupplierTable = () => {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [createProduct, setCreateProduct] = useState({ name: "" });
 
-  const [name, setName] = useState(""); // search term
+  const [name, setName] = useState("");
+  const debouncedName = useDebounce(name, 400); // search term
 
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
@@ -47,7 +74,7 @@ const SupplierTable = () => {
   const { data, isLoading, isError, error, refetch } = useGetAllSupplierQuery({
     page: currentPage,
     limit: itemsPerPage,
-    searchTerm: name || undefined,
+    searchTerm: debouncedName || undefined,
   });
 
   // ✅ Get all suppliers summary (total paid, unpaid, net balance)
@@ -167,7 +194,6 @@ const SupplierTable = () => {
       Math.min(p + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)),
     );
 
-  console.log("summaryData", summaryData);
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
@@ -176,100 +202,78 @@ const SupplierTable = () => {
       transition={{ duration: 0.25 }}
     >
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mb-6">
-        {/* Total Paid */}
-        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-emerald-50/70 to-transparent" />
-          <div className="relative flex items-start justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500">Total Paid</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
-                {summaryLoading
-                  ? "—"
-                  : Number(
-                      summaryData?.data?.meta?.totalPaid || 0,
-                    ).toLocaleString()}
-              </p>
+      {(() => {
+        const totalPaid   = Number(summaryData?.data?.meta?.totalPaid   || 0);
+        const totalUnpaid = Number(summaryData?.data?.meta?.totalUnpaid || 0);
+        const netBalance  = Number(summaryData?.data?.meta?.netBalance  || 0);
+        const netPositive = netBalance > 0;
+        const netZero     = netBalance === 0;
+
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mb-6">
+            {/* মোট পরিশোধ */}
+            <div className="group relative overflow-hidden rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-emerald-50/70 to-transparent" />
+              <div className="relative flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">মোট পরিশোধ</p>
+                  <p className="mt-1 text-[11px] text-slate-400">Supplier-দের মোট payment করা হয়েছে</p>
+                  <p className="mt-2 text-2xl font-bold text-emerald-700 tabular-nums">
+                    {summaryLoading ? "—" : `৳${formatAmount(totalPaid)}`}
+                  </p>
+                </div>
+                <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-emerald-600" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 19V5" /><path d="M5 12l7-7 7 7" />
+                  </svg>
+                </div>
+              </div>
             </div>
 
-            <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5 text-emerald-600"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M12 19V5" />
-                <path d="M5 12l7-7 7 7" />
-              </svg>
+            {/* মোট বাকি */}
+            <div className="group relative overflow-hidden rounded-2xl border border-rose-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-rose-50/70 to-transparent" />
+              <div className="relative flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-rose-600 uppercase tracking-wide">মোট বাকি</p>
+                  <p className="mt-1 text-[11px] text-slate-400">Supplier-দের কাছে এখনো বাকি আছে</p>
+                  <p className="mt-2 text-2xl font-bold text-rose-600 tabular-nums">
+                    {summaryLoading ? "—" : `৳${formatAmount(totalUnpaid)}`}
+                  </p>
+                </div>
+                <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-rose-600" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 5v14" /><path d="M19 12l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* পাবেন / দিবেন */}
+            <div className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition hover:shadow-md bg-white ${netZero ? "border-slate-200" : netPositive ? "border-emerald-200" : "border-rose-200"}`}>
+              <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br ${netZero ? "from-slate-50/70" : netPositive ? "from-emerald-50/70" : "from-rose-50/70"} to-transparent`} />
+              <div className="relative flex items-start justify-between">
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wide ${netZero ? "text-slate-500" : netPositive ? "text-emerald-600" : "text-rose-600"}`}>
+                    {netZero ? "সমতুল্য" : netPositive ? "আপনি পাবেন" : "আপনি দিবেন"}
+                  </p>
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    {netZero ? "সব হিসাব সমান" : netPositive ? "Supplier-রা আপনার কাছে ঋণী" : "আপনি Supplier-দের কাছে ঋণী"}
+                  </p>
+                  <p className={`mt-2 text-2xl font-bold tabular-nums ${netZero ? "text-slate-600" : netPositive ? "text-emerald-700" : "text-rose-600"}`}>
+                    {summaryLoading ? "—" : `৳${formatAmount(Math.abs(netBalance))}`}
+                  </p>
+                </div>
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center border ${netZero ? "bg-slate-50 border-slate-100" : netPositive ? "bg-emerald-50 border-emerald-100" : "bg-rose-50 border-rose-100"}`}>
+                  <svg viewBox="0 0 24 24" className={`h-5 w-5 ${netZero ? "text-slate-500" : netPositive ? "text-emerald-600" : "text-rose-600"}`} fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 19V5" /><path d="M8 17V7" /><path d="M12 19V9" /><path d="M16 15V5" /><path d="M20 19V11" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Total Unpaid */}
-        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-rose-50/70 to-transparent" />
-          <div className="relative flex items-start justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500">Total Unpaid</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
-                {summaryLoading
-                  ? "—"
-                  : Number(
-                      summaryData?.data?.meta?.totalUnpaid || 0,
-                    ).toLocaleString()}
-              </p>
-            </div>
-
-            <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5 text-rose-600"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M12 5v14" />
-                <path d="M19 12l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Net Balance */}
-        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-indigo-50/70 to-transparent" />
-          <div className="relative flex items-start justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500">Net Balance</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
-                {summaryLoading
-                  ? "—"
-                  : Number(
-                      summaryData?.data?.meta?.netBalance || 0,
-                    ).toLocaleString()}
-              </p>
-            </div>
-
-            <div className="h-10 w-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5 text-indigo-600"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M4 19V5" />
-                <path d="M8 17V7" />
-                <path d="M12 19V9" />
-                <path d="M16 15V5" />
-                <path d="M20 19V11" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Top bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -305,47 +309,70 @@ const SupplierTable = () => {
 
       {/* List */}
       <div className="mt-6 rounded-2xl border border-slate-200 overflow-hidden">
-        {suppliers.map((item) => (
+        {isLoading && <TableSkeleton rows={8} columns={4} />}
+        {!isLoading && suppliers.map((item) => (
           <div
             key={item.Id}
-            className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-white hover:bg-slate-50 transition"
+            className="flex items-center justify-between gap-4 px-5 py-4 border-b border-slate-200 bg-white hover:bg-slate-50 transition"
           >
             {/* Left */}
             <Link
               to={`/supplier-history/${item.Id}`}
-              className="flex items-center gap-4"
+              className="flex min-w-0 items-center gap-4"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50">
                 <LucideTruck className="text-indigo-600" size={18} />
               </div>
 
-              <div className="text-[15px] font-semibold text-slate-900 hover:text-indigo-600">
+              <div className="truncate text-[15px] font-semibold text-slate-900 hover:text-indigo-600">
                 {item.name}
               </div>
             </Link>
 
             {/* Right */}
-            {(role === "superAdmin" || role === "admin") && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleEditSupplier(item)}
-                  type="button"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-white border border-transparent hover:border-slate-200 transition"
-                  title="Edit"
-                >
-                  <Pencil className="text-indigo-600" size={18} />
-                </button>
-
-                <button
-                  onClick={() => handleDeleteSupplier(item.Id)}
-                  type="button"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-white border border-transparent hover:border-slate-200 transition"
-                  title="Delete"
-                >
-                  <Trash2 className="text-red-600" size={18} />
-                </button>
+            <div className="flex shrink-0 items-center gap-4">
+              {/* Paid / Unpaid / Net */}
+              <div className="hidden sm:flex items-center gap-4 text-right">
+                <div className="min-w-[90px]">
+                  <p className="text-[10px] font-medium text-emerald-500 uppercase">পরিশোধ</p>
+                  <p className="text-sm font-semibold tabular-nums text-emerald-600">
+                    ৳{formatAmount(item.totalPaid)}
+                  </p>
+                </div>
+                <div className="min-w-[90px]">
+                  <p className="text-[10px] font-medium text-rose-500 uppercase">বাকি</p>
+                  <p className="text-sm font-semibold tabular-nums text-rose-600">
+                    ৳{formatAmount(item.totalUnpaid)}
+                  </p>
+                </div>
               </div>
-            )}
+              <div className="min-w-[110px] text-right">
+                <p className="text-[10px] font-medium text-slate-400 uppercase mb-1">নেট</p>
+                <NetBadge value={item.netBalance} />
+              </div>
+
+              {(role === "superAdmin" || role === "admin") && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleEditSupplier(item)}
+                    type="button"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-white border border-transparent hover:border-slate-200 transition"
+                    title="Edit"
+                  >
+                    <Pencil className="text-indigo-600" size={18} />
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteSupplier(item.Id)}
+                    type="button"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-white border border-transparent hover:border-slate-200 transition"
+                    title="Delete"
+                  >
+                    <Trash2 className="text-red-600" size={18} />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         ))}
 

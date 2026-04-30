@@ -1001,28 +1001,6 @@ const DamageRepairTable = () => {
                       </button>
                     )}
                   </td>
-                  {/* ✅ Note Modal (Popup) */}
-                  {isNoteModalOpen && (
-                    <div className="fixed inset-0 flex items-center justify-center p-4">
-                      <div className="bg-white rounded-lg p-6 shadow-xl w-full md:w-1/3">
-                        <h2 className="text-xl font-semibold text-slate-900">
-                          Note
-                        </h2>
-                        <p className="mt-4 text-sm text-slate-700">
-                          {noteContent}
-                        </p>
-
-                        <div className="mt-6 flex justify-end gap-2">
-                          <button
-                            onClick={handleNoteModalClose}
-                            className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                          >
-                            Close
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </motion.tr>
               );
             })}
@@ -1079,19 +1057,21 @@ const DamageRepairTable = () => {
         </button>
       </div>
 
-      {/* Edit Modal */}
-      {isEditOpen && currentItem && (
-        <div className="fixed inset-0 top-32 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
+      {/* Note Modal */}
+      <Modal isOpen={isNoteModalOpen} onClose={handleNoteModalClose} title="Note">
+        <p className="mt-4 text-sm text-slate-700">{noteContent}</p>
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            onClick={handleNoteModalClose}
+            className="h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
           >
-            <h2 className="text-lg font-semibold text-slate-900">
-              Edit Product
-            </h2>
+            Close
+          </button>
+        </div>
+      </Modal>
 
+      {/* Edit Modal */}
+      <Modal isOpen={isEditOpen && !!currentItem} onClose={closeEdit} title="Edit Product">
             <div className="mt-4">
               <label className="block text-sm text-slate-600 mb-1">Name</label>
               <Select
@@ -1233,7 +1213,11 @@ const DamageRepairTable = () => {
                                 e.target.value,
                               )
                             }
-                            className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                            disabled={
+                              !currentItem?.receivedId ||
+                              editSizeOptions.length === 0
+                            }
+                            className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                             placeholder="0"
                           />
                         </div>
@@ -1410,21 +1394,10 @@ const DamageRepairTable = () => {
                 Cancel
               </button>
             </div>
-          </motion.div>
-        </div>
-      )}
+      </Modal>
 
-      {/* Note Modal */}
-      {isEditOpen1 && currentItem && (
-        <div className="fixed inset-0 flex items-center justify-center   p-4">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-xl w-full md:w-1/3 border border-slate-200"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="text-lg font-semibold text-slate-900">Edit Note</h2>
-
+      {/* Edit Note Modal */}
+      <Modal isOpen={isEditOpen1 && !!currentItem} onClose={closeEdit1} title="Edit Note">
             <div className="mt-4">
               <label className="block text-sm text-slate-600 mb-1">Note</label>
               <textarea
@@ -1451,9 +1424,7 @@ const DamageRepairTable = () => {
                 Cancel
               </button>
             </div>
-          </motion.div>
-        </div>
-      )}
+      </Modal>
 
       {/* Add Modal */}
       {/* {isAddOpen && (
@@ -1632,7 +1603,11 @@ const DamageRepairTable = () => {
                                   e.target.value,
                                 )
                               }
-                              className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                              disabled={
+                                !createForm?.receivedId ||
+                                createSizeOptions.length === 0
+                              }
+                              className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                               placeholder="0"
                             />
                           </div>
@@ -1947,7 +1922,11 @@ const DamageRepairTable = () => {
                               e.target.value,
                             )
                           }
-                          className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                          disabled={
+                            !createForm?.receivedId ||
+                            createSizeOptions.length === 0
+                          }
+                          className="h-11 border bg-white border-slate-200 rounded-xl px-3 w-full text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                           placeholder="0"
                         />
                       </div>

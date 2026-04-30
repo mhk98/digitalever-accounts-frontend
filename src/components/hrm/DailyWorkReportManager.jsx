@@ -31,6 +31,8 @@ import {
   useUpdateDailyWorkReportMutation,
 } from "../../features/dailyWorkReport/dailyWorkReport";
 import { useGetAllEmployeeListWithoutQueryQuery } from "../../features/employeeList/employeeList";
+import useDebounce from "../../hooks/useDebounce";
+
 
 const today = new Date().toISOString().slice(0, 10);
 const EMPTY_TASK = {
@@ -98,6 +100,7 @@ const DailyWorkReportManager = () => {
   const canManageReports = ["superAdmin", "admin"].includes(role);
   const [form, setForm] = useState(EMPTY_FORM);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
@@ -121,7 +124,7 @@ const DailyWorkReportManager = () => {
     () => ({
       page: currentPage,
       limit: 10,
-      searchTerm: searchTerm || undefined,
+      searchTerm: debouncedSearchTerm || undefined,
       startDate: fromDate || undefined,
       endDate: toDate || undefined,
       employeeId: selectedEmployeeId || undefined,

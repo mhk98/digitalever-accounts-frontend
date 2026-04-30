@@ -954,7 +954,7 @@ import toast from "react-hot-toast";
 import Select from "react-select";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { Edit, Trash2, FileText, X, Printer } from "lucide-react";
+import { Edit, Trash2, FileText, Printer } from "lucide-react";
 
 import {
   useDeletePosReportMutation,
@@ -963,6 +963,64 @@ import {
   useUpdatePosReportMutation,
 } from "../../features/posReport/posReport";
 import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
+import Modal from "../common/Modal";
+
+const parseMaybeJsonArray = (value) => {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
+
+const getReportItems = (report) => {
+  const itemsRaw =
+    report?.items ??
+    report?.Items ??
+    report?.products ??
+    report?.Products ??
+    report?.posItems ??
+    report?.PosItems ??
+    report?.posReportItems ??
+    report?.PosReportItems ??
+    report?.saleItems ??
+    report?.SaleItems ??
+    report?.orderItems ??
+    report?.OrderItems ??
+    report?.details ??
+    report?.Details ??
+    [];
+
+  return parseMaybeJsonArray(itemsRaw).map((item, index) => {
+    const qty = Number(item?.qty ?? item?.quantity ?? item?.Quantity ?? 0);
+    const price = Number(
+      item?.price ?? item?.unitPrice ?? item?.sale_price ?? item?.salePrice ?? 0,
+    );
+
+    return {
+      Id: item?.Id ?? item?.id ?? item?.productId ?? item?.product?.Id ?? index,
+      name:
+        item?.name ??
+        item?.productName ??
+        item?.ProductName ??
+        item?.product?.name ??
+        item?.receivedProduct?.productName ??
+        item?.receivedProduct?.product?.name ??
+        `Item ${index + 1}`,
+      qty,
+      price,
+      total: Number(item?.total ?? item?.amount ?? item?.lineTotal ?? 0) || qty * price,
+    };
+  });
+};
 
 const PosReportTable = () => {
   const role = localStorage.getItem("role");
@@ -1152,14 +1210,23 @@ const PosReportTable = () => {
     const all =
       Array.isArray(reportsAll) && reportsAll.length ? reportsAll : reports;
     const map = new Map((all || []).map((r) => [r.Id, r]));
-    return selectedIds.map((id) => map.get(id)).filter(Boolean);
+    return selectedIds
+      .map((id) => {
+        const report = map.get(id);
+        return report ? { ...report, items: getReportItems(report) } : null;
+      })
+      .filter(Boolean);
   }, [selectedIds, reportsAll, reports]);
 
   // ----------------------------
   // Invoice Modal (single)
   // ----------------------------
   const openInvoice = (report) => {
-    setInvoiceReport(report);
+    const fullReport =
+      (reportsAll || []).find((item) => String(item?.Id) === String(report?.Id)) ||
+      report;
+
+    setInvoiceReport({ ...fullReport, items: getReportItems(fullReport) });
     setIsInvoiceOpen(true);
   };
 
@@ -1356,7 +1423,7 @@ const PosReportTable = () => {
       paidAmount: safeNum(report?.paidAmount),
       dueAmount: safeNum(report?.dueAmount),
       status: report?.status || "---",
-      items: Array.isArray(report?.items) ? report.items : [],
+      items: getReportItems(report),
       userId,
     };
 
@@ -1740,189 +1807,166 @@ const PosReportTable = () => {
       </div>
 
       {/* -------------------- Edit Modal -------------------- */}
-      {isEditModalOpen && currentReport && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 p-3 sm:p-5">
-          <motion.div
-            className="flex min-h-full items-center justify-center"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="flex h-[min(88vh,820px)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.22)]">
-              <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Edit POS Report
-                </h2>
-                <button
-                  type="button"
-                  onClick={closeEdit}
-                  className="h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
-                  title="Close"
-                >
-                  <X size={18} className="text-slate-600" />
-                </button>
+      <Modal isOpen={isEditModalOpen && !!currentReport} onClose={closeEdit} title="Edit POS Report" maxWidth="max-w-5xl">
+        {currentReport && (
+          <>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <Field
+                label="Date"
+                type="date"
+                value={currentReport.date || ""}
+                onChange={(v) =>
+                  setCurrentReport({ ...currentReport, date: v })
+                }
+              />
+
+              <Field
+                label="Customer Name"
+                value={currentReport.name || ""}
+                onChange={(v) =>
+                  setCurrentReport({ ...currentReport, name: v })
+                }
+              />
+
+              <Field
+                label="Mobile"
+                value={currentReport.mobile || ""}
+                onChange={(v) =>
+                  setCurrentReport({ ...currentReport, mobile: v })
+                }
+              />
+
+              <Field
+                label="Address"
+                value={currentReport.address || ""}
+                onChange={(v) =>
+                  setCurrentReport({ ...currentReport, address: v })
+                }
+              />
+
+              <Field
+                label="Subtotal"
+                type="number"
+                value={currentReport.subTotal}
+                onChange={(v) =>
+                  setCurrentReport({ ...currentReport, subTotal: v })
+                }
+              />
+
+              <Field
+                label="Discount"
+                type="number"
+                value={currentReport.discount}
+                onChange={(v) =>
+                  setCurrentReport({ ...currentReport, discount: v })
+                }
+              />
+
+              <Field
+                label="Delivery Charge"
+                type="number"
+                value={currentReport.deliveryCharge}
+                onChange={(v) =>
+                  setCurrentReport({ ...currentReport, deliveryCharge: v })
+                }
+              />
+
+              <Field
+                label="Total"
+                type="number"
+                value={currentReport.total}
+                onChange={(v) =>
+                  setCurrentReport({ ...currentReport, total: v })
+                }
+              />
+
+              <Field
+                label="Paid Amount"
+                type="number"
+                value={currentReport.paidAmount}
+                onChange={handleEditPaidAmountChange}
+              />
+
+              <Field
+                label="Due Amount"
+                type="number"
+                value={currentReport.dueAmount}
+                onChange={handleEditDueAmountChange}
+              />
+
+              <div className="md:col-span-3">
+                <label className="block text-sm text-slate-700">Note</label>
+                <textarea
+                  value={currentReport.note || ""}
+                  onChange={(e) =>
+                    setCurrentReport({
+                      ...currentReport,
+                      note: e.target.value,
+                    })
+                  }
+                  className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  rows={3}
+                />
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                  <Field
-                    label="Date"
-                    type="date"
-                    value={currentReport.date || ""}
-                    onChange={(v) =>
-                      setCurrentReport({ ...currentReport, date: v })
+              {(role === "superAdmin" || role === "admin") && (
+                <div className="md:col-span-3">
+                  <label className="block text-sm text-slate-700">
+                    Status
+                  </label>
+                  <select
+                    value={currentReport.status || ""}
+                    onChange={(e) =>
+                      setCurrentReport({
+                        ...currentReport,
+                        status: e.target.value,
+                      })
                     }
-                  />
-
-                  <Field
-                    label="Customer Name"
-                    value={currentReport.name || ""}
-                    onChange={(v) =>
-                      setCurrentReport({ ...currentReport, name: v })
-                    }
-                  />
-
-                  <Field
-                    label="Mobile"
-                    value={currentReport.mobile || ""}
-                    onChange={(v) =>
-                      setCurrentReport({ ...currentReport, mobile: v })
-                    }
-                  />
-
-                  <Field
-                    label="Address"
-                    value={currentReport.address || ""}
-                    onChange={(v) =>
-                      setCurrentReport({ ...currentReport, address: v })
-                    }
-                  />
-
-                  <Field
-                    label="Subtotal"
-                    type="number"
-                    value={currentReport.subTotal}
-                    onChange={(v) =>
-                      setCurrentReport({ ...currentReport, subTotal: v })
-                    }
-                  />
-
-                  <Field
-                    label="Discount"
-                    type="number"
-                    value={currentReport.discount}
-                    onChange={(v) =>
-                      setCurrentReport({ ...currentReport, discount: v })
-                    }
-                  />
-
-                  <Field
-                    label="Delivery Charge"
-                    type="number"
-                    value={currentReport.deliveryCharge}
-                    onChange={(v) =>
-                      setCurrentReport({ ...currentReport, deliveryCharge: v })
-                    }
-                  />
-
-                  <Field
-                    label="Total"
-                    type="number"
-                    value={currentReport.total}
-                    onChange={(v) =>
-                      setCurrentReport({ ...currentReport, total: v })
-                    }
-                  />
-
-                  <Field
-                    label="Paid Amount"
-                    type="number"
-                    value={currentReport.paidAmount}
-                    onChange={handleEditPaidAmountChange}
-                  />
-
-                  <Field
-                    label="Due Amount"
-                    type="number"
-                    value={currentReport.dueAmount}
-                    onChange={handleEditDueAmountChange}
-                  />
-
-                  <div className="md:col-span-3">
-                    <label className="block text-sm text-slate-700">Note</label>
-                    <textarea
-                      value={currentReport.note || ""}
-                      onChange={(e) =>
-                        setCurrentReport({
-                          ...currentReport,
-                          note: e.target.value,
-                        })
-                      }
-                      className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                      rows={3}
-                    />
-                  </div>
-
-                  {(role === "superAdmin" || role === "admin") && (
-                    <div className="md:col-span-3">
-                      <label className="block text-sm text-slate-700">
-                        Status
-                      </label>
-                      <select
-                        value={currentReport.status || ""}
-                        onChange={(e) =>
-                          setCurrentReport({
-                            ...currentReport,
-                            status: e.target.value,
-                          })
-                        }
-                        className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                      >
-                        <option value="">Select Status</option>
-                        <option value="Approved">Approved</option>
-                        <option value="Pending">Pending</option>
-                        <option value="---">---</option>
-                      </select>
-                    </div>
-                  )}
+                    className="border border-slate-200 rounded-xl p-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  >
+                    <option value="">Select Status</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Pending">Pending</option>
+                    <option value="---">---</option>
+                  </select>
                 </div>
-              </div>
-
-              <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-slate-200 bg-white/95 px-4 py-4 backdrop-blur sm:flex-row sm:justify-end sm:px-6">
-                <button
-                  type="button"
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
-                  onClick={closeEdit}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
-                  onClick={handleUpdate}
-                >
-                  Save
-                </button>
-              </div>
+              )}
             </div>
-          </motion.div>
-        </div>
-      )}
+
+            <div className="flex flex-col-reverse gap-2 border-t border-slate-200 mt-6 pt-4 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200"
+                onClick={closeEdit}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-sm"
+                onClick={handleUpdate}
+              >
+                Save
+              </button>
+            </div>
+          </>
+        )}
+      </Modal>
 
       {/* -------------------- Invoice Modal (single) -------------------- */}
       {isInvoiceOpen && invoiceReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-3 sm:p-5">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-3 sm:p-5">
           <motion.div
-            className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.2)] max-h-[90vh] overflow-y-auto"
+            className="my-auto flex h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.2)] sm:h-[calc(100vh-2.5rem)]"
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-slate-900 font-semibold text-lg">
                 POS Invoice
               </h2>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={downloadInvoicePDF}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl shadow-sm"
@@ -1939,12 +1983,14 @@ const PosReportTable = () => {
               </div>
             </div>
 
-            <div
-              id="posInvoiceCapture"
-              ref={invoiceRef}
-              className="bg-white text-slate-900 rounded-xl p-6 border border-slate-200"
-            >
-              <PosInvoiceView report={invoiceReport} />
+            <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-3 sm:p-4">
+              <div
+                id="posInvoiceCapture"
+                ref={invoiceRef}
+                className="mx-auto bg-white text-slate-900 rounded-xl p-4 sm:p-6 border border-slate-200"
+              >
+                <PosInvoiceView report={invoiceReport} />
+              </div>
             </div>
           </motion.div>
         </div>
@@ -1952,19 +1998,19 @@ const PosReportTable = () => {
 
       {/* -------------------- Bulk Invoice Modal -------------------- */}
       {isBulkInvoiceOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-3 sm:p-5">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-3 sm:p-5">
           <motion.div
-            className="w-full max-w-5xl rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.2)] max-h-[90vh] overflow-y-auto"
+            className="my-auto flex h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.2)] sm:h-[calc(100vh-2.5rem)]"
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-slate-900 font-semibold text-lg">
                 Selected POS Invoices ({selectedReports.length})
               </h2>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={printBulkInvoices}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl disabled:opacity-60 shadow-sm"
@@ -1990,12 +2036,12 @@ const PosReportTable = () => {
               </div>
             </div>
 
-            <div className="bg-slate-50 p-4 rounded-xl max-h-[75vh] overflow-auto border border-slate-200">
+            <div className="min-h-0 flex-1 overflow-auto bg-slate-50 p-3 sm:p-4">
               <div ref={bulkInvoiceRef}>
                 {selectedReports.map((r) => (
                   <div
                     key={r.Id}
-                    className="invoice-page bg-white text-slate-900 rounded-xl p-6 mb-6 border border-slate-200"
+                    className="invoice-page mx-auto bg-white text-slate-900 rounded-xl p-4 sm:p-6 mb-6 border border-slate-200"
                   >
                     <PosInvoiceView report={r} />
                   </div>
@@ -2017,7 +2063,7 @@ function PosInvoiceView({ report }) {
     return s.length >= 10 ? s.slice(0, 10) : s;
   };
 
-  const items = Array.isArray(report?.items) ? report.items : [];
+  const items = getReportItems(report);
 
   return (
     <>

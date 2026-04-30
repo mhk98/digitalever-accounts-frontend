@@ -67,6 +67,7 @@
 import { useNavigate } from "react-router-dom";
 import Header from "../components/common/Header";
 import { useEffect, useState } from "react";
+import Pagination from "../components/common/Pagination";
 import {
   useGetDataByIdQuery,
   useUpdateNotificationMutation,
@@ -218,40 +219,11 @@ const NotificationPage = () => {
             ))}
           </div>
 
-          {/* Pagination */}
-          <div className="flex items-center justify-center space-x-2 mt-6">
-            <button
-              onClick={handlePreviousSet}
-              disabled={startPage === 1}
-              className="px-3 py-2 text-sm rounded-md border border-gray-200 bg-white text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              {t.prev}
-            </button>
-
-            {[...Array(endPage - startPage + 1)].map((_, index) => {
-              const pageNum = startPage + index;
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => handlePageChange(pageNum)}
-                  className={`px-3 py-2 text-sm rounded-md border transition ${pageNum === currentPage
-                    ? "bg-indigo-600 border-indigo-600 text-white"
-                    : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                    }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-
-            <button
-              onClick={handleNextSet}
-              disabled={endPage === totalPages}
-              className="px-3 py-2 text-sm rounded-md border border-gray-200 bg-white text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              {t.next}
-            </button>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         </div>
       </main>
     </div>

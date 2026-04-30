@@ -5,9 +5,57 @@ import Select from "react-select";
 import { motion } from "framer-motion";
 import { ShoppingBasket } from "lucide-react";
 
+const getNumberValue = (...values) => {
+  for (const value of values) {
+    const numberValue = Number(value);
+    if (Number.isFinite(numberValue) && numberValue > 0) return numberValue;
+  }
+
+  return 0;
+};
+
+const getInventoryTotalPages = ({ meta, rows, page, limit }) => {
+  const explicitTotalPages = getNumberValue(
+    meta?.totalPages,
+    meta?.totalPage,
+    meta?.lastPage,
+    meta?.pageCount,
+    meta?.pagination?.totalPages,
+    meta?.pagination?.lastPage,
+  );
+
+  if (explicitTotalPages) return explicitTotalPages;
+
+  const totalCount = getNumberValue(
+    meta?.total,
+    meta?.totalCount,
+    meta?.totalItems,
+    meta?.totalRecords,
+    meta?.recordsTotal,
+    meta?.pagination?.total,
+    meta?.pagination?.totalItems,
+    meta?.count,
+  );
+
+  const pagesFromCount = totalCount ? Math.ceil(totalCount / limit) : 0;
+  const hasNextPage =
+    Boolean(
+      meta?.hasNextPage ??
+      meta?.hasNext ??
+      meta?.pagination?.hasNextPage ??
+      meta?.pagination?.hasNext,
+    ) ||
+    getNumberValue(meta?.nextPage, meta?.pagination?.nextPage) > page ||
+    rows.length >= limit;
+
+  return Math.max(1, pagesFromCount, hasNextPage ? page + 1 : page);
+};
+
 const InventoryOverviewTable = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [startPage, setStartPage] = useState(1);
+  const [pagesPerSet, setPagesPerSet] = useState(10);
 
   // Filters for product, start date, end date, and category
   const [productName, setProductName] = useState("");
@@ -32,12 +80,30 @@ const InventoryOverviewTable = () => {
   // Flatten the data if it contains nested arrays
   const rows = (data?.data ?? []).flat();
 
-  const totalCount = Number(data?.meta?.count || 0);
-  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+  const totalPages = getInventoryTotalPages({
+    meta: data?.meta,
+    rows,
+    page,
+    limit,
+  });
+  const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
 
   useEffect(() => {
     if (isError) console.error("Inventory list error:", error);
   }, [isError, error]);
+
+  useEffect(() => {
+    const updatePagesPerSet = () => {
+      if (window.innerWidth < 640) setPagesPerSet(5);
+      else if (window.innerWidth < 1024) setPagesPerSet(7);
+      else setPagesPerSet(10);
+    };
+
+    updatePagesPerSet();
+    window.addEventListener("resize", updatePagesPerSet);
+
+    return () => window.removeEventListener("resize", updatePagesPerSet);
+  }, []);
 
   // Fetching all products for dropdown filter
   const {
@@ -47,19 +113,17 @@ const InventoryOverviewTable = () => {
     error: errorAllProducts,
   } = useGetAllProductWithoutQueryQuery();
 
-  const productsData = allProductsRes?.data || [];
-
   useEffect(() => {
     if (isErrorAllProducts)
       console.error("Error fetching products", errorAllProducts);
   }, [isErrorAllProducts, errorAllProducts]);
 
   const productDropdownOptions = useMemo(() => {
-    return (productsData || []).map((p) => ({
+    return (allProductsRes?.data || []).map((p) => ({
       value: String(p.Id ?? p.id ?? p._id),
       label: p.name,
     }));
-  }, [productsData]);
+  }, [allProductsRes?.data]);
 
   const categoryDropdownOptions = useMemo(
     () => [
@@ -71,7 +135,7 @@ const InventoryOverviewTable = () => {
       { value: "Damage Repair", label: "Damage Repair" },
       { value: "Damage Repaired", label: "Damage Repaired" },
     ],
-    []
+    [],
   );
 
   // Filters reset logic
@@ -81,12 +145,39 @@ const InventoryOverviewTable = () => {
     setProductName("");
     setCategory("");
     setPage(1);
+    setStartPage(1);
   };
 
   // Whenever filters change, reset the page to 1
   useEffect(() => {
     setPage(1);
+    setStartPage(1);
   }, [startDate, endDate, productName, category, limit]);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+      return;
+    }
+
+    if (page < startPage || page > endPage) {
+      setStartPage(Math.floor((page - 1) / pagesPerSet) * pagesPerSet + 1);
+    }
+  }, [page, totalPages, startPage, endPage, pagesPerSet]);
+
+  const handlePageChange = (pageNumber) => {
+    setPage(pageNumber);
+    if (pageNumber < startPage) setStartPage(pageNumber);
+    else if (pageNumber > endPage) setStartPage(pageNumber - pagesPerSet + 1);
+  };
+
+  const handlePreviousSet = () =>
+    setStartPage((prev) => Math.max(prev - pagesPerSet, 1));
+
+  const handleNextSet = () =>
+    setStartPage((prev) =>
+      Math.min(prev + pagesPerSet, Math.max(1, totalPages - pagesPerSet + 1)),
+    );
 
   const selectStyles = {
     control: (base, state) => ({
@@ -101,8 +192,6 @@ const InventoryOverviewTable = () => {
     placeholder: (base) => ({ ...base, color: "#64748b" }),
     menu: (base) => ({ ...base, borderRadius: 14, overflow: "hidden" }),
   };
-
-  console.log("overview", data?.meta?.totalQuantity, rows);
 
   // Table rendering and pagination
   return (
@@ -187,8 +276,9 @@ const InventoryOverviewTable = () => {
             <Select
               options={categoryDropdownOptions}
               value={
-                categoryDropdownOptions.find((option) => option.value === category) ||
-                null
+                categoryDropdownOptions.find(
+                  (option) => option.value === category,
+                ) || null
               }
               onChange={(selected) => setCategory(selected?.value || "")}
               placeholder="Select Category"
@@ -246,29 +336,40 @@ const InventoryOverviewTable = () => {
             </thead>
 
             <tbody className="divide-y divide-slate-200 bg-white">
-              {rows.map((rp) => (
-                <motion.tr
-                  key={rp.Id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                  className="hover:bg-slate-50"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                    {rp.date ? new Date(rp.date).toLocaleDateString() : "-"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                    {rp.name || "-"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                    {rp.source || "-"}
-                  </td>
+              {isLoading &&
+                Array.from({ length: 6 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    {[...Array(4)].map((__, j) => (
+                      <td key={j} className="px-6 py-4">
+                        <div className="h-4 rounded-lg bg-slate-100" />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              {!isLoading &&
+                rows.map((rp) => (
+                  <motion.tr
+                    key={rp.Id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                    className="hover:bg-slate-50"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                      {rp.date ? new Date(rp.date).toLocaleDateString() : "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
+                      {rp.name || "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
+                      {rp.source || "-"}
+                    </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.quantity || 0).toFixed(2)}
-                  </td>
-                </motion.tr>
-              ))}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                      {Number(rp.quantity || 0)}
+                    </td>
+                  </motion.tr>
+                ))}
 
               {!isLoading && rows.length === 0 && (
                 <tr>
@@ -285,25 +386,41 @@ const InventoryOverviewTable = () => {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-center gap-3 mt-5">
+        <div className="flex items-center justify-center flex-wrap gap-2 mt-5">
           <button
             type="button"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1 || isLoading}
-            className="h-10 px-4 rounded-xl border border-slate-200 bg-white text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+            onClick={handlePreviousSet}
+            disabled={startPage === 1 || isLoading}
+            className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed hover:bg-slate-50 transition"
           >
             Prev
           </button>
 
-          <div className="h-10 w-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-semibold">
-            {page}
-          </div>
+          {[...Array(endPage - startPage + 1)].map((_, index) => {
+            const pageNumber = startPage + index;
+
+            return (
+              <button
+                key={pageNumber}
+                type="button"
+                onClick={() => handlePageChange(pageNumber)}
+                disabled={isLoading}
+                className={`px-4 py-2 rounded-xl border transition ${
+                  pageNumber === page
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
 
           <button
             type="button"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page >= totalPages || isLoading}
-            className="h-10 px-4 rounded-xl border border-slate-200 bg-white text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+            onClick={handleNextSet}
+            disabled={endPage === totalPages || isLoading}
+            className="px-4 py-2 text-slate-700 bg-white border border-slate-200 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed hover:bg-slate-50 transition"
           >
             Next
           </button>

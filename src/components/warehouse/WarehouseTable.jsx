@@ -10,6 +10,8 @@ import {
 } from "../../features/wirehouse/wirehouse";
 import Modal from "../common/Modal";
 import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
+import useDebounce from "../../hooks/useDebounce";
+
 
 const WarehouseTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
@@ -20,7 +22,8 @@ const WarehouseTable = () => {
 
   const [currentWarehouse, setCurrentWarehouse] = useState(null);
   const [createWarehouse, setCreateWarehouse] = useState({ name: "" });
-  const [name, setName] = useState(""); // search term
+  const [name, setName] = useState("");
+  const debouncedName = useDebounce(name, 400); // search term
 
   const [currentPage, setCurrentPage] = useState(1);
   const [startPage, setStartPage] = useState(1);
@@ -42,7 +45,7 @@ const WarehouseTable = () => {
   const { data, isLoading, refetch } = useGetAllWirehouseQuery({
     page: currentPage,
     limit: itemsPerPage,
-    searchTerm: name || undefined,
+    searchTerm: debouncedName || undefined,
   });
 
   const warehouses = data?.data ?? [];
