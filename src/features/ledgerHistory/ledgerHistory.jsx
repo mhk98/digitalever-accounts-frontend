@@ -10,7 +10,12 @@ export const ledgerHistoryApi = baseApi.injectEndpoints({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: [{ type: "LedgerHistory", id: "LIST" }],
+      invalidatesTags: [
+        { type: "LedgerHistory", id: "LIST" },
+        { type: "SupplierHistory", id: "LIST" },
+        { type: "CashInOut", id: "LIST" },
+        { type: "Overview", id: "LIST" },
+      ],
     }),
 
     deleteLedgerHistory: build.mutation({
@@ -18,7 +23,12 @@ export const ledgerHistoryApi = baseApi.injectEndpoints({
         url: `ledger-history/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: [{ type: "LedgerHistory", id: "LIST" }],
+      invalidatesTags: [
+        { type: "LedgerHistory", id: "LIST" },
+        { type: "SupplierHistory", id: "LIST" },
+        { type: "CashInOut", id: "LIST" },
+        { type: "Overview", id: "LIST" },
+      ],
     }),
 
     updateLedgerHistory: build.mutation({
@@ -30,6 +40,9 @@ export const ledgerHistoryApi = baseApi.injectEndpoints({
       invalidatesTags: (res, err, arg) => [
         { type: "LedgerHistory", id: "LIST" },
         { type: "LedgerHistory", id: arg.id },
+        { type: "SupplierHistory", id: "LIST" },
+        { type: "CashInOut", id: "LIST" },
+        { type: "Overview", id: "LIST" },
       ],
     }),
 

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Select from "react-select";
+import Pagination from "../common/Pagination";
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api/v1`;
 
@@ -122,6 +123,9 @@ const LogHistoryTable = () => {
   const [userOptions, setUserOptions] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [logs, setLogs] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [totalCount, setTotalCount] = useState(0);
   const [userSearch, setUserSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -170,6 +174,7 @@ const LogHistoryTable = () => {
   const loadLogs = async (userId, filters = {}) => {
     if (!userId) {
       setLogs([]);
+      setTotalCount(0);
       return;
     }
 
@@ -178,8 +183,8 @@ const LogHistoryTable = () => {
 
       const params = new URLSearchParams({
         userId: String(userId),
-        page: "1",
-        limit: "200",
+        page: String(filters.page || 1),
+        limit: String(filters.limit || pageSize),
       });
 
       if (filters.startDate) params.set("startDate", filters.startDate);
@@ -191,6 +196,8 @@ const LogHistoryTable = () => {
       );
 
       const nextLogs = response.data?.data || [];
+      const meta = response.data?.meta || {};
+      setTotalCount(Number(meta.count || nextLogs.length || 0));
       setLogs(
         nextLogs.filter((log) =>
           isWithinDateRange(
@@ -203,6 +210,7 @@ const LogHistoryTable = () => {
     } catch (error) {
       console.error("Failed to load log history", error);
       setLogs([]);
+      setTotalCount(0);
     } finally {
       setLoadingLogs(false);
     }
@@ -229,17 +237,39 @@ const LogHistoryTable = () => {
   useEffect(() => {
     if (!selectedUser?.value) return;
 
-    loadLogs(selectedUser.value, { startDate, endDate });
-  }, [selectedUser?.value, startDate, endDate]);
+    loadLogs(selectedUser.value, {
+      startDate,
+      endDate,
+      page: currentPage,
+      limit: pageSize,
+    });
+  }, [selectedUser?.value, startDate, endDate, currentPage, pageSize]);
 
   const handleUserChange = (selectedOption) => {
     setSelectedUser(selectedOption);
+    setCurrentPage(1);
     if (!selectedOption?.value) {
       setLogs([]);
+      setTotalCount(0);
     }
   };
 
-  const totalLogs = logs.length;
+  const handleStartDateChange = (event) => {
+    setStartDate(event.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleEndDateChange = (event) => {
+    setEndDate(event.target.value);
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (event) => {
+    setPageSize(Number(event.target.value));
+    setCurrentPage(1);
+  };
+
+  const totalLogs = totalCount;
   const successLogs = logs.filter((log) =>
     String(log?.status || "")
       .toLowerCase()
@@ -251,6 +281,7 @@ const LogHistoryTable = () => {
       .match(/fail|error|denied/),
   ).length;
   const latestActivity = logs[0]?.createdAt || logs[0]?.date || null;
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <motion.div
@@ -309,7 +340,7 @@ const LogHistoryTable = () => {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400">
-                Success
+                Page Success
               </p>
               <p className="text-lg sm:text-xl font-black text-emerald-900 truncate">
                 {loadingLogs ? "..." : successLogs.toLocaleString()}
@@ -325,7 +356,7 @@ const LogHistoryTable = () => {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-rose-400">
-                Failed
+                Page Failed
               </p>
               <p className="text-lg sm:text-xl font-black text-rose-900 truncate">
                 {loadingLogs ? "..." : failedLogs.toLocaleString()}
@@ -341,7 +372,7 @@ const LogHistoryTable = () => {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-400">
-                Latest Activity
+                Page Latest
               </p>
               <p className="text-sm font-black text-indigo-900 break-words">
                 {loadingLogs ? "Loading..." : formatDateTime(latestActivity)}
@@ -351,7 +382,7 @@ const LogHistoryTable = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(180px,0.45fr)_minmax(180px,0.45fr)_auto] gap-4 mb-6 sm:mb-8 bg-slate-50/50 p-4 sm:p-6 rounded-3xl border border-slate-100 items-end">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(150px,0.35fr)_minmax(150px,0.35fr)_minmax(130px,0.25fr)_auto] gap-4 mb-6 sm:mb-8 bg-slate-50/50 p-4 sm:p-6 rounded-3xl border border-slate-100 items-end">
         <div className="flex flex-col">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
             User
@@ -384,7 +415,7 @@ const LogHistoryTable = () => {
             <input
               type="date"
               value={startDate}
-              onChange={(event) => setStartDate(event.target.value)}
+              onChange={handleStartDateChange}
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-indigo-200 focus:ring-4 focus:ring-indigo-100"
             />
             <Calendar
@@ -403,7 +434,7 @@ const LogHistoryTable = () => {
               type="date"
               value={endDate}
               min={startDate || undefined}
-              onChange={(event) => setEndDate(event.target.value)}
+              onChange={handleEndDateChange}
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-indigo-200 focus:ring-4 focus:ring-indigo-100"
             />
             <Calendar
@@ -413,6 +444,22 @@ const LogHistoryTable = () => {
           </label>
         </div>
 
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
+            Per Page
+          </label>
+          <select
+            value={pageSize}
+            onChange={handlePageSizeChange}
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-indigo-200 focus:ring-4 focus:ring-indigo-100"
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+
         <button
           type="button"
           onClick={() => {
@@ -420,6 +467,8 @@ const LogHistoryTable = () => {
             setUserSearch("");
             setStartDate("");
             setEndDate("");
+            setCurrentPage(1);
+            setTotalCount(0);
             setLogs([]);
             loadUsers("");
           }}
@@ -650,6 +699,16 @@ const LogHistoryTable = () => {
           )}
         </div>
       </div>
+
+      {!loadingLogs && selectedUser && totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalCount={totalCount}
+          pageSize={pageSize}
+        />
+      )}
     </motion.div>
   );
 };

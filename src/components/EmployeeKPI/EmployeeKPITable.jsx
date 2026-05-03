@@ -1,8 +1,26 @@
 import { motion } from "framer-motion";
-import { Edit, Notebook, Plus, Trash2, BarChart3, Settings } from "lucide-react";
+import {
+  Edit,
+  Notebook,
+  Plus,
+  Trash2,
+  BarChart3,
+  Settings,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import Modal from "../common/Modal";
 import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 import {
@@ -11,10 +29,11 @@ import {
   useGetAllKPIWithoutQueryQuery,
   useInsertKPIMutation,
   useGetKPISettingsQuery,
+  useGetKPIEmployeeOptionsQuery,
+  useGetKPIPerformanceGraphQuery,
   useUpdateKPIMutation,
   useUpdateKPISettingsMutation,
 } from "../../features/kpi/kpi";
-
 
 const parseSettingRules = (rules) => {
   if (Array.isArray(rules)) return rules;
@@ -28,7 +47,97 @@ const parseSettingRules = (rules) => {
   }
 };
 
+const RAW_FIELDS = [
+  "confirmRaw",
+  "deliveredRaw",
+  "returnParcentRaw",
+  "lateRaw",
+  "absentRaw",
+  "leaveRaw",
+  "workingTimeRaw",
+  "qcRaw",
+  "overallBaviourRaw",
+  "totalSaleAmountRaw",
+];
+
+const KPI_SETTING_ORDER = [
+  "order_cs",
+  "order_up",
+  "delivered",
+  "return",
+  "late",
+  "absent",
+  "leave",
+  "working_time",
+  "qc",
+  "overall_behaviour",
+  "total_sale_amount",
+];
+
+const REQUIRED_KPI_SETTINGS = [
+  {
+    key: "qc",
+    label: "For QC",
+    status: "Active",
+    rules: [
+      { label: "90+", min: 90, max: null, mark: 10 },
+      { label: "80 - 89", min: 80, max: 89, mark: 9 },
+      { label: "70 - 79", min: 70, max: 79, mark: 8 },
+      { label: "60 - 69", min: 60, max: 69, mark: 7 },
+      { label: "50 - 59", min: 50, max: 59, mark: 6 },
+    ],
+  },
+  {
+    key: "overall_behaviour",
+    label: "For Overall Behaviour",
+    status: "Active",
+    rules: [
+      { label: "90+", min: 90, max: null, mark: 10 },
+      { label: "80 - 89", min: 80, max: 89, mark: 9 },
+      { label: "70 - 79", min: 70, max: 79, mark: 8 },
+      { label: "60 - 69", min: 60, max: 69, mark: 7 },
+      { label: "50 - 59", min: 50, max: 59, mark: 6 },
+    ],
+  },
+  {
+    key: "total_sale_amount",
+    label: "For Total Sale Amount",
+    status: "Active",
+    rules: [
+      { label: "100000+", min: 100000, max: null, mark: 10 },
+      { label: "80000 - 99999", min: 80000, max: 99999, mark: 9 },
+      { label: "60000 - 79999", min: 60000, max: 79999, mark: 8 },
+      { label: "40000 - 59999", min: 40000, max: 59999, mark: 7 },
+      { label: "20000 - 39999", min: 20000, max: 39999, mark: 6 },
+    ],
+  },
+];
+
+const mergeRequiredKpiSettings = (settings = []) => {
+  const normalized = settings.map((item) => ({
+    ...item,
+    rules: parseSettingRules(item.rules),
+  }));
+  const existingKeys = new Set(normalized.map((item) => item.key));
+  const missing = REQUIRED_KPI_SETTINGS.filter(
+    (item) => !existingKeys.has(item.key),
+  );
+
+  return [...normalized, ...missing].sort((a, b) => {
+    const aIndex = KPI_SETTING_ORDER.indexOf(a.key);
+    const bIndex = KPI_SETTING_ORDER.indexOf(b.key);
+    const safeAIndex = aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex;
+    const safeBIndex = bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex;
+    return safeAIndex - safeBIndex;
+  });
+};
+
+const rawValue = (item, field) =>
+  item?.[field] !== null && item?.[field] !== undefined ? item[field] : null;
+
 const emptyKpiForm = () => ({
+  userId: "",
+  employeeId: "",
   designationType: "CS",
   periodType: "Monthly",
   periodStartDate: new Date().toISOString().slice(0, 10),
@@ -40,6 +149,9 @@ const emptyKpiForm = () => ({
   absentRaw: "",
   leaveRaw: "",
   workingTimeRaw: "",
+  qcRaw: "",
+  overallBaviourRaw: "",
+  totalSaleAmountRaw: "",
   confirm: "",
   delivered: "",
   returnParcent: "",
@@ -48,7 +160,7 @@ const emptyKpiForm = () => ({
   leave: "",
   workingTime: "",
   qc: "",
-  overallBehind: "",
+  overallBaviour: "",
   totalSaleAmount: "",
   date: new Date().toISOString().slice(0, 10),
   note: "",
@@ -58,6 +170,7 @@ const emptyKpiForm = () => ({
 const EmployeeKPITable = () => {
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
+  const isEmployeeRole = role === "employee";
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen1, setIsModalOpen1] = useState(false);
@@ -77,7 +190,7 @@ const EmployeeKPITable = () => {
   // filters
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [status, setStatus] = useState("");
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
 
   // pagination
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -117,7 +230,7 @@ const EmployeeKPITable = () => {
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate, status, itemsPerPage]);
+  }, [startDate, endDate, selectedEmployee, itemsPerPage]);
 
   useEffect(() => {
     if (startDate && endDate && startDate > endDate) {
@@ -131,7 +244,10 @@ const EmployeeKPITable = () => {
       limit: itemsPerPage,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      status: status || undefined,
+      userId: isEmployeeRole
+        ? userId || undefined
+        : selectedEmployee?.userId || selectedEmployee?.value || undefined,
+      employeeId: isEmployeeRole ? undefined : selectedEmployee?.employeeId || undefined,
     };
 
     Object.keys(args).forEach((k) => {
@@ -141,7 +257,15 @@ const EmployeeKPITable = () => {
     });
 
     return args;
-  }, [currentPage, itemsPerPage, startDate, endDate, status]);
+  }, [
+    currentPage,
+    itemsPerPage,
+    startDate,
+    endDate,
+    selectedEmployee,
+    isEmployeeRole,
+    userId,
+  ]);
 
   const { data, isLoading, isError, error, refetch } =
     useGetAllKPIQuery(queryArgs);
@@ -165,15 +289,47 @@ const EmployeeKPITable = () => {
     isLoading: isSettingsLoading,
     refetch: refetchSettings,
   } = useGetKPISettingsQuery();
+  const { data: employeeOptionsData, isLoading: isEmployeeOptionsLoading } =
+    useGetKPIEmployeeOptionsQuery({ limit: 200 });
+  const graphQueryArgs = useMemo(
+    () => ({
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+      userId: isEmployeeRole
+        ? userId || undefined
+        : selectedEmployee?.userId || selectedEmployee?.value || undefined,
+      employeeId: isEmployeeRole ? undefined : selectedEmployee?.employeeId || undefined,
+    }),
+    [startDate, endDate, selectedEmployee, isEmployeeRole, userId],
+  );
+  const { data: performanceGraphData, isLoading: isPerformanceGraphLoading } =
+    useGetKPIPerformanceGraphQuery(graphQueryArgs);
+
+  const employeeOptions = useMemo(
+    () => employeeOptionsData?.data || [],
+    [employeeOptionsData],
+  );
+
+  const findEmployeeOption = (item = {}) => {
+    const source = item || {};
+    const itemUserId = Number(source.userId || source.value || 0);
+    const itemEmployeeId = Number(source.employeeId || 0);
+
+    return (
+      employeeOptions.find((option) => {
+        const optionUserId = Number(option.userId || option.value || 0);
+        const optionEmployeeId = Number(option.employeeId || 0);
+        return (
+          (itemUserId && optionUserId === itemUserId) ||
+          (itemEmployeeId && optionEmployeeId === itemEmployeeId)
+        );
+      }) || null
+    );
+  };
 
   useEffect(() => {
     if (settingsData?.data) {
-      setSettingsDraft(
-        settingsData.data.map((item) => ({
-          ...item,
-          rules: parseSettingRules(item.rules),
-        })),
-      );
+      setSettingsDraft(mergeRequiredKpiSettings(settingsData.data));
     }
   }, [settingsData]);
 
@@ -193,15 +349,7 @@ const EmployeeKPITable = () => {
   };
 
   const stripEmptyRawFields = (payload) => {
-    [
-      "confirmRaw",
-      "deliveredRaw",
-      "returnParcentRaw",
-      "lateRaw",
-      "absentRaw",
-      "leaveRaw",
-      "workingTimeRaw",
-    ].forEach((field) => {
+    RAW_FIELDS.forEach((field) => {
       if (payload[field] === "" || payload[field] === null) {
         delete payload[field];
       }
@@ -217,8 +365,12 @@ const EmployeeKPITable = () => {
   const handleAddProduct = () => setIsModalOpen1(true);
 
   const handleEditClick = (product) => {
+    const employeeOption = findEmployeeOption(product);
     setCurrentProduct({
       ...product,
+      selectedEmployee: employeeOption,
+      userId: employeeOption?.userId || product.userId || "",
+      employeeId: employeeOption?.employeeId || product.employeeId || "",
       designationType: product.designationType ?? "CS",
       periodType: product.periodType ?? "Monthly",
       periodStartDate: product.periodStartDate ?? product.date ?? "",
@@ -230,6 +382,9 @@ const EmployeeKPITable = () => {
       absentRaw: product.absentRaw ?? "",
       leaveRaw: product.leaveRaw ?? "",
       workingTimeRaw: product.workingTimeRaw ?? "",
+      qcRaw: product.qcRaw ?? "",
+      overallBaviourRaw: product.overallBaviourRaw ?? "",
+      totalSaleAmountRaw: product.totalSaleAmountRaw ?? "",
       confirm: product.confirm ?? "",
       delivered: product.delivered ?? "",
       returnParcent: product.returnParcent ?? "",
@@ -238,12 +393,11 @@ const EmployeeKPITable = () => {
       leave: product.leave ?? "",
       workingTime: product.workingTime ?? "",
       qc: product.qc ?? "",
-      overallBehind: product.overallBehind ?? "",
+      overallBaviour: product.overallBaviour ?? product.overallBehind ?? "",
       totalSaleAmount: product.totalSaleAmount ?? "",
       date: product.date ?? "",
       note: product.note ?? "",
       status: product.status ?? "",
-      userId,
     });
     setIsModalOpen(true);
   };
@@ -265,6 +419,8 @@ const EmployeeKPITable = () => {
       const payload = stripEmptyRawFields({
         designationType: createProduct.designationType,
         periodType: createProduct.periodType,
+        userId: createProduct.userId,
+        employeeId: createProduct.employeeId,
         periodStartDate: createProduct.periodStartDate,
         periodEndDate: createProduct.periodEndDate,
         confirmRaw: createProduct.confirmRaw,
@@ -274,20 +430,17 @@ const EmployeeKPITable = () => {
         absentRaw: createProduct.absentRaw,
         leaveRaw: createProduct.leaveRaw,
         workingTimeRaw: createProduct.workingTimeRaw,
-        confirm: Number(createProduct.confirm || 0),
-        delivered: Number(createProduct.delivered || 0),
-        returnParcent: Number(createProduct.returnParcent || 0),
-        late: Number(createProduct.late || 0),
-        absent: Number(createProduct.absent || 0),
-        leave: Number(createProduct.leave || 0),
-        workingTime: Number(createProduct.workingTime || 0),
-        qc: Number(createProduct.qc || 0),
-        overallBehind: Number(createProduct.overallBehind || 0),
-        totalSaleAmount: Number(createProduct.totalSaleAmount || 0),
+        qcRaw: createProduct.qcRaw,
+        overallBaviourRaw: createProduct.overallBaviourRaw,
+        totalSaleAmountRaw: createProduct.totalSaleAmountRaw,
         date: createProduct.date,
         note: createProduct.note,
-        status: createProduct.status || "Pending",
       });
+
+      if (!payload.userId && !payload.employeeId) {
+        toast.error("Please select an employee");
+        return;
+      }
 
       const res = await insertKPI(payload).unwrap();
 
@@ -310,6 +463,8 @@ const EmployeeKPITable = () => {
       const payload = stripEmptyRawFields({
         designationType: currentProduct.designationType,
         periodType: currentProduct.periodType,
+        userId: currentProduct.userId,
+        employeeId: currentProduct.employeeId,
         periodStartDate: currentProduct.periodStartDate,
         periodEndDate: currentProduct.periodEndDate,
         confirmRaw: currentProduct.confirmRaw,
@@ -319,20 +474,11 @@ const EmployeeKPITable = () => {
         absentRaw: currentProduct.absentRaw,
         leaveRaw: currentProduct.leaveRaw,
         workingTimeRaw: currentProduct.workingTimeRaw,
-        confirm: Number(currentProduct.confirm || 0),
-        delivered: Number(currentProduct.delivered || 0),
-        returnParcent: Number(currentProduct.returnParcent || 0),
-        late: Number(currentProduct.late || 0),
-        absent: Number(currentProduct.absent || 0),
-        leave: Number(currentProduct.leave || 0),
-        workingTime: Number(currentProduct.workingTime || 0),
-        qc: Number(currentProduct.qc || 0),
-        overallBehind: Number(currentProduct.overallBehind || 0),
-        totalSaleAmount: Number(currentProduct.totalSaleAmount || 0),
+        qcRaw: currentProduct.qcRaw,
+        overallBaviourRaw: currentProduct.overallBaviourRaw,
+        totalSaleAmountRaw: currentProduct.totalSaleAmountRaw,
         date: currentProduct.date,
         note: currentProduct.note,
-        status: currentProduct.status,
-        userId,
         actorRole: role,
       });
 
@@ -362,7 +508,6 @@ const EmployeeKPITable = () => {
     try {
       const payload = {
         note: currentProduct.note,
-        status: currentProduct.status,
         userId,
         actorRole: role,
       };
@@ -385,7 +530,9 @@ const EmployeeKPITable = () => {
   };
 
   const handleDeleteProduct = async (id) => {
-    const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this KPI?" });
+    const confirmDelete = await requestDeleteConfirmation({
+      message: "Do you want to delete this KPI?",
+    });
     if (!confirmDelete) return;
 
     try {
@@ -504,7 +651,7 @@ const EmployeeKPITable = () => {
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
-    setStatus("");
+    setSelectedEmployee(null);
   };
 
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
@@ -522,30 +669,6 @@ const EmployeeKPITable = () => {
     setStartPage((prev) =>
       Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
-
-  const statusOptions = useMemo(() => {
-    const base = [
-      { value: "Approved", label: "Approved" },
-      { value: "Pending", label: "Pending" },
-      { value: "Active", label: "Active" },
-    ];
-
-    const dynamic = (productsData || [])
-      .map((item) => item?.status)
-      .filter(Boolean)
-      .map((item) => ({
-        value: item,
-        label: item,
-      }));
-
-    const seen = new Set();
-    return [...base, ...dynamic].filter((item) => {
-      const key = String(item.value).toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [productsData]);
 
   const selectStyles = useMemo(
     () => ({
@@ -583,19 +706,84 @@ const EmployeeKPITable = () => {
 
   const summary = useMemo(() => {
     const rows = products || [];
+    const averageOf = (getter) => {
+      const values = rows
+        .map((item) => Number(getter(item) || 0))
+        .filter((value) => Number.isFinite(value));
+
+      if (!values.length) return 0;
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    };
+
     return {
-      delivered: rows.reduce(
-        (sum, item) => sum + Number(item.delivered || 0),
-        0,
+      order: averageOf((item) => item.confirmRaw ?? item.confirm),
+      delivered: averageOf((item) => item.deliveredRaw ?? item.delivered),
+      returnPercent: averageOf(
+        (item) => item.returnParcentRaw ?? item.returnParcent,
+      ),
+      late: averageOf((item) => item.lateRaw ?? item.late),
+      absent: averageOf((item) => item.absentRaw ?? item.absent),
+      leave: averageOf((item) => item.leaveRaw ?? item.leave),
+      workingTime: averageOf((item) => item.workingTimeRaw ?? item.workingTime),
+      qc: averageOf((item) => item.qcRaw ?? item.qc),
+      overallBehaviour: averageOf(
+        (item) => item.overallBaviourRaw ?? item.overallBaviour,
       ),
       sale: rows.reduce(
-        (sum, item) => sum + Number(item.totalSaleAmount || 0),
+        (sum, item) =>
+          sum + Number(item.totalSaleAmountRaw ?? item.totalSaleAmount ?? 0),
         0,
       ),
-      late: rows.reduce((sum, item) => sum + Number(item.late || 0), 0),
-      absent: rows.reduce((sum, item) => sum + Number(item.absent || 0), 0),
     };
   }, [products]);
+
+  const graphPoints = performanceGraphData?.data?.points || [];
+
+  const performanceChartData = useMemo(() => {
+    if (isEmployeeRole || selectedEmployee) {
+      return graphPoints.map((point) => ({
+        name:
+          point.periodType && point.periodStartDate
+            ? `${point.periodType} ${point.periodStartDate}`
+            : point.date || point.periodStartDate || "-",
+        score: Number(point.totalMarks || 0),
+        percentage: Number(point.performancePercentage || 0),
+      }));
+    }
+
+    const employeeMap = new Map();
+    graphPoints.forEach((point) => {
+      const key = point.employeeName || `Employee ${point.employeeId || point.userId || ""}`;
+      const current = employeeMap.get(key) || {
+        name: key,
+        totalScore: 0,
+        records: 0,
+        latestScore: 0,
+      };
+
+      current.totalScore += Number(point.totalMarks || 0);
+      current.records += 1;
+      current.latestScore = Number(point.totalMarks || 0);
+      employeeMap.set(key, current);
+    });
+
+    return Array.from(employeeMap.values()).map((item) => ({
+      name: item.name,
+      score: item.records ? Number((item.totalScore / item.records).toFixed(2)) : 0,
+      latestScore: item.latestScore,
+    }));
+  }, [graphPoints, selectedEmployee, isEmployeeRole]);
+
+  const graphTitle = isEmployeeRole
+    ? "My KPI Performance"
+    : selectedEmployee
+    ? `${selectedEmployee.label} Performance Trend`
+    : "All Employee Performance";
+
+  const graphDescription =
+    isEmployeeRole || selectedEmployee
+      ? "Month/date wise score out of 100"
+      : "Average score out of 100 for each employee";
 
   return (
     <motion.div
@@ -604,22 +792,86 @@ const EmployeeKPITable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        <SummaryCard title="Total Delivered" value={summary.delivered} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <SummaryCard title="Order" value={summary.order} />
+        <SummaryCard title="Delivered" value={summary.delivered} suffix="%" />
+        <SummaryCard title="Return %" value={summary.returnPercent} suffix="%" />
+        <SummaryCard title="Late" value={summary.late} />
+        <SummaryCard title="Absent" value={summary.absent} />
+        <SummaryCard title="Leave" value={summary.leave} />
+        <SummaryCard title="Working Time" value={summary.workingTime} />
+        <SummaryCard title="QC" value={summary.qc} suffix="%" />
+        <SummaryCard
+          title="Overall Behaviour"
+          value={summary.overallBehaviour}
+          suffix="%"
+        />
         <SummaryCard title="Total Sale" value={summary.sale} />
-        <SummaryCard title="Total Late" value={summary.late} />
-        <SummaryCard title="Total Absent" value={summary.absent} />
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-base font-bold text-slate-900">{graphTitle}</h3>
+            <p className="text-sm text-slate-500">
+              {graphDescription}
+            </p>
+          </div>
+          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-600">
+            {isPerformanceGraphLoading
+              ? "Loading..."
+              : `${performanceChartData.length} point${performanceChartData.length === 1 ? "" : "s"}`}
+          </span>
+        </div>
+
+        <div className="h-72 w-full">
+          {performanceChartData.length ? (
+            <ResponsiveContainer width="100%" height="100%">
+              {isEmployeeRole || selectedEmployee ? (
+                <LineChart data={performanceChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#64748b" />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} stroke="#64748b" />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    name="Score"
+                    stroke="#4f46e5"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              ) : (
+                <BarChart data={performanceChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#64748b" />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} stroke="#64748b" />
+                  <Tooltip />
+                  <Bar dataKey="score" name="Average Score" fill="#4f46e5" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              )}
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-sm font-semibold text-slate-500">
+              No performance data found
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="my-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            onClick={handleAddProduct}
-            className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition px-4 py-2 rounded-xl shadow-sm font-semibold"
-          >
-            Add KPI <Plus size={18} />
-          </button>
+          {!isEmployeeRole ? (
+            <button
+              type="button"
+              onClick={handleAddProduct}
+              className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition px-4 py-2 rounded-xl shadow-sm font-semibold"
+            >
+              Add KPI <Plus size={18} />
+            </button>
+          ) : null}
           {role === "superAdmin" || role === "admin" ? (
             <button
               type="button"
@@ -643,7 +895,11 @@ const EmployeeKPITable = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6 w-full justify-center mx-auto">
+      <div
+        className={`grid grid-cols-1 gap-4 items-end mb-6 w-full justify-center mx-auto ${
+          isEmployeeRole ? "md:grid-cols-4" : "md:grid-cols-5"
+        }`}
+      >
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">From</label>
           <input
@@ -664,19 +920,22 @@ const EmployeeKPITable = () => {
           />
         </div>
 
-        <div className="flex items-center justify-center md:mt-0">
-          <Select
-            options={statusOptions}
-            value={statusOptions.find((o) => o.value === status) || null}
-            onChange={(selected) =>
-              setStatus(selected?.value ? String(selected.value) : "")
-            }
-            placeholder="Select Status"
-            isClearable
-            styles={selectStyles}
-            className="w-full"
-          />
-        </div>
+        {!isEmployeeRole ? (
+          <div className="flex items-center justify-center md:mt-0">
+            <Select
+              options={employeeOptions}
+              value={selectedEmployee}
+              onChange={setSelectedEmployee}
+              placeholder={
+                isEmployeeOptionsLoading ? "Loading employees..." : "Select Employee"
+              }
+              isClearable
+              isLoading={isEmployeeOptionsLoading}
+              styles={selectStyles}
+              className="w-full"
+            />
+          </div>
+        ) : null}
 
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Per Page</label>
@@ -710,6 +969,7 @@ const EmployeeKPITable = () => {
           <thead className="bg-slate-50">
             <tr>
               {[
+                "Employee",
                 "Date",
                 "Period",
                 "Designation",
@@ -723,9 +983,10 @@ const EmployeeKPITable = () => {
                 "QC",
                 "Overall Behaviour",
                 "Total Sale",
-                "Status",
-                "Actions",
-              ].map((h) => (
+                !isEmployeeRole ? "Actions" : null,
+              ]
+                .filter(Boolean)
+                .map((h) => (
                 <th
                   key={h}
                   className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
@@ -746,17 +1007,22 @@ const EmployeeKPITable = () => {
                 className="hover:bg-slate-50"
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
+                  {product.employeeName || product.employee?.name || "-"}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                   {product.date}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {product.periodStartDate || "-"} to {product.periodEndDate || "-"}
+                  {product.periodStartDate || "-"} to{" "}
+                  {product.periodEndDate || "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {product.designationType || "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {product.confirm}
-                  {product.confirmRaw !== null && product.confirmRaw !== undefined ? (
+                  {product.confirmRaw !== null &&
+                  product.confirmRaw !== undefined ? (
                     <span className="ml-1 text-xs text-slate-400">
                       ({product.confirmRaw})
                     </span>
@@ -764,7 +1030,8 @@ const EmployeeKPITable = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {product.delivered}
-                  {product.deliveredRaw !== null && product.deliveredRaw !== undefined ? (
+                  {product.deliveredRaw !== null &&
+                  product.deliveredRaw !== undefined ? (
                     <span className="ml-1 text-xs text-slate-400">
                       ({product.deliveredRaw})
                     </span>
@@ -781,76 +1048,98 @@ const EmployeeKPITable = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {product.late}
+                  {rawValue(product, "lateRaw") !== null ? (
+                    <span className="ml-1 text-xs text-slate-400">
+                      ({product.lateRaw})
+                    </span>
+                  ) : null}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {product.absent}
+                  {rawValue(product, "absentRaw") !== null ? (
+                    <span className="ml-1 text-xs text-slate-400">
+                      ({product.absentRaw})
+                    </span>
+                  ) : null}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {product.leave}
+                  {rawValue(product, "leaveRaw") !== null ? (
+                    <span className="ml-1 text-xs text-slate-400">
+                      ({product.leaveRaw})
+                    </span>
+                  ) : null}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {product.workingTime}
+                  {rawValue(product, "workingTimeRaw") !== null ? (
+                    <span className="ml-1 text-xs text-slate-400">
+                      ({product.workingTimeRaw})
+                    </span>
+                  ) : null}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {product.qc}
+                  {rawValue(product, "qcRaw") !== null ? (
+                    <span className="ml-1 text-xs text-slate-400">
+                      ({product.qcRaw})
+                    </span>
+                  ) : null}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {product.overallBehind}
+                  {product.overallBaviour ?? product.overallBehind}
+                  {rawValue(product, "overallBaviourRaw") !== null ? (
+                    <span className="ml-1 text-xs text-slate-400">
+                      ({product.overallBaviourRaw})
+                    </span>
+                  ) : null}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {Number(product.totalSaleAmount || 0).toFixed(2)}
+                  {rawValue(product, "totalSaleAmountRaw") !== null ? (
+                    <span className="ml-1 text-xs text-slate-400">
+                      ({Number(product.totalSaleAmountRaw || 0).toFixed(2)})
+                    </span>
+                  ) : null}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
-                      product.status === "Approved"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : product.status === "Active"
-                          ? "bg-blue-50 text-blue-700 border-blue-200"
-                          : "bg-amber-50 text-amber-700 border-amber-200"
-                    }`}
-                  >
-                    {product.status}
-                  </span>
-                </td>
+                {!isEmployeeRole ? (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center gap-3">
+                      {product.note ? (
+                        <div className="relative">
+                          <button
+                            className="relative h-10 w-10 rounded-md flex items-center justify-center"
+                            title={product.note}
+                            type="button"
+                            onClick={() => handleNoteClick(product.note)}
+                          >
+                            <Notebook size={18} className="text-slate-700" />
+                          </button>
 
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex items-center gap-3">
-                    {product.note ? (
-                      <div className="relative">
+                          <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
+                            1
+                          </span>
+                        </div>
+                      ) : (
                         <button
-                          className="relative h-10 w-10 rounded-md flex items-center justify-center"
-                          title={product.note}
+                          className="h-10 w-10 rounded-md flex items-center justify-center cursor-default"
+                          title="No note available"
                           type="button"
-                          onClick={() => handleNoteClick(product.note)}
                         >
-                          <Notebook size={18} className="text-slate-700" />
+                          <Notebook size={18} className="text-slate-300" />
                         </button>
+                      )}
 
-                        <span className="absolute top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center">
-                          1
-                        </span>
-                      </div>
-                    ) : (
                       <button
-                        className="h-10 w-10 rounded-md flex items-center justify-center cursor-default"
-                        title="No note available"
+                        onClick={() => handleEditClick(product)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-indigo-50 transition"
+                        title="Edit"
                         type="button"
                       >
-                        <Notebook size={18} className="text-slate-300" />
+                        <Edit size={18} className="text-indigo-600" />
                       </button>
-                    )}
 
-                    <button
-                      onClick={() => handleEditClick(product)}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-indigo-50 transition"
-                      title="Edit"
-                      type="button"
-                    >
-                      <Edit size={18} className="text-indigo-600" />
-                    </button>
-
-                    {role === "superAdmin" || role === "admin" ? (
+                      {role === "superAdmin" || role === "admin" ? (
                       <button
                         onClick={() => handleDeleteProduct(product.Id)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-rose-50 transition"
@@ -868,16 +1157,17 @@ const EmployeeKPITable = () => {
                       >
                         <Trash2 size={18} className="text-rose-600" />
                       </button>
-                    )}
-                  </div>
-                </td>
+                      )}
+                    </div>
+                  </td>
+                ) : null}
               </motion.tr>
             ))}
 
             {!isLoading && products.length === 0 && (
               <tr>
                 <td
-                  colSpan={15}
+                  colSpan={isEmployeeRole ? 14 : 15}
                   className="px-6 py-6 text-center text-sm text-slate-600"
                 >
                   No data found
@@ -1110,6 +1400,29 @@ const EmployeeKPITable = () => {
         maxWidth="max-w-4xl"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="md:col-span-2">
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+              Employee
+            </label>
+            <Select
+              options={employeeOptions}
+              value={currentProduct?.selectedEmployee || findEmployeeOption(currentProduct)}
+              onChange={(selected) =>
+                setCurrentProduct({
+                  ...currentProduct,
+                  selectedEmployee: selected,
+                  userId: selected?.userId || selected?.value || "",
+                  employeeId: selected?.employeeId || "",
+                })
+              }
+              placeholder={
+                isEmployeeOptionsLoading ? "Loading employees..." : "Select Employee"
+              }
+              isClearable
+              isLoading={isEmployeeOptionsLoading}
+              styles={selectStyles}
+            />
+          </div>
           <Field
             label="Date"
             type="date"
@@ -1150,7 +1463,7 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Order Raw"
+            label="Order"
             type="number"
             value={currentProduct?.confirmRaw || ""}
             onChange={(v) =>
@@ -1158,14 +1471,7 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Order Mark"
-            value={currentProduct?.confirm || ""}
-            onChange={(v) =>
-              setCurrentProduct({ ...currentProduct, confirm: v })
-            }
-          />
-          <Field
-            label="Delivered Raw"
+            label="Delivered"
             type="number"
             value={currentProduct?.deliveredRaw || ""}
             onChange={(v) =>
@@ -1173,15 +1479,7 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Delivered Mark"
-            type="number"
-            value={currentProduct?.delivered || ""}
-            onChange={(v) =>
-              setCurrentProduct({ ...currentProduct, delivered: v })
-            }
-          />
-          <Field
-            label="Return Raw"
+            label="Return"
             type="number"
             value={currentProduct?.returnParcentRaw || ""}
             onChange={(v) =>
@@ -1189,15 +1487,7 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Return Mark"
-            type="number"
-            value={currentProduct?.returnParcent || ""}
-            onChange={(v) =>
-              setCurrentProduct({ ...currentProduct, returnParcent: v })
-            }
-          />
-          <Field
-            label="Late Raw"
+            label="Late"
             type="number"
             value={currentProduct?.lateRaw || ""}
             onChange={(v) =>
@@ -1205,13 +1495,7 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Late Mark"
-            type="number"
-            value={currentProduct?.late || ""}
-            onChange={(v) => setCurrentProduct({ ...currentProduct, late: v })}
-          />
-          <Field
-            label="Absent Raw"
+            label="Absent"
             type="number"
             value={currentProduct?.absentRaw || ""}
             onChange={(v) =>
@@ -1219,15 +1503,7 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Absent Mark"
-            type="number"
-            value={currentProduct?.absent || ""}
-            onChange={(v) =>
-              setCurrentProduct({ ...currentProduct, absent: v })
-            }
-          />
-          <Field
-            label="Leave Raw"
+            label="Leave"
             type="number"
             value={currentProduct?.leaveRaw || ""}
             onChange={(v) =>
@@ -1235,13 +1511,7 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Leave Mark"
-            type="number"
-            value={currentProduct?.leave || ""}
-            onChange={(v) => setCurrentProduct({ ...currentProduct, leave: v })}
-          />
-          <Field
-            label="Working Time Raw"
+            label="Working Time"
             type="number"
             step="0.01"
             value={currentProduct?.workingTimeRaw || ""}
@@ -1250,73 +1520,42 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Working Time Mark"
-            type="number"
-            value={currentProduct?.workingTime || ""}
-            onChange={(v) =>
-              setCurrentProduct({ ...currentProduct, workingTime: v })
-            }
-          />
-          <Field
             label="QC"
             type="number"
-            value={currentProduct?.qc || ""}
-            onChange={(v) => setCurrentProduct({ ...currentProduct, qc: v })}
+            value={currentProduct?.qcRaw || ""}
+            onChange={(v) => setCurrentProduct({ ...currentProduct, qcRaw: v })}
           />
           <Field
             label="Overall Behaviour"
             type="number"
-            value={currentProduct?.overallBehind || ""}
+            value={currentProduct?.overallBaviourRaw || ""}
             onChange={(v) =>
-              setCurrentProduct({ ...currentProduct, overallBehind: v })
+              setCurrentProduct({ ...currentProduct, overallBaviourRaw: v })
             }
           />
           <Field
             label="Total Sale Amount"
             type="number"
             step="0.01"
-            value={currentProduct?.totalSaleAmount || ""}
+            value={currentProduct?.totalSaleAmountRaw || ""}
             onChange={(v) =>
-              setCurrentProduct({ ...currentProduct, totalSaleAmount: v })
+              setCurrentProduct({ ...currentProduct, totalSaleAmountRaw: v })
             }
           />
 
-          {role === "superAdmin" ? (
-            <div>
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
-                Approval Status
-              </label>
-              <select
-                value={currentProduct?.status || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    status: e.target.value,
-                  })
-                }
-                className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="">Select Status</option>
-                <option value="Approved">Approved</option>
-                <option value="Pending">Pending</option>
-                <option value="Active">Active</option>
-              </select>
-            </div>
-          ) : (
-            <div className="md:col-span-2">
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
-                Note
-              </label>
-              <textarea
-                value={currentProduct?.note || ""}
-                onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, note: e.target.value })
-                }
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                rows={4}
-              />
-            </div>
-          )}
+          <div className="md:col-span-2">
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+              Note
+            </label>
+            <textarea
+              value={currentProduct?.note || ""}
+              onChange={(e) =>
+                setCurrentProduct({ ...currentProduct, note: e.target.value })
+              }
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              rows={4}
+            />
+          </div>
         </div>
 
         <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
@@ -1343,43 +1582,20 @@ const EmployeeKPITable = () => {
         title="Action Request / Note Update"
       >
         <div className="space-y-5">
-          {role === "superAdmin" ? (
-            <div>
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
-                Status Overwrite
-              </label>
-              <select
-                value={currentProduct?.status || ""}
-                onChange={(e) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    status: e.target.value,
-                  })
-                }
-                className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-              >
-                <option value="">Select Status</option>
-                <option value="Approved">Approved</option>
-                <option value="Pending">Pending</option>
-                <option value="Active">Active</option>
-              </select>
-            </div>
-          ) : (
-            <div>
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
-                Request Note
-              </label>
-              <textarea
-                value={currentProduct?.note || ""}
-                onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, note: e.target.value })
-                }
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                rows={4}
-                placeholder="Reason for request..."
-              />
-            </div>
-          )}
+          <div>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+              Request Note
+            </label>
+            <textarea
+              value={currentProduct?.note || ""}
+              onChange={(e) =>
+                setCurrentProduct({ ...currentProduct, note: e.target.value })
+              }
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+              rows={4}
+              placeholder="Reason for request..."
+            />
+          </div>
         </div>
 
         <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
@@ -1410,6 +1626,28 @@ const EmployeeKPITable = () => {
           onSubmit={handleCreateProduct}
           className="grid grid-cols-1 md:grid-cols-2 gap-5"
         >
+          <div className="md:col-span-2">
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+              Employee
+            </label>
+            <Select
+              options={employeeOptions}
+              value={findEmployeeOption(createProduct)}
+              onChange={(selected) =>
+                setCreateProduct({
+                  ...createProduct,
+                  userId: selected?.userId || selected?.value || "",
+                  employeeId: selected?.employeeId || "",
+                })
+              }
+              placeholder={
+                isEmployeeOptionsLoading ? "Loading employees..." : "Select Employee"
+              }
+              isClearable
+              isLoading={isEmployeeOptionsLoading}
+              styles={selectStyles}
+            />
+          </div>
           <Field
             label="Date"
             type="date"
@@ -1450,7 +1688,7 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Order Raw"
+            label="Order"
             type="number"
             value={createProduct.confirmRaw}
             onChange={(v) =>
@@ -1458,12 +1696,7 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Order Mark"
-            value={createProduct.confirm}
-            onChange={(v) => setCreateProduct({ ...createProduct, confirm: v })}
-          />
-          <Field
-            label="Delivered Raw"
+            label="Delivered"
             type="number"
             value={createProduct.deliveredRaw}
             onChange={(v) =>
@@ -1471,15 +1704,7 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Delivered Mark"
-            type="number"
-            value={createProduct.delivered}
-            onChange={(v) =>
-              setCreateProduct({ ...createProduct, delivered: v })
-            }
-          />
-          <Field
-            label="Return Raw"
+            label="Return"
             type="number"
             value={createProduct.returnParcentRaw}
             onChange={(v) =>
@@ -1487,27 +1712,13 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Return Mark"
-            type="number"
-            value={createProduct.returnParcent}
-            onChange={(v) =>
-              setCreateProduct({ ...createProduct, returnParcent: v })
-            }
-          />
-          <Field
-            label="Late Raw"
+            label="Late"
             type="number"
             value={createProduct.lateRaw}
             onChange={(v) => setCreateProduct({ ...createProduct, lateRaw: v })}
           />
           <Field
-            label="Late Mark"
-            type="number"
-            value={createProduct.late}
-            onChange={(v) => setCreateProduct({ ...createProduct, late: v })}
-          />
-          <Field
-            label="Absent Raw"
+            label="Absent"
             type="number"
             value={createProduct.absentRaw}
             onChange={(v) =>
@@ -1515,13 +1726,7 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Absent Mark"
-            type="number"
-            value={createProduct.absent}
-            onChange={(v) => setCreateProduct({ ...createProduct, absent: v })}
-          />
-          <Field
-            label="Leave Raw"
+            label="Leave"
             type="number"
             value={createProduct.leaveRaw}
             onChange={(v) =>
@@ -1529,13 +1734,7 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Leave Mark"
-            type="number"
-            value={createProduct.leave}
-            onChange={(v) => setCreateProduct({ ...createProduct, leave: v })}
-          />
-          <Field
-            label="Working Time Raw"
+            label="Working Time"
             type="number"
             step="0.01"
             value={createProduct.workingTimeRaw}
@@ -1544,54 +1743,28 @@ const EmployeeKPITable = () => {
             }
           />
           <Field
-            label="Working Time Mark"
-            type="number"
-            value={createProduct.workingTime}
-            onChange={(v) =>
-              setCreateProduct({ ...createProduct, workingTime: v })
-            }
-          />
-          <Field
             label="QC"
             type="number"
-            value={createProduct.qc}
-            onChange={(v) => setCreateProduct({ ...createProduct, qc: v })}
+            value={createProduct.qcRaw}
+            onChange={(v) => setCreateProduct({ ...createProduct, qcRaw: v })}
           />
           <Field
             label="Overall Behaviour"
             type="number"
-            value={createProduct.overallBehind}
+            value={createProduct.overallBaviourRaw}
             onChange={(v) =>
-              setCreateProduct({ ...createProduct, overallBehind: v })
+              setCreateProduct({ ...createProduct, overallBaviourRaw: v })
             }
           />
           <Field
             label="Total Sale Amount"
             type="number"
             step="0.01"
-            value={createProduct.totalSaleAmount}
+            value={createProduct.totalSaleAmountRaw}
             onChange={(v) =>
-              setCreateProduct({ ...createProduct, totalSaleAmount: v })
+              setCreateProduct({ ...createProduct, totalSaleAmountRaw: v })
             }
           />
-
-          <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
-              Status
-            </label>
-            <select
-              value={createProduct.status}
-              onChange={(e) =>
-                setCreateProduct({ ...createProduct, status: e.target.value })
-              }
-              className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-            >
-              <option value="">Select Status</option>
-              <option value="Approved">Approved</option>
-              <option value="Pending">Pending</option>
-              <option value="Active">Active</option>
-            </select>
-          </div>
 
           <div className="md:col-span-2">
             <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
@@ -1629,13 +1802,16 @@ const EmployeeKPITable = () => {
   );
 };
 
-const SummaryCard = ({ title, value }) => (
+const SummaryCard = ({ title, value, suffix = "" }) => (
   <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
     <div className="relative flex items-start justify-between">
       <div>
         <p className="text-xs font-medium text-slate-500">{title}</p>
         <p className="mt-2 text-2xl font-semibold text-slate-900 tabular-nums">
-          {Number(value || 0).toLocaleString()}
+          {Number(value || 0).toLocaleString(undefined, {
+            maximumFractionDigits: 2,
+          })}
+          {suffix}
         </p>
       </div>
     </div>

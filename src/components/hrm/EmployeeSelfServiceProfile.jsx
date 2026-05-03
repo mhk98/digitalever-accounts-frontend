@@ -5,6 +5,7 @@ import {
   CircleDollarSign,
   Clock3,
   Fingerprint,
+  LineChart as LineChartIcon,
   Mail,
   Phone,
   ReceiptText,
@@ -12,12 +13,22 @@ import {
   UserRound,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import HrmWorkspace from "./HrmWorkspace";
 import StatCard from "../common/StatCard";
 import { useGetMyEmployeeProfileQuery } from "../../features/employeeList/employeeList";
 import { useGetMyAttendanceSummariesQuery } from "../../features/attendanceSummary/attendanceSummary";
 import { useGetMyLeaveRequestsQuery } from "../../features/leaveRequest/leaveRequest";
 import { useGetMyPayrollItemsQuery } from "../../features/payrollItem/payrollItem";
+import { useGetKPIPerformanceGraphQuery } from "../../features/kpi/kpi";
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -82,11 +93,23 @@ const EmployeeSelfServiceProfile = () => {
     useGetMyLeaveRequestsQuery();
   const { data: payrollRes, isLoading: isPayrollLoading } =
     useGetMyPayrollItemsQuery();
+  const { data: kpiGraphRes, isLoading: isKpiGraphLoading } =
+    useGetKPIPerformanceGraphQuery();
 
   const profile = profileRes?.data;
   const attendanceRows = attendanceRes?.data || [];
   const leaveRows = leaveRes?.data || [];
   const payrollRows = payrollRes?.data || [];
+  const kpiPoints = kpiGraphRes?.data?.points || [];
+  const kpiSummary = kpiGraphRes?.data?.summary || {};
+  const kpiChartData = kpiPoints.map((point) => ({
+    name:
+      point.periodType && point.periodStartDate
+        ? `${point.periodType} ${formatDate(point.periodStartDate)}`
+        : formatDate(point.date || point.periodStartDate),
+    score: Number(point.totalMarks || 0),
+    percentage: Number(point.performancePercentage || 0),
+  }));
 
   const latestPayroll = payrollRows[0];
 
@@ -247,6 +270,78 @@ const EmployeeSelfServiceProfile = () => {
           </div>
         </SectionCard>
       </div>
+
+      <SectionCard title="My KPI Performance">
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <StatCard
+            name="Latest Score"
+            value={`${Number(kpiSummary.latestScore || 0).toLocaleString(undefined, {
+              maximumFractionDigits: 2,
+            })}/${Number(kpiSummary.maxMarks || 100)}`}
+            icon={LineChartIcon}
+            iconBg="#eef2ff"
+            iconColor="#4f46e5"
+          />
+          <StatCard
+            name="Previous Score"
+            value={`${Number(kpiSummary.previousScore || 0).toLocaleString(undefined, {
+              maximumFractionDigits: 2,
+            })}/${Number(kpiSummary.maxMarks || 100)}`}
+            icon={LineChartIcon}
+            iconBg="#f8fafc"
+            iconColor="#475569"
+          />
+          <StatCard
+            name="Trend"
+            value={kpiSummary.trend || "same"}
+            icon={LineChartIcon}
+            iconBg={
+              kpiSummary.trend === "up"
+                ? "#f0fdf4"
+                : kpiSummary.trend === "down"
+                  ? "#fff1f2"
+                  : "#f8fafc"
+            }
+            iconColor={
+              kpiSummary.trend === "up"
+                ? "#16a34a"
+                : kpiSummary.trend === "down"
+                  ? "#e11d48"
+                  : "#475569"
+            }
+          />
+        </div>
+
+        <div className="h-72 rounded-2xl bg-slate-50 p-4">
+          {isKpiGraphLoading ? (
+            <div className="flex h-full items-center justify-center text-sm font-semibold text-slate-500">
+              Loading KPI performance...
+            </div>
+          ) : kpiChartData.length ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={kpiChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#64748b" />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} stroke="#64748b" />
+                <Tooltip />
+                <Line
+                  type="monotone"
+                  dataKey="score"
+                  name="Score"
+                  stroke="#4f46e5"
+                  strokeWidth={3}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm font-semibold text-slate-500">
+              No KPI performance data is available for your profile yet.
+            </div>
+          )}
+        </div>
+      </SectionCard>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <SectionCard title="Recent Attendance" actionLabel="Open Attendance" actionHref="/hrm/attendance-summaries">

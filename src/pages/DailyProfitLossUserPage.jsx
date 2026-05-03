@@ -442,7 +442,9 @@ const DailyProfitLossUserPage = () => {
 
     const invoiceDate = formatDate(row?.createdAt);
     const invoiceNo = `PL-${row?.Id || Date.now()}`;
-    const invoiceSalesType = escapeHtml(row?.salesType || salesType?.value || "-");
+    const invoiceSalesType = escapeHtml(
+      row?.salesType || salesType?.value || "-",
+    );
 
     const reportRowsHtml =
       allCalcReports.length > 0

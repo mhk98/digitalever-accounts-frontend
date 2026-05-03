@@ -46,8 +46,26 @@ export const inTransitProductApi = baseApi.injectEndpoints({
 
     getAllInTransitProduct: build.query({
       query: (arg = {}) => {
-        const { page, limit, startDate, endDate, name, searchTerm } = arg;
-        const params = { page, limit, startDate, endDate, name, searchTerm };
+        const {
+          page,
+          limit,
+          startDate,
+          endDate,
+          name,
+          searchTerm,
+          sortBy,
+          sortOrder,
+        } = arg;
+        const params = {
+          page,
+          limit,
+          startDate,
+          endDate,
+          name,
+          searchTerm,
+          sortBy,
+          sortOrder,
+        };
 
         Object.keys(params).forEach((k) => {
           if (params[k] === undefined || params[k] === null || params[k] === "")

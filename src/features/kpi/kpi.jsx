@@ -46,7 +46,10 @@ export const kpiApi = baseApi.injectEndpoints({
           limit,
           startDate,
           endDate,
+          status,
           searchTerm,
+          userId,
+          employeeId,
           paymentMode,
           paymentStatus,
           category,
@@ -60,7 +63,10 @@ export const kpiApi = baseApi.injectEndpoints({
           bookId,
           startDate,
           endDate,
+          status,
           searchTerm,
+          userId,
+          employeeId,
           paymentMode,
           paymentStatus,
           category,
@@ -111,6 +117,49 @@ export const kpiApi = baseApi.injectEndpoints({
       refetchOnMountOrArgChange: true,
     }),
 
+    getKPIEmployeeOptions: build.query({
+      query: (arg = {}) => {
+        const { searchTerm, status, page, limit } = arg;
+        const params = {
+          searchTerm,
+          status,
+          page,
+          limit: limit || 100,
+        };
+
+        Object.keys(params).forEach((k) => {
+          if (params[k] === undefined || params[k] === null || params[k] === "")
+            delete params[k];
+        });
+
+        return { url: "/kpi/employee-options", params };
+      },
+      providesTags: [{ type: "KPI", id: "EMPLOYEE_OPTIONS" }],
+      refetchOnMountOrArgChange: true,
+    }),
+
+    getKPIPerformanceGraph: build.query({
+      query: (arg = {}) => {
+        const { startDate, endDate, userId, employeeId, periodType } = arg;
+        const params = {
+          startDate,
+          endDate,
+          userId,
+          employeeId,
+          periodType,
+        };
+
+        Object.keys(params).forEach((k) => {
+          if (params[k] === undefined || params[k] === null || params[k] === "")
+            delete params[k];
+        });
+
+        return { url: "/kpi/performance-graph", params };
+      },
+      providesTags: [{ type: "KPI", id: "PERFORMANCE_GRAPH" }],
+      refetchOnMountOrArgChange: true,
+    }),
+
     updateKPISettings: build.mutation({
       query: (data) => ({
         url: "/kpi/settings",
@@ -132,5 +181,7 @@ export const {
   useDeleteKPIMutation,
   useGetAllKPIWithoutQueryQuery,
   useGetKPISettingsQuery,
+  useGetKPIEmployeeOptionsQuery,
+  useGetKPIPerformanceGraphQuery,
   useUpdateKPISettingsMutation,
 } = kpiApi;

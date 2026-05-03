@@ -5,8 +5,10 @@ import {
   Plus,
   RotateCcw,
   Download,
+  Edit,
   Printer,
   ArrowRight,
+  Trash2,
   X,
   ChevronDown,
   Calendar,
@@ -23,10 +25,14 @@ import {
 } from "../../features/ledger/ledger";
 import {
   useGetAllLedgerHistoryQuery,
+  useGetAllLedgerHistoryWithoutQueryQuery,
+  useDeleteLedgerHistoryMutation,
   useInsertLedgerHistoryMutation,
+  useUpdateLedgerHistoryMutation,
 } from "../../features/ledgerHistory/ledgerHistory";
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import useDebounce from "../../hooks/useDebounce";
+import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
 
 const ENTITY_TYPES = {
@@ -314,6 +320,27 @@ const formatCurrency = (value) =>
 const getBalanceValue = (totalReceived = 0, totalPaid = 0) =>
   getSafeNumber(totalReceived) - getSafeNumber(totalPaid);
 
+const getHistoryTotals = (history = []) => {
+  const paidTotal = history.reduce((sum, item) => sum + item.paidAmount, 0);
+  const unpaidTotal = history.reduce((sum, item) => sum + item.unpaidAmount, 0);
+
+  return {
+    paidTotal,
+    unpaidTotal,
+    totalReceived: paidTotal,
+    totalPaid: unpaidTotal,
+    balance: getBalanceValue(paidTotal, unpaidTotal),
+  };
+};
+
+const escapeHtml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 const normalizeRole = (value = "") => String(value).trim().toLowerCase();
 
 const extractLedgerRows = (response) => {
@@ -429,6 +456,7 @@ const CreditLedgerTable = () => {
   const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
   const [isDueHistoryModalOpen, setIsDueHistoryModalOpen] = useState(false);
   const [historyEntryType, setHistoryEntryType] = useState("Paid");
+  const [editingHistoryEntry, setEditingHistoryEntry] = useState(null);
   const [ledgerHistoryForm, setLedgerHistoryForm] = useState(
     getInitialLedgerHistoryForm,
   );
@@ -450,6 +478,7 @@ const CreditLedgerTable = () => {
   const handleLedgerHistoryDrawerClose = () => {
     setIsHistoryDrawerOpen(false);
     setHistoryEntryType("Paid");
+    setEditingHistoryEntry(null);
     setLedgerHistoryForm(getInitialLedgerHistoryForm());
   };
 
@@ -662,7 +691,7 @@ const CreditLedgerTable = () => {
   );
 
   const filteredEntities = useMemo(() => {
-    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+    const normalizedSearchTerm = debouncedSearchTerm.trim().toLowerCase();
 
     if (!normalizedSearchTerm) return activeEntities;
 
@@ -673,7 +702,7 @@ const CreditLedgerTable = () => {
           String(value).toLowerCase().includes(normalizedSearchTerm),
         ),
     );
-  }, [activeEntities, searchTerm]);
+  }, [activeEntities, debouncedSearchTerm]);
 
   const ledgerSummaryByEntity = useMemo(() => {
     return ledgers.reduce((acc, ledger, index) => {
@@ -719,6 +748,69 @@ const CreditLedgerTable = () => {
       return acc;
     }, {});
   }, [ledgers]);
+
+  const { data: allLedgerHistoryData } =
+    useGetAllLedgerHistoryWithoutQueryQuery();
+
+  const allLedgerHistoryRecords = useMemo(() => {
+    if (Array.isArray(allLedgerHistoryData)) return allLedgerHistoryData;
+    if (Array.isArray(allLedgerHistoryData?.data)) {
+      return allLedgerHistoryData.data;
+    }
+    if (Array.isArray(allLedgerHistoryData?.result)) {
+      return allLedgerHistoryData.result;
+    }
+    return [];
+  }, [allLedgerHistoryData]);
+
+  const ledgerHistorySummaryByEntity = useMemo(() => {
+    return allLedgerHistoryRecords.reduce((acc, entry) => {
+      const supplierId = String(
+        entry?.supplierId ?? entry?.supplier_id ?? entry?.SupplierId ?? "",
+      );
+      const employeeId = String(
+        entry?.employeeId ?? entry?.employee_id ?? entry?.EmployeeId ?? "",
+      );
+      const key = supplierId
+        ? `supplier|${supplierId}`
+        : employeeId
+          ? `employee|${employeeId}`
+          : "";
+
+      if (!key) return acc;
+
+      if (!acc[key]) {
+        acc[key] = {
+          totalReceived: 0,
+          totalPaid: 0,
+        };
+      }
+
+      acc[key].totalReceived += getSafeNumber(
+        entry?.paidAmount ?? entry?.PaidAmount,
+      );
+      acc[key].totalPaid += getSafeNumber(
+        entry?.unpaidAmount ?? entry?.UnpaidAmount,
+      );
+
+      return acc;
+    }, {});
+  }, [allLedgerHistoryRecords]);
+
+  const getEntitySummary = (entity) => {
+    const historySummaryKey =
+      entity.type === "supplier"
+        ? `supplier|${entity.supplierId}`
+        : entity.type === "employee"
+          ? `employee|${entity.employeeId}`
+          : "";
+
+    return (
+      ledgerHistorySummaryByEntity[historySummaryKey] ||
+      ledgerSummaryByEntity[getEntityKey(entity)] ||
+      {}
+    );
+  };
 
   useEffect(() => {
     if (isError) {
@@ -857,6 +949,11 @@ const CreditLedgerTable = () => {
           balanceValue: getBalanceValue(totalReceived, totalPaid),
           paidAmount,
           unpaidAmount,
+          ledgerId: entry?.ledgerId ?? entry?.LedgerId ?? "",
+          bookId: entry?.bookId ?? entry?.BookId ?? "",
+          supplierHistoryId: entry?.supplierHistoryId ?? "",
+          cashInOutId: entry?.cashInOutId ?? "",
+          status: entry?.status || (paidAmount > 0 ? "Paid" : "Unpaid"),
           note: entry?.note || "",
           rawDate: entry?.date,
         };
@@ -883,19 +980,7 @@ const CreditLedgerTable = () => {
   }, [mainHistoryEndDate, mainHistoryStartDate, selectedHistory]);
 
   const mainFilteredTotals = useMemo(
-    () => ({
-      totalReceived: mainFilteredHistory.reduce(
-        (sum, item) => sum + item.paidAmount,
-        0,
-      ),
-      totalPaid: mainFilteredHistory.reduce(
-        (sum, item) => sum + item.unpaidAmount,
-        0,
-      ),
-      balance: mainFilteredHistory.length
-        ? mainFilteredHistory[0].balanceValue
-        : 0,
-    }),
+    () => getHistoryTotals(mainFilteredHistory),
     [mainFilteredHistory],
   );
 
@@ -918,19 +1003,7 @@ const CreditLedgerTable = () => {
   }, [dueHistoryEndDate, dueHistoryStartDate, selectedHistory]);
 
   const filteredDueHistoryTotals = useMemo(
-    () => ({
-      totalReceived: filteredDueHistory.reduce(
-        (sum, item) => sum + item.paidAmount,
-        0,
-      ),
-      totalPaid: filteredDueHistory.reduce(
-        (sum, item) => sum + item.unpaidAmount,
-        0,
-      ),
-      balance: filteredDueHistory.length
-        ? filteredDueHistory[0].balanceValue
-        : 0,
-    }),
+    () => getHistoryTotals(filteredDueHistory),
     [filteredDueHistory],
   );
 
@@ -947,17 +1020,10 @@ const CreditLedgerTable = () => {
     );
   }, [dueHistoryCurrentPage, filteredDueHistory]);
 
-  const selectedTotals = {
-    totalReceived: selectedHistory.reduce(
-      (sum, item) => sum + item.paidAmount,
-      0,
-    ),
-    totalPaid: selectedHistory.reduce(
-      (sum, item) => sum + item.unpaidAmount,
-      0,
-    ),
-    balance: selectedHistory.length ? selectedHistory[0].balanceValue : 0,
-  };
+  const selectedTotals = useMemo(
+    () => getHistoryTotals(selectedHistory),
+    [selectedHistory],
+  );
 
   useEffect(() => {
     setDueHistoryCurrentPage(1);
@@ -997,6 +1063,8 @@ const CreditLedgerTable = () => {
   const isPhoneRequired = createLedger.type === "customer";
 
   const [insertLedgerHistory] = useInsertLedgerHistoryMutation();
+  const [updateLedgerHistory] = useUpdateLedgerHistoryMutation();
+  const [deleteLedgerHistory] = useDeleteLedgerHistoryMutation();
 
   const openLedgerHistoryDrawer = (type) => {
     if (!selectedLedger?.Id && !selectedLedger?.id) {
@@ -1005,8 +1073,57 @@ const CreditLedgerTable = () => {
     }
 
     setHistoryEntryType(type);
+    setEditingHistoryEntry(null);
     setLedgerHistoryForm(getInitialLedgerHistoryForm());
     setIsHistoryDrawerOpen(true);
+  };
+
+  const openLedgerHistoryEditDrawer = (entry) => {
+    if (!entry?.id) {
+      toast.error("Invalid history entry.");
+      return;
+    }
+
+    setEditingHistoryEntry(entry);
+    setHistoryEntryType(entry.entryType === "Unpaid" ? "Unpaid" : "Paid");
+    setLedgerHistoryForm({
+      bookId: entry.bookId ? String(entry.bookId) : "",
+      date:
+        entry.rawDate && !Number.isNaN(new Date(entry.rawDate).getTime())
+          ? new Date(entry.rawDate).toISOString().slice(0, 10)
+          : new Date().toISOString().slice(0, 10),
+      amount: String(entry.paidAmount || entry.unpaidAmount || ""),
+      note: entry.note || "",
+    });
+    setIsDueHistoryModalOpen(false);
+    setIsHistoryDrawerOpen(true);
+  };
+
+  const handleDeleteLedgerHistory = async (entry) => {
+    if (!entry?.id) {
+      toast.error("Invalid history entry.");
+      return;
+    }
+
+    const confirmed = await requestDeleteConfirmation({
+      title: "Delete due history?",
+      message:
+        "This entry and its linked cash/supplier history record will be deleted.",
+    });
+
+    if (!confirmed) return;
+
+    try {
+      const res = await deleteLedgerHistory(entry.id).unwrap();
+
+      if (res?.success) {
+        toast.success("Due history deleted successfully!");
+      } else {
+        toast.error(res?.message || "Delete failed!");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Delete failed!");
+    }
   };
 
   const handleInsertLedgerHistory = async (e) => {
@@ -1037,22 +1154,32 @@ const CreditLedgerTable = () => {
       bookId: Number(ledgerHistoryForm.bookId) || undefined,
       date: ledgerHistoryForm.date,
       note: ledgerHistoryForm.note,
+      status: historyEntryType,
       cashType: historyEntryType,
       paidAmount: historyEntryType === "Paid" ? amount : 0,
       unpaidAmount: historyEntryType === "Unpaid" ? amount : 0,
     };
 
     try {
-      const res = await insertLedgerHistory(payload).unwrap();
+      const res = editingHistoryEntry
+        ? await updateLedgerHistory({
+            id: editingHistoryEntry.id,
+            data: payload,
+          }).unwrap()
+        : await insertLedgerHistory(payload).unwrap();
 
       if (res?.success) {
-        toast.success(`${historyEntryType} amount added successfully!`);
+        toast.success(
+          editingHistoryEntry
+            ? `${historyEntryType} amount updated successfully!`
+            : `${historyEntryType} amount added successfully!`,
+        );
         handleLedgerHistoryDrawerClose();
       } else {
-        toast.error(res?.message || "Create failed!");
+        toast.error(res?.message || "Save failed!");
       }
     } catch (err) {
-      toast.error(err?.data?.message || "Create failed!");
+      toast.error(err?.data?.message || "Save failed!");
     }
   };
 
@@ -1066,12 +1193,12 @@ const CreditLedgerTable = () => {
       .map(
         (item) => `
           <tr>
-            <td>${item.date}</td>
-            <td>${item.entryType}</td>
-            <td style="text-align:right;">${item.credit || "-"}</td>
-            <td style="text-align:right;">${item.debit || "-"}</td>
-            <td style="text-align:right;">${item.balance}</td>
-            <td>${item.note || "-"}</td>
+            <td>${escapeHtml(item.date)}</td>
+            <td>${escapeHtml(item.entryType)}</td>
+            <td style="text-align:right;">${escapeHtml(item.credit || "-")}</td>
+            <td style="text-align:right;">${escapeHtml(item.debit || "-")}</td>
+            <td style="text-align:right;">${escapeHtml(item.balance)}</td>
+            <td>${escapeHtml(item.note || "-")}</td>
           </tr>`,
       )
       .join("");
@@ -1080,9 +1207,9 @@ const CreditLedgerTable = () => {
       title: "Due History",
       content: `
         <h1>Due History</h1>
-        <p><strong>Name:</strong> ${selectedEntity.name}</p>
-        <p><strong>Contact:</strong> ${selectedEntity.phone || selectedEntity.extra || "-"}</p>
-        <p><strong>Role:</strong> ${selectedEntity.role || "-"}</p>
+        <p><strong>Name:</strong> ${escapeHtml(selectedEntity.name)}</p>
+        <p><strong>Contact:</strong> ${escapeHtml(selectedEntity.phone || selectedEntity.extra || "-")}</p>
+        <p><strong>Role:</strong> ${escapeHtml(selectedEntity.role || "-")}</p>
         <table>
           <thead>
             <tr>
@@ -1098,9 +1225,9 @@ const CreditLedgerTable = () => {
           <tfoot>
             <tr>
               <td colspan="2">Total</td>
-              <td style="text-align:right;">${formatCurrency(filteredDueHistoryTotals.totalReceived)}</td>
-              <td style="text-align:right;">${formatCurrency(filteredDueHistoryTotals.totalPaid)}</td>
-              <td style="text-align:right;">${formatCurrency(filteredDueHistoryTotals.balance)}</td>
+              <td style="text-align:right;">${escapeHtml(formatCurrency(filteredDueHistoryTotals.paidTotal))}</td>
+              <td style="text-align:right;">${escapeHtml(formatCurrency(filteredDueHistoryTotals.unpaidTotal))}</td>
+              <td style="text-align:right;">${escapeHtml(formatCurrency(filteredDueHistoryTotals.balance))}</td>
               <td>-</td>
             </tr>
           </tfoot>
@@ -1121,7 +1248,7 @@ const CreditLedgerTable = () => {
 
     const rowsMarkup = filteredEntities
       .map((item) => {
-        const entitySummary = ledgerSummaryByEntity[getEntityKey(item)] || {};
+        const entitySummary = getEntitySummary(item);
         const entityBalance = getBalanceValue(
           entitySummary.totalReceived || 0,
           entitySummary.totalPaid || 0,
@@ -1129,10 +1256,10 @@ const CreditLedgerTable = () => {
 
         return `
           <tr>
-            <td>${item.name}</td>
-            <td>${item.phone || item.extra || "-"}</td>
-            <td>${item.role || "-"}</td>
-            <td style="text-align:right;">${formatCurrency(entityBalance)}</td>
+            <td>${escapeHtml(item.name)}</td>
+            <td>${escapeHtml(item.phone || item.extra || "-")}</td>
+            <td>${escapeHtml(item.role || "-")}</td>
+            <td style="text-align:right;">${escapeHtml(formatCurrency(entityBalance))}</td>
           </tr>`;
       })
       .join("");
@@ -1140,8 +1267,8 @@ const CreditLedgerTable = () => {
     const printWindow = openPrintWindow({
       title: `${activeTabMeta?.label || "Contact"} List`,
       content: `
-        <h1>${activeTabMeta?.label || "Contact"} List</h1>
-        <p><strong>Search:</strong> ${searchTerm || "All"}</p>
+        <h1>${escapeHtml(activeTabMeta?.label || "Contact")} List</h1>
+        <p><strong>Search:</strong> ${escapeHtml(searchTerm || "All")}</p>
         <table>
           <thead>
             <tr>
@@ -1171,11 +1298,11 @@ const CreditLedgerTable = () => {
       .map(
         (item) => `
           <tr>
-            <td>${item.date}</td>
-            <td style="text-align:right;">${item.credit || "-"}</td>
-            <td style="text-align:right;">${item.debit || "-"}</td>
-            <td style="text-align:right;">${item.balance}</td>
-            <td>${item.note || "-"}</td>
+            <td>${escapeHtml(item.date)}</td>
+            <td style="text-align:right;">${escapeHtml(item.credit || "-")}</td>
+            <td style="text-align:right;">${escapeHtml(item.debit || "-")}</td>
+            <td style="text-align:right;">${escapeHtml(item.balance)}</td>
+            <td>${escapeHtml(item.note || "-")}</td>
           </tr>`,
       )
       .join("");
@@ -1189,9 +1316,9 @@ const CreditLedgerTable = () => {
       title: "Credit Ledger",
       content: `
         <h1>Credit Ledger</h1>
-        <p><strong>Name:</strong> ${selectedEntity.name}</p>
-        <p><strong>Contact:</strong> ${selectedEntity.phone || selectedEntity.extra || "-"}</p>
-        <p><strong>Range:</strong> ${filterLabel}</p>
+        <p><strong>Name:</strong> ${escapeHtml(selectedEntity.name)}</p>
+        <p><strong>Contact:</strong> ${escapeHtml(selectedEntity.phone || selectedEntity.extra || "-")}</p>
+        <p><strong>Range:</strong> ${escapeHtml(filterLabel)}</p>
         <table>
           <thead>
             <tr>
@@ -1206,9 +1333,9 @@ const CreditLedgerTable = () => {
           <tfoot>
             <tr>
               <td>Total</td>
-              <td style="text-align:right;">${formatCurrency(mainFilteredTotals.totalReceived)}</td>
-              <td style="text-align:right;">${formatCurrency(mainFilteredTotals.totalPaid)}</td>
-              <td style="text-align:right;">${formatCurrency(mainFilteredTotals.balance)}</td>
+              <td style="text-align:right;">${escapeHtml(formatCurrency(mainFilteredTotals.paidTotal))}</td>
+              <td style="text-align:right;">${escapeHtml(formatCurrency(mainFilteredTotals.unpaidTotal))}</td>
+              <td style="text-align:right;">${escapeHtml(formatCurrency(mainFilteredTotals.balance))}</td>
               <td>-</td>
             </tr>
           </tfoot>
@@ -1259,8 +1386,8 @@ const CreditLedgerTable = () => {
           [
             "Total",
             "",
-            formatCurrency(filteredDueHistoryTotals.totalReceived),
-            formatCurrency(filteredDueHistoryTotals.totalPaid),
+            formatCurrency(filteredDueHistoryTotals.paidTotal),
+            formatCurrency(filteredDueHistoryTotals.unpaidTotal),
             formatCurrency(filteredDueHistoryTotals.balance),
             "-",
           ],
@@ -1309,10 +1436,10 @@ const CreditLedgerTable = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-500">
-            Total Unpaid: {formatCurrency(selectedTotals.totalReceived)}
+            Total Unpaid: {formatCurrency(selectedTotals.unpaidTotal)}
           </div>
           <div className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-500">
-            Total Paid: {formatCurrency(selectedTotals.totalPaid)}
+            Total Paid: {formatCurrency(selectedTotals.paidTotal)}
           </div>
           <button
             type="button"
@@ -1405,6 +1532,8 @@ const CreditLedgerTable = () => {
               <button
                 type="button"
                 onClick={() => setSearchTerm("")}
+                aria-label="Clear search"
+                title="Clear search"
                 className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50"
               >
                 <RefreshCw size={16} className="text-slate-600" />
@@ -1413,6 +1542,8 @@ const CreditLedgerTable = () => {
               <button
                 type="button"
                 onClick={handlePrintEntityList}
+                aria-label={`Print ${activeTabMeta?.label?.toLowerCase() || "contact"} list`}
+                title={`Print ${activeTabMeta?.label?.toLowerCase() || "contact"} list`}
                 className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50"
               >
                 <FileText size={16} className="text-slate-600" />
@@ -1435,12 +1566,13 @@ const CreditLedgerTable = () => {
 
               {!isEntityListLoading &&
                 filteredEntities.map((item) => {
-                  const entitySummary =
-                    ledgerSummaryByEntity[getEntityKey(item)] || {};
-                  const entityBalance =
-                    (entitySummary.totalPaid || 0) -
-                    (entitySummary.totalReceived || 0);
+                  const entitySummary = getEntitySummary(item);
+                  const entityBalance = getBalanceValue(
+                    entitySummary.totalReceived || 0,
+                    entitySummary.totalPaid || 0,
+                  );
                   const isSelected = selectedEntityId === item.id;
+                  const hasPendingDue = entityBalance < 0;
 
                   return (
                     <button
@@ -1468,15 +1600,19 @@ const CreditLedgerTable = () => {
                       </div>
 
                       <div className="text-right">
-                        <p className="font-semibold text-green-500">
+                        <p
+                          className={`font-semibold ${
+                            hasPendingDue ? "text-red-500" : "text-green-500"
+                          }`}
+                        >
                           {formatCurrency(entityBalance)}
                         </p>
                         <span
                           className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs text-white ${
-                            entityBalance > 0 ? "bg-green-500" : "bg-slate-500"
+                            hasPendingDue ? "bg-red-500" : "bg-green-500"
                           }`}
                         >
-                          {entityBalance > 0 ? "Pending" : "Clear"}
+                          {hasPendingDue ? "Pending" : "Clear"}
                         </span>
                       </div>
                     </button>
@@ -1515,6 +1651,8 @@ const CreditLedgerTable = () => {
                 <button
                   type="button"
                   onClick={handlePrintSelectedLedger}
+                  aria-label="Print selected ledger"
+                  title="Print selected ledger"
                   className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50"
                 >
                   <FileText size={16} className="text-slate-600" />
@@ -1539,12 +1677,19 @@ const CreditLedgerTable = () => {
                 <button
                   type="button"
                   onClick={handleResetMainHistoryFilters}
+                  aria-label="Reset date filters"
+                  title="Reset date filters"
                   className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50"
                 >
                   <RefreshCw size={16} className="text-slate-600" />
                 </button>
 
-                <button className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+                <button
+                  type="button"
+                  disabled
+                  title="Due comparison is not available yet"
+                  className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-indigo-200 px-4 py-2 text-sm font-medium text-indigo-700 opacity-70"
+                >
                   Due Comparison
                   <ArrowRight size={16} />
                 </button>
@@ -1585,6 +1730,9 @@ const CreditLedgerTable = () => {
                     <th className="px-4 py-3 text-right font-medium">
                       Balance
                     </th>
+                    <th className="px-4 py-3 text-right font-medium">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1613,12 +1761,34 @@ const CreditLedgerTable = () => {
                       >
                         {item.balance}
                       </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openLedgerHistoryEditDrawer(item)}
+                            aria-label="Edit due history"
+                            title="Edit"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteLedgerHistory(item)}
+                            aria-label="Delete due history"
+                            title="Delete"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 text-red-500 hover:bg-red-50"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                   {!mainFilteredHistory.length && (
                     <tr className="border-t border-slate-200">
                       <td
-                        colSpan={4}
+                        colSpan={5}
                         className="px-4 py-8 text-center text-sm text-slate-500"
                       >
                         No due history found for this contact.
@@ -1632,10 +1802,10 @@ const CreditLedgerTable = () => {
                       Total
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-green-500">
-                      {formatCurrency(mainFilteredTotals.totalReceived)}
+                      {formatCurrency(mainFilteredTotals.paidTotal)}
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-red-500">
-                      {formatCurrency(mainFilteredTotals.totalPaid)}
+                      {formatCurrency(mainFilteredTotals.unpaidTotal)}
                     </td>
                     <td
                       className={`px-4 py-3 text-right font-semibold ${
@@ -1646,6 +1816,7 @@ const CreditLedgerTable = () => {
                     >
                       {formatCurrency(mainFilteredTotals.balance)}
                     </td>
+                    <td className="px-4 py-3" />
                   </tr>
                 </tfoot>
               </table>
@@ -1666,13 +1837,13 @@ const CreditLedgerTable = () => {
 
                 <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
                   <div>
-                    <p className="text-xs text-slate-400">Received</p>
+                    <p className="text-xs text-slate-400">Paid</p>
                     <p className="font-semibold text-green-500">
                       {item.credit || "-"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400">Paid</p>
+                    <p className="text-xs text-slate-400">Unpaid</p>
                     <p className="font-semibold text-red-500">
                       {item.debit || "-"}
                     </p>
@@ -1690,6 +1861,24 @@ const CreditLedgerTable = () => {
                     </p>
                   </div>
                 </div>
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openLedgerHistoryEditDrawer(item)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600"
+                  >
+                    <Edit size={16} />
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteLedgerHistory(item)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-red-100 px-3 py-2 text-sm font-medium text-red-500"
+                  >
+                    <Trash2 size={16} />
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
 
@@ -1702,15 +1891,15 @@ const CreditLedgerTable = () => {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="grid grid-cols-3 gap-2 text-sm">
                 <div>
-                  <p className="text-xs text-slate-400">Total Unpaid</p>
+                  <p className="text-xs text-slate-400">Total Paid</p>
                   <p className="font-semibold text-green-500">
-                    {formatCurrency(mainFilteredTotals.totalReceived)}
+                    {formatCurrency(mainFilteredTotals.paidTotal)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400">Total Paid</p>
+                  <p className="text-xs text-slate-400">Total Unpaid</p>
                   <p className="font-semibold text-red-500">
-                    {formatCurrency(mainFilteredTotals.totalPaid)}
+                    {formatCurrency(mainFilteredTotals.unpaidTotal)}
                   </p>
                 </div>
                 <div>
@@ -1737,7 +1926,7 @@ const CreditLedgerTable = () => {
               disabled={!selectedLedger}
               className="rounded-xl bg-red-500 px-4 py-3 font-semibold text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Unpaid
+              Add Unpaid
             </button>
             <button
               type="button"
@@ -1745,7 +1934,7 @@ const CreditLedgerTable = () => {
               disabled={!selectedLedger}
               className="rounded-xl bg-green-500 px-4 py-3 font-semibold text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Paid
+              Add Paid
             </button>
           </div>
         </section>
@@ -1785,6 +1974,7 @@ const CreditLedgerTable = () => {
                       type="button"
                       onClick={handlePrintDueHistory}
                       disabled={!filteredDueHistory.length}
+                      aria-label="Print due history"
                       className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Printer size={16} />
@@ -1794,6 +1984,7 @@ const CreditLedgerTable = () => {
                       type="button"
                       onClick={handleDownloadDueHistoryPdf}
                       disabled={!filteredDueHistory.length}
+                      aria-label="Download due history PDF"
                       className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Download size={16} />
@@ -1802,6 +1993,7 @@ const CreditLedgerTable = () => {
                     <button
                       type="button"
                       onClick={handleDueHistoryModalClose}
+                      aria-label="Close due history"
                       className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
                     >
                       <X size={18} />
@@ -1813,13 +2005,13 @@ const CreditLedgerTable = () => {
                   <div className="rounded-2xl border border-slate-200 bg-white p-4">
                     <p className="text-xs text-slate-400">Total Paid</p>
                     <p className="mt-1 text-2xl font-bold text-green-500">
-                      {formatCurrency(filteredDueHistoryTotals.totalReceived)}
+                      {formatCurrency(filteredDueHistoryTotals.paidTotal)}
                     </p>
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-white p-4">
                     <p className="text-xs text-slate-400">Total Unpaid</p>
                     <p className="mt-1 text-2xl font-bold text-red-500">
-                      {formatCurrency(filteredDueHistoryTotals.totalPaid)}
+                      {formatCurrency(filteredDueHistoryTotals.unpaidTotal)}
                     </p>
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -1893,6 +2085,9 @@ const CreditLedgerTable = () => {
                           <th className="px-4 py-3 text-left font-medium">
                             Note
                           </th>
+                          <th className="px-4 py-3 text-right font-medium">
+                            Actions
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1933,12 +2128,36 @@ const CreditLedgerTable = () => {
                             <td className="px-4 py-3 text-slate-500">
                               {item.note || "-"}
                             </td>
+                            <td className="px-4 py-3">
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    openLedgerHistoryEditDrawer(item)
+                                  }
+                                  aria-label="Edit due history"
+                                  title="Edit"
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                                >
+                                  <Edit size={16} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteLedgerHistory(item)}
+                                  aria-label="Delete due history"
+                                  title="Delete"
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 text-red-500 hover:bg-red-50"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </td>
                           </tr>
                         ))}
                         {!paginatedDueHistory.length && (
                           <tr className="border-t border-slate-200">
                             <td
-                              colSpan={6}
+                              colSpan={7}
                               className="px-4 py-10 text-center text-sm text-slate-500"
                             >
                               No due history found for this contact.
@@ -2019,7 +2238,8 @@ const CreditLedgerTable = () => {
             >
               <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-center relative">
                 <h2 className="text-[18px] font-bold text-slate-700">
-                  Add {historyEntryType} Amount
+                  {editingHistoryEntry ? "Edit" : "Add"} {historyEntryType}{" "}
+                  Amount
                 </h2>
 
                 <button
@@ -2051,6 +2271,11 @@ const CreditLedgerTable = () => {
                       Ledger ID:{" "}
                       {selectedLedger?.Id ?? selectedLedger?.id ?? "-"}
                     </p>
+                    {editingHistoryEntry && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        History ID: {editingHistoryEntry.id}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -2168,7 +2393,8 @@ const CreditLedgerTable = () => {
                     type="submit"
                     className="w-full h-11 rounded-lg bg-black text-white text-sm font-semibold hover:bg-slate-900 transition"
                   >
-                    Save {historyEntryType}
+                    {editingHistoryEntry ? "Update" : "Save"}{" "}
+                    {historyEntryType}
                   </button>
                 </div>
               </form>

@@ -25,7 +25,6 @@ import { saveRolePermissionsForRole } from "../../utils/navigationPermissions";
 import Modal from "../common/Modal";
 import useDebounce from "../../hooks/useDebounce";
 
-
 const API_BASE = import.meta.env.VITE_API_URL;
 const DOCUMENT_LABELS = {
   image: "Profile Photo",
@@ -204,8 +203,8 @@ const UserManagementTable = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
 
-    if (!createUser.Email || !createUser.Password || !createUser.role) {
-      toast.error("Email, Password এবং Role বাধ্যতামূলক!");
+    if (!createUser.Email || !createUser.role) {
+      toast.error("Email এবং Role বাধ্যতামূলক!");
       return;
     }
     try {
@@ -724,7 +723,7 @@ const UserManagementTable = () => {
                 <option value="leader">Leader</option>
                 <option value="inventor">Inventor</option>
                 <option value="accountant">Accountant</option>
-                <option value="staff">Staff</option>
+                <option value="employee">Employee</option>
                 <option value="user">User</option>
               </select>
             </div>

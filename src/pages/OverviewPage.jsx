@@ -3,9 +3,7 @@ import Header from "../components/common/Header";
 import StatCard from "../components/common/StatCard";
 import { useMemo, useState } from "react";
 import {
-  Truck,
   Receipt,
-  Landmark,
   CalendarDays,
   RefreshCcw,
   TrendingUp,
@@ -16,10 +14,10 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { useGetOverviewSummaryQuery } from "../features/overview/overview";
-import { useGetTrendingProductsQuery } from "../features/confirmOrder/confirmOrder";
 import { useLayout } from "../context/LayoutContext";
 import { translations } from "../utils/translations";
 import { useGetInventoryOverviewLowStockQuery } from "../features/inventoryOverview/inventoryOverview";
+import { useGetAllInTransitProductQuery } from "../features/inTransitProduct/inTransitProduct";
 
 const formatDateOnly = (date) => {
   const yyyy = date.getFullYear();
@@ -34,11 +32,29 @@ const getTodayRange = () => {
   return { from: today, to: today };
 };
 
+const getYesterdayRange = () => {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const date = formatDateOnly(yesterday);
+  return { from: date, to: date };
+};
+
 const getThisMonthRange = () => {
   const now = new Date();
   return {
     from: formatDateOnly(new Date(now.getFullYear(), now.getMonth(), 1)),
     to: formatDateOnly(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
+  };
+};
+
+const getLastDaysRange = (days) => {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(end.getDate() - Math.max(Number(days) || 1, 1) + 1);
+
+  return {
+    from: formatDateOnly(start),
+    to: formatDateOnly(end),
   };
 };
 
@@ -131,19 +147,12 @@ const OverviewPage = () => {
       : `${t.live_summary}: ALL DATA`;
 
   // ✅ values (fallback 0)
-  const totalPurchaseAmount = Number(summary?.totalPurchaseAmount || 0);
   const totalAssetsBalance = Number(summary?.totalAssetsBalance || 0);
   const inventoryOverview = Number(summary?.totalInventoryOverview || 0);
   const totalMetaAmount = Number(summary?.totalMetaAmount || 0);
-  const totalReceiveableAmount = Number(summary?.totalReceiveableAmount || 0);
-  const totalPayableAmount = Number(summary?.totalPayableAmount || 0);
   const totalCashInAmount = Number(summary?.totalCashInAmount || 0);
   const totalCashOutAmount = Number(summary?.totalCashOutAmount || 0);
   const netCashPosition = Number(summary?.netCashPosition || 0);
-  const grossSalesAmount = Number(summary?.grossSalesAmount || 0);
-  const totalInventoryRetailValue = Number(
-    summary?.totalInventoryRetailValue || 0,
-  );
   const totalDamageStockPrice = Number(summary?.totalDamageStockPrice || 0);
   const totalRepairingStockPrice = Number(
     summary?.totalRepairingStockPrice || 0,
@@ -165,7 +174,20 @@ const OverviewPage = () => {
   // =========================
   // ✅ Trending Products
   // =========================
-  const [trendDays, setTrendDays] = useState(1);
+  const [trendFilter, setTrendFilter] = useState("today");
+  const inTransitTrendRange = useMemo(
+    () =>
+      trendFilter === "yesterday"
+        ? getYesterdayRange()
+        : getLastDaysRange(Number(trendFilter) || 1),
+    [trendFilter],
+  );
+  const trendLabel =
+    trendFilter === "today"
+      ? t.today
+      : trendFilter === "yesterday"
+        ? t.yesterday
+        : `${trendFilter} ${t.days}`;
 
   const {
     data: trendingRes,
@@ -173,14 +195,50 @@ const OverviewPage = () => {
     isError: trendingIsError,
     error: trendingErr,
     refetch: refetchTrending,
-  } = useGetTrendingProductsQuery({
-    days: trendDays,
-    limit: 10,
+  } = useGetAllInTransitProductQuery({
+    page: 1,
+    limit: 100,
+    startDate: inTransitTrendRange.from,
+    endDate: inTransitTrendRange.to,
+    sortBy: "quantity",
+    sortOrder: "desc",
   });
 
-  const trending = trendingRes?.data ?? [];
+  const inTransitTrendRows = trendingRes?.data ?? [];
 
-  if (trendingIsError) console.error("Trending error:", trendingErr);
+  if (trendingIsError) console.error("Intransit trending error:", trendingErr);
+
+  const trending = useMemo(() => {
+    const productMap = new Map();
+
+    inTransitTrendRows.forEach((item) => {
+      const productId = item?.productId ?? item?.receivedId ?? item?.Id;
+      const productName = item?.name || item?.product?.name || "Intransit Item";
+      const quantity = Number(item?.quantity || 0);
+      const salePrice = Number(item?.sale_price || item?.salePrice || 0);
+      const purchasePrice = Number(
+        item?.purchase_price || item?.purchasePrice || 0,
+      );
+      const revenue = quantity * (salePrice || purchasePrice);
+      const key = productId != null ? `id-${productId}` : productName;
+      const existing = productMap.get(key) || {
+        productId,
+        name: productName,
+        soldQty: 0,
+        revenue: 0,
+      };
+
+      productMap.set(key, {
+        ...existing,
+        soldQty: existing.soldQty + quantity,
+        revenue: existing.revenue + revenue,
+      });
+    });
+
+    return Array.from(productMap.values())
+      .sort((a, b) => Number(b.soldQty || 0) - Number(a.soldQty || 0))
+      .slice(0, 10);
+  }, [inTransitTrendRows]);
 
   const trendSummary = useMemo(() => {
     if (!trending.length) {
@@ -541,15 +599,15 @@ const OverviewPage = () => {
                       {t.top_selling_products}
                     </div>
                     <div className="text-xs font-bold text-slate-400 mt-0.5">
-                      {t.performance_analytics_last} {trendDays} {t.day_s}
+                      Based on Intransit Product for {trendLabel}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <select
-                    value={trendDays}
-                    onChange={(e) => setTrendDays(Number(e.target.value))}
+                    value={trendFilter}
+                    onChange={(e) => setTrendFilter(e.target.value)}
                     className="h-11 pl-4 pr-10 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-black outline-none focus:ring-4 focus:ring-indigo-500/10 transition appearance-none cursor-pointer"
                     style={{
                       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
@@ -558,11 +616,12 @@ const OverviewPage = () => {
                       backgroundSize: "16px",
                     }}
                   >
-                    <option value={1}> {t.today}</option>
-                    <option value={2}>2 {t.days}</option>
-                    <option value={7}>7 {t.days}</option>
-                    <option value={15}>15 {t.days}</option>
-                    <option value={30}>30 {t.days}</option>
+                    <option value="today">{t.today}</option>
+                    <option value="yesterday">{t.yesterday}</option>
+                    <option value="2">2 {t.days}</option>
+                    <option value="7">7 {t.days}</option>
+                    <option value="15">15 {t.days}</option>
+                    <option value="30">30 {t.days}</option>
                   </select>
 
                   <button
@@ -639,7 +698,7 @@ const OverviewPage = () => {
                           <div className="flex items-center gap-8">
                             <div className="text-right hidden sm:block">
                               <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                                {t.velocity}
+                                Intransit Qty
                               </div>
                               <div className="text-sm font-black text-slate-700">
                                 {soldQty} {t.units}

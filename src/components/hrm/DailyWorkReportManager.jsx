@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Award,
   BarChart3,
@@ -6,6 +6,7 @@ import {
   CalendarDays,
   CheckCircle2,
   ClipboardCheck,
+  Clock3,
   Eye,
   FileText,
   Plus,
@@ -1252,26 +1253,120 @@ const Input = ({
   wrapperClassName = "",
   ...props
 }) => {
+  const inputRef = useRef(null);
+  const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const dateTimeClass = ["date", "time"].includes(type)
     ? "date-time-light"
     : "";
+  const showTimeIcon = type === "time";
+  const [selectedHour = "09", selectedMinute = "00"] = String(value || "09:00")
+    .split(":")
+    .map((item) => item.padStart(2, "0"));
+  const hours = Array.from({ length: 24 }, (_, index) =>
+    String(index).padStart(2, "0"),
+  );
+  const minutes = Array.from({ length: 60 }, (_, index) =>
+    String(index).padStart(2, "0"),
+  );
+
+  const openPicker = () => {
+    const input = inputRef.current;
+    if (!input) return setIsTimePickerOpen(true);
+
+    input.focus();
+    setIsTimePickerOpen(true);
+
+    try {
+      if (typeof input.showPicker === "function") {
+        input.showPicker();
+      }
+    } catch {
+      // The custom picker below is the cross-browser fallback.
+    }
+  };
+
+  const updateTimePart = (part, nextValue) => {
+    const nextHour = part === "hour" ? nextValue : selectedHour;
+    const nextMinute = part === "minute" ? nextValue : selectedMinute;
+    onChange(`${nextHour}:${nextMinute}`);
+  };
 
   return (
-    <label className={`${wrapperClassName} block`}>
+    <div className={`${wrapperClassName} block`}>
       <div className="mb-2 text-sm font-semibold text-slate-700">
         {label}
         {required ? " *" : ""}
       </div>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={required}
-        readOnly={readOnly}
-        className={`h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-black outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 read-only:bg-slate-100 ${dateTimeClass}`}
-        {...props}
-      />
-    </label>
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onClick={showTimeIcon ? openPicker : undefined}
+          required={required}
+          readOnly={readOnly}
+          className={`h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-black outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 read-only:bg-slate-100 ${
+            showTimeIcon ? "pr-10" : ""
+          } ${dateTimeClass}`}
+          {...props}
+        />
+        {showTimeIcon ? (
+          <button
+            type="button"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={openPicker}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-indigo-600"
+            tabIndex={-1}
+            aria-label={`Open ${label} picker`}
+          >
+            <Clock3 size={17} />
+          </button>
+        ) : null}
+        {showTimeIcon && isTimePickerOpen ? (
+          <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
+            <div className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+              {label}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={selectedHour}
+                onChange={(event) => updateTimePart("hour", event.target.value)}
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-indigo-400"
+              >
+                {hours.map((hour) => (
+                  <option key={hour} value={hour}>
+                    {hour}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={selectedMinute}
+                onChange={(event) =>
+                  updateTimePart("minute", event.target.value)
+                }
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-indigo-400"
+              >
+                {minutes.map((minute) => (
+                  <option key={minute} value={minute}>
+                    {minute}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsTimePickerOpen(false)}
+                className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-indigo-700"
+              >
+                Set Time
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 };
 
