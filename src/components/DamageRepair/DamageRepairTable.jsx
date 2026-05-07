@@ -13,7 +13,7 @@ import {
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
 import { useGetAllDamageStockWithoutQueryQuery } from "../../features/damageStock/damageStock";
-import { useGetSingleProductByIdQuery } from "../../features/product/product";
+import { useGetSingleReceivedProductByIdQuery } from "../../features/product/product";
 import Modal from "../common/Modal";
 import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
@@ -190,6 +190,51 @@ const hasDuplicateVariantCombination = (rows) => {
   return false;
 };
 
+const getVariantKey = (variant) =>
+  `${String(variant?.size || "").trim()}__${String(variant?.color || "").trim()}`;
+
+const validateVariantSelection = (stockRecord, variantsPayload, quantity) => {
+  const availableVariants = getVariantDisplayRows(stockRecord);
+  if (availableVariants.length === 0) return true;
+
+  if (variantsPayload.length === 0) {
+    toast.error("Please select variants for this damage stock");
+    return false;
+  }
+
+  const totalVariantQuantity = variantsPayload.reduce(
+    (total, variant) => total + (Number(variant.quantity) || 0),
+    0,
+  );
+
+  if (totalVariantQuantity !== Number(quantity || 0)) {
+    toast.error("Variant quantity must match total quantity");
+    return false;
+  }
+
+  const availableByVariant = new Map(
+    availableVariants.map((variant) => [
+      getVariantKey(variant),
+      Number(variant.quantity || 0),
+    ]),
+  );
+
+  for (const variant of variantsPayload) {
+    const availableQuantity = availableByVariant.get(getVariantKey(variant));
+    if (!availableQuantity) {
+      toast.error("Selected variant is not available in damage stock");
+      return false;
+    }
+
+    if (Number(variant.quantity || 0) > availableQuantity) {
+      toast.error("Variant quantity exceeds available damage stock");
+      return false;
+    }
+  }
+
+  return true;
+};
+
 const DamageRepairTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isEditOpen1, setIsEditOpen1] = useState(false);
@@ -264,19 +309,29 @@ const DamageRepairTable = () => {
   const selectedEditProductId =
     selectedEditDamageStock?.productId || currentItem?.productId || undefined;
 
-  const { data: selectedCreateProductRes } = useGetSingleProductByIdQuery(
+  const { data: selectedCreateProductRes } = useGetSingleReceivedProductByIdQuery(
     selectedCreateProductId,
     { skip: !selectedCreateProductId },
   );
-  const { data: selectedEditProductRes } = useGetSingleProductByIdQuery(
+  const { data: selectedEditProductRes } = useGetSingleReceivedProductByIdQuery(
     selectedEditProductId,
     { skip: !selectedEditProductId },
   );
 
-  const selectedCreateProductData =
+  const rawSelectedCreateProductData =
     selectedCreateProductRes?.data || selectedCreateProductRes;
-  const selectedEditProductData =
+  const rawSelectedEditProductData =
     selectedEditProductRes?.data || selectedEditProductRes;
+  const selectedCreateProductData =
+    String(rawSelectedCreateProductData?.Id || "") ===
+    String(selectedCreateProductId || "")
+      ? rawSelectedCreateProductData
+      : null;
+  const selectedEditProductData =
+    String(rawSelectedEditProductData?.Id || "") ===
+    String(selectedEditProductId || "")
+      ? rawSelectedEditProductData
+      : null;
 
   const createSizeOptions = useMemo(
     () => getVariationOptions(selectedCreateProductData, "size"),
@@ -294,6 +349,40 @@ const DamageRepairTable = () => {
     () => getVariationOptions(selectedEditProductData, "color"),
     [selectedEditProductData],
   );
+
+  useEffect(() => {
+    if (
+      !createForm?.receivedId ||
+      !selectedCreateProductData ||
+      createSizeOptions.length > 0
+    )
+      return;
+
+    if (hasConfiguredVariants(createForm?.variantRows)) {
+      setCreateForm((p) => ({
+        ...p,
+        variantRows: [createEmptyVariantRow()],
+        quantity: "",
+      }));
+    }
+  }, [createForm?.receivedId, selectedCreateProductData, createSizeOptions.length]);
+
+  useEffect(() => {
+    if (
+      !currentItem?.receivedId ||
+      !selectedEditProductData ||
+      editSizeOptions.length > 0
+    )
+      return;
+
+    if (hasConfiguredVariants(currentItem?.variantRows)) {
+      setCurrentItem((p) => ({
+        ...p,
+        variantRows: [createEmptyVariantRow()],
+        quantity: "",
+      }));
+    }
+  }, [currentItem?.receivedId, selectedEditProductData, editSizeOptions.length]);
 
   // ✅ react-select light styles
   const selectStyles = {
@@ -500,6 +589,16 @@ const DamageRepairTable = () => {
     if (hasDuplicateVariantCombination(variantsPayload)) {
       return toast.error("Duplicate size and color combination found");
     }
+    if (
+      createSizeOptions.length > 0 &&
+      !validateVariantSelection(
+        selectedCreateDamageStock,
+        variantsPayload,
+        createForm.quantity,
+      )
+    ) {
+      return;
+    }
 
     try {
       const payload = {
@@ -538,6 +637,16 @@ const DamageRepairTable = () => {
     );
     if (hasDuplicateVariantCombination(variantsPayload)) {
       return toast.error("Duplicate size and color combination found");
+    }
+    if (
+      editSizeOptions.length > 0 &&
+      !validateVariantSelection(
+        selectedEditDamageStock,
+        variantsPayload,
+        currentItem.quantity,
+      )
+    ) {
+      return;
     }
 
     try {
@@ -607,7 +716,12 @@ const DamageRepairTable = () => {
 
   // delete
   const handleDelete = async (id) => {
-    if (!await requestDeleteConfirmation({ message: "Do you want to delete this item?" })) return;
+    if (
+      !(await requestDeleteConfirmation({
+        message: "Do you want to delete this item?",
+      }))
+    )
+      return;
 
     try {
       const res = await deleteDamageRepair(id).unwrap();
@@ -1058,7 +1172,11 @@ const DamageRepairTable = () => {
       </div>
 
       {/* Note Modal */}
-      <Modal isOpen={isNoteModalOpen} onClose={handleNoteModalClose} title="Note">
+      <Modal
+        isOpen={isNoteModalOpen}
+        onClose={handleNoteModalClose}
+        title="Note"
+      >
         <p className="mt-4 text-sm text-slate-700">{noteContent}</p>
         <div className="mt-6 flex justify-end gap-2">
           <button
@@ -1071,7 +1189,13 @@ const DamageRepairTable = () => {
       </Modal>
 
       {/* Edit Modal */}
-      <Modal isOpen={isEditOpen && !!currentItem} onClose={closeEdit} title="Edit Product">
+      <Modal
+        isOpen={isEditOpen && !!currentItem}
+        onClose={closeEdit}
+        title="Edit Product"
+      >
+        {currentItem ? (
+          <>
             <div className="mt-4">
               <label className="block text-sm text-slate-600 mb-1">Name</label>
               <Select
@@ -1271,7 +1395,9 @@ const DamageRepairTable = () => {
                     warehouseId: selected?.value || "",
                   })
                 }
-                placeholder={isLoadingWarehouse ? "Loading..." : "Select Warehouse"}
+                placeholder={
+                  isLoadingWarehouse ? "Loading..." : "Select Warehouse"
+                }
                 isClearable
                 className="text-black mt-1"
                 styles={selectStyles}
@@ -1296,7 +1422,9 @@ const DamageRepairTable = () => {
                     supplierId: selected?.value || "",
                   })
                 }
-                placeholder={isLoadingSupplier ? "Loading..." : "Select Supplier"}
+                placeholder={
+                  isLoadingSupplier ? "Loading..." : "Select Supplier"
+                }
                 isClearable
                 className="text-black mt-1"
                 styles={selectStyles}
@@ -1394,10 +1522,18 @@ const DamageRepairTable = () => {
                 Cancel
               </button>
             </div>
+          </>
+        ) : null}
       </Modal>
 
       {/* Edit Note Modal */}
-      <Modal isOpen={isEditOpen1 && !!currentItem} onClose={closeEdit1} title="Edit Note">
+      <Modal
+        isOpen={isEditOpen1 && !!currentItem}
+        onClose={closeEdit1}
+        title="Edit Note"
+      >
+        {currentItem ? (
+          <>
             <div className="mt-4">
               <label className="block text-sm text-slate-600 mb-1">Note</label>
               <textarea
@@ -1424,6 +1560,8 @@ const DamageRepairTable = () => {
                 Cancel
               </button>
             </div>
+          </>
+        ) : null}
       </Modal>
 
       {/* Add Modal */}
@@ -1762,7 +1900,7 @@ const DamageRepairTable = () => {
       <Modal
         isOpen={isAddOpen}
         onClose={closeAdd}
-        title="Add Damage Repaired Product"
+        title="Add Damage Repairing Product"
         maxWidth="max-w-2xl"
       >
         <form onSubmit={handleCreate}>
@@ -1958,7 +2096,8 @@ const DamageRepairTable = () => {
               value={
                 warehouseOptions.find(
                   (option) =>
-                    String(option.value) === String(createForm?.warehouseId || ""),
+                    String(option.value) ===
+                    String(createForm?.warehouseId || ""),
                 ) || null
               }
               onChange={(selected) =>
@@ -1967,7 +2106,9 @@ const DamageRepairTable = () => {
                   warehouseId: selected?.value || "",
                 })
               }
-              placeholder={isLoadingWarehouse ? "Loading..." : "Select Warehouse"}
+              placeholder={
+                isLoadingWarehouse ? "Loading..." : "Select Warehouse"
+              }
               isClearable
               className="text-black mt-1"
               styles={selectStyles}
@@ -1982,7 +2123,8 @@ const DamageRepairTable = () => {
               value={
                 supplierOptions.find(
                   (option) =>
-                    String(option.value) === String(createForm?.supplierId || ""),
+                    String(option.value) ===
+                    String(createForm?.supplierId || ""),
                 ) || null
               }
               onChange={(selected) =>

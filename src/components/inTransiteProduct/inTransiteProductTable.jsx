@@ -23,6 +23,7 @@ const initialCreateForm = {
   productId: "",
   variantRows: [{ size: "", color: "", quantity: "" }],
   quantity: "",
+  sale_price: "",
   note: "",
   date: new Date().toISOString().slice(0, 10),
 };
@@ -393,7 +394,6 @@ const IntransiteProductTable = () => {
       return {
         ...prev,
         variantRows: nextRows,
-        quantity: String(getVariantRowsTotalQuantity(nextRows)),
       };
     });
   };
@@ -407,7 +407,6 @@ const IntransiteProductTable = () => {
         ...normalizeVariantRows(prev?.variantRows),
         createEmptyVariantRow(),
       ],
-      quantity: String(getVariantRowsTotalQuantity(prev?.variantRows)),
     }));
   };
 
@@ -422,11 +421,6 @@ const IntransiteProductTable = () => {
       return {
         ...prev,
         variantRows: nextRows.length > 0 ? nextRows : [createEmptyVariantRow()],
-        quantity: String(
-          getVariantRowsTotalQuantity(
-            nextRows.length > 0 ? nextRows : [createEmptyVariantRow()],
-          ),
-        ),
       };
     });
   };
@@ -441,6 +435,7 @@ const IntransiteProductTable = () => {
       quantity: String(
         getVariantRowsTotalQuantity(variantRows) || Number(rp.quantity) || 0,
       ),
+      sale_price: rp.sale_price ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
       date: rp.date ?? "",
@@ -464,6 +459,7 @@ const IntransiteProductTable = () => {
       quantity: String(
         getVariantRowsTotalQuantity(variantRows) || Number(rp.quantity) || 0,
       ),
+      sale_price: rp.sale_price ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
       userId,
@@ -504,6 +500,7 @@ const IntransiteProductTable = () => {
         supplierId: Number(createForm.supplierId),
         warehouseId: Number(createForm.warehouseId),
         quantity: Number(createForm.quantity),
+        sale_price: Number(createForm.sale_price) || 0,
         variants: variantsPayload,
         note: createForm.note,
         date: createForm.date,
@@ -543,6 +540,7 @@ const IntransiteProductTable = () => {
         warehouseId: Number(currentItem.warehouseId),
         date: currentItem.date,
         quantity: Number(currentItem.quantity),
+        sale_price: Number(currentItem.sale_price) || 0,
         variants: variantsPayload,
         receivedId: Number(currentItem.receivedId || currentItem.productId),
         productId: Number(currentItem.productId || currentItem.receivedId),
@@ -1111,6 +1109,7 @@ const IntransiteProductTable = () => {
                     receivedId: selected?.value || "",
                     variantRows: [createEmptyVariantRow()],
                     quantity: "",
+                    sale_price: "",
                   }))
                 }
                 placeholder={
@@ -1339,12 +1338,25 @@ const IntransiteProductTable = () => {
                 onChange={(e) =>
                   setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
                 }
-                readOnly={hasConfiguredVariants(currentItem?.variantRows)}
-                className={`h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none ${
-                  hasConfiguredVariants(currentItem?.variantRows)
-                    ? "bg-slate-50"
-                    : "bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                }`}
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">
+                Sales Price
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={currentItem.sale_price ?? ""}
+                onChange={(e) =>
+                  setCurrentItem((p) => ({
+                    ...p,
+                    sale_price: e.target.value,
+                  }))
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
 
@@ -1475,6 +1487,7 @@ const IntransiteProductTable = () => {
                   receivedId: selected?.value || "",
                   variantRows: [createEmptyVariantRow()],
                   quantity: "",
+                  sale_price: "",
                 }))
               }
               placeholder="Search product..."
@@ -1705,12 +1718,26 @@ const IntransiteProductTable = () => {
                 onChange={(e) =>
                   setCreateForm((p) => ({ ...p, quantity: e.target.value }))
                 }
-                readOnly={hasConfiguredVariants(createForm?.variantRows)}
-                className={`w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 outline-none ${
-                  hasConfiguredVariants(createForm?.variantRows)
-                    ? "bg-slate-50"
-                    : "bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                }`}
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                Sales Price
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={createForm.sale_price}
+                onChange={(e) =>
+                  setCreateForm((p) => ({
+                    ...p,
+                    sale_price: e.target.value,
+                  }))
+                }
+                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 required
               />
             </div>

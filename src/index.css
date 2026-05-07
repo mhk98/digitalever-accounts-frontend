@@ -207,6 +207,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border: 2px solid #e2e8f0;
 }
 
+tr.duplicate-same-day-entry > td {
+  background-color: #fff1f2 !important;
+  border-top-color: #fecdd3 !important;
+  border-bottom-color: #fecdd3 !important;
+}
+
+tr.duplicate-same-day-entry > td:first-child {
+  box-shadow: inset 4px 0 0 #ef4444;
+}
+
+tr.duplicate-same-day-entry:hover > td {
+  background-color: #ffe4e6 !important;
+}
+
 /* ✅ html2canvas safe styles (avoid oklch, filters, fancy shadows) */
 .pdf-safe,
 .pdf-safe * {

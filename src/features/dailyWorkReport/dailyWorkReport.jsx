@@ -123,6 +123,13 @@ export const dailyWorkReportApi = createApi({
       providesTags: ["DailyWorkReport"],
       refetchOnMountOrArgChange: true,
     }),
+    getDailyWorkEligibleSubmitters: build.query({
+      query: () => ({
+        url: "/daily-work-reports/eligible-submitters",
+      }),
+      providesTags: ["DailyWorkReport"],
+      refetchOnMountOrArgChange: true,
+    }),
   }),
 });
 
@@ -141,4 +148,5 @@ export const {
   useGetDailyWorkReportLeaderboardQuery,
   useGetDailyWorkEmployeeDashboardQuery,
   useGetDailyWorkAdminDashboardQuery,
+  useGetDailyWorkEligibleSubmittersQuery,
 } = dailyWorkReportApi;

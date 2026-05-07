@@ -160,6 +160,7 @@ import { payrollRunApi } from "../features/payrollRun/payrollRun";
 import { payrollItemApi } from "../features/payrollItem/payrollItem";
 import { dailyWorkReportApi } from "../features/dailyWorkReport/dailyWorkReport";
 import { employeeWorkReportApi } from "../features/employeeWorkReport/employeeWorkReport";
+import { logisticWorkReportApi } from "../features/logisticWorkReport/logisticWorkReport";
 import { assetsApi } from "../features/assets/assets";
 import { noticeApi } from "../features/notice/notice";
 import { taskApi } from "../features/task/task";
@@ -220,6 +221,7 @@ const apis = [
   payrollItemApi,
   dailyWorkReportApi,
   employeeWorkReportApi,
+  logisticWorkReportApi,
   notificationApi,
   noticeApi,
   taskApi,

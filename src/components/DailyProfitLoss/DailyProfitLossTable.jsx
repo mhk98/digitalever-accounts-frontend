@@ -17,6 +17,7 @@ import useDebounce from "../../hooks/useDebounce";
 import {
   useGetAllProfitLossQuery,
   useInsertProfitLossMutation,
+  useDeleteProfitLossMutation,
   useSendProfitLossInvoiceMutation,
 } from "../../features/profitLoss/profitLoss";
 
@@ -178,7 +179,6 @@ const DailyProfitLossTable = () => {
 
   const receivedData = useMemo(() => receivedRes?.data || [], [receivedRes]);
 
-
   useEffect(() => {
     if (receivedError) console.error("Received fetch error:", receivedErrObj);
   }, [receivedError, receivedErrObj]);
@@ -191,6 +191,8 @@ const DailyProfitLossTable = () => {
     useInsertProfitLossMutation();
   const [sendProfitLossInvoice, { isLoading: isSendingProfitLossInvoice }] =
     useSendProfitLossInvoiceMutation();
+  const [deleteProfitLoss, { isLoading: isDeletingProfitLoss }] =
+    useDeleteProfitLossMutation();
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -198,6 +200,9 @@ const DailyProfitLossTable = () => {
   const [marketingSpends, setMarketingSpends] = useState(0);
   const [otherExpenses, setOtherExpenses] = useState(0);
   const [returnPercentage, setReturnPercentage] = useState(0);
+  const [calculationDate, setCalculationDate] = useState(
+    new Date().toISOString().slice(0, 10),
+  );
   const [salesType, setSalesType] = useState(null);
   const [historyStartDate, setHistoryStartDate] = useState("");
   const [historyEndDate, setHistoryEndDate] = useState("");
@@ -207,7 +212,6 @@ const DailyProfitLossTable = () => {
   const [selectedInvoiceRow, setSelectedInvoiceRow] = useState(null);
   const [clientEmail, setClientEmail] = useState("");
   const itemsPerPage = 10;
-
 
   useEffect(() => {
     setCurrentPage(1);
@@ -267,7 +271,6 @@ const DailyProfitLossTable = () => {
         .filter(Boolean);
     });
   }, [normalizedProducts]);
-
 
   const productOptions = useMemo(
     () =>
@@ -330,6 +333,7 @@ const DailyProfitLossTable = () => {
     setMarketingSpends(0);
     setOtherExpenses(0);
     setReturnPercentage(0);
+    setCalculationDate(new Date().toISOString().slice(0, 10));
     setSalesType(null);
   };
 
@@ -424,6 +428,7 @@ const DailyProfitLossTable = () => {
       cost: Math.round(summary.extraCost),
       profitLoss: Math.round(summary.finalProfit),
       salesType: salesType.value,
+      date: calculationDate,
     };
 
     try {
@@ -439,6 +444,21 @@ const DailyProfitLossTable = () => {
     }
   };
 
+  const handleDeleteProfitLossHistory = async (id) => {
+    if (!window.confirm("Delete this saved profit/loss record?")) return;
+
+    try {
+      const res = await deleteProfitLoss(id).unwrap();
+      if (res?.success) {
+        toast.success("Profit/Loss history deleted");
+      } else {
+        toast.error(res?.message || "Delete failed");
+      }
+    } catch (error) {
+      toast.error(error?.data?.message || "Delete failed");
+    }
+  };
+
   const handlePrintInvoice = (row) => {
     const printWindow = window.open("", "_blank", "width=1050,height=820");
     if (!printWindow) {
@@ -448,7 +468,9 @@ const DailyProfitLossTable = () => {
 
     const invoiceDate = formatDate(row?.createdAt || row?.date);
     const invoiceNo = `PL-${row?.Id || row?.id || Date.now()}`;
-    const invoiceSalesType = escapeHtml(row?.salesType || salesType?.value || "-");
+    const invoiceSalesType = escapeHtml(
+      row?.salesType || salesType?.value || "-",
+    );
 
     const productRowsHtml =
       selectedRows.length > 0
@@ -953,7 +975,22 @@ const DailyProfitLossTable = () => {
         </table>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 xl:grid-cols-4">
+      <div className="mt-8 grid grid-cols-1 gap-4 xl:grid-cols-5">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 className="text-2xl font-bold text-slate-900">
+            Calculation Date
+          </h3>
+          <p className="mt-6 text-sm leading-7 text-slate-500">
+            Select the date for this profit/loss calculation and saved history.
+          </p>
+          <input
+            type="date"
+            value={calculationDate}
+            onChange={(e) => setCalculationDate(e.target.value)}
+            className="mt-3 h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-base font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+          />
+        </div>
+
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <h3 className="text-2xl font-bold text-slate-900">
             Marketing Spends
@@ -1164,7 +1201,7 @@ const DailyProfitLossTable = () => {
                 profitLossRows.map((row) => (
                   <tr key={row?.Id} className="group">
                     <td className="border-b border-slate-100 px-3 py-4 text-sm font-medium text-slate-700 first:pl-2">
-                      {formatDate(row?.createdAt || row?.date)}
+                      {formatDate(row?.date || row?.createdAt)}
                     </td>
                     <td className="border-b border-slate-100 px-3 py-4 text-sm font-semibold text-slate-900">
                       {row?.salesType || "-"}
@@ -1210,6 +1247,15 @@ const DailyProfitLossTable = () => {
                         >
                           <Mail size={14} />
                           Email
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProfitLossHistory(row?.Id)}
+                          disabled={isDeletingProfitLoss}
+                          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <Trash2 size={14} />
+                          Delete
                         </button>
                       </div>
                     </td>

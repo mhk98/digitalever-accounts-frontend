@@ -21,9 +21,9 @@ import toast from "react-hot-toast";
 import HrmWorkspace from "./HrmWorkspace";
 import {
   useCreateDailyWorkReportMutation,
-  useGetAssignedDailyWorkTasksQuery,
   useGetAllDailyWorkReportsQuery,
   useGetDailyWorkAdminDashboardQuery,
+  useGetDailyWorkEligibleSubmittersQuery,
   useGetDailyWorkEmployeeDashboardQuery,
   useGetDailyWorkReportLeaderboardQuery,
   useGetMyDailyWorkReportsQuery,
@@ -31,12 +31,11 @@ import {
   useSendDailyWorkReportRemindersMutation,
   useUpdateDailyWorkReportMutation,
 } from "../../features/dailyWorkReport/dailyWorkReport";
-import { useGetAllEmployeeListWithoutQueryQuery } from "../../features/employeeList/employeeList";
 import useDebounce from "../../hooks/useDebounce";
 
 
 const today = new Date().toISOString().slice(0, 10);
-const EMPTY_TASK = {
+const EMPTY_WORK_ENTRY = {
   taskId: null,
   taskSource: "Self-created",
   taskTitle: "",
@@ -60,10 +59,46 @@ const EMPTY_FORM = {
   workStartTime: "09:00",
   workEndTime: "18:00",
   totalWorkingHours: 9,
+  todayWork: "",
   tomorrowPlan: "",
   blockers: "",
   tasks: [],
 };
+
+const WORK_CATEGORIES = [
+  "Web Development",
+  "Graphics Design",
+  "Digital Marketing",
+  "Video Editing",
+  "Customer Service",
+  "Accounts",
+  "Inventory",
+  "Other",
+];
+
+const STATUS_PROGRESS = {
+  Completed: 100,
+  Partial: 50,
+  Pending: 0,
+  Blocked: 25,
+  Failed: 0,
+};
+
+const EVALUATION_WEIGHTS = [
+  { label: "Task Completion", value: "45%", note: "Status অনুযায়ী কাজ কতটা শেষ হয়েছে" },
+  { label: "Productivity", value: "25%", note: "Working hours অনুযায়ী completed work units" },
+  { label: "Consistency", value: "15%", note: "নিয়মিত daily report submit করা" },
+  { label: "Task Quality", value: "10%", note: "Clear title, result, blocker details" },
+  { label: "Initiative", value: "5%", note: "নিজে থেকে কাজ করা এবং blocker explain করা" },
+];
+
+const STATUS_GUIDE = [
+  { label: "Completed", value: "100%", tone: "emerald" },
+  { label: "Partial", value: "50%", tone: "amber" },
+  { label: "Blocked", value: "25%", tone: "violet" },
+  { label: "Pending", value: "0%", tone: "slate" },
+  { label: "Failed", value: "0%", tone: "rose" },
+];
 
 const statusStyles = {
   Submitted: "border-sky-200 bg-sky-50 text-sky-700",
@@ -73,6 +108,7 @@ const statusStyles = {
   Completed: "border-emerald-200 bg-emerald-50 text-emerald-700",
   Failed: "border-rose-200 bg-rose-50 text-rose-700",
   Hold: "border-violet-200 bg-violet-50 text-violet-700",
+  Blocked: "border-violet-200 bg-violet-50 text-violet-700",
 };
 
 const getEmployeeName = (row) =>
@@ -91,14 +127,19 @@ const calculateHours = (start, end) => {
   return minutes > 0 ? Number((minutes / 60).toFixed(2)) : 0;
 };
 
-const buildTaskSummary = (tasks) =>
-  tasks
-    .map((task, index) => `${index + 1}. ${task.taskTitle} - ${task.status}`)
+const buildWorkSummary = (entries) =>
+  entries
+    .map((entry, index) => {
+      const result = entry.outputResult || entry.status;
+      return `${index + 1}. ${entry.taskTitle} - ${result}`;
+    })
     .join("\n");
 
 const DailyWorkReportManager = () => {
   const role = localStorage.getItem("role") || "user";
   const canManageReports = ["superAdmin", "admin"].includes(role);
+  const canSubmitReports = role !== "employee";
+  const [activePanel, setActivePanel] = useState("admin");
   const [form, setForm] = useState(EMPTY_FORM);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
@@ -110,8 +151,6 @@ const DailyWorkReportManager = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedReport, setSelectedReport] = useState(null);
   const [reviewForm, setReviewForm] = useState({
-    qualityScore: 8,
-    initiativeScore: 8,
     managerRemarks: "",
     status: "Approved",
   });
@@ -128,9 +167,9 @@ const DailyWorkReportManager = () => {
       searchTerm: debouncedSearchTerm || undefined,
       startDate: fromDate || undefined,
       endDate: toDate || undefined,
-      employeeId: selectedEmployeeId || undefined,
+      userId: selectedEmployeeId || undefined,
       departmentId: selectedDepartmentId || undefined,
-      status: selectedStatus || undefined,
+      taskStatus: selectedStatus || undefined,
     }),
     [
       currentPage,
@@ -143,20 +182,14 @@ const DailyWorkReportManager = () => {
     ],
   );
 
-  const { data: employeeListRes } = useGetAllEmployeeListWithoutQueryQuery(
-    undefined,
-    { skip: !canManageReports },
-  );
+  const { data: submitterListRes } = useGetDailyWorkEligibleSubmittersQuery(undefined, {
+    skip: !canManageReports,
+  });
   const {
     data: currentReportRes,
     isLoading: currentReportLoading,
     refetch: refetchCurrent,
   } = useGetMyDailyWorkReportsQuery(myCurrentQueryArgs);
-  const {
-    data: assignedTasksRes,
-    isLoading: assignedTasksLoading,
-    refetch: refetchAssignedTasks,
-  } = useGetAssignedDailyWorkTasksQuery({ reportDate: form.reportDate });
   const {
     data: adminReportsRes,
     isLoading: adminReportsLoading,
@@ -190,11 +223,11 @@ const DailyWorkReportManager = () => {
   const employeeDashboard = employeeDashboardRes?.data || {};
   const adminDashboard = adminDashboardRes?.data || {};
   const leaderboard = leaderboardRes?.data || [];
-  const employeeOptions = employeeListRes?.data || [];
+  const employeeOptions = submitterListRes?.data || [];
   const departmentOptions = useMemo(() => {
     const map = new Map();
     employeeOptions.forEach((employee) => {
-      const department = employee.department;
+      const department = employee.department || employee.employeeProfile?.department;
       if (department?.Id) map.set(department.Id, department.name);
     });
     return Array.from(map, ([Id, name]) => ({ Id, name }));
@@ -232,6 +265,7 @@ const DailyWorkReportManager = () => {
       workStartTime: toInputTime(currentReport.workStartTime) || "09:00",
       workEndTime: toInputTime(currentReport.workEndTime) || "18:00",
       totalWorkingHours: Number(currentReport.totalWorkingHours || 0),
+      todayWork: currentReport.todayWork || "",
       tomorrowPlan: currentReport.tomorrowPlan || "",
       blockers: currentReport.blockers || "",
       tasks: currentReport.tasks?.length
@@ -246,9 +280,8 @@ const DailyWorkReportManager = () => {
             outputResult: task.outputResult || "",
             blockerProblem: task.blockerProblem || "",
             selfRating: task.selfRating || 3,
-            taskId: task.taskId || null,
-            taskSource:
-              task.taskSource || (task.taskId ? "Assigned" : "Self-created"),
+            taskId: null,
+            taskSource: "Self-created",
             progressPercent: Number(task.progressPercent ?? 100),
             timeSpentMinutes: Number(task.timeSpentMinutes || 0),
             dueDate: task.dueDate || "",
@@ -262,56 +295,34 @@ const DailyWorkReportManager = () => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleTaskChange = (index, key, value) => {
+  const handleWorkEntryChange = (index, key, value) => {
     setForm((prev) => ({
       ...prev,
-      tasks: prev.tasks.map((task, taskIndex) =>
-        taskIndex === index ? { ...task, [key]: value } : task,
+      tasks: prev.tasks.map((entry, entryIndex) =>
+        entryIndex === index
+          ? {
+              ...entry,
+              [key]: value,
+              ...(key === "status"
+                ? { progressPercent: STATUS_PROGRESS[value] ?? entry.progressPercent }
+                : {}),
+            }
+          : entry,
       ),
     }));
   };
 
-  const addTask = () => {
-    setForm((prev) => ({ ...prev, tasks: [...prev.tasks, { ...EMPTY_TASK }] }));
-  };
-
-  const importAssignedTasks = async () => {
-    const res = await refetchAssignedTasks();
-    const assignedTasks = res?.data?.data || assignedTasksRes?.data || [];
-    if (!assignedTasks.length) {
-      toast.error("No assigned task found for this date");
-      return;
-    }
-
-    setForm((prev) => {
-      const existingTaskIds = new Set(
-        prev.tasks.map((task) => Number(task.taskId)).filter(Boolean),
-      );
-      const importedTasks = assignedTasks
-        .filter((task) => !existingTaskIds.has(Number(task.taskId)))
-        .map((task) => ({
-          ...EMPTY_TASK,
-          ...task,
-          status: task.status || "Pending",
-          progressPercent: Number(task.progressPercent || 0),
-          selfRating: task.selfRating || 3,
-        }));
-
-      if (!importedTasks.length) return prev;
-
-      return {
-        ...prev,
-        tasks: [...prev.tasks, ...importedTasks],
-      };
-    });
-
-    toast.success("Assigned tasks imported");
-  };
-
-  const removeTask = (index) => {
+  const addWorkEntry = () => {
     setForm((prev) => ({
       ...prev,
-      tasks: prev.tasks.filter((_, taskIndex) => taskIndex !== index),
+      tasks: [...prev.tasks, { ...EMPTY_WORK_ENTRY }],
+    }));
+  };
+
+  const removeWorkEntry = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      tasks: prev.tasks.filter((_, entryIndex) => entryIndex !== index),
     }));
   };
 
@@ -320,7 +331,7 @@ const DailyWorkReportManager = () => {
     try {
       const payload = {
         ...form,
-        todayWork: buildTaskSummary(form.tasks),
+        todayWork: form.todayWork || buildWorkSummary(form.tasks),
         totalWorkingHours: calculateHours(form.workStartTime, form.workEndTime),
       };
       const res = currentReport
@@ -360,7 +371,7 @@ const DailyWorkReportManager = () => {
       toast.success(
         res?.data?.reminderCount
           ? `${res.data.reminderCount} reminders sent`
-          : "No pending employee found",
+          : "No pending submitter found",
       );
     } catch (err) {
       toast.error(err?.data?.message || "Failed to send reminders");
@@ -394,87 +405,84 @@ const DailyWorkReportManager = () => {
     <HrmWorkspace
       eyebrow="Performance Standard"
       title="Daily Work Reports"
-      description="Employees submit structured daily work, managers evaluate quality and initiative, and the system calculates daily, weekly, and monthly performance."
+      description="Eligible team members submit structured daily work, managers review reports, and the system calculates daily, weekly, and monthly performance."
       stats={stats}
     >
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        {!canManageReports && (
+      {canManageReports && (
+        <PanelSwitch activePanel={activePanel} onPanelChange={setActivePanel} />
+      )}
+
+      {canSubmitReports && (!canManageReports || activePanel === "daily") && (
+        <div className="grid gap-6">
           <ReportForm
             form={form}
             currentReport={currentReport}
             currentReportLoading={currentReportLoading}
             onFormChange={handleFormChange}
-            onTaskChange={handleTaskChange}
-            onAddTask={addTask}
-            onImportAssignedTasks={importAssignedTasks}
-            assignedTasksLoading={assignedTasksLoading}
-            onRemoveTask={removeTask}
+            onWorkEntryChange={handleWorkEntryChange}
+            onAddWorkEntry={addWorkEntry}
+            onRemoveWorkEntry={removeWorkEntry}
             onSubmit={handleSubmit}
             isSaving={creating || updating}
           />
-        )}
+        </div>
+      )}
 
-        {!canManageReports && (
-          <EmployeeDashboard
-            dashboard={employeeDashboard}
-            currentReport={currentReport}
+      {!canSubmitReports && (
+        <EmptyState text="Daily work reports are enabled for non-employee roles only." />
+      )}
+
+      {canManageReports && activePanel === "admin" && (
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <AdminDashboard
+            dashboard={adminDashboard}
+            leaderboard={leaderboard}
+            leaderboardPeriod={leaderboardPeriod}
+            onLeaderboardPeriodChange={setLeaderboardPeriod}
           />
-        )}
-
-        {canManageReports && (
-          <>
-            <AdminDashboard
-              dashboard={adminDashboard}
-              leaderboard={leaderboard}
-              leaderboardPeriod={leaderboardPeriod}
-              onLeaderboardPeriodChange={setLeaderboardPeriod}
-            />
-            <AdminReviewPanel
-              reports={reports}
-              isLoading={adminReportsLoading}
-              reportMeta={reportMeta}
-              totalPages={totalPages}
-              currentPage={currentPage}
-              filters={{
-                searchTerm,
-                fromDate,
-                toDate,
-                selectedEmployeeId,
-                selectedDepartmentId,
-                selectedStatus,
-              }}
-              employeeOptions={employeeOptions}
-              departmentOptions={departmentOptions}
-              onFilterChange={{
-                setSearchTerm,
-                setFromDate,
-                setToDate,
-                setSelectedEmployeeId,
-                setSelectedDepartmentId,
-                setSelectedStatus,
-                setCurrentPage,
-              }}
-              onViewReport={(report) => {
-                setSelectedReport(report);
-                setReviewForm({
-                  qualityScore: report.evaluation?.qualityScore || 8,
-                  initiativeScore: report.evaluation?.initiativeScore || 8,
-                  managerRemarks:
-                    report.evaluation?.managerRemarks ||
-                    report.reviewNote ||
-                    "",
-                  status:
-                    report.evaluation?.status === "Rejected"
-                      ? "Rejected"
-                      : "Approved",
-                });
-              }}
-              onSendReminders={handleSendReminders}
-              sendingReminders={sendingReminders}
-            />
-          </>
-        )}
-      </div>
+          <AdminReviewPanel
+            reports={reports}
+            isLoading={adminReportsLoading}
+            reportMeta={reportMeta}
+            totalPages={totalPages}
+            currentPage={currentPage}
+            filters={{
+              searchTerm,
+              fromDate,
+              toDate,
+              selectedEmployeeId,
+              selectedDepartmentId,
+              selectedStatus,
+            }}
+            employeeOptions={employeeOptions}
+            departmentOptions={departmentOptions}
+            onFilterChange={{
+              setSearchTerm,
+              setFromDate,
+              setToDate,
+              setSelectedEmployeeId,
+              setSelectedDepartmentId,
+              setSelectedStatus,
+              setCurrentPage,
+            }}
+            onViewReport={(report) => {
+              setSelectedReport(report);
+              setReviewForm({
+                managerRemarks:
+                  report.evaluation?.managerRemarks ||
+                  report.reviewNote ||
+                  "",
+                status:
+                  report.evaluation?.status === "Rejected"
+                    ? "Rejected"
+                    : "Approved",
+              });
+            }}
+            onSendReminders={handleSendReminders}
+            sendingReminders={sendingReminders}
+          />
+        </div>
+      )}
 
       {selectedReport && (
         <ReportDetailModal
@@ -490,16 +498,54 @@ const DailyWorkReportManager = () => {
   );
 };
 
+const PanelSwitch = ({ activePanel, onPanelChange }) => {
+  const panels = [
+    {
+      key: "admin",
+      label: "Admin Panel",
+      icon: Users,
+    },
+    {
+      key: "daily",
+      label: "Daily Report Panel",
+      icon: FileText,
+    },
+  ];
+
+  return (
+    <div className="mb-5 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+      {panels.map((panel) => {
+        const Icon = panel.icon;
+        const active = activePanel === panel.key;
+
+        return (
+          <button
+            key={panel.key}
+            type="button"
+            onClick={() => onPanelChange(panel.key)}
+            className={`inline-flex h-11 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition ${
+              active
+                ? "border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm"
+                : "border-transparent bg-white text-slate-600 hover:border-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            <Icon size={16} />
+            {panel.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
 const ReportForm = ({
   form,
   currentReport,
   currentReportLoading,
   onFormChange,
-  onTaskChange,
-  onAddTask,
-  onImportAssignedTasks,
-  assignedTasksLoading,
-  onRemoveTask,
+  onWorkEntryChange,
+  onAddWorkEntry,
+  onRemoveWorkEntry,
   onSubmit,
   isSaving,
 }) => (
@@ -510,7 +556,7 @@ const ReportForm = ({
           Submit Daily Report
         </h3>
         <p className="mt-1 text-sm text-slate-500">
-          Add task rows with priority, status, result, blocker, and self rating.
+          Add independent work rows with output, progress, time, and blockers.
         </p>
       </div>
       <Badge value={currentReport ? currentReport.status : "New"} />
@@ -520,6 +566,8 @@ const ReportForm = ({
       <EmptyState text="Loading report..." />
     ) : (
       <form className="mt-6 space-y-5" onSubmit={onSubmit}>
+        <EvaluationGuide />
+
         <div className="grid gap-3 md:grid-cols-4">
           <Input
             label="Date"
@@ -549,174 +597,90 @@ const ReportForm = ({
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-bold text-slate-900">Task Entries</div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-sm font-bold text-slate-900">Work Entries</div>
             <button
               type="button"
-              onClick={onAddTask}
+              onClick={onAddWorkEntry}
               className="inline-flex h-9 items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700"
             >
-              <Plus size={15} /> Add Task
-            </button>
-            <button
-              type="button"
-              onClick={onImportAssignedTasks}
-              disabled={assignedTasksLoading}
-              className="inline-flex h-9 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 disabled:opacity-60"
-            >
-              <ClipboardCheck size={15} />{" "}
-              {assignedTasksLoading ? "Importing..." : "Import Assigned Tasks"}
+              <Plus size={15} /> Add Work Row
             </button>
           </div>
 
           {form.tasks.length === 0 && (
             <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-              Import assigned tasks or add a new task to open the task entry
-              form.
+              Add at least one work row to calculate a meaningful performance score.
             </div>
           )}
 
-          {form.tasks.map((task, index) => (
+          {form.tasks.map((entry, index) => (
             <div
               key={index}
               className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
             >
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm font-bold text-slate-800">
-                    Task #{index + 1}
-                  </div>
-                  {task.taskId && (
-                    <div className="mt-1 text-xs font-semibold text-emerald-700">
-                      Linked Task #{task.taskId}
-                      {task.dueDate ? ` • Due ${task.dueDate}` : ""}
-                    </div>
-                  )}
+                <div className="text-sm font-bold text-slate-800">
+                  Work Row #{index + 1}
                 </div>
                 <button
                   type="button"
-                  onClick={() => onRemoveTask(index)}
+                  onClick={() => onRemoveWorkEntry(index)}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-rose-100 bg-white text-rose-600"
                 >
                   <Trash2 size={15} />
                 </button>
               </div>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <SelectInput
-                  label="Task Source"
-                  value={task.taskSource}
-                  onChange={(value) => onTaskChange(index, "taskSource", value)}
-                  options={["Assigned", "Self-created", "Urgent"]}
-                />
+              <div className="mt-4 grid gap-3 lg:grid-cols-[1.5fr_0.9fr_0.8fr_0.9fr]">
                 <Input
-                  label="Task Title"
-                  value={task.taskTitle}
-                  onChange={(value) => onTaskChange(index, "taskTitle", value)}
-                  wrapperClassName="mt-3"
+                  label="Work Title"
+                  value={entry.taskTitle}
+                  onChange={(value) => onWorkEntryChange(index, "taskTitle", value)}
                   required
                 />
-                <Input
-                  label="Task Category"
-                  value={task.taskCategory}
-                  onChange={(value) =>
-                    onTaskChange(index, "taskCategory", value)
-                  }
-                  placeholder="Sales, Accounts, HR, Support"
-                />
-              </div>
-              <TextArea
-                label="Task Description"
-                value={task.taskDescription}
-                onChange={(value) =>
-                  onTaskChange(index, "taskDescription", value)
-                }
-              />
-              <div className="grid gap-3 md:grid-cols-5">
                 <SelectInput
-                  label="Priority"
-                  value={task.priority}
-                  onChange={(value) => onTaskChange(index, "priority", value)}
-                  options={["High", "Medium", "Low"]}
+                  label="Work Category"
+                  value={entry.taskCategory}
+                  onChange={(value) => onWorkEntryChange(index, "taskCategory", value)}
+                  options={WORK_CATEGORIES}
                 />
                 <SelectInput
                   label="Status"
-                  value={task.status}
-                  onChange={(value) => onTaskChange(index, "status", value)}
-                  options={[
-                    "Completed",
-                    "Partial",
-                    "Pending",
-                    "Failed",
-                    "Hold",
-                  ]}
-                />
-                <Input
-                  label="Start Time"
-                  type="time"
-                  value={task.startTime}
-                  onChange={(value) => onTaskChange(index, "startTime", value)}
-                  wrapperClassName="mt-3"
-                />
-                <Input
-                  label="End Time"
-                  type="time"
-                  value={task.endTime}
-                  onChange={(value) => onTaskChange(index, "endTime", value)}
-                  wrapperClassName="mt-3"
-                />
-                <SelectInput
-                  label="Self Rating"
-                  value={String(task.selfRating)}
-                  onChange={(value) =>
-                    onTaskChange(index, "selfRating", Number(value))
-                  }
-                  options={["1", "2", "3", "4", "5"]}
-                />
-              </div>
-              <div className="grid gap-3 md:grid-cols-3 mt-4">
-                <Input
-                  label="Progress Today (%)"
-                  type="number"
-                  value={task.progressPercent}
-                  min="0"
-                  max="100"
-                  onChange={(value) =>
-                    onTaskChange(index, "progressPercent", Number(value))
-                  }
+                  value={entry.status}
+                  onChange={(value) => onWorkEntryChange(index, "status", value)}
+                  options={["Completed", "Partial", "Pending", "Blocked", "Failed"]}
                 />
                 <Input
                   label="Time Spent (minutes)"
                   type="number"
-                  value={task.timeSpentMinutes}
+                  value={entry.timeSpentMinutes}
                   min="0"
                   onChange={(value) =>
-                    onTaskChange(index, "timeSpentMinutes", Number(value))
-                  }
-                />
-                <Input
-                  label="Due Date"
-                  type="date"
-                  value={task.dueDate}
-                  onChange={(value) => onTaskChange(index, "dueDate", value)}
-                />
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <TextArea
-                  label="Output / Result"
-                  value={task.outputResult}
-                  onChange={(value) =>
-                    onTaskChange(index, "outputResult", value)
-                  }
-                />
-                <TextArea
-                  label="Blocker / Problem"
-                  value={task.blockerProblem}
-                  onChange={(value) =>
-                    onTaskChange(index, "blockerProblem", value)
+                    onWorkEntryChange(index, "timeSpentMinutes", Number(value))
                   }
                 />
               </div>
+
+              <details className="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
+                <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                  More details
+                </summary>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <Input
+                    label="Actual Output / Result"
+                    value={entry.outputResult}
+                    onChange={(value) => onWorkEntryChange(index, "outputResult", value)}
+                  />
+                  <Input
+                    label="Blocker / Problem"
+                    value={entry.blockerProblem}
+                    onChange={(value) =>
+                      onWorkEntryChange(index, "blockerProblem", value)
+                    }
+                  />
+                </div>
+              </details>
             </div>
           ))}
         </div>
@@ -744,12 +708,87 @@ const ReportForm = ({
             : currentReport
               ? "Update Report"
               : form.tasks.length === 0
-                ? "Add task first"
+                ? "Add work row first"
                 : "Submit Report"}
         </button>
       </form>
     )}
   </section>
+);
+
+const EvaluationGuide = () => (
+  <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-4">
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-sky-700">
+          <Award size={13} /> Evaluation Guide
+        </div>
+        <h4 className="mt-3 text-base font-black text-slate-900">
+          Performance score যেভাবে calculate হয়
+        </h4>
+        <p className="mt-1 text-sm text-slate-600">
+          Submitter শুধু কাজের row submit করবে। Status, time, result, blocker,
+          এবং নিয়মিত submission থেকে score automatic হবে।
+        </p>
+      </div>
+      <div className="rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm">
+        <div className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+          Progress by Status
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {STATUS_GUIDE.map((item) => (
+            <span
+              key={item.label}
+              className={`rounded-full border px-2.5 py-1 text-xs font-bold ${
+                item.tone === "emerald"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : item.tone === "amber"
+                    ? "border-amber-200 bg-amber-50 text-amber-700"
+                    : item.tone === "violet"
+                      ? "border-violet-200 bg-violet-50 text-violet-700"
+                      : item.tone === "rose"
+                        ? "border-rose-200 bg-rose-50 text-rose-700"
+                        : "border-slate-200 bg-slate-50 text-slate-600"
+              }`}
+            >
+              {item.label} {item.value}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <div className="mt-4 grid gap-3 md:grid-cols-5">
+      {EVALUATION_WEIGHTS.map((item) => (
+        <div key={item.label} className="rounded-2xl border border-sky-100 bg-white p-3">
+          <div className="text-xl font-black text-slate-900">{item.value}</div>
+          <div className="mt-1 text-sm font-bold text-slate-800">{item.label}</div>
+          <div className="mt-1 text-xs leading-5 text-slate-500">{item.note}</div>
+        </div>
+      ))}
+    </div>
+
+    <div className="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-3">
+      <div className="rounded-2xl border border-sky-100 bg-white p-3">
+        <div className="font-bold text-slate-900">Score বাড়ে</div>
+        <p className="mt-1">
+          Clear work title, correct status, actual result, এবং realistic time দিলে।
+        </p>
+      </div>
+      <div className="rounded-2xl border border-sky-100 bg-white p-3">
+        <div className="font-bold text-slate-900">Blocked হলে</div>
+        <p className="mt-1">
+          Blocker/problem লিখলে quality fair থাকে। খালি রাখলে score কমে।
+        </p>
+      </div>
+      <div className="rounded-2xl border border-sky-100 bg-white p-3">
+        <div className="font-bold text-slate-900">Manager mark দেয় না</div>
+        <p className="mt-1">
+          Manager শুধু approve/reject ও remarks দিতে পারে। Mark automatic.
+        </p>
+      </div>
+    </div>
+  </div>
 );
 
 const EmployeeDashboard = ({ dashboard, currentReport }) => (
@@ -759,7 +798,7 @@ const EmployeeDashboard = ({ dashboard, currentReport }) => (
         <BarChart3 size={18} />
       </div>
       <div>
-        <h3 className="text-lg font-bold text-slate-900">Employee Dashboard</h3>
+        <h3 className="text-lg font-bold text-slate-900">My Performance Dashboard</h3>
         <p className="mt-1 text-sm text-slate-500">
           Personal score, weekly trend, monthly average, and manager feedback.
         </p>
@@ -867,7 +906,7 @@ const AdminDashboard = ({
         value={dashboard.reportsNotSubmittedToday || 0}
       />
       <MetricCard
-        label="Active Employees"
+        label="Active Submitters"
         value={dashboard.activeEmployees || 0}
       />
     </div>
@@ -951,17 +990,17 @@ const AdminReviewPanel = ({
         <input
           value={filters.searchTerm}
           onChange={(e) => onFilterChange.setSearchTerm(e.target.value)}
-          placeholder="Search employee or report"
+          placeholder="Search submitter or report"
           className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-black outline-none focus:border-indigo-500"
         />
       </label>
       <FilterSelect
         value={filters.selectedEmployeeId}
         onChange={onFilterChange.setSelectedEmployeeId}
-        placeholder="All employees"
+        placeholder="All submitters"
         options={employeeOptions.map((employee) => ({
           value: employee.Id,
-          label: employee.name,
+          label: `${employee.name}${employee.role ? ` (${employee.role})` : ""}`,
         }))}
       />
       <FilterSelect
@@ -976,8 +1015,8 @@ const AdminReviewPanel = ({
       <FilterSelect
         value={filters.selectedStatus}
         onChange={onFilterChange.setSelectedStatus}
-        placeholder="All status"
-        options={["Submitted", "Approved", "Rejected"].map((status) => ({
+        placeholder="All work status"
+        options={["Completed", "Partial", "Pending", "Blocked", "Failed"].map((status) => ({
           value: status,
           label: status,
         }))}
@@ -998,7 +1037,7 @@ const AdminReviewPanel = ({
 
     <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
       <div className="grid grid-cols-[1.2fr_0.8fr_0.7fr_0.7fr_0.8fr_0.4fr] bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-        <div>Employee</div>
+        <div>Submitter</div>
         <div>Date</div>
         <div>Status</div>
         <div>Score</div>
@@ -1175,29 +1214,11 @@ const ReportDetailModal = ({
 
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
           <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-            <CheckCircle2 size={17} /> Manager Evaluation
+            <CheckCircle2 size={17} /> Report Review
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <Input
-              label="Quality Score (1-10)"
-              type="number"
-              value={reviewForm.qualityScore}
-              onChange={(value) =>
-                setReviewForm((prev) => ({ ...prev, qualityScore: value }))
-              }
-              min="1"
-              max="10"
-            />
-            <Input
-              label="Initiative Score (1-10)"
-              type="number"
-              value={reviewForm.initiativeScore}
-              onChange={(value) =>
-                setReviewForm((prev) => ({ ...prev, initiativeScore: value }))
-              }
-              min="1"
-              max="10"
-            />
+          <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+            Performance score is calculated automatically from task completion,
+            productivity, task quality, consistency, and initiative.
           </div>
           <SelectInput
             label="Review Decision"
@@ -1233,8 +1254,16 @@ const ReportDetailModal = ({
               value={Number(report.performanceScore?.productivityScore || 0)}
             />
             <ProgressRow
+              label="Task Quality"
+              value={Number(report.performanceScore?.qualityScore || 0)}
+            />
+            <ProgressRow
               label="Consistency"
               value={Number(report.performanceScore?.consistencyScore || 0)}
+            />
+            <ProgressRow
+              label="Initiative"
+              value={Number(report.performanceScore?.initiativeScore || 0)}
             />
           </div>
         </div>

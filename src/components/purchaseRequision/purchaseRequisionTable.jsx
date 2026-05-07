@@ -23,6 +23,7 @@ import {
 
 import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
+import { useGetAllBankAccountWithoutQueryQuery } from "../../features/bankAccount/bankAccount";
 import Modal from "../common/Modal";
 import {
   useGetAllProductWithoutQueryQuery,
@@ -195,13 +196,12 @@ const hasDuplicateVariantCombination = (rows) => {
   return false;
 };
 
-const purchaseRequisitionStatuses = [
-  "Active",
-  "Pending",
-  "Approved",
-  "Pay For Purchase",
-  "Completed",
-];
+const purchaseRequisitionStatusesByRole = {
+  superAdmin: ["Pending", "Approved"],
+  admin: ["Pending", "Approved"],
+  accountant: ["Pay For Purchase", "Completed"],
+  inventor: ["Product Received"],
+};
 
 const PurchaseRequisionTable = () => {
   const { language } = useLayout();
@@ -209,6 +209,10 @@ const PurchaseRequisionTable = () => {
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
   const [user, setUser] = useState(null);
+  const purchaseRequisitionStatuses =
+    purchaseRequisitionStatusesByRole[role] || [];
+  const canUpdatePurchaseRequisitionStatus =
+    purchaseRequisitionStatuses.length > 0;
 
   const [isModalOpen, setIsModalOpen] = useState(false); // Edit modal
   const [isModalOpen1, setIsModalOpen1] = useState(false); // Add modal
@@ -238,6 +242,9 @@ const PurchaseRequisionTable = () => {
     warehouseId: "",
     supplierId: "",
     bookId: "",
+    paymentMode: "",
+    bankName: "",
+    bankAccount: "",
     productId: "",
     variantRows: [createEmptyVariantRow()],
     quantity: "",
@@ -446,6 +453,9 @@ const PurchaseRequisionTable = () => {
       warehouseId: "",
       supplierId: "",
       bookId: "",
+      paymentMode: "",
+      bankName: "",
+      bankAccount: "",
       productId: "",
       variantRows: [createEmptyVariantRow()],
       quantity: "",
@@ -456,6 +466,23 @@ const PurchaseRequisionTable = () => {
     });
   };
   const handleModalClose2 = () => setIsModalOpen2(false);
+
+  useEffect(() => {
+    if (createProduct.paymentMode !== "Bank") {
+      if (createProduct.bankName || createProduct.bankAccount) {
+        setCreateProduct((p) => ({ ...p, bankName: "", bankAccount: "" }));
+      }
+    }
+  }, [createProduct.paymentMode]);
+
+  useEffect(() => {
+    if (!currentProduct) return;
+    if (currentProduct.paymentMode !== "Bank") {
+      if (currentProduct.bankName || currentProduct.bankAccount) {
+        setCurrentProduct((p) => ({ ...p, bankName: "", bankAccount: "" }));
+      }
+    }
+  }, [currentProduct?.paymentMode]);
 
   const updateVariantRow = (mode, index, key, value) => {
     const setter = mode === "edit" ? setCurrentProduct : setCreateProduct;
@@ -541,6 +568,9 @@ const PurchaseRequisionTable = () => {
     setCurrentProduct({
       ...rp,
       bookId: String(rp.bookId ?? rp.book?.Id ?? rp.book?.id ?? ""),
+      paymentMode: rp.paymentMode ?? "",
+      bankName: rp.bankName ?? "",
+      bankAccount: rp.bankAccount ?? "",
       productId: pidFromRow || pidFromName, // ✅ selected ঠিক রাখে
       variantRows,
       quantity: String(
@@ -582,6 +612,9 @@ const PurchaseRequisionTable = () => {
     setCurrentProduct({
       ...rp,
       bookId: String(rp.bookId ?? rp.book?.Id ?? rp.book?.id ?? ""),
+      paymentMode: rp.paymentMode ?? "",
+      bankName: rp.bankName ?? "",
+      bankAccount: rp.bankAccount ?? "",
       productId: pidFromRow || pidFromName,
       variantRows,
       quantity: String(
@@ -605,11 +638,30 @@ const PurchaseRequisionTable = () => {
       if (hasDuplicateVariantCombination(variantsPayload)) {
         return toast.error("Duplicate size and color combination found");
       }
+      if (
+        currentProduct?.paymentMode === "Bank" &&
+        (!currentProduct?.bankName || !currentProduct?.bankAccount)
+      ) {
+        return toast.error("Please select bank name and bank account");
+      }
 
       const formData = new FormData();
       formData.append("productId", Number(currentProduct.productId));
       if (Number(currentProduct.bookId))
         formData.append("bookId", Number(currentProduct.bookId));
+      formData.append("paymentMode", currentProduct.paymentMode || "");
+      formData.append(
+        "bankName",
+        currentProduct.paymentMode === "Bank"
+          ? currentProduct.bankName || ""
+          : "",
+      );
+      formData.append(
+        "bankAccount",
+        currentProduct.paymentMode === "Bank"
+          ? currentProduct.bankAccount || ""
+          : "",
+      );
       formData.append("quantity", Number(currentProduct.quantity));
       formData.append("amount", Number(currentProduct.amount) || 0);
       formData.append("variants", JSON.stringify(variantsPayload));
@@ -641,7 +693,10 @@ const PurchaseRequisionTable = () => {
 
   const handleUpdateProduct1 = async () => {
     if (!currentProduct?.Id) return toast.error("Invalid item!");
-    if (currentProduct?.note === "" || currentProduct?.note === null)
+    if (
+      !canUpdatePurchaseRequisitionStatus &&
+      (currentProduct?.note === "" || currentProduct?.note === null)
+    )
       return toast.error("Note is required!");
 
     try {
@@ -651,16 +706,40 @@ const PurchaseRequisionTable = () => {
       if (hasDuplicateVariantCombination(variantsPayload)) {
         return toast.error("Duplicate size and color combination found");
       }
+      if (
+        currentProduct?.paymentMode === "Bank" &&
+        (!currentProduct?.bankName || !currentProduct?.bankAccount)
+      ) {
+        return toast.error("Please select bank name and bank account");
+      }
 
       const formData = new FormData();
       formData.append("productId", Number(currentProduct.productId));
       if (Number(currentProduct.bookId))
         formData.append("bookId", Number(currentProduct.bookId));
+      formData.append("paymentMode", currentProduct.paymentMode || "");
+      formData.append(
+        "bankName",
+        currentProduct.paymentMode === "Bank"
+          ? currentProduct.bankName || ""
+          : "",
+      );
+      formData.append(
+        "bankAccount",
+        currentProduct.paymentMode === "Bank"
+          ? currentProduct.bankAccount || ""
+          : "",
+      );
       formData.append("quantity", Number(currentProduct.quantity));
       formData.append("amount", Number(currentProduct.amount) || 0);
       formData.append("variants", JSON.stringify(variantsPayload));
       formData.append("status", currentProduct.status || "");
       formData.append("note", currentProduct.note || "");
+      formData.append("date", currentProduct.date || "");
+      if (Number(currentProduct.supplierId))
+        formData.append("supplierId", Number(currentProduct.supplierId));
+      if (Number(currentProduct.warehouseId))
+        formData.append("warehouseId", Number(currentProduct.warehouseId));
       formData.append("userId", userId);
       formData.append("actorRole", role);
       if (currentProduct.file) formData.append("file", currentProduct.file);
@@ -697,6 +776,12 @@ const PurchaseRequisionTable = () => {
       if (hasDuplicateVariantCombination(variantsPayload)) {
         return toast.error("Duplicate size and color combination found");
       }
+      if (
+        createProduct.paymentMode === "Bank" &&
+        (!createProduct.bankName || !createProduct.bankAccount)
+      ) {
+        return toast.error("Please select bank name and bank account");
+      }
 
       const formData = new FormData();
       formData.append("productId", Number(createProduct.productId));
@@ -706,6 +791,19 @@ const PurchaseRequisionTable = () => {
       );
       if (Number(createProduct.bookId))
         formData.append("bookId", Number(createProduct.bookId));
+      formData.append("paymentMode", createProduct.paymentMode || "");
+      formData.append(
+        "bankName",
+        createProduct.paymentMode === "Bank"
+          ? createProduct.bankName || ""
+          : "",
+      );
+      formData.append(
+        "bankAccount",
+        createProduct.paymentMode === "Bank"
+          ? createProduct.bankAccount || ""
+          : "",
+      );
       formData.append("quantity", Number(createProduct.quantity));
       formData.append("amount", Number(createProduct.amount) || 0);
       formData.append("variants", JSON.stringify(variantsPayload));
@@ -726,6 +824,9 @@ const PurchaseRequisionTable = () => {
           warehouseId: "",
           supplierId: "",
           bookId: "",
+          paymentMode: "",
+          bankName: "",
+          bankAccount: "",
           productId: "",
           variantRows: [createEmptyVariantRow()],
           quantity: "",
@@ -791,7 +892,6 @@ const PurchaseRequisionTable = () => {
 
   const selectPortalTarget =
     typeof document !== "undefined" ? document.body : null;
-
 
   // ✅ suppliers
   const {
@@ -862,6 +962,44 @@ const PurchaseRequisionTable = () => {
       })),
     [books],
   );
+
+  const paymentModeOptions = useMemo(
+    () =>
+      ["Cash", "Bkash", "Nagad", "Rocket", "Bank", "Card"].map((mode) => ({
+        value: mode,
+        label: mode,
+      })),
+    [],
+  );
+
+  const { data: bankAccountRes } = useGetAllBankAccountWithoutQueryQuery();
+  const bankAccountsFromDB = bankAccountRes?.data || [];
+
+  const bankOptions = useMemo(() => {
+    const seen = new Set();
+    return bankAccountsFromDB
+      .filter((ba) => {
+        const key = String(ba.bankName || "")
+          .toLowerCase()
+          .trim();
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map((ba) => ({ value: ba.bankName, label: ba.bankName }));
+  }, [bankAccountsFromDB]);
+
+  const getBankAccountOptions = (bankName = "") =>
+    bankAccountsFromDB
+      .filter(
+        (ba) =>
+          !bankName || String(ba.bankName || "") === String(bankName || ""),
+      )
+      .map((ba) => ({
+        value: ba.accountNumber,
+        label: `${ba.accountNumber} (${ba.bankName})`,
+        bankName: ba.bankName,
+      }));
 
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [noteContent, setNoteContent] = useState("");
@@ -1597,6 +1735,90 @@ const PurchaseRequisionTable = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Payment Mode
+              </label>
+              <Select
+                options={paymentModeOptions}
+                value={
+                  paymentModeOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(currentProduct?.paymentMode || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCurrentProduct({
+                    ...currentProduct,
+                    paymentMode: selected?.value || "",
+                    bankName: "",
+                    bankAccount: "",
+                  })
+                }
+                placeholder="Select Payment Mode"
+                isClearable
+                className="text-black"
+                styles={selectStyles}
+              />
+            </div>
+            {currentProduct?.paymentMode === "Bank" && (
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                    Bank Name
+                  </label>
+                  <Select
+                    options={bankOptions}
+                    value={
+                      bankOptions.find(
+                        (option) =>
+                          String(option.value) ===
+                          String(currentProduct?.bankName || ""),
+                      ) || null
+                    }
+                    onChange={(selected) =>
+                      setCurrentProduct({
+                        ...currentProduct,
+                        bankName: selected?.value || "",
+                        bankAccount: "",
+                      })
+                    }
+                    placeholder="Select Bank"
+                    isClearable
+                    className="text-black"
+                    styles={selectStyles}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                    Bank Account
+                  </label>
+                  <Select
+                    options={getBankAccountOptions(currentProduct?.bankName)}
+                    value={
+                      getBankAccountOptions(currentProduct?.bankName).find(
+                        (option) =>
+                          String(option.value) ===
+                          String(currentProduct?.bankAccount || ""),
+                      ) || null
+                    }
+                    onChange={(selected) =>
+                      setCurrentProduct({
+                        ...currentProduct,
+                        bankAccount: selected?.value || "",
+                        bankName:
+                          selected?.bankName || currentProduct.bankName || "",
+                      })
+                    }
+                    placeholder="Select Bank Account"
+                    isClearable
+                    className="text-black"
+                    styles={selectStyles}
+                  />
+                </div>
+              </>
+            )}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Date
               </label>
               <input
@@ -1645,7 +1867,7 @@ const PurchaseRequisionTable = () => {
             </div>
           </div>
 
-          {role === "superAdmin" || role === "admin" ? (
+          {canUpdatePurchaseRequisitionStatus ? (
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Status
@@ -1999,6 +2221,90 @@ const PurchaseRequisionTable = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Payment Mode
+              </label>
+              <Select
+                options={paymentModeOptions}
+                value={
+                  paymentModeOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(createProduct.paymentMode || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCreateProduct({
+                    ...createProduct,
+                    paymentMode: selected?.value || "",
+                    bankName: "",
+                    bankAccount: "",
+                  })
+                }
+                placeholder="Select Payment Mode"
+                isClearable
+                className="text-black"
+                styles={selectStyles}
+              />
+            </div>
+            {createProduct.paymentMode === "Bank" && (
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                    Bank Name
+                  </label>
+                  <Select
+                    options={bankOptions}
+                    value={
+                      bankOptions.find(
+                        (option) =>
+                          String(option.value) ===
+                          String(createProduct.bankName || ""),
+                      ) || null
+                    }
+                    onChange={(selected) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        bankName: selected?.value || "",
+                        bankAccount: "",
+                      })
+                    }
+                    placeholder="Select Bank"
+                    isClearable
+                    className="text-black"
+                    styles={selectStyles}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                    Bank Account
+                  </label>
+                  <Select
+                    options={getBankAccountOptions(createProduct.bankName)}
+                    value={
+                      getBankAccountOptions(createProduct.bankName).find(
+                        (option) =>
+                          String(option.value) ===
+                          String(createProduct.bankAccount || ""),
+                      ) || null
+                    }
+                    onChange={(selected) =>
+                      setCreateProduct({
+                        ...createProduct,
+                        bankAccount: selected?.value || "",
+                        bankName:
+                          selected?.bankName || createProduct.bankName || "",
+                      })
+                    }
+                    placeholder="Select Bank Account"
+                    isClearable
+                    className="text-black"
+                    styles={selectStyles}
+                  />
+                </div>
+              </>
+            )}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Quantity
               </label>
               <input
@@ -2100,40 +2406,134 @@ const PurchaseRequisionTable = () => {
       <Modal
         isOpen={isModalOpen2 && !!currentProduct}
         onClose={handleModalClose2}
-        title={role === "superAdmin" ? "Update Status" : "Request Delete"}
+        title={
+          canUpdatePurchaseRequisitionStatus ? "Update Status" : "Request Delete"
+        }
       >
         <div className="space-y-6">
-          {role === "superAdmin" ? (
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                Status
-              </label>
-              <Select
-                options={purchaseRequisitionStatuses.map((status) => ({
-                  value: status,
-                  label: status,
-                }))}
-                menuPortalTarget={selectPortalTarget}
-                menuPosition="fixed"
-                value={
-                  currentProduct?.status
-                    ? {
-                        value: currentProduct.status,
-                        label: currentProduct.status,
-                      }
-                    : null
-                }
-                onChange={(selected) =>
-                  setCurrentProduct({
-                    ...currentProduct,
-                    status: selected?.value || "",
-                  })
-                }
-                placeholder="Select Status"
-                className="text-black"
-                styles={selectStyles}
-              />
-            </div>
+          {canUpdatePurchaseRequisitionStatus ? (
+            <>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                  Status
+                </label>
+                <Select
+                  options={purchaseRequisitionStatuses.map((status) => ({
+                    value: status,
+                    label: status,
+                  }))}
+                  menuPortalTarget={selectPortalTarget}
+                  menuPosition="fixed"
+                  value={
+                    currentProduct?.status
+                      ? {
+                          value: currentProduct.status,
+                          label: currentProduct.status,
+                        }
+                      : null
+                  }
+                  onChange={(selected) =>
+                    setCurrentProduct({
+                      ...currentProduct,
+                      status: selected?.value || "",
+                    })
+                  }
+                  placeholder="Select Status"
+                  className="text-black"
+                  styles={selectStyles}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                    Payment Mode
+                  </label>
+                  <Select
+                    options={paymentModeOptions}
+                    value={
+                      paymentModeOptions.find(
+                        (option) =>
+                          String(option.value) ===
+                          String(currentProduct?.paymentMode || ""),
+                      ) || null
+                    }
+                    onChange={(selected) =>
+                      setCurrentProduct({
+                        ...currentProduct,
+                        paymentMode: selected?.value || "",
+                        bankName: "",
+                        bankAccount: "",
+                      })
+                    }
+                    placeholder="Select Payment Mode"
+                    isClearable
+                    className="text-black"
+                    styles={selectStyles}
+                  />
+                </div>
+                {currentProduct?.paymentMode === "Bank" && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                        Bank Name
+                      </label>
+                      <Select
+                        options={bankOptions}
+                        value={
+                          bankOptions.find(
+                            (option) =>
+                              String(option.value) ===
+                              String(currentProduct?.bankName || ""),
+                          ) || null
+                        }
+                        onChange={(selected) =>
+                          setCurrentProduct({
+                            ...currentProduct,
+                            bankName: selected?.value || "",
+                            bankAccount: "",
+                          })
+                        }
+                        placeholder="Select Bank"
+                        isClearable
+                        className="text-black"
+                        styles={selectStyles}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                        Bank Account
+                      </label>
+                      <Select
+                        options={getBankAccountOptions(
+                          currentProduct?.bankName,
+                        )}
+                        value={
+                          getBankAccountOptions(currentProduct?.bankName).find(
+                            (option) =>
+                              String(option.value) ===
+                              String(currentProduct?.bankAccount || ""),
+                          ) || null
+                        }
+                        onChange={(selected) =>
+                          setCurrentProduct({
+                            ...currentProduct,
+                            bankAccount: selected?.value || "",
+                            bankName:
+                              selected?.bankName ||
+                              currentProduct.bankName ||
+                              "",
+                          })
+                        }
+                        placeholder="Select Bank Account"
+                        isClearable
+                        className="text-black"
+                        styles={selectStyles}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
           ) : (
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">

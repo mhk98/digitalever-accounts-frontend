@@ -38,6 +38,24 @@ const getVariantDisplayRows = (record) => {
   return [];
 };
 
+const getVariantRowsTotalQuantity = (record) =>
+  getVariantDisplayRows(record).reduce(
+    (total, variant) => total + (Number(variant.quantity) || 0),
+    0,
+  );
+
+const validateQuantityAgainstVariants = (record, quantity) => {
+  const variantRows = getVariantDisplayRows(record);
+  if (!variantRows.length) return true;
+
+  if (Number(quantity || 0) !== getVariantRowsTotalQuantity(record)) {
+    toast.error("Quantity must match existing variant quantity total");
+    return false;
+  }
+
+  return true;
+};
+
 const DamageRepairingStockTable = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isEditOpen1, setIsEditOpen1] = useState(false);
@@ -247,6 +265,8 @@ const DamageRepairingStockTable = () => {
     if (!currentItem?.receivedId) return toast.error("Please select a product");
     if (!currentItem.quantity || Number(currentItem.quantity) <= 0)
       return toast.error("Please enter valid quantity");
+    if (!validateQuantityAgainstVariants(currentItem, currentItem.quantity))
+      return;
 
     try {
       const payload = {
@@ -279,6 +299,8 @@ const DamageRepairingStockTable = () => {
 
   const handleUpdate1 = async () => {
     if (!currentItem?.Id) return toast.error("Invalid item");
+    if (!validateQuantityAgainstVariants(currentItem, currentItem.quantity))
+      return;
 
     try {
       const payload = {

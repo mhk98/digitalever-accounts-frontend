@@ -121,7 +121,6 @@ const CashInOutTable = () => {
   const [newBankNameEdit, setNewBankNameEdit] = useState("");
   const [newAccountNumberEdit, setNewAccountNumberEdit] = useState("");
 
-
   //Pagination calculation start
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
@@ -1117,7 +1116,6 @@ const CashInOutTable = () => {
     isSupplierHistoryError,
     supplierHistoryError,
   ]);
-
 
   const selectStyles = {
     control: (base, state) => ({

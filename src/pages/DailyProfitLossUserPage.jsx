@@ -26,6 +26,7 @@ import { useGetAllEmployeeListWithoutQueryQuery } from "../features/employeeList
 import {
   useInsertProfitLossMutation,
   useGetAllProfitLossQuery,
+  useDeleteProfitLossMutation,
   useSendProfitLossInvoiceMutation,
 } from "../features/profitLoss/profitLoss";
 
@@ -37,6 +38,9 @@ const REPORT_FIELDS = [
   { key: "pendingGiven", label: "Pending দেওয়া হয়েছে" },
   { key: "pendingReceived", label: "Pending থেকে আসছে" },
   { key: "pendingReturnReceived", label: "Pending Return থেকে আসছে" },
+  { key: "leadGiven", label: "Lead দেওয়া হয়েছে" },
+  { key: "leadReceived", label: "Lead থেকে আসছে" },
+  { key: "crossReceived", label: "Cross থেকে আসছে" },
   { key: "canceledReceived", label: "Canceled থেকে আসছে" },
   { key: "holdReceived", label: "Hold থেকে আসছে" },
   { key: "ideskGiven", label: "Inbox দেওয়া হয়েছে" },
@@ -48,6 +52,32 @@ const REPORT_FIELDS = [
   { key: "totalAssign", label: "Total Assign" },
   { key: "totalOrder", label: "Total Order" },
   { key: "totalAmount", label: "Total Amount", step: "0.01" },
+];
+
+const TOTAL_ASSIGN_SOURCE_FIELDS = [
+  "failedGiven",
+  "pendingGiven",
+  "leadGiven",
+  "ideskGiven",
+  "callDone",
+  "whatsappDone",
+];
+const TOTAL_ORDER_SOURCE_FIELDS = [
+  "failedReceived",
+  "pendingReceived",
+  "pendingReturnReceived",
+  "leadReceived",
+  "crossReceived",
+  "canceledReceived",
+  "holdReceived",
+  "ideskReceived",
+  "callReceived",
+  "whatsappReceived",
+];
+const AUTO_TOTAL_FIELDS = ["totalAssign", "totalOrder"];
+const AUTO_TOTAL_SOURCE_FIELDS = [
+  ...TOTAL_ASSIGN_SOURCE_FIELDS,
+  ...TOTAL_ORDER_SOURCE_FIELDS,
 ];
 
 const salesTypeOptions = [
@@ -62,6 +92,19 @@ const safeNumber = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 };
+
+const sumReportFields = (values, fields) =>
+  fields.reduce((total, field) => total + safeNumber(values[field]), 0);
+
+const getAutoReportTotals = (values) => ({
+  totalAssign: sumReportFields(values, TOTAL_ASSIGN_SOURCE_FIELDS),
+  totalOrder: sumReportFields(values, TOTAL_ORDER_SOURCE_FIELDS),
+});
+
+const withAutoReportTotals = (values) => ({
+  ...values,
+  ...getAutoReportTotals(values),
+});
 
 const formatCurrency = (value) =>
   `৳${safeNumber(value).toLocaleString(undefined, {
@@ -133,6 +176,7 @@ const DailyProfitLossUserPage = () => {
   const [marketingSpends, setMarketingSpends] = useState(0);
   const [otherExpenses, setOtherExpenses] = useState(0);
   const [returnPercentage, setReturnPercentage] = useState(0);
+  const [calculationDate, setCalculationDate] = useState(today);
   const [salesType, setSalesType] = useState(null);
 
   // Profit/Loss history state
@@ -208,6 +252,8 @@ const DailyProfitLossUserPage = () => {
     useInsertProfitLossMutation();
   const [sendProfitLossInvoice, { isLoading: sendingEmail }] =
     useSendProfitLossInvoiceMutation();
+  const [deleteProfitLoss, { isLoading: deletingProfitLoss }] =
+    useDeleteProfitLossMutation();
 
   const profitLossQueryArgs = useMemo(
     () => ({
@@ -340,23 +386,28 @@ const DailyProfitLossUserPage = () => {
 
   const handleEdit = (row) => {
     setEditingId(row.Id);
-    setEditForm({
-      reportDate: row.reportDate || today,
-      ...REPORT_FIELDS.reduce(
-        (acc, field) => ({ ...acc, [field.key]: row[field.key] ?? "" }),
-        {},
-      ),
-    });
+    setEditForm(
+      withAutoReportTotals({
+        reportDate: row.reportDate || today,
+        saleType: row.saleType || "",
+        ...REPORT_FIELDS.reduce(
+          (acc, field) => ({ ...acc, [field.key]: row[field.key] ?? "" }),
+          {},
+        ),
+      }),
+    );
     setShowEditModal(true);
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
+      const reportValues = withAutoReportTotals(editForm);
       const payload = {
         reportDate: editForm.reportDate,
+        saleType: editForm.saleType || null,
         ...REPORT_FIELDS.reduce(
-          (acc, field) => ({ ...acc, [field.key]: editForm[field.key] || 0 }),
+          (acc, field) => ({ ...acc, [field.key]: reportValues[field.key] || 0 }),
           {},
         ),
       };
@@ -391,10 +442,27 @@ const DailyProfitLossUserPage = () => {
     }
   };
 
+  const handleDeleteProfitLossHistory = async (id) => {
+    const ok = window.confirm("Delete this saved profit/loss record?");
+    if (!ok) return;
+
+    try {
+      const res = await deleteProfitLoss(id).unwrap();
+      if (res?.success) {
+        toast.success("Profit/Loss history deleted");
+      } else {
+        toast.error(res?.message || "Delete failed");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Delete failed");
+    }
+  };
+
   const handleResetCalculation = () => {
     setMarketingSpends(0);
     setOtherExpenses(0);
     setReturnPercentage(0);
+    setCalculationDate(today);
     setSalesType(null);
   };
 
@@ -417,6 +485,7 @@ const DailyProfitLossUserPage = () => {
       cost: Math.round(summary.extraCost),
       profitLoss: Math.round(summary.finalProfit),
       salesType: salesType.value,
+      date: calculationDate,
     };
 
     try {
@@ -455,6 +524,8 @@ const DailyProfitLossUserPage = () => {
                 <td>${escapeHtml(r.name || "-")}</td>
                 <td>${safeNumber(r.failedGiven)}/${safeNumber(r.failedReceived)}</td>
                 <td>${safeNumber(r.pendingGiven)}/${safeNumber(r.pendingReceived)}</td>
+                <td>${safeNumber(r.leadGiven)}/${safeNumber(r.leadReceived)}</td>
+                <td>${safeNumber(r.crossReceived)}</td>
                 <td>${safeNumber(r.ideskGiven)}/${safeNumber(r.ideskReceived)}</td>
                 <td>${safeNumber(r.callDone)}/${safeNumber(r.callReceived)}</td>
                 <td>${safeNumber(r.whatsappDone)}/${safeNumber(r.whatsappReceived)}</td>
@@ -464,7 +535,7 @@ const DailyProfitLossUserPage = () => {
               </tr>`,
             )
             .join("")
-        : `<tr><td colspan="10" style="text-align:center;padding:20px;color:#94a3b8;">কোনো employee report নেই</td></tr>`;
+        : `<tr><td colspan="12" style="text-align:center;padding:20px;color:#94a3b8;">কোনো employee report নেই</td></tr>`;
 
     const historyRowsHtml =
       profitLossRows.length > 0
@@ -521,7 +592,7 @@ const DailyProfitLossUserPage = () => {
             <thead>
               <tr>
                 <th>Date</th><th>Name</th><th>Failed</th><th>Pending</th>
-                <th>Inbox</th><th>Call</th><th>WhatsApp</th>
+                <th>Lead</th><th>Cross</th><th>Inbox</th><th>Call</th><th>WhatsApp</th>
                 <th>Assign</th><th>Order</th><th>Amount</th>
               </tr>
             </thead>
@@ -602,6 +673,8 @@ const DailyProfitLossUserPage = () => {
       name: r.name || "-",
       failed: `${safeNumber(r.failedGiven)}/${safeNumber(r.failedReceived)}`,
       pending: `${safeNumber(r.pendingGiven)}/${safeNumber(r.pendingReceived)}`,
+      lead: `${safeNumber(r.leadGiven)}/${safeNumber(r.leadReceived)}`,
+      cross: safeNumber(r.crossReceived),
       inbox: `${safeNumber(r.ideskGiven)}/${safeNumber(r.ideskReceived)}`,
       call: `${safeNumber(r.callDone)}/${safeNumber(r.callReceived)}`,
       whatsapp: `${safeNumber(r.whatsappDone)}/${safeNumber(r.whatsappReceived)}`,
@@ -760,13 +833,15 @@ const DailyProfitLossUserPage = () => {
             </div>
 
             <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200">
-              <table className="min-w-[1180px] w-full divide-y divide-slate-200 text-left text-sm">
+              <table className="min-w-[1380px] w-full divide-y divide-slate-200 text-left text-sm">
                 <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500">
                   <tr>
                     <th className="px-4 py-3">Date</th>
                     <th className="px-4 py-3">Name</th>
                     <th className="px-4 py-3">Failed</th>
                     <th className="px-4 py-3">Pending</th>
+                    <th className="px-4 py-3">Lead</th>
+                    <th className="px-4 py-3">Cross</th>
                     <th className="px-4 py-3">Inbox</th>
                     <th className="px-4 py-3">Call</th>
                     <th className="px-4 py-3">WhatsApp</th>
@@ -780,7 +855,7 @@ const DailyProfitLossUserPage = () => {
                   {isLoading && (
                     <tr>
                       <td
-                        colSpan={11}
+                        colSpan={13}
                         className="px-4 py-10 text-center text-slate-500"
                       >
                         Loading reports...
@@ -790,7 +865,7 @@ const DailyProfitLossUserPage = () => {
                   {!isLoading && reports.length === 0 && (
                     <tr>
                       <td
-                        colSpan={11}
+                        colSpan={13}
                         className="px-4 py-10 text-center text-slate-500"
                       >
                         No cs work report found.
@@ -819,6 +894,12 @@ const DailyProfitLossUserPage = () => {
                           </td>
                           <td className="px-4 py-3">
                             {row.pendingGiven || 0} / {row.pendingReceived || 0}
+                          </td>
+                          <td className="px-4 py-3">
+                            {row.leadGiven || 0} / {row.leadReceived || 0}
+                          </td>
+                          <td className="px-4 py-3">
+                            {row.crossReceived || 0}
                           </td>
                           <td className="px-4 py-3">
                             {row.ideskGiven || 0} / {row.ideskReceived || 0}
@@ -909,7 +990,23 @@ const DailyProfitLossUserPage = () => {
           </section>
 
           {/* ── Calculation Section ── */}
-          <div className="grid gap-6 lg:grid-cols-4">
+          <div className="grid gap-6 lg:grid-cols-5">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 className="text-lg font-bold text-slate-900">
+                Calculation Date
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">
+                Select the date for this profit/loss calculation and saved
+                history.
+              </p>
+              <input
+                type="date"
+                value={calculationDate}
+                onChange={(e) => setCalculationDate(e.target.value)}
+                className="mt-4 h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              />
+            </div>
+
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <h3 className="text-lg font-bold text-slate-900">
                 Marketing Spends
@@ -1106,7 +1203,7 @@ const DailyProfitLossUserPage = () => {
                     profitLossRows.map((row) => (
                       <tr key={row.Id} className="hover:bg-slate-50">
                         <td className="px-4 py-3 font-medium text-slate-900">
-                          {formatDate(row.createdAt)}
+                          {formatDate(row.date || row.createdAt)}
                         </td>
                         <td className="px-4 py-3">{row.salesType || "-"}</td>
                         <td className="px-4 py-3 font-semibold">
@@ -1138,6 +1235,16 @@ const DailyProfitLossUserPage = () => {
                               className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
                             >
                               <Mail size={14} /> Email
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDeleteProfitLossHistory(row?.Id)
+                              }
+                              disabled={deletingProfitLoss}
+                              className="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <Trash2 size={14} /> Delete
                             </button>
                           </div>
                         </td>
@@ -1208,6 +1315,28 @@ const DailyProfitLossUserPage = () => {
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
                 />
               </label>
+              <label className="block">
+                <div className="mb-2 text-sm font-semibold text-slate-700">
+                  Sale Type
+                </div>
+                <select
+                  value={editForm.saleType || ""}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      saleType: e.target.value,
+                    }))
+                  }
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                >
+                  <option value="">Select sale type</option>
+                  {salesTypeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <div className="grid max-h-[50vh] gap-3 overflow-y-auto sm:grid-cols-2">
                 {REPORT_FIELDS.map((field) => (
                   <label key={field.key} className="block">
@@ -1220,11 +1349,18 @@ const DailyProfitLossUserPage = () => {
                       step={field.step || "1"}
                       value={editForm[field.key]}
                       onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
-                          [field.key]: e.target.value,
-                        }))
+                        setEditForm((prev) => {
+                          const next = {
+                            ...prev,
+                            [field.key]: e.target.value,
+                          };
+                          if (!AUTO_TOTAL_SOURCE_FIELDS.includes(field.key)) {
+                            return next;
+                          }
+                          return withAutoReportTotals(next);
+                        })
                       }
+                      readOnly={AUTO_TOTAL_FIELDS.includes(field.key)}
                       className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
                     />
                   </label>

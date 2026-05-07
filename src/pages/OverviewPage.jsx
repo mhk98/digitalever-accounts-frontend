@@ -18,6 +18,18 @@ import { useLayout } from "../context/LayoutContext";
 import { translations } from "../utils/translations";
 import { useGetInventoryOverviewLowStockQuery } from "../features/inventoryOverview/inventoryOverview";
 import { useGetAllInTransitProductQuery } from "../features/inTransitProduct/inTransitProduct";
+import { useGetAllProfitLossQuery } from "../features/profitLoss/profitLoss";
+
+const safeNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatCurrency = (value) =>
+  `৳${safeNumber(value).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 
 const formatDateOnly = (date) => {
   const yyyy = date.getFullYear();
@@ -37,6 +49,19 @@ const getYesterdayRange = () => {
   yesterday.setDate(yesterday.getDate() - 1);
   const date = formatDateOnly(yesterday);
   return { from: date, to: date };
+};
+
+const getThisWeekRange = () => {
+  const now = new Date();
+  const day = now.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const start = new Date(now);
+  start.setDate(now.getDate() + diffToMonday);
+
+  return {
+    from: formatDateOnly(start),
+    to: formatDateOnly(now),
+  };
 };
 
 const getThisMonthRange = () => {
@@ -80,7 +105,24 @@ const OverviewPage = () => {
       return { filter: "thisMonth" };
     }
 
-    if (appliedFilter.type === "custom" && appliedFilter.from && appliedFilter.to) {
+    if (
+      ["yesterday", "thisWeek"].includes(appliedFilter.type) &&
+      appliedFilter.from &&
+      appliedFilter.to
+    ) {
+      return {
+        filter: "custom",
+        from: appliedFilter.from,
+        to: appliedFilter.to,
+        applyFilter: true,
+      };
+    }
+
+    if (
+      appliedFilter.type === "custom" &&
+      appliedFilter.from &&
+      appliedFilter.to
+    ) {
       return {
         filter: "custom",
         from: appliedFilter.from,
@@ -101,6 +143,60 @@ const OverviewPage = () => {
 
   const summary = summaryRes?.data || {};
 
+  const autoProfitLossQueryArgs = useMemo(() => {
+    const args = {
+      page: 1,
+      limit: 1000,
+      mode: "auto",
+    };
+
+    if (
+      ["today", "yesterday", "thisWeek", "thisMonth", "custom"].includes(
+        appliedFilter.type,
+      ) &&
+      appliedFilter.from &&
+      appliedFilter.to
+    ) {
+      args.startDate = appliedFilter.from;
+      args.endDate = appliedFilter.to;
+    }
+
+    return args;
+  }, [appliedFilter]);
+
+  const {
+    data: autoProfitLossRes,
+    isLoading: autoProfitLossLoading,
+    isFetching: autoProfitLossFetching,
+  } = useGetAllProfitLossQuery(autoProfitLossQueryArgs);
+
+  const autoProfitLossRows = autoProfitLossRes?.data || [];
+  const autoProfitLossCount = safeNumber(
+    autoProfitLossRes?.meta?.count ?? autoProfitLossRes?.meta?.total,
+  );
+
+  const autoProfitLossSummary = useMemo(
+    () =>
+      autoProfitLossRows.reduce(
+        (acc, row) => {
+          acc.purchase += safeNumber(row?.purchase);
+          acc.revenue += safeNumber(row?.revenue);
+          acc.returnAmount += safeNumber(row?.return);
+          acc.cost += safeNumber(row?.cost);
+          acc.profitLoss += safeNumber(row?.profitLoss);
+          return acc;
+        },
+        {
+          purchase: 0,
+          revenue: 0,
+          returnAmount: 0,
+          cost: 0,
+          profitLoss: 0,
+        },
+      ),
+    [autoProfitLossRows],
+  );
+
   const onFilterChange = (value) => {
     setSelectedFilter(value);
 
@@ -109,6 +205,22 @@ const OverviewPage = () => {
       setFrom(todayRange.from);
       setTo(todayRange.to);
       setAppliedFilter({ type: "today", ...todayRange });
+      return;
+    }
+
+    if (value === "yesterday") {
+      const yesterdayRange = getYesterdayRange();
+      setFrom(yesterdayRange.from);
+      setTo(yesterdayRange.to);
+      setAppliedFilter({ type: "yesterday", ...yesterdayRange });
+      return;
+    }
+
+    if (value === "thisWeek") {
+      const weekRange = getThisWeekRange();
+      setFrom(weekRange.from);
+      setTo(weekRange.to);
+      setAppliedFilter({ type: "thisWeek", ...weekRange });
       return;
     }
 
@@ -320,6 +432,8 @@ const OverviewPage = () => {
                 >
                   <option value="">All Data</option>
                   <option value="today">Today</option>
+                  <option value="yesterday">Yesterday</option>
+                  <option value="thisWeek">This Week</option>
                   <option value="thisMonth">This Month</option>
                   <option value="custom">Custom Date</option>
                 </select>
@@ -328,48 +442,48 @@ const OverviewPage = () => {
               {isCustomFilter ? (
                 <div className="flex flex-col sm:flex-row items-end gap-3 lg:gap-4">
                   <div className="flex flex-col flex-1 w-full">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 flex items-center gap-1.5">
-                  <CalendarDays size={12} className="text-indigo-500" />{" "}
-                  {t.start_date}
-                </label>
-                <input
-                  type="date"
-                  value={from}
-                  onChange={(e) => setFrom(e.target.value)}
-                  className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                />
-              </div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 flex items-center gap-1.5">
+                      <CalendarDays size={12} className="text-indigo-500" />{" "}
+                      {t.start_date}
+                    </label>
+                    <input
+                      type="date"
+                      value={from}
+                      onChange={(e) => setFrom(e.target.value)}
+                      className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                    />
+                  </div>
 
                   <div className="flex flex-col flex-1 w-full">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 flex items-center gap-1.5">
-                  <CalendarDays size={12} className="text-indigo-500" />{" "}
-                  {t.end_date}
-                </label>
-                <input
-                  type="date"
-                  value={to}
-                  onChange={(e) => setTo(e.target.value)}
-                  className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                />
-              </div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 flex items-center gap-1.5">
+                      <CalendarDays size={12} className="text-indigo-500" />{" "}
+                      {t.end_date}
+                    </label>
+                    <input
+                      type="date"
+                      value={to}
+                      onChange={(e) => setTo(e.target.value)}
+                      className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
+                    />
+                  </div>
 
                   <div className="flex gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={onApply}
-                    disabled={!from || !to}
-                    className="h-11 px-6 rounded-xl bg-indigo-600 text-white text-sm font-black hover:bg-indigo-700 active:scale-[0.98] transition shadow-lg shadow-indigo-100 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed disabled:active:scale-100"
-                  >
-                    {t.apply}
-                  </button>
+                    <button
+                      onClick={onApply}
+                      disabled={!from || !to}
+                      className="h-11 px-6 rounded-xl bg-indigo-600 text-white text-sm font-black hover:bg-indigo-700 active:scale-[0.98] transition shadow-lg shadow-indigo-100 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed disabled:active:scale-100"
+                    >
+                      {t.apply}
+                    </button>
 
-                  <button
-                    onClick={onReset}
-                    className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-slate-600 active:scale-[0.98] transition flex items-center justify-center hover:bg-slate-50"
-                    title="Reset to all data"
-                  >
-                    <RefreshCcw size={18} />
-                  </button>
-                </div>
+                    <button
+                      onClick={onReset}
+                      className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-slate-600 active:scale-[0.98] transition flex items-center justify-center hover:bg-slate-50"
+                      title="Reset to all data"
+                    >
+                      <RefreshCcw size={18} />
+                    </button>
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -425,6 +539,68 @@ const OverviewPage = () => {
               iconBg="#FFF1F2"
               iconColor="#E11D48"
             />
+          </motion.div>
+
+          <motion.div
+            className="mb-10 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.02 }}
+          >
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50 text-orange-600">
+                  <TrendingUp size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    Profit & Loss
+                  </h3>
+                  <p className="text-xs font-medium text-slate-400">
+                    Saved auto calculations from Intransit minus Sales Return
+                  </p>
+                </div>
+              </div>
+              <span className="rounded-full border border-slate-100 bg-slate-50 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+                {autoProfitLossLoading || autoProfitLossFetching
+                  ? "Loading..."
+                  : `${autoProfitLossCount} records`}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              {[
+                ["Revenue", autoProfitLossSummary.revenue, "text-indigo-700"],
+                ["Purchase", autoProfitLossSummary.purchase, "text-amber-700"],
+                [
+                  "Sales Return",
+                  autoProfitLossSummary.returnAmount,
+                  "text-rose-600",
+                ],
+                ["Cost", autoProfitLossSummary.cost, "text-slate-700"],
+                [
+                  "Profit/Loss",
+                  autoProfitLossSummary.profitLoss,
+                  autoProfitLossSummary.profitLoss >= 0
+                    ? "text-emerald-600"
+                    : "text-rose-600",
+                ],
+              ].map(([label, value, tone]) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4"
+                >
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    {label}
+                  </div>
+                  <div className={`mt-2 text-xl font-black ${tone}`}>
+                    {autoProfitLossLoading || autoProfitLossFetching
+                      ? "..."
+                      : formatCurrency(value)}
+                  </div>
+                </div>
+              ))}
+            </div>
           </motion.div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-10">

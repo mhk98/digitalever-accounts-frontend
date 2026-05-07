@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { Provider } from "react-redux";
 import { Toaster } from "react-hot-toast";
 import store from "./app/store";
@@ -10,6 +10,7 @@ import SidebarLayout from "./components/common/SidebarLayout";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import LoadingBar from "./components/common/LoadingBar";
 import DeleteConfirmationProvider from "./components/common/DeleteConfirmationProvider";
+import DuplicateSameDayEntryHighlighter from "./components/common/DuplicateSameDayEntryHighlighter";
 
 const OverviewPage = lazy(() => import("./pages/OverviewPage"));
 const ProductsPage = lazy(() => import("./pages/ProductsPage"));
@@ -53,8 +54,11 @@ const AssetsRequisitionPage = lazy(() => import("./pages/AssetsRequisitionPage")
 const ExpiredProductPage = lazy(() => import("./pages/ExpiredProductPage"));
 const PosReportPage = lazy(() => import("./pages/PosReportPage"));
 const InventoryOverviewPage = lazy(() => import("./pages/InventoryOverviewPage"));
+const StockAlertPage = lazy(() => import("./pages/StockAlertPage"));
 const MarketingBookPage = lazy(() => import("./pages/MarketingBookPage"));
 const MarketingExpensePage = lazy(() => import("./pages/MarketingExpensePage"));
+const AdsCampaignKPIPage = lazy(() => import("./pages/AdsCampaignKPIPage"));
+const AutoProfitLossPage = lazy(() => import("./pages/AutoProfitLossPage"));
 const InventoryDashboardPage = lazy(() => import("./pages/InventoryDashboardPage"));
 const DamageStockPage = lazy(() => import("./pages/DamageStockPage"));
 const WarehousePage = lazy(() => import("./pages/WarehousePage"));
@@ -73,6 +77,7 @@ const DailyProfitLossPage = lazy(() => import("./pages/DailyProfitLossPage"));
 const DailyProfitLossUserPage = lazy(() => import("./pages/DailyProfitLossUserPage"));
 const DailyWorkReportPage = lazy(() => import("./pages/DailyWorkReportPage"));
 const EmployeeWorkReportPage = lazy(() => import("./pages/EmployeeWorkReportPage"));
+const LogisticWorkReportPage = lazy(() => import("./pages/LogisticWorkReportPage"));
 const EmployeeMasterPage = lazy(() => import("./pages/EmployeeMasterPage"));
 const EmployeeProfilePage = lazy(() => import("./pages/EmployeeProfilePage"));
 const DepartmentPage = lazy(() => import("./pages/DepartmentPage"));
@@ -105,9 +110,11 @@ const AuthedRoute = ({ children }) => (
 );
 
 function App() {
+  const location = useLocation();
+
   return (
     <Provider store={store}>
-      <ErrorBoundary>
+      <ErrorBoundary resetKey={location.pathname}>
         <div className="flex min-h-dvh bg-gray-900 text-gray-100 overflow-x-hidden">
           {/* Background */}
           <div className="fixed inset-0 z-0">
@@ -118,6 +125,7 @@ function App() {
           {/* Main content area */}
           <div className="flex-1 min-w-0 relative z-10 min-h-dvh">
             <LoadingBar />
+            <DuplicateSameDayEntryHighlighter />
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/login" element={<Login />} />
@@ -141,6 +149,7 @@ function App() {
                 <Route path="/hrm/payslips" element={<AuthedRoute><PayslipPage /></AuthedRoute>} />
                 <Route path="/hrm/daily-work-reports" element={<AuthedRoute><DailyWorkReportPage /></AuthedRoute>} />
                 <Route path="/hrm/employee-work-reports" element={<AuthedRoute><EmployeeWorkReportPage /></AuthedRoute>} />
+                <Route path="/hrm/logistic-work-reports" element={<AuthedRoute><LogisticWorkReportPage /></AuthedRoute>} />
                 <Route path="/employee-kpi" element={<AuthedRoute><EmployeeKPIPage /></AuthedRoute>} />
                 <Route path="/employee" element={<AuthedRoute><EmployeePage /></AuthedRoute>} />
                 <Route path="/pos-sell" element={<AuthedRoute><POSPage /></AuthedRoute>} />
@@ -152,6 +161,7 @@ function App() {
                 <Route path="/stock-adjustment" element={<AuthedRoute><StockAdjustmentPage /></AuthedRoute>} />
                 <Route path="/mixer" element={<AuthedRoute><MixerPage /></AuthedRoute>} />
                 <Route path="/stock-product" element={<AuthedRoute><InventoryOverviewPage /></AuthedRoute>} />
+                <Route path="/stock-alert" element={<AuthedRoute><StockAlertPage /></AuthedRoute>} />
                 <Route path="/products" element={<AuthedRoute><ProductsPage /></AuthedRoute>} />
                 <Route path="/purchase-requisition" element={<AuthedRoute><PurchaseRequisitionPage /></AuthedRoute>} />
                 <Route path="/purchase-product" element={<AuthedRoute><ReceivedProductPage /></AuthedRoute>} />
@@ -180,6 +190,8 @@ function App() {
                 <Route path="/book/:id" element={<AuthedRoute><CashInOutPage /></AuthedRoute>} />
                 <Route path="/marketing-book" element={<AuthedRoute><MarketingBookPage /></AuthedRoute>} />
                 <Route path="/marketing-book/:id" element={<AuthedRoute><MarketingExpensePage /></AuthedRoute>} />
+                <Route path="/ads-campaign-kpi" element={<AuthedRoute><AdsCampaignKPIPage /></AuthedRoute>} />
+                <Route path="/auto-profit-loss" element={<AuthedRoute><AutoProfitLossPage /></AuthedRoute>} />
                 <Route path="/profit-loss" element={<AuthedRoute><DailyProfitLossPage /></AuthedRoute>} />
                 <Route path="/profit-loss-user" element={<AuthedRoute><DailyProfitLossUserPage /></AuthedRoute>} />
                 <Route path="/warehouse" element={<AuthedRoute><WarehousePage /></AuthedRoute>} />

@@ -72,6 +72,7 @@ export const baseApi = createApi({
     "DamageRepairingStock",
     "EmployeeList",
     "KPI",
+    "AdsCampaignKPI",
     "ProfitLoss",
   ],
 

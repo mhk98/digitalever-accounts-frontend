@@ -66,7 +66,9 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "damage",
     "marketing",
     "dm_expense",
+    "ads_campaign_kpi",
     "profit_loss",
+    "auto_profit_loss",
     "profit_loss_user",
     "manufacture",
     "item",
@@ -77,6 +79,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "inventory",
     "inventory_overview",
     "stock_product",
+    "stock_alert",
     "warehouse",
     "supplier",
     "product",
@@ -120,6 +123,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "leave_management",
     "daily_work_reports",
     "cs_work_reports",
+    "logistic_work_reports",
     "payroll_management",
     "payslip",
     "hr_payroll",
@@ -139,7 +143,11 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "purchase",
     "sale",
     "damage",
+    "marketing",
+    "dm_expense",
+    "ads_campaign_kpi",
     "profit_loss",
+    "auto_profit_loss",
     "profit_loss_user",
     "manufacture",
     "manufacture_menu",
@@ -149,6 +157,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "inventory",
     "inventory_overview",
     "stock_product",
+    "stock_alert",
     "warehouse",
     "supplier",
     "product",
@@ -189,6 +198,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "leave_management",
     "daily_work_reports",
     "cs_work_reports",
+    "logistic_work_reports",
     "payroll_management",
     "payslip",
     "hr_payroll",
@@ -202,7 +212,9 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "overview",
     "marketing",
     "dm_expense",
+    "ads_campaign_kpi",
     "profit_loss",
+    "auto_profit_loss",
     "profit_loss_user",
     "notifications",
     "tasks",
@@ -226,6 +238,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "inventory",
     "inventory_overview",
     "stock_product",
+    "stock_alert",
     "manufacture",
     "manufacture_menu",
     "manufacture_stock",
@@ -276,6 +289,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "leave_management",
     "daily_work_reports",
     "cs_work_reports",
+    "logistic_work_reports",
     "payroll_management",
     "payslip",
     "hr_payroll",
@@ -291,8 +305,8 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
   employee: [
     "hrm",
     "employee_profile",
-    "daily_work_reports",
     "cs_work_reports",
+    "logistic_work_reports",
     "notifications",
     "tasks",
     "profile",
@@ -380,11 +394,28 @@ export const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin", "marketer"],
       },
       {
+        name: "Ads Campaign KPI",
+        key: "ads_campaign_kpi",
+        icon: BarChart3,
+        color: "#f97316",
+        href: "/ads-campaign-kpi",
+        roles: ["superAdmin", "admin", "marketer"],
+      },
+      {
         name: "Daily Profit & Loss By Product",
         key: "profit_loss",
         icon: BarChart3,
         color: "#f97316",
         href: "/profit-loss",
+        roles: ["superAdmin", "admin", "marketer"],
+      },
+      {
+        name: "Auto Profit & Loss",
+        key: "auto_profit_loss",
+        icon: BarChart3,
+        color: "#f97316",
+        href: "/auto-profit-loss",
+        matchPaths: ["/auto-profit-loss"],
         roles: ["superAdmin", "admin", "marketer"],
       },
       {
@@ -461,6 +492,13 @@ export const SIDEBAR_ITEMS = [
         icon: PackageSearch,
         href: "/stock-product",
         roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Stock Alert",
+        key: "stock_alert",
+        icon: TriangleAlert,
+        href: "/stock-alert",
+        roles: ["superAdmin", "admin", "inventor"],
       },
       {
         name: "Warehouse",
@@ -844,6 +882,13 @@ export const SIDEBAR_ITEMS = [
         href: "/hrm/employee-work-reports",
         roles: ["superAdmin", "admin", "accountant", "employee"],
       },
+      {
+        name: "Logistic Work Reports",
+        key: "logistic_work_reports",
+        icon: ClipboardList,
+        href: "/hrm/logistic-work-reports",
+        roles: ["superAdmin", "admin", "accountant", "employee"],
+      },
     ],
   },
   {
@@ -1018,12 +1063,32 @@ const normalizeRolePermissionMap = (value) => {
       normalizedKeys.add("tasks");
     }
 
+    if (defaultKeys.includes("ads_campaign_kpi")) {
+      normalizedKeys.add("ads_campaign_kpi");
+    }
+
+    if (defaultKeys.includes("auto_profit_loss")) {
+      normalizedKeys.add("auto_profit_loss");
+    }
+
+    if (defaultKeys.includes("stock_alert")) {
+      normalizedKeys.add("stock_alert");
+    }
+
+    if (defaultKeys.includes("daily_work_reports")) {
+      normalizedKeys.add("daily_work_reports");
+    }
+
     if (defaultKeys.includes("loan")) {
       normalizedKeys.add("loan");
     }
 
     if (defaultKeys.includes("cs_work_reports")) {
       normalizedKeys.add("cs_work_reports");
+    }
+
+    if (defaultKeys.includes("logistic_work_reports")) {
+      normalizedKeys.add("logistic_work_reports");
     }
 
     if (normalizedKeys.has("department_designation")) {

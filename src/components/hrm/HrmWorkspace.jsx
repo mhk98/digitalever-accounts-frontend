@@ -141,6 +141,13 @@ const SECTION_ITEMS = [
     icon: ClipboardCheck,
   },
   {
+    group: "HRM",
+    label: "Logistic Work Reports",
+    href: "/hrm/logistic-work-reports",
+    match: ["/hrm/logistic-work-reports"],
+    icon: ClipboardList,
+  },
+  {
     group: "Payroll",
     label: "Employee List",
     href: "/employee-list",

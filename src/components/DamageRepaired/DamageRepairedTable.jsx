@@ -151,6 +151,35 @@ const getVariationColorsForSize = (product, size) => {
   ].map((value) => ({ value, label: value }));
 };
 
+const getStockVariantOptions = (stockRecord, key) => {
+  const variants = getVariantDisplayRows(stockRecord);
+  if (variants.length === 0) return [];
+
+  return [
+    ...new Set(
+      variants
+        .map((variant) => String(variant?.[key] || "").trim())
+        .filter(Boolean),
+    ),
+  ].map((value) => ({ value, label: value }));
+};
+
+const getStockVariantColorsForSize = (stockRecord, size) => {
+  if (!size) return [];
+
+  const variants = getVariantDisplayRows(stockRecord);
+  if (variants.length === 0) return [];
+
+  return [
+    ...new Set(
+      variants
+        .filter((variant) => String(variant?.size || "").trim() === size)
+        .map((variant) => String(variant?.color || "").trim())
+        .filter(Boolean),
+    ),
+  ].map((value) => ({ value, label: value }));
+};
+
 const getNormalizedVariantsPayload = (rows) =>
   normalizeVariantRows(rows)
     .filter((row) => row.size || row.color || row.quantity)
@@ -188,6 +217,51 @@ const hasDuplicateVariantCombination = (rows) => {
   }
 
   return false;
+};
+
+const getVariantKey = (variant) =>
+  `${String(variant?.size || "").trim()}__${String(variant?.color || "").trim()}`;
+
+const validateVariantSelection = (stockRecord, variantsPayload, quantity) => {
+  const availableVariants = getVariantDisplayRows(stockRecord);
+  if (availableVariants.length === 0) return true;
+
+  if (variantsPayload.length === 0) {
+    toast.error("Please select variants for this repairing stock");
+    return false;
+  }
+
+  const totalVariantQuantity = variantsPayload.reduce(
+    (total, variant) => total + (Number(variant.quantity) || 0),
+    0,
+  );
+
+  if (totalVariantQuantity !== Number(quantity || 0)) {
+    toast.error("Variant quantity must match total quantity");
+    return false;
+  }
+
+  const availableByVariant = new Map(
+    availableVariants.map((variant) => [
+      getVariantKey(variant),
+      Number(variant.quantity || 0),
+    ]),
+  );
+
+  for (const variant of variantsPayload) {
+    const availableQuantity = availableByVariant.get(getVariantKey(variant));
+    if (!availableQuantity) {
+      toast.error("Selected variant is not available in repairing stock");
+      return false;
+    }
+
+    if (Number(variant.quantity || 0) > availableQuantity) {
+      toast.error("Variant quantity exceeds available repairing stock");
+      return false;
+    }
+  }
+
+  return true;
 };
 
 const DamageRepairedTable = () => {
@@ -283,20 +357,52 @@ const DamageRepairedTable = () => {
     selectedEditProductRes?.data || selectedEditProductRes;
 
   const createSizeOptions = useMemo(
-    () => getVariationOptions(selectedCreateProductData, "size"),
-    [selectedCreateProductData],
+    () => {
+      const stockOptions = getStockVariantOptions(
+        selectedCreateDamageStock,
+        "size",
+      );
+      return stockOptions.length > 0
+        ? stockOptions
+        : getVariationOptions(selectedCreateProductData, "size");
+    },
+    [selectedCreateDamageStock, selectedCreateProductData],
   );
   const createColorOptions = useMemo(
-    () => getVariationOptions(selectedCreateProductData, "color"),
-    [selectedCreateProductData],
+    () => {
+      const stockOptions = getStockVariantOptions(
+        selectedCreateDamageStock,
+        "color",
+      );
+      return stockOptions.length > 0
+        ? stockOptions
+        : getVariationOptions(selectedCreateProductData, "color");
+    },
+    [selectedCreateDamageStock, selectedCreateProductData],
   );
   const editSizeOptions = useMemo(
-    () => getVariationOptions(selectedEditProductData, "size"),
-    [selectedEditProductData],
+    () => {
+      const stockOptions = getStockVariantOptions(
+        selectedEditDamageStock,
+        "size",
+      );
+      return stockOptions.length > 0
+        ? stockOptions
+        : getVariationOptions(selectedEditProductData, "size");
+    },
+    [selectedEditDamageStock, selectedEditProductData],
   );
   const editColorOptions = useMemo(
-    () => getVariationOptions(selectedEditProductData, "color"),
-    [selectedEditProductData],
+    () => {
+      const stockOptions = getStockVariantOptions(
+        selectedEditDamageStock,
+        "color",
+      );
+      return stockOptions.length > 0
+        ? stockOptions
+        : getVariationOptions(selectedEditProductData, "color");
+    },
+    [selectedEditDamageStock, selectedEditProductData],
   );
 
   // ✅ react-select light styles
@@ -504,6 +610,15 @@ const DamageRepairedTable = () => {
     if (hasDuplicateVariantCombination(variantsPayload)) {
       return toast.error("Duplicate size and color combination found");
     }
+    if (
+      !validateVariantSelection(
+        selectedCreateDamageStock,
+        variantsPayload,
+        createForm.quantity,
+      )
+    ) {
+      return;
+    }
 
     try {
       const payload = {
@@ -542,6 +657,15 @@ const DamageRepairedTable = () => {
     );
     if (hasDuplicateVariantCombination(variantsPayload)) {
       return toast.error("Duplicate size and color combination found");
+    }
+    if (
+      !validateVariantSelection(
+        selectedEditDamageStock,
+        variantsPayload,
+        currentItem.quantity,
+      )
+    ) {
+      return;
     }
 
     try {
@@ -1164,8 +1288,19 @@ const DamageRepairedTable = () => {
 
             {normalizeVariantRows(currentItem?.variantRows).map(
               (row, index) => {
+                const stockColorOptions = row.size
+                  ? getStockVariantColorsForSize(
+                      selectedEditDamageStock,
+                      row.size,
+                    )
+                  : [];
                 const colorOptions = row.size
-                  ? getVariationColorsForSize(selectedEditProductData, row.size)
+                  ? stockColorOptions.length > 0
+                    ? stockColorOptions
+                    : getVariationColorsForSize(
+                        selectedEditProductData,
+                        row.size,
+                      )
                   : editColorOptions;
 
                 return (
@@ -1543,8 +1678,19 @@ const DamageRepairedTable = () => {
             </div>
 
             {normalizeVariantRows(createForm?.variantRows).map((row, index) => {
+              const stockColorOptions = row.size
+                ? getStockVariantColorsForSize(
+                    selectedCreateDamageStock,
+                    row.size,
+                  )
+                : [];
               const colorOptions = row.size
-                ? getVariationColorsForSize(selectedCreateProductData, row.size)
+                ? stockColorOptions.length > 0
+                  ? stockColorOptions
+                  : getVariationColorsForSize(
+                      selectedCreateProductData,
+                      row.size,
+                    )
                 : createColorOptions;
 
               return (

@@ -12,95 +12,32 @@ import Select from "react-select";
 import toast from "react-hot-toast";
 import HrmWorkspace from "./HrmWorkspace";
 import {
-  useCreateEmployeeWorkReportMutation,
-  useDeleteEmployeeWorkReportMutation,
-  useGetAllEmployeeWorkReportsQuery,
-  useGetMyEmployeeWorkReportsQuery,
-  useUpdateEmployeeWorkReportMutation,
-} from "../../features/employeeWorkReport/employeeWorkReport";
+  useCreateLogisticWorkReportMutation,
+  useDeleteLogisticWorkReportMutation,
+  useGetAllLogisticWorkReportsQuery,
+  useGetMyLogisticWorkReportsQuery,
+  useUpdateLogisticWorkReportMutation,
+} from "../../features/logisticWorkReport/logisticWorkReport";
 import { useGetAllEmployeeListWithoutQueryQuery } from "../../features/employeeList/employeeList";
 import useDebounce from "../../hooks/useDebounce";
 
 const today = new Date().toISOString().slice(0, 10);
 
-const SALE_TYPE_OPTIONS = [
-  "Regular Sale",
-  "Up Sale",
-  "Cross Sale",
-  "Organic Sale",
-  "Office Sale",
-];
-
 const REPORT_FIELDS = [
-  { key: "failedGiven", label: "Failed দেওয়া হয়েছে" },
-  { key: "failedReceived", label: "Failed থেকে আসছে" },
-  { key: "pendingGiven", label: "Pending দেওয়া হয়েছে" },
-  { key: "pendingReceived", label: "Pending থেকে আসছে" },
-  { key: "leadGiven", label: "Lead দেওয়া হয়েছে" },
-  { key: "leadReceived", label: "Lead থেকে আসছে" },
-  { key: "ideskGiven", label: "Inbox দেওয়া হয়েছে" },
-  { key: "ideskReceived", label: "Inbox থেকে আসছে" },
-  { key: "callDone", label: "Call দেওয়া হয়েছে" },
-  { key: "callReceived", label: "Call থেকে আসছে" },
-  { key: "whatsappDone", label: "WhatsApp দেওয়া হয়েছে" },
-  { key: "whatsappReceived", label: "WhatsApp থেকে আসছে" },
-  { key: "pendingReturnReceived", label: "Pending Return থেকে আসছে" },
-  { key: "crossReceived", label: "Cross থেকে আসছে" },
-  { key: "canceledReceived", label: "Canceled থেকে আসছে" },
-  { key: "holdReceived", label: "Hold থেকে আসছে" },
-
-  { key: "totalAssign", label: "Total Assign" },
-  { key: "totalOrder", label: "Total Order" },
-  { key: "totalAmount", label: "Total Amount", step: "0.01" },
+  { key: "pending", label: "Pending" },
+  { key: "cancelRequest", label: "Cancel Request" },
+  { key: "cancelApprove", label: "Cancel Approve" },
+  { key: "cancelResend", label: "Cancel Resend" },
+  { key: "incomingReceive", label: "Incoming Receive" },
+  { key: "incomingSolve", label: "Incoming Solve" },
 ];
-
-const TOTAL_ASSIGN_SOURCE_FIELDS = [
-  "failedGiven",
-  "pendingGiven",
-  "leadGiven",
-  "ideskGiven",
-  "callDone",
-  "whatsappDone",
-];
-const TOTAL_ORDER_SOURCE_FIELDS = [
-  "failedReceived",
-  "pendingReceived",
-  "pendingReturnReceived",
-  "leadReceived",
-  "crossReceived",
-  "canceledReceived",
-  "holdReceived",
-  "ideskReceived",
-  "callReceived",
-  "whatsappReceived",
-];
-const AUTO_TOTAL_FIELDS = ["totalAssign", "totalOrder"];
-const AUTO_TOTAL_SOURCE_FIELDS = [
-  ...TOTAL_ASSIGN_SOURCE_FIELDS,
-  ...TOTAL_ORDER_SOURCE_FIELDS,
-];
-
-const toReportNumber = (value) => Number(value) || 0;
-
-const sumReportFields = (values, fields) =>
-  fields.reduce((total, field) => total + toReportNumber(values[field]), 0);
-
-const getAutoReportTotals = (values) => ({
-  totalAssign: sumReportFields(values, TOTAL_ASSIGN_SOURCE_FIELDS),
-  totalOrder: sumReportFields(values, TOTAL_ORDER_SOURCE_FIELDS),
-});
-
-const withAutoReportTotals = (values) => ({
-  ...values,
-  ...getAutoReportTotals(values),
-});
 
 const EMPTY_FORM = REPORT_FIELDS.reduce(
   (acc, field) => ({ ...acc, [field.key]: "" }),
-  { reportDate: today, saleType: "" },
+  { reportDate: today },
 );
 
-const EmployeeWorkReportManager = () => {
+const LogisticWorkReportManager = () => {
   const role = localStorage.getItem("role") || "user";
   const canManageReports = ["superAdmin", "admin"].includes(role);
   const currentUserId = Number(localStorage.getItem("userId") || 0);
@@ -129,38 +66,36 @@ const EmployeeWorkReportManager = () => {
       startDate: fromDate || undefined,
       endDate: toDate || undefined,
     }),
-    [currentPage, searchTerm, selectedEmployee, fromDate, toDate],
+    [currentPage, debouncedSearchTerm, selectedEmployee, fromDate, toDate],
   );
 
   const { data: employeeListRes } = useGetAllEmployeeListWithoutQueryQuery(
     undefined,
-    {
-      skip: !canManageReports,
-    },
+    { skip: !canManageReports },
   );
   const { data: currentReportRes, refetch: refetchCurrent } =
-    useGetMyEmployeeWorkReportsQuery(currentReportArgs);
+    useGetMyLogisticWorkReportsQuery(currentReportArgs);
   const {
     data: myReportsRes,
     isLoading: myReportsLoading,
     refetch: refetchMine,
-  } = useGetMyEmployeeWorkReportsQuery(listQueryArgs, {
+  } = useGetMyLogisticWorkReportsQuery(listQueryArgs, {
     skip: canManageReports,
   });
   const {
     data: allReportsRes,
     isLoading: allReportsLoading,
     refetch: refetchAll,
-  } = useGetAllEmployeeWorkReportsQuery(listQueryArgs, {
+  } = useGetAllLogisticWorkReportsQuery(listQueryArgs, {
     skip: !canManageReports,
   });
 
   const [createReport, { isLoading: creating }] =
-    useCreateEmployeeWorkReportMutation();
+    useCreateLogisticWorkReportMutation();
   const [updateReport, { isLoading: updating }] =
-    useUpdateEmployeeWorkReportMutation();
+    useUpdateLogisticWorkReportMutation();
   const [deleteReport, { isLoading: deleting }] =
-    useDeleteEmployeeWorkReportMutation();
+    useDeleteLogisticWorkReportMutation();
 
   const employeeOptions = useMemo(
     () =>
@@ -184,12 +119,20 @@ const EmployeeWorkReportManager = () => {
   const isLoading = myReportsLoading || allReportsLoading;
 
   const totals = reports.reduce(
-    (acc, row) => ({
-      totalAssign: acc.totalAssign + Number(row.totalAssign || 0),
-      totalOrder: acc.totalOrder + Number(row.totalOrder || 0),
-      totalAmount: acc.totalAmount + Number(row.totalAmount || 0),
-    }),
-    { totalAssign: 0, totalOrder: 0, totalAmount: 0 },
+    (acc, row) =>
+      REPORT_FIELDS.reduce(
+        (next, field) => ({
+          ...next,
+          [field.key]: next[field.key] + Number(row[field.key] || 0),
+        }),
+        acc,
+      ),
+    REPORT_FIELDS.reduce((acc, field) => ({ ...acc, [field.key]: 0 }), {}),
+  );
+
+  const totalActivity = REPORT_FIELDS.reduce(
+    (total, field) => total + totals[field.key],
+    0,
   );
 
   const stats = [
@@ -201,25 +144,22 @@ const EmployeeWorkReportManager = () => {
       iconColor: "#4338CA",
     },
     {
-      name: "Total Assign",
-      value: totals.totalAssign,
-      icon: BarChart3,
-      iconBg: "#ECFDF5",
-      iconColor: "#047857",
-    },
-    {
-      name: "Total Order",
-      value: totals.totalOrder,
+      name: "Pending",
+      value: totals.pending || 0,
       icon: CalendarDays,
       iconBg: "#FFF7ED",
       iconColor: "#C2410C",
     },
     {
-      name: "Total Amount",
-      value: totals.totalAmount.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }),
+      name: "Incoming Solved",
+      value: totals.incomingSolve || 0,
+      icon: BarChart3,
+      iconBg: "#ECFDF5",
+      iconColor: "#047857",
+    },
+    {
+      name: "Total Activity",
+      value: totalActivity,
       icon: BarChart3,
       iconBg: "#F0F9FF",
       iconColor: "#0369A1",
@@ -238,16 +178,11 @@ const EmployeeWorkReportManager = () => {
   };
 
   const handleFormChange = (key, value) => {
-    setForm((prev) => {
-      const next = { ...prev, [key]: value };
-      if (!AUTO_TOTAL_SOURCE_FIELDS.includes(key)) return next;
-      return withAutoReportTotals(next);
-    });
+    setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const buildPayload = () => ({
     reportDate: form.reportDate,
-    saleType: form.saleType || null,
     ...REPORT_FIELDS.reduce(
       (acc, field) => ({ ...acc, [field.key]: form[field.key] || 0 }),
       {},
@@ -266,45 +201,42 @@ const EmployeeWorkReportManager = () => {
 
       if (res?.success) {
         toast.success(
-          targetId ? "Work report updated" : "Work report submitted",
+          targetId ? "Logistic report updated" : "Logistic report submitted",
         );
         setEditingId(null);
         refetchReports();
       }
     } catch (err) {
       toast.error(
-        err?.data?.message || err?.error || "Failed to save work report",
+        err?.data?.message || err?.error || "Failed to save logistic report",
       );
     }
   };
 
   const handleEdit = (row) => {
     setEditingId(row.Id);
-    setForm(
-      withAutoReportTotals({
-        reportDate: row.reportDate || today,
-        saleType: row.saleType || "",
-        ...REPORT_FIELDS.reduce(
-          (acc, field) => ({ ...acc, [field.key]: row[field.key] ?? "" }),
-          {},
-        ),
-      }),
-    );
+    setForm({
+      reportDate: row.reportDate || today,
+      ...REPORT_FIELDS.reduce(
+        (acc, field) => ({ ...acc, [field.key]: row[field.key] ?? "" }),
+        {},
+      ),
+    });
   };
 
   const handleDelete = async (row) => {
-    const ok = window.confirm("Delete this cs work report?");
+    const ok = window.confirm("Delete this logistic work report?");
     if (!ok) return;
 
     try {
       const res = await deleteReport(row.Id).unwrap();
       if (res?.success) {
-        toast.success("Work report deleted");
+        toast.success("Logistic report deleted");
         if (editingId === row.Id) resetForm();
         refetchReports();
       }
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to delete work report");
+      toast.error(err?.data?.message || "Failed to delete logistic report");
     }
   };
 
@@ -316,26 +248,23 @@ const EmployeeWorkReportManager = () => {
     if (editingId) return;
     if (!currentReport) return;
 
-    setForm(
-      withAutoReportTotals({
-        reportDate: currentReport.reportDate || today,
-        saleType: currentReport.saleType || "",
-        ...REPORT_FIELDS.reduce(
-          (acc, field) => ({
-            ...acc,
-            [field.key]: currentReport[field.key] ?? "",
-          }),
-          {},
-        ),
-      }),
-    );
+    setForm({
+      reportDate: currentReport.reportDate || today,
+      ...REPORT_FIELDS.reduce(
+        (acc, field) => ({
+          ...acc,
+          [field.key]: currentReport[field.key] ?? "",
+        }),
+        {},
+      ),
+    });
   }, [currentReport?.Id, editingId]);
 
   return (
     <HrmWorkspace
-      eyebrow="Employee Report"
-      title="CS Work Reports"
-      description="Employees submit daily operation counts, and managers can search, compare, and filter submissions by date range."
+      eyebrow="Logistic Report"
+      title="Logistic Work Reports"
+      description="Logistic team members submit daily workflow counts, and managers can search, compare, and filter submissions by date range."
       stats={stats}
     >
       <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
@@ -344,8 +273,8 @@ const EmployeeWorkReportManager = () => {
             <div>
               <h3 className="text-lg font-bold text-slate-900">
                 {editingId || currentReport
-                  ? "Edit Work Report"
-                  : "Submit Work Report"}
+                  ? "Edit Logistic Report"
+                  : "Submit Logistic Report"}
               </h3>
               <p className="mt-1 text-sm text-slate-500">
                 One report can be submitted per employee for a date.
@@ -370,13 +299,6 @@ const EmployeeWorkReportManager = () => {
               onChange={(value) => handleFormChange("reportDate", value)}
               required
             />
-            <SelectField
-              label="Sale Type"
-              value={form.saleType}
-              onChange={(value) => handleFormChange("saleType", value)}
-              options={SALE_TYPE_OPTIONS}
-              placeholder="Select sale type"
-            />
             <div className="grid gap-3 sm:grid-cols-2">
               {REPORT_FIELDS.map((field) => (
                 <InputField
@@ -384,10 +306,9 @@ const EmployeeWorkReportManager = () => {
                   label={field.label}
                   type="number"
                   min="0"
-                  step={field.step || "1"}
+                  step="1"
                   value={form[field.key]}
                   onChange={(value) => handleFormChange(field.key, value)}
-                  readOnly={AUTO_TOTAL_FIELDS.includes(field.key)}
                 />
               ))}
             </div>
@@ -411,7 +332,7 @@ const EmployeeWorkReportManager = () => {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h3 className="text-lg font-bold text-slate-900">
-                {canManageReports ? "All Employee Reports" : "My Reports"}
+                {canManageReports ? "All Logistic Reports" : "My Reports"}
               </h3>
               <p className="mt-1 text-sm text-slate-500">
                 Search by name and filter with start and end date.
@@ -467,21 +388,16 @@ const EmployeeWorkReportManager = () => {
           </div>
 
           <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200">
-            <table className="min-w-[1380px] w-full divide-y divide-slate-200 text-left text-sm">
+            <table className="min-w-[1100px] w-full divide-y divide-slate-200 text-left text-sm">
               <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Failed</th>
-                  <th className="px-4 py-3">Pending</th>
-                  <th className="px-4 py-3">Lead</th>
-                  <th className="px-4 py-3">Cross</th>
-                  <th className="px-4 py-3">Inbox</th>
-                  <th className="px-4 py-3">Call</th>
-                  <th className="px-4 py-3">WhatsApp</th>
-                  <th className="px-4 py-3">Assign</th>
-                  <th className="px-4 py-3">Order</th>
-                  <th className="px-4 py-3">Amount</th>
+                  {REPORT_FIELDS.map((field) => (
+                    <th key={field.key} className="px-4 py-3">
+                      {field.label}
+                    </th>
+                  ))}
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -489,7 +405,7 @@ const EmployeeWorkReportManager = () => {
                 {isLoading && (
                   <tr>
                     <td
-                      colSpan={13}
+                      colSpan={REPORT_FIELDS.length + 3}
                       className="px-4 py-10 text-center text-slate-500"
                     >
                       Loading reports...
@@ -499,10 +415,10 @@ const EmployeeWorkReportManager = () => {
                 {!isLoading && reports.length === 0 && (
                   <tr>
                     <td
-                      colSpan={13}
+                      colSpan={REPORT_FIELDS.length + 3}
                       className="px-4 py-10 text-center text-slate-500"
                     >
-                      No cs work report found.
+                      No logistic work report found.
                     </td>
                   </tr>
                 )}
@@ -523,40 +439,11 @@ const EmployeeWorkReportManager = () => {
                             {row.user?.Email || "-"}
                           </div>
                         </td>
-                        <td className="px-4 py-3">
-                          {row.failedGiven || 0} / {row.failedReceived || 0}
-                        </td>
-                        <td className="px-4 py-3">
-                          {row.pendingGiven || 0} / {row.pendingReceived || 0}
-                        </td>
-                        <td className="px-4 py-3">
-                          {row.leadGiven || 0} / {row.leadReceived || 0}
-                        </td>
-                        <td className="px-4 py-3">{row.crossReceived || 0}</td>
-                        <td className="px-4 py-3">
-                          {row.ideskGiven || 0} / {row.ideskReceived || 0}
-                        </td>
-                        <td className="px-4 py-3">
-                          {row.callDone || 0} / {row.callReceived || 0}
-                        </td>
-                        <td className="px-4 py-3">
-                          {row.whatsappDone || 0} / {row.whatsappReceived || 0}
-                        </td>
-                        <td className="px-4 py-3 font-semibold">
-                          {row.totalAssign || 0}
-                        </td>
-                        <td className="px-4 py-3 font-semibold">
-                          {row.totalOrder || 0}
-                        </td>
-                        <td className="px-4 py-3 font-semibold">
-                          {Number(row.totalAmount || 0).toLocaleString(
-                            undefined,
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            },
-                          )}
-                        </td>
+                        {REPORT_FIELDS.map((field) => (
+                          <td key={field.key} className="px-4 py-3">
+                            {row[field.key] || 0}
+                          </td>
+                        ))}
                         <td className="px-4 py-3">
                           {canMutateRow ? (
                             <div className="flex justify-end gap-2">
@@ -654,7 +541,6 @@ const InputField = ({
   onChange,
   type = "text",
   required = false,
-  readOnly = false,
   ...props
 }) => (
   <label className="block">
@@ -667,37 +553,10 @@ const InputField = ({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       required={required}
-      readOnly={readOnly}
-      className={`h-11 w-full rounded-xl border border-slate-200 px-4 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 ${
-        readOnly ? "bg-slate-50 font-semibold" : "bg-white"
-      }`}
+      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
       {...props}
     />
   </label>
 );
 
-const SelectField = ({
-  label,
-  value,
-  onChange,
-  options,
-  placeholder = "Select option",
-}) => (
-  <label className="block">
-    <div className="mb-2 text-sm font-semibold text-slate-700">{label}</div>
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
-    >
-      <option value="">{placeholder}</option>
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  </label>
-);
-
-export default EmployeeWorkReportManager;
+export default LogisticWorkReportManager;
