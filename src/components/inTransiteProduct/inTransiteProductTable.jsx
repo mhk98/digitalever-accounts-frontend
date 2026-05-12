@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit, Notebook, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Edit, Notebook, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -11,19 +11,18 @@ import {
 } from "../../features/inTransitProduct/inTransitProduct";
 import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 import { useGetAllWirehouseWithoutQueryQuery } from "../../features/wirehouse/wirehouse";
-import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supplier";
 import { useGetSingleProductByIdQuery } from "../../features/product/product";
 import Modal from "../common/Modal";
 import { useGetAllInventoryOverviewWithoutQueryQuery } from "../../features/inventoryOverview/inventoryOverview";
 
 const initialCreateForm = {
   warehouseId: "",
-  supplierId: "",
   receivedId: "",
   productId: "",
   variantRows: [{ size: "", color: "", quantity: "" }],
   quantity: "",
   sale_price: "",
+  purchase_price: "",
   note: "",
   date: new Date().toISOString().slice(0, 10),
 };
@@ -63,6 +62,24 @@ const getVariationOptions = (product, key) => {
     value,
     label: value,
   }));
+};
+
+const getVariantRowsFromProduct = (product) => {
+  if (!Array.isArray(product?.variations)) return [];
+
+  return product.variations.flatMap((variation) => {
+    const sizes = parseVariationValue(variation?.size);
+    const colors = parseVariationValue(variation?.color);
+
+    if (sizes.length === 0 && colors.length === 0) return [];
+
+    const safeSizes = sizes.length ? sizes : [""];
+    const safeColors = colors.length ? colors : [""];
+
+    return safeSizes.flatMap((size) =>
+      safeColors.map((color) => ({ size, color, quantity: "" })),
+    );
+  });
 };
 
 const createEmptyVariantRow = () => ({
@@ -189,6 +206,9 @@ const hasDuplicateVariantCombination = (rows) => {
   return false;
 };
 
+const createBatchId = () =>
+  `batch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
 const IntransiteProductTable = () => {
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
@@ -199,12 +219,11 @@ const IntransiteProductTable = () => {
   const [currentItem, setCurrentItem] = useState(null);
 
   const [warehouse, setWarehouse] = useState("");
-  const [supplier, setSupplier] = useState("");
-
   // ✅ UI uses receivedId (ReceivedProduct.Id)
   const [createForm, setCreateForm] = useState({
     ...initialCreateForm,
   });
+  const [createItems, setCreateItems] = useState([]);
 
   const [rows, setRows] = useState([]);
 
@@ -230,7 +249,6 @@ const IntransiteProductTable = () => {
 
   const receivedData = receivedRes?.data || [];
 
-
   useEffect(() => {
     if (receivedError) console.error("Received fetch error:", receivedErrObj);
   }, [receivedError, receivedErrObj]);
@@ -248,14 +266,16 @@ const IntransiteProductTable = () => {
   const selectedEditProductId =
     currentItem?.productId || currentItem?.receivedId || undefined;
 
-  const { data: selectedCreateProductRes } = useGetSingleProductByIdQuery(
-    selectedCreateProductId,
-    { skip: !selectedCreateProductId },
-  );
-  const { data: selectedEditProductRes } = useGetSingleProductByIdQuery(
-    selectedEditProductId,
-    { skip: !selectedEditProductId },
-  );
+  const {
+    data: selectedCreateProductRes,
+    isFetching: isFetchingCreateProduct,
+  } = useGetSingleProductByIdQuery(selectedCreateProductId, {
+    skip: !selectedCreateProductId,
+  });
+  const { data: selectedEditProductRes, isFetching: isFetchingEditProduct } =
+    useGetSingleProductByIdQuery(selectedEditProductId, {
+      skip: !selectedEditProductId,
+    });
 
   const selectedCreateProductData =
     selectedCreateProductRes?.data || selectedCreateProductRes;
@@ -270,6 +290,40 @@ const IntransiteProductTable = () => {
     () => getVariationOptions(selectedCreateProductData, "color"),
     [selectedCreateProductData],
   );
+  const shouldShowCreateVariantOptions = useMemo(
+    () =>
+      !isFetchingCreateProduct &&
+      getVariantRowsFromProduct(selectedCreateProductData).length > 0,
+    [isFetchingCreateProduct, selectedCreateProductData],
+  );
+  const createItemsTotalQuantity = useMemo(
+    () =>
+      createItems.reduce(
+        (total, item) => total + (Number(item?.payload?.quantity) || 0),
+        0,
+      ),
+    [createItems],
+  );
+
+  const createItemsTotalSale = useMemo(
+    () =>
+      createItems.reduce((total, item) => {
+        const quantity = Number(item?.payload?.quantity) || 0;
+        const salePrice = Number(item?.payload?.sale_price) || 0;
+        return total + quantity * salePrice;
+      }, 0),
+    [createItems],
+  );
+
+  const createItemsTotalPurchase = useMemo(
+    () =>
+      createItems.reduce((total, item) => {
+        const quantity = Number(item?.payload?.quantity) || 0;
+        const purchasePrice = Number(item?.payload?.purchase_price) || 0;
+        return total + quantity * purchasePrice;
+      }, 0),
+    [createItems],
+  );
   const editSizeOptions = useMemo(
     () => getVariationOptions(selectedEditProductData, "size"),
     [selectedEditProductData],
@@ -277,6 +331,13 @@ const IntransiteProductTable = () => {
   const editColorOptions = useMemo(
     () => getVariationOptions(selectedEditProductData, "color"),
     [selectedEditProductData],
+  );
+  const shouldShowEditVariantOptions = useMemo(
+    () =>
+      hasConfiguredVariants(currentItem?.variantRows) ||
+      (!isFetchingEditProduct &&
+        getVariantRowsFromProduct(selectedEditProductData).length > 0),
+    [currentItem?.variantRows, isFetchingEditProduct, selectedEditProductData],
   );
 
   // ✅ react-select light styles
@@ -369,11 +430,13 @@ const IntransiteProductTable = () => {
   // ✅ add/edit handlers
   const openAdd = () => {
     setCreateForm(initialCreateForm);
+    setCreateItems([]);
     setIsAddOpen(true);
   };
   const closeAdd = () => {
     setIsAddOpen(false);
     setCreateForm(initialCreateForm);
+    setCreateItems([]);
   };
 
   const updateVariantRow = (mode, index, key, value) => {
@@ -394,6 +457,7 @@ const IntransiteProductTable = () => {
       return {
         ...prev,
         variantRows: nextRows,
+        quantity: String(getVariantRowsTotalQuantity(nextRows) || ""),
       };
     });
   };
@@ -421,6 +485,7 @@ const IntransiteProductTable = () => {
       return {
         ...prev,
         variantRows: nextRows.length > 0 ? nextRows : [createEmptyVariantRow()],
+        quantity: String(getVariantRowsTotalQuantity(nextRows) || ""),
       };
     });
   };
@@ -436,6 +501,7 @@ const IntransiteProductTable = () => {
         getVariantRowsTotalQuantity(variantRows) || Number(rp.quantity) || 0,
       ),
       sale_price: rp.sale_price ?? "",
+      purchase_price: rp.purchase_price ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
       date: rp.date ?? "",
@@ -460,6 +526,7 @@ const IntransiteProductTable = () => {
         getVariantRowsTotalQuantity(variantRows) || Number(rp.quantity) || 0,
       ),
       sale_price: rp.sale_price ?? "",
+      purchase_price: rp.purchase_price ?? "",
       note: rp.note ?? "",
       status: rp.status ?? "",
       userId,
@@ -477,38 +544,236 @@ const IntransiteProductTable = () => {
   const [updateInTransitProduct] = useUpdateInTransitProductMutation();
   const [deleteInTransitProduct] = useDeleteInTransitProductMutation();
 
-  // ✅ create (send receivedId)
-  const handleCreate = async (e) => {
-    e.preventDefault();
+  const applyCreateGlobalFields = (payload) => ({
+    ...payload,
+    warehouseId: Number(createForm.warehouseId),
+    note: createForm.note,
+    date: createForm.date,
+  });
 
+  const buildCreatePayload = () => {
     if (!createForm.receivedId && !createForm.productId)
-      return toast.error("Please select a product");
-    if (!createForm.quantity || Number(createForm.quantity) <= 0)
-      return toast.error("Please enter valid quantity");
+      return { error: "Please select a product" };
 
     const variantsPayload = getNormalizedVariantsPayload(
       createForm.variantRows,
     );
     if (hasDuplicateVariantCombination(variantsPayload)) {
-      return toast.error("Duplicate size and color combination found");
+      return { error: "Duplicate size and color combination found" };
     }
 
-    try {
-      const payload = {
+    const totalQuantity =
+      variantsPayload.length > 0
+        ? getVariantRowsTotalQuantity(variantsPayload)
+        : Number(createForm.quantity) || 0;
+
+    if (totalQuantity <= 0) return { error: "Please enter valid quantity" };
+
+    const productId = String(createForm.productId || createForm.receivedId);
+    const selectedProduct = receivedDropdownOptions.find(
+      (option) => option.value === productId,
+    );
+
+    return {
+      payload: {
         receivedId: Number(createForm.receivedId || createForm.productId),
         productId: Number(createForm.productId || createForm.receivedId),
-        supplierId: Number(createForm.supplierId),
         warehouseId: Number(createForm.warehouseId),
-        quantity: Number(createForm.quantity),
+        quantity: totalQuantity,
         sale_price: Number(createForm.sale_price) || 0,
+        purchase_price: Number(createForm.purchase_price) || 0,
         variants: variantsPayload,
         note: createForm.note,
         date: createForm.date,
-      };
+      },
+      label: selectedProduct?.label || `Product #${productId}`,
+    };
+  };
 
+  const resetCreateProductFields = () => {
+    setCreateForm((prev) => ({
+      ...prev,
+      receivedId: "",
+      productId: "",
+      variantRows: [createEmptyVariantRow()],
+      quantity: "",
+      sale_price: "",
+      purchase_price: "",
+    }));
+  };
+
+  const mergeCreateItem = (incomingItem) => {
+    setCreateItems((prev) => {
+      const targetReceivedId = String(incomingItem.payload?.receivedId || "");
+      const existingIndex = prev.findIndex(
+        (item) => String(item.payload?.receivedId || "") === targetReceivedId,
+      );
+
+      if (existingIndex === -1) return [...prev, incomingItem];
+
+      return prev.map((item, index) => {
+        if (index !== existingIndex) return item;
+
+        const variants = [
+          ...normalizeVariantRows(item.payload?.variants).filter(
+            (variant) => variant.size || variant.color || variant.quantity,
+          ),
+          ...normalizeVariantRows(incomingItem.payload?.variants).filter(
+            (variant) => variant.size || variant.color || variant.quantity,
+          ),
+        ];
+
+        return {
+          ...item,
+          payload: {
+            ...item.payload,
+            ...incomingItem.payload,
+            quantity:
+              (Number(item.payload?.quantity) || 0) +
+              (Number(incomingItem.payload?.quantity) || 0),
+            variants,
+          },
+        };
+      });
+    });
+  };
+
+  const handleAddCreateVariants = () => {
+    const item = buildCreatePayload();
+    if (item.error) return toast.error(item.error);
+    mergeCreateItem(item);
+    resetCreateProductFields();
+  };
+
+  const handleCreateProductSelect = (selected) => {
+    if (!selected) {
+      resetCreateProductFields();
+      return;
+    }
+
+    setCreateForm((prev) => ({
+      ...prev,
+      productId: selected?.value || "",
+      receivedId: selected?.value || "",
+      variantRows: [createEmptyVariantRow()],
+      quantity: "",
+      sale_price: "",
+      purchase_price: "",
+    }));
+  };
+
+  useEffect(() => {
+    if (
+      !createForm?.receivedId ||
+      !selectedCreateProductData ||
+      isFetchingCreateProduct ||
+      shouldShowCreateVariantOptions
+    ) {
+      return;
+    }
+
+    const productId = String(createForm.productId || createForm.receivedId);
+    const selectedProduct = receivedDropdownOptions.find(
+      (option) => option.value === productId,
+    );
+
+    mergeCreateItem({
+      payload: {
+        receivedId: Number(createForm.receivedId || createForm.productId),
+        productId: Number(createForm.productId || createForm.receivedId),
+        warehouseId: Number(createForm.warehouseId),
+        quantity: 0,
+        sale_price: 0,
+        variants: [],
+        note: createForm.note,
+        date: createForm.date,
+      },
+      label: selectedProduct?.label || `Product #${productId}`,
+    });
+    resetCreateProductFields();
+  }, [
+    createForm?.receivedId,
+    createForm?.productId,
+    selectedCreateProductData,
+    isFetchingCreateProduct,
+    shouldShowCreateVariantOptions,
+    receivedDropdownOptions,
+  ]);
+
+  const updateCreateItem = (index, key, value) => {
+    setCreateItems((prev) =>
+      prev.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              payload: {
+                ...item.payload,
+                [key]: value,
+              },
+            }
+          : item,
+      ),
+    );
+  };
+
+  const updateCreateItemVariantField = (
+    itemIndex,
+    variantIndex,
+    key,
+    value,
+  ) => {
+    setCreateItems((prev) =>
+      prev.map((item, currentItemIndex) => {
+        if (currentItemIndex !== itemIndex) return item;
+
+        const variants = normalizeVariantRows(item.payload?.variants).map(
+          (variant, currentVariantIndex) =>
+            currentVariantIndex === variantIndex
+              ? { ...variant, [key]: value }
+              : variant,
+        );
+        const quantity = getVariantRowsTotalQuantity(variants);
+
+        return {
+          ...item,
+          payload: {
+            ...item.payload,
+            variants,
+            quantity,
+          },
+        };
+      }),
+    );
+  };
+
+  const removeCreateItem = (index) => {
+    setCreateItems((prev) =>
+      prev.filter((_, itemIndex) => itemIndex !== index),
+    );
+  };
+
+  // ✅ create (send receivedId)
+  const handleCreate = async (e) => {
+    e.preventDefault();
+
+    if (!createForm.warehouseId) return toast.error("Please select warehouse");
+
+    const batchId = createBatchId();
+    let items = createItems.map((item) =>
+      applyCreateGlobalFields(item.payload),
+    );
+    items = items.map((item) => ({ ...item, batchId }));
+    if (items.length === 0) {
+      const item = buildCreatePayload();
+      if (item.error) return toast.error(item.error);
+      items = [{ ...applyCreateGlobalFields(item.payload), batchId }];
+    }
+
+    try {
+      const payload = items.length === 1 ? items[0] : { items };
       const res = await insertInTransitProduct(payload).unwrap();
       if (res?.success) {
-        toast.success("Created!");
+        toast.success(items.length > 1 ? "Products created!" : "Created!");
         closeAdd();
         refetch?.();
       } else toast.error(res?.message || "Create failed!");
@@ -536,11 +801,11 @@ const IntransiteProductTable = () => {
       const payload = {
         note: currentItem.note,
         status: currentItem.status,
-        supplierId: Number(currentItem.supplierId),
         warehouseId: Number(currentItem.warehouseId),
         date: currentItem.date,
         quantity: Number(currentItem.quantity),
         sale_price: Number(currentItem.sale_price) || 0,
+        purchase_price: Number(currentItem.purchase_price) || 0,
         variants: variantsPayload,
         receivedId: Number(currentItem.receivedId || currentItem.productId),
         productId: Number(currentItem.productId || currentItem.receivedId),
@@ -572,6 +837,8 @@ const IntransiteProductTable = () => {
         note: currentItem.note,
         status: currentItem.status,
         quantity: Number(currentItem.quantity || 0),
+        sale_price: Number(currentItem.sale_price) || 0,
+        purchase_price: Number(currentItem.purchase_price) || 0,
         receivedId: Number(currentItem.receivedId || currentItem.productId),
         productId: Number(currentItem.productId || currentItem.receivedId),
         userId: userId,
@@ -641,33 +908,28 @@ const IntransiteProductTable = () => {
       Math.min(prev + pagesPerSet, Math.max(totalPages - pagesPerSet + 1, 1)),
     );
 
+  const pageOptions = useMemo(
+    () =>
+      Array.from({ length: totalPages }, (_, index) => ({
+        value: index + 1,
+        label: String(index + 1),
+      })),
+    [totalPages],
+  );
+
+  const handlePageSelect = (selected) => {
+    if (!selected) return;
+    const selectedPage = Number(selected.value);
+    if (!selectedPage || selectedPage < 1 || selectedPage > totalPages) return;
+
+    setCurrentPage(selectedPage);
+    const newStart =
+      Math.floor((selectedPage - 1) / pagesPerSet) * pagesPerSet + 1;
+    setStartPage(newStart);
+  };
+
   // (optional) per page options for light UI (still fixed limit=10 here)
   const perPageOptions = [10, 20, 50, 100];
-
-  // ✅ suppliers
-  const {
-    data: allSupplierRes,
-    isLoading: isLoadingSupplier,
-    isError: isErrorSupplier,
-    error: errorSupplier,
-  } = useGetAllSupplierWithoutQueryQuery();
-  const suppliers = allSupplierRes?.data || [];
-
-  useEffect(() => {
-    if (isErrorSupplier)
-      console.error("Error fetching suppliers", errorSupplier);
-  }, [isErrorSupplier, errorSupplier]);
-
-  // ✅ Dropdown options
-
-  const supplierOptions = useMemo(
-    () =>
-      (suppliers || []).map((w) => ({
-        value: w.Id,
-        label: w.name,
-      })),
-    [suppliers],
-  );
 
   // ✅ warehouses
   const {
@@ -807,22 +1069,6 @@ const IntransiteProductTable = () => {
             }
             onChange={(selected) => setWarehouse(selected?.value || "")}
             placeholder="Select Warehouse"
-            isClearable
-            className="text-black"
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <label className="text-sm text-slate-600 mb-1">Supplier</label>
-          <Select
-            options={supplierOptions}
-            value={
-              supplierOptions.find(
-                (o) => String(o.value) === String(supplier),
-              ) || null
-            }
-            onChange={(selected) => setSupplier(selected?.value || "")}
-            placeholder="Select Supplier"
             isClearable
             className="text-black"
           />
@@ -1051,6 +1297,20 @@ const IntransiteProductTable = () => {
 
       {/* Pagination */}
       <div className="flex items-center justify-center flex-wrap gap-2 mt-6">
+        <div className="min-w-[160px] w-full sm:w-auto">
+          <Select
+            options={pageOptions}
+            value={
+              pageOptions.find((option) => option.value === currentPage) || null
+            }
+            onChange={handlePageSelect}
+            placeholder="Go to page"
+            isSearchable
+            className="text-black"
+            styles={selectStyles}
+          />
+        </div>
+
         <button
           onClick={handlePreviousSet}
           disabled={startPage === 1}
@@ -1090,7 +1350,12 @@ const IntransiteProductTable = () => {
       </div>
 
       {/* Edit Modal */}
-      <Modal isOpen={isEditOpen && !!currentItem} onClose={closeEdit} title="Edit Product" maxWidth="max-w-4xl">
+      <Modal
+        isOpen={isEditOpen && !!currentItem}
+        onClose={closeEdit}
+        title="Edit Product"
+        maxWidth="max-w-4xl"
+      >
         {currentItem && (
           <>
             <div className="mt-4">
@@ -1112,153 +1377,153 @@ const IntransiteProductTable = () => {
                     sale_price: "",
                   }))
                 }
-                placeholder={
-                  receivedLoading ? "Loading..." : "Select Product"
-                }
+                placeholder={receivedLoading ? "Loading..." : "Select Product"}
                 isClearable
                 className="text-black"
                 isDisabled={receivedLoading}
                 styles={selectStyles}
               />
             </div>
-            <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
-              <div>
+            {shouldShowEditVariantOptions && (
+              <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
                 <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Product Variants
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    Add size, color and quantity combinations
-                  </p>
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Product Variants
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      Add size, color and quantity combinations
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
-                <button
-                  type="button"
-                  onClick={() => addVariantRow("edit")}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                  disabled={!currentItem?.receivedId}
-                >
-                  <Plus size={14} />
-                  Add Variant
-                </button>
-              </div>
+                <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
+                  <button
+                    type="button"
+                    onClick={() => addVariantRow("edit")}
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    disabled={!currentItem?.receivedId}
+                  >
+                    <Plus size={14} />
+                    Add Variant
+                  </button>
+                </div>
 
-              {normalizeVariantRows(currentItem?.variantRows).map(
-                (row, index) => {
-                  const colorOptions = row.size
-                    ? getVariationColorsForSize(
-                        selectedEditProductData,
-                        row.size,
-                      )
-                    : editColorOptions;
+                {normalizeVariantRows(currentItem?.variantRows).map(
+                  (row, index) => {
+                    const colorOptions = row.size
+                      ? getVariationColorsForSize(
+                          selectedEditProductData,
+                          row.size,
+                        )
+                      : editColorOptions;
 
-                  return (
-                    <div
-                      key={`edit-variant-${index}`}
-                      className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
-                    >
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                          Size
-                        </label>
-                        <Select
-                          options={editSizeOptions}
-                          value={
-                            editSizeOptions.find(
-                              (option) => option.value === row.size,
-                            ) || null
-                          }
-                          onChange={(selected) =>
-                            updateVariantRow(
-                              "edit",
-                              index,
-                              "size",
-                              selected?.value || "",
-                            )
-                          }
-                          placeholder="Select size..."
-                          isClearable
-                          styles={selectStyles}
-                          className="text-sm font-medium"
-                          isDisabled={
-                            !currentItem?.receivedId ||
-                            editSizeOptions.length === 0
-                          }
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                          Color
-                        </label>
-                        <Select
-                          options={colorOptions}
-                          value={
-                            colorOptions.find(
-                              (option) => option.value === row.color,
-                            ) || null
-                          }
-                          onChange={(selected) =>
-                            updateVariantRow(
-                              "edit",
-                              index,
-                              "color",
-                              selected?.value || "",
-                            )
-                          }
-                          placeholder="Select color..."
-                          isClearable
-                          styles={selectStyles}
-                          className="text-sm font-medium"
-                          isDisabled={!row.size || colorOptions.length === 0}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                          Quantity
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={row.quantity}
-                          onChange={(e) =>
-                            updateVariantRow(
-                              "edit",
-                              index,
-                              "quantity",
-                              e.target.value,
-                            )
-                          }
-                          disabled={
-                            !currentItem?.receivedId ||
-                            editSizeOptions.length === 0
-                          }
-                          className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
-                          placeholder="0"
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => removeVariantRow("edit", index)}
-                        className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
-                        disabled={
-                          normalizeVariantRows(currentItem?.variantRows)
-                            .length === 1
-                        }
+                    return (
+                      <div
+                        key={`edit-variant-${index}`}
+                        className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
                       >
-                        <span className="mx-auto block text-base leading-none">
-                          x
-                        </span>
-                      </button>
-                    </div>
-                  );
-                },
-              )}
-            </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                            Size
+                          </label>
+                          <Select
+                            options={editSizeOptions}
+                            value={
+                              editSizeOptions.find(
+                                (option) => option.value === row.size,
+                              ) || null
+                            }
+                            onChange={(selected) =>
+                              updateVariantRow(
+                                "edit",
+                                index,
+                                "size",
+                                selected?.value || "",
+                              )
+                            }
+                            placeholder="Select size..."
+                            isClearable
+                            styles={selectStyles}
+                            className="text-sm font-medium"
+                            isDisabled={
+                              !currentItem?.receivedId ||
+                              editSizeOptions.length === 0
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                            Color
+                          </label>
+                          <Select
+                            options={colorOptions}
+                            value={
+                              colorOptions.find(
+                                (option) => option.value === row.color,
+                              ) || null
+                            }
+                            onChange={(selected) =>
+                              updateVariantRow(
+                                "edit",
+                                index,
+                                "color",
+                                selected?.value || "",
+                              )
+                            }
+                            placeholder="Select color..."
+                            isClearable
+                            styles={selectStyles}
+                            className="text-sm font-medium"
+                            isDisabled={!row.size || colorOptions.length === 0}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                            Quantity
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={row.quantity}
+                            onChange={(e) =>
+                              updateVariantRow(
+                                "edit",
+                                index,
+                                "quantity",
+                                e.target.value,
+                              )
+                            }
+                            disabled={
+                              !currentItem?.receivedId ||
+                              editSizeOptions.length === 0
+                            }
+                            className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => removeVariantRow("edit", index)}
+                          className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
+                          disabled={
+                            normalizeVariantRows(currentItem?.variantRows)
+                              .length === 1
+                          }
+                        >
+                          <span className="mx-auto block text-base leading-none">
+                            x
+                          </span>
+                        </button>
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+            )}
 
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Date</label>
@@ -1274,9 +1539,7 @@ const IntransiteProductTable = () => {
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm text-slate-700">
-                Warehouse
-              </label>
+              <label className="block text-sm text-slate-700">Warehouse</label>
               <Select
                 options={warehouseOptions}
                 value={
@@ -1299,33 +1562,6 @@ const IntransiteProductTable = () => {
                 styles={selectStyles}
                 className="text-black mt-1"
                 isDisabled={isLoadingWarehouse}
-              />
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Supplier</label>
-              <Select
-                options={supplierOptions}
-                value={
-                  supplierOptions.find(
-                    (option) =>
-                      String(option.value) ===
-                      String(currentItem?.supplierId || ""),
-                  ) || null
-                }
-                onChange={(selected) =>
-                  setCurrentItem({
-                    ...currentItem,
-                    supplierId: selected?.value || "",
-                  })
-                }
-                placeholder={
-                  isLoadingSupplier ? "Loading..." : "Select Supplier"
-                }
-                isClearable
-                styles={selectStyles}
-                className="text-black mt-1"
-                isDisabled={isLoadingSupplier}
               />
             </div>
 
@@ -1359,17 +1595,32 @@ const IntransiteProductTable = () => {
                 className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
+            <div className="mt-4">
+              <label className="block text-sm text-slate-700">
+                Purchase Price
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={currentItem.purchase_price ?? ""}
+                onChange={(e) =>
+                  setCurrentItem((p) => ({
+                    ...p,
+                    purchase_price: e.target.value,
+                  }))
+                }
+                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+              />
+            </div>
 
             {role === "superAdmin" || role === "admin" ? (
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">Status</label>
                 <Select
-                  options={["Active", "Approved", "Pending"].map(
-                    (status) => ({
-                      value: status,
-                      label: status,
-                    }),
-                  )}
+                  options={["Active", "Approved", "Pending"].map((status) => ({
+                    value: status,
+                    label: status,
+                  }))}
                   value={
                     currentItem?.status
                       ? {
@@ -1424,7 +1675,12 @@ const IntransiteProductTable = () => {
       </Modal>
 
       {/* Note / Delete Request Modal */}
-      <Modal isOpen={isEditOpen1 && !!currentItem} onClose={closeEdit1} title="Note" maxWidth="max-w-lg">
+      <Modal
+        isOpen={isEditOpen1 && !!currentItem}
+        onClose={closeEdit1}
+        title="Note"
+        maxWidth="max-w-lg"
+      >
         {currentItem && (
           <>
             <div className="mt-4">
@@ -1480,16 +1736,7 @@ const IntransiteProductTable = () => {
                   (o) => o.value === String(createForm.receivedId),
                 ) || null
               }
-              onChange={(selected) =>
-                setCreateForm((prev) => ({
-                  ...prev,
-                  productId: selected?.value || "",
-                  receivedId: selected?.value || "",
-                  variantRows: [createEmptyVariantRow()],
-                  quantity: "",
-                  sale_price: "",
-                }))
-              }
+              onChange={handleCreateProductSelect}
               placeholder="Search product..."
               isClearable
               styles={selectStyles}
@@ -1498,143 +1745,412 @@ const IntransiteProductTable = () => {
             />
           </div>
 
-          <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
-            <div>
+          {shouldShowCreateVariantOptions && (
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Product Variants
-                </p>
-                <p className="text-[11px] text-slate-400">
-                  Add size, color and quantity combinations
-                </p>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Product Variants
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    Add size, color and quantity combinations
+                  </p>
+                </div>
+              </div>
+              <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
+                <button
+                  type="button"
+                  onClick={() => addVariantRow("create")}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  disabled={!createForm?.receivedId}
+                >
+                  <Plus size={14} />
+                  Add Variant
+                </button>
+              </div>
+
+              {normalizeVariantRows(createForm?.variantRows).map(
+                (row, index) => {
+                  const colorOptions = row.size
+                    ? getVariationColorsForSize(
+                        selectedCreateProductData,
+                        row.size,
+                      )
+                    : createColorOptions;
+
+                  return (
+                    <div
+                      key={`create-variant-${index}`}
+                      className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
+                    >
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Size
+                        </label>
+                        <Select
+                          options={createSizeOptions}
+                          value={
+                            createSizeOptions.find(
+                              (option) => option.value === row.size,
+                            ) || null
+                          }
+                          onChange={(selected) =>
+                            updateVariantRow(
+                              "create",
+                              index,
+                              "size",
+                              selected?.value || "",
+                            )
+                          }
+                          placeholder="Select size..."
+                          isClearable
+                          styles={selectStyles}
+                          className="text-sm text-black font-medium"
+                          isDisabled={
+                            !createForm?.receivedId ||
+                            createSizeOptions.length === 0
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Color
+                        </label>
+                        <Select
+                          options={colorOptions}
+                          value={
+                            colorOptions.find(
+                              (option) => option.value === row.color,
+                            ) || null
+                          }
+                          onChange={(selected) =>
+                            updateVariantRow(
+                              "create",
+                              index,
+                              "color",
+                              selected?.value || "",
+                            )
+                          }
+                          placeholder="Select color..."
+                          isClearable
+                          styles={selectStyles}
+                          className="text-sm text-black font-medium"
+                          isDisabled={!row.size || colorOptions.length === 0}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Quantity
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={row.quantity}
+                          onChange={(e) =>
+                            updateVariantRow(
+                              "create",
+                              index,
+                              "quantity",
+                              e.target.value,
+                            )
+                          }
+                          disabled={
+                            !createForm?.receivedId ||
+                            createSizeOptions.length === 0
+                          }
+                          className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeVariantRow("create", index)}
+                        className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
+                        disabled={
+                          normalizeVariantRows(createForm?.variantRows)
+                            .length === 1
+                        }
+                      >
+                        <span className="mx-auto block text-base leading-none">
+                          x
+                        </span>
+                      </button>
+                    </div>
+                  );
+                },
+              )}
+
+              <div className="flex justify-end border-t border-slate-200 pt-3">
+                <button
+                  type="button"
+                  onClick={handleAddCreateVariants}
+                  className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-indigo-100 transition hover:bg-indigo-700"
+                >
+                  <Plus size={16} />
+                  Add Variants
+                </button>
               </div>
             </div>
-            <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
-              <button
-                type="button"
-                onClick={() => addVariantRow("create")}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                disabled={!createForm?.receivedId}
-              >
-                <Plus size={14} />
-                Add Variant
-              </button>
+          )}
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Product Line Items
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Select a product above to add a new row; then set quantity,
+                  sale price and purchase price here
+                </p>
+              </div>
+              <div className="grid gap-3 rounded-xl border border-indigo-100 bg-white p-4 text-right">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Total Quantity
+                  </p>
+                  <p className="text-lg font-black text-slate-900">
+                    {createItemsTotalQuantity}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Total Sale
+                  </p>
+                  <p className="text-lg font-black text-slate-900">
+                    {createItemsTotalSale.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Total Purchase
+                  </p>
+                  <p className="text-lg font-black text-slate-900">
+                    {createItemsTotalPurchase.toFixed(2)}
+                  </p>
+                </div>
+              </div>
             </div>
 
-            {normalizeVariantRows(createForm?.variantRows).map((row, index) => {
-              const colorOptions = row.size
-                ? getVariationColorsForSize(selectedCreateProductData, row.size)
-                : createColorOptions;
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+              <table className="min-w-[760px] w-full text-left text-sm">
+                <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Product</th>
+                    <th className="px-4 py-3">Product Detail</th>
+                    <th className="px-4 py-3">Variant Detail</th>
+                    <th className="px-4 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {createItems.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="px-4 py-8 text-center text-sm text-slate-400"
+                      >
+                        No products added
+                      </td>
+                    </tr>
+                  ) : (
+                    createItems.map((item, itemIndex) => {
+                      const variants = getNormalizedVariantsPayload(
+                        item.payload?.variants,
+                      );
+                      const hasVariants = variants.length > 0;
 
-              return (
-                <div
-                  key={`create-variant-${index}`}
-                  className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
-                >
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                      Size
-                    </label>
-                    <Select
-                      options={createSizeOptions}
-                      value={
-                        createSizeOptions.find(
-                          (option) => option.value === row.size,
-                        ) || null
-                      }
-                      onChange={(selected) =>
-                        updateVariantRow(
-                          "create",
-                          index,
-                          "size",
-                          selected?.value || "",
-                        )
-                      }
-                      placeholder="Select size..."
-                      isClearable
-                      styles={selectStyles}
-                      className="text-sm text-black font-medium"
-                      isDisabled={
-                        !createForm?.receivedId ||
-                        createSizeOptions.length === 0
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                      Color
-                    </label>
-                    <Select
-                      options={colorOptions}
-                      value={
-                        colorOptions.find(
-                          (option) => option.value === row.color,
-                        ) || null
-                      }
-                      onChange={(selected) =>
-                        updateVariantRow(
-                          "create",
-                          index,
-                          "color",
-                          selected?.value || "",
-                        )
-                      }
-                      placeholder="Select color..."
-                      isClearable
-                      styles={selectStyles}
-                      className="text-sm text-black font-medium"
-                      isDisabled={!row.size || colorOptions.length === 0}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                      Quantity
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={row.quantity}
-                      onChange={(e) =>
-                        updateVariantRow(
-                          "create",
-                          index,
-                          "quantity",
-                          e.target.value,
-                        )
-                      }
-                      disabled={
-                        !createForm?.receivedId ||
-                        createSizeOptions.length === 0
-                      }
-                      className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
-                      placeholder="0"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => removeVariantRow("create", index)}
-                    className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
-                    disabled={
-                      normalizeVariantRows(createForm?.variantRows).length === 1
-                    }
-                  >
-                    <span className="mx-auto block text-base leading-none">
-                      x
-                    </span>
-                  </button>
-                </div>
-              );
-            })}
+                      return (
+                        <tr key={`${item.label}-${itemIndex}`}>
+                          <td className="px-4 py-4 align-top font-semibold text-slate-900">
+                            {item.label}
+                          </td>
+                          <td className="px-4 py-4 align-top">
+                            {hasVariants ? (
+                              <div className="grid max-w-[360px] grid-cols-2 gap-3">
+                                <div>
+                                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Total Quantity
+                                  </p>
+                                  <p className="text-base font-black text-slate-900">
+                                    {Number(item.payload?.quantity) || 0}
+                                  </p>
+                                </div>
+                                <div>
+                                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Sale
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={item.payload?.sale_price ?? ""}
+                                    onChange={(event) =>
+                                      updateCreateItem(
+                                        itemIndex,
+                                        "sale_price",
+                                        event.target.value,
+                                      )
+                                    }
+                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                                    placeholder="0"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Purchase
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={item.payload?.purchase_price ?? ""}
+                                    onChange={(event) =>
+                                      updateCreateItem(
+                                        itemIndex,
+                                        "purchase_price",
+                                        event.target.value,
+                                      )
+                                    }
+                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                                    placeholder="0"
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="grid max-w-[520px] grid-cols-2 gap-3">
+                                <div>
+                                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Qty
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={item.payload?.quantity ?? ""}
+                                    onChange={(event) =>
+                                      updateCreateItem(
+                                        itemIndex,
+                                        "quantity",
+                                        event.target.value,
+                                      )
+                                    }
+                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                                    placeholder="0"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Sale
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={item.payload?.sale_price ?? ""}
+                                    onChange={(event) =>
+                                      updateCreateItem(
+                                        itemIndex,
+                                        "sale_price",
+                                        event.target.value,
+                                      )
+                                    }
+                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                                    placeholder="0"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Purchase
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={item.payload?.purchase_price ?? ""}
+                                    onChange={(event) =>
+                                      updateCreateItem(
+                                        itemIndex,
+                                        "purchase_price",
+                                        event.target.value,
+                                      )
+                                    }
+                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                                    placeholder="0"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 align-top">
+                            {hasVariants ? (
+                              <div className="space-y-2">
+                                {variants.map((variant, variantIndex) => (
+                                  <div
+                                    key={`${item.label}-${itemIndex}-variant-${variantIndex}`}
+                                    className="grid grid-cols-[auto_auto_110px] items-end gap-2 rounded-xl border border-slate-100 bg-slate-50 p-2"
+                                  >
+                                    <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+                                      {variant.size || "N/A"}
+                                    </span>
+                                    <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-indigo-700">
+                                      {variant.color || "N/A"}
+                                    </span>
+                                    <div>
+                                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        Qty
+                                      </label>
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={variant.quantity ?? ""}
+                                        onChange={(event) =>
+                                          updateCreateItemVariantField(
+                                            itemIndex,
+                                            variantIndex,
+                                            "quantity",
+                                            event.target.value,
+                                          )
+                                        }
+                                        className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="inline-flex rounded-full border border-dashed border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-400">
+                                No variants
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-right align-top">
+                            <button
+                              type="button"
+                              onClick={() => removeCreateItem(itemIndex)}
+                              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-rose-600 transition hover:bg-rose-50"
+                            >
+                              <X size={14} />
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Purchase Date
+                Date
               </label>
               <input
                 type="date"
@@ -1676,73 +2192,6 @@ const IntransiteProductTable = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Supplier
-              </label>
-              <Select
-                options={supplierOptions}
-                value={
-                  supplierOptions.find(
-                    (option) =>
-                      String(option.value) ===
-                      String(createForm?.supplierId || ""),
-                  ) || null
-                }
-                onChange={(selected) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    supplierId: selected?.value || "",
-                  }))
-                }
-                placeholder={
-                  isLoadingSupplier ? "Loading..." : "Select Supplier"
-                }
-                isClearable
-                styles={selectStyles}
-                className="text-black"
-                isDisabled={isLoadingSupplier}
-              />
-              {/* legacy options removed */}
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Quantity
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={createForm.quantity}
-                onChange={(e) =>
-                  setCreateForm((p) => ({ ...p, quantity: e.target.value }))
-                }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Sales Price
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={createForm.sale_price}
-                onChange={(e) =>
-                  setCreateForm((p) => ({
-                    ...p,
-                    sale_price: e.target.value,
-                  }))
-                }
-                className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                required
-              />
-            </div>
-          </div>
-
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
               Note
@@ -1771,7 +2220,7 @@ const IntransiteProductTable = () => {
               type="submit"
               className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-100 active:scale-95"
             >
-              Save
+              {createItems.length > 0 ? "Save Products" : "Save"}
             </button>
           </div>
         </form>

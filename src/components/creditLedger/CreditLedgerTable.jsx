@@ -34,7 +34,6 @@ import { useGetAllSupplierWithoutQueryQuery } from "../../features/supplier/supp
 import useDebounce from "../../hooks/useDebounce";
 import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
 
-
 const ENTITY_TYPES = {
   supplier: {
     label: "Supplier",
@@ -656,7 +655,6 @@ const CreditLedgerTable = () => {
     useGetAllLedgerWithoutQueryQuery();
   const ledgers = useMemo(() => extractLedgerRows(data), [data]);
 
-
   const entitiesByType = useMemo(
     () =>
       ENTITY_TABS.reduce((acc, tab) => {
@@ -894,7 +892,6 @@ const CreditLedgerTable = () => {
     () => ledgerHistoryData?.data || [],
     [ledgerHistoryData],
   );
-
 
   const selectedHistory = useMemo(() => {
     const isSupplierTab = activeTab === "supplier";
@@ -1598,23 +1595,6 @@ const CreditLedgerTable = () => {
                           </p>
                         </div>
                       </div>
-
-                      <div className="text-right">
-                        <p
-                          className={`font-semibold ${
-                            hasPendingDue ? "text-red-500" : "text-green-500"
-                          }`}
-                        >
-                          {formatCurrency(entityBalance)}
-                        </p>
-                        <span
-                          className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs text-white ${
-                            hasPendingDue ? "bg-red-500" : "bg-green-500"
-                          }`}
-                        >
-                          {hasPendingDue ? "Pending" : "Clear"}
-                        </span>
-                      </div>
                     </button>
                   );
                 })}
@@ -2143,7 +2123,9 @@ const CreditLedgerTable = () => {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => handleDeleteLedgerHistory(item)}
+                                  onClick={() =>
+                                    handleDeleteLedgerHistory(item)
+                                  }
                                   aria-label="Delete due history"
                                   title="Delete"
                                   className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 text-red-500 hover:bg-red-50"
@@ -2393,8 +2375,7 @@ const CreditLedgerTable = () => {
                     type="submit"
                     className="w-full h-11 rounded-lg bg-black text-white text-sm font-semibold hover:bg-slate-900 transition"
                   >
-                    {editingHistoryEntry ? "Update" : "Save"}{" "}
-                    {historyEntryType}
+                    {editingHistoryEntry ? "Update" : "Save"} {historyEntryType}
                   </button>
                 </div>
               </form>

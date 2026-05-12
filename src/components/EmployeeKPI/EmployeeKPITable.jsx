@@ -23,6 +23,8 @@ import {
 } from "recharts";
 import Modal from "../common/Modal";
 import { requestDeleteConfirmation } from "../../utils/deleteConfirmation";
+import { useGetAllDepartmentsQuery } from "../../features/department/department";
+import { useGetAllDesignationsQuery } from "../../features/designation/designation";
 import {
   useDeleteKPIMutation,
   useGetAllKPIQuery,
@@ -34,6 +36,7 @@ import {
   useUpdateKPIMutation,
   useUpdateKPISettingsMutation,
 } from "../../features/kpi/kpi";
+import { useGetAllTeamsQuery } from "../../features/team/team";
 
 const parseSettingRules = (rules) => {
   if (Array.isArray(rules)) return rules;
@@ -135,9 +138,34 @@ const mergeRequiredKpiSettings = (settings = []) => {
 const rawValue = (item, field) =>
   item?.[field] !== null && item?.[field] !== undefined ? item[field] : null;
 
+const toEntityOptions = (rows = []) =>
+  rows.map((item) => ({
+    value: String(item.Id ?? item.id ?? ""),
+    label: item.name || item.title || item.code || "Unnamed",
+    code: item.code || "",
+    departmentId:
+      item.departmentId !== null && item.departmentId !== undefined
+        ? String(item.departmentId)
+        : "",
+  }));
+
+const findOptionById = (options = [], value) =>
+  options.find((option) => String(option.value) === String(value || "")) ||
+  null;
+
+const resolveDesignationType = (option, fallback = "CS") => {
+  const token = String(option?.code || option?.label || fallback || "CS")
+    .trim()
+    .toUpperCase();
+  return ["CS", "UP"].includes(token) ? token : fallback || "CS";
+};
+
 const emptyKpiForm = () => ({
   userId: "",
   employeeId: "",
+  departmentId: "",
+  designationId: "",
+  teamId: "",
   designationType: "CS",
   periodType: "Monthly",
   periodStartDate: new Date().toISOString().slice(0, 10),
@@ -191,6 +219,9 @@ const EmployeeKPITable = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [selectedDesignation, setSelectedDesignation] = useState(null);
+  const [selectedTeam, setSelectedTeam] = useState(null);
 
   // pagination
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -230,7 +261,15 @@ const EmployeeKPITable = () => {
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate, selectedEmployee, itemsPerPage]);
+  }, [
+    startDate,
+    endDate,
+    selectedEmployee,
+    selectedDepartment,
+    selectedDesignation,
+    selectedTeam,
+    itemsPerPage,
+  ]);
 
   useEffect(() => {
     if (startDate && endDate && startDate > endDate) {
@@ -248,6 +287,9 @@ const EmployeeKPITable = () => {
         ? userId || undefined
         : selectedEmployee?.userId || selectedEmployee?.value || undefined,
       employeeId: isEmployeeRole ? undefined : selectedEmployee?.employeeId || undefined,
+      departmentId: selectedDepartment?.value || undefined,
+      designationId: selectedDesignation?.value || undefined,
+      teamId: selectedTeam?.value || undefined,
     };
 
     Object.keys(args).forEach((k) => {
@@ -263,6 +305,9 @@ const EmployeeKPITable = () => {
     startDate,
     endDate,
     selectedEmployee,
+    selectedDepartment,
+    selectedDesignation,
+    selectedTeam,
     isEmployeeRole,
     userId,
   ]);
@@ -291,6 +336,14 @@ const EmployeeKPITable = () => {
   } = useGetKPISettingsQuery();
   const { data: employeeOptionsData, isLoading: isEmployeeOptionsLoading } =
     useGetKPIEmployeeOptionsQuery({ limit: 200 });
+  const { data: departmentsData, isLoading: isDepartmentsLoading } =
+    useGetAllDepartmentsQuery({ page: 1, limit: 500 });
+  const { data: designationsData, isLoading: isDesignationsLoading } =
+    useGetAllDesignationsQuery({ page: 1, limit: 500 });
+  const { data: teamsData, isLoading: isTeamsLoading } = useGetAllTeamsQuery({
+    page: 1,
+    limit: 500,
+  });
   const graphQueryArgs = useMemo(
     () => ({
       startDate: startDate || undefined,
@@ -299,8 +352,20 @@ const EmployeeKPITable = () => {
         ? userId || undefined
         : selectedEmployee?.userId || selectedEmployee?.value || undefined,
       employeeId: isEmployeeRole ? undefined : selectedEmployee?.employeeId || undefined,
+      departmentId: selectedDepartment?.value || undefined,
+      designationId: selectedDesignation?.value || undefined,
+      teamId: selectedTeam?.value || undefined,
     }),
-    [startDate, endDate, selectedEmployee, isEmployeeRole, userId],
+    [
+      startDate,
+      endDate,
+      selectedEmployee,
+      selectedDepartment,
+      selectedDesignation,
+      selectedTeam,
+      isEmployeeRole,
+      userId,
+    ],
   );
   const { data: performanceGraphData, isLoading: isPerformanceGraphLoading } =
     useGetKPIPerformanceGraphQuery(graphQueryArgs);
@@ -309,6 +374,34 @@ const EmployeeKPITable = () => {
     () => employeeOptionsData?.data || [],
     [employeeOptionsData],
   );
+  const departmentOptions = useMemo(
+    () => toEntityOptions(departmentsData?.data || []),
+    [departmentsData],
+  );
+  const designationOptions = useMemo(
+    () => toEntityOptions(designationsData?.data || []),
+    [designationsData],
+  );
+  const teamOptions = useMemo(
+    () => toEntityOptions(teamsData?.data || []),
+    [teamsData],
+  );
+
+  const getDesignationOptions = (departmentId) =>
+    designationOptions.filter(
+      (option) =>
+        !departmentId ||
+        !option.departmentId ||
+        option.departmentId === String(departmentId),
+    );
+
+  const getTeamOptions = (departmentId) =>
+    teamOptions.filter(
+      (option) =>
+        !departmentId ||
+        !option.departmentId ||
+        option.departmentId === String(departmentId),
+    );
 
   const findEmployeeOption = (item = {}) => {
     const source = item || {};
@@ -371,6 +464,9 @@ const EmployeeKPITable = () => {
       selectedEmployee: employeeOption,
       userId: employeeOption?.userId || product.userId || "",
       employeeId: employeeOption?.employeeId || product.employeeId || "",
+      departmentId: product.departmentId ?? "",
+      designationId: product.designationId ?? "",
+      teamId: product.teamId ?? "",
       designationType: product.designationType ?? "CS",
       periodType: product.periodType ?? "Monthly",
       periodStartDate: product.periodStartDate ?? product.date ?? "",
@@ -417,6 +513,9 @@ const EmployeeKPITable = () => {
 
     try {
       const payload = stripEmptyRawFields({
+        departmentId: createProduct.departmentId,
+        designationId: createProduct.designationId,
+        teamId: createProduct.teamId,
         designationType: createProduct.designationType,
         periodType: createProduct.periodType,
         userId: createProduct.userId,
@@ -461,6 +560,9 @@ const EmployeeKPITable = () => {
 
     try {
       const payload = stripEmptyRawFields({
+        departmentId: currentProduct.departmentId,
+        designationId: currentProduct.designationId,
+        teamId: currentProduct.teamId,
         designationType: currentProduct.designationType,
         periodType: currentProduct.periodType,
         userId: currentProduct.userId,
@@ -652,6 +754,9 @@ const EmployeeKPITable = () => {
     setStartDate("");
     setEndDate("");
     setSelectedEmployee(null);
+    setSelectedDepartment(null);
+    setSelectedDesignation(null);
+    setSelectedTeam(null);
   };
 
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
@@ -897,7 +1002,7 @@ const EmployeeKPITable = () => {
 
       <div
         className={`grid grid-cols-1 gap-4 items-end mb-6 w-full justify-center mx-auto ${
-          isEmployeeRole ? "md:grid-cols-4" : "md:grid-cols-5"
+          isEmployeeRole ? "md:grid-cols-4 xl:grid-cols-7" : "md:grid-cols-4 xl:grid-cols-8"
         }`}
       >
         <div className="flex flex-col">
@@ -921,7 +1026,8 @@ const EmployeeKPITable = () => {
         </div>
 
         {!isEmployeeRole ? (
-          <div className="flex items-center justify-center md:mt-0">
+          <div className="flex flex-col">
+            <label className="text-sm text-slate-600 mb-1">Employee</label>
             <Select
               options={employeeOptions}
               value={selectedEmployee}
@@ -936,6 +1042,56 @@ const EmployeeKPITable = () => {
             />
           </div>
         ) : null}
+
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Department</label>
+          <Select
+            options={departmentOptions}
+            value={selectedDepartment}
+            onChange={(selected) => {
+              setSelectedDepartment(selected);
+              setSelectedDesignation(null);
+              setSelectedTeam(null);
+            }}
+            placeholder={
+              isDepartmentsLoading ? "Loading departments..." : "Select Department"
+            }
+            isClearable
+            isLoading={isDepartmentsLoading}
+            styles={selectStyles}
+            className="w-full"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Designation</label>
+          <Select
+            options={getDesignationOptions(selectedDepartment?.value)}
+            value={selectedDesignation}
+            onChange={setSelectedDesignation}
+            placeholder={
+              isDesignationsLoading ? "Loading designations..." : "Select Designation"
+            }
+            isClearable
+            isLoading={isDesignationsLoading}
+            styles={selectStyles}
+            className="w-full"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Team</label>
+          <Select
+            options={getTeamOptions(selectedDepartment?.value)}
+            value={selectedTeam}
+            onChange={setSelectedTeam}
+            placeholder={isTeamsLoading ? "Loading teams..." : "Select Team"}
+            isClearable
+            isLoading={isTeamsLoading}
+            styles={selectStyles}
+            className="w-full"
+          />
+        </div>
 
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">Per Page</label>
@@ -1430,13 +1586,63 @@ const EmployeeKPITable = () => {
             onChange={(v) => setCurrentProduct({ ...currentProduct, date: v })}
             required
           />
-          <SelectField
-            label="Designation"
-            value={currentProduct?.designationType || "CS"}
-            onChange={(v) =>
-              setCurrentProduct({ ...currentProduct, designationType: v })
+          <EntitySelectField
+            label="Department"
+            options={departmentOptions}
+            value={findOptionById(departmentOptions, currentProduct?.departmentId)}
+            onChange={(selected) =>
+              setCurrentProduct({
+                ...currentProduct,
+                departmentId: selected?.value || "",
+                designationId: "",
+                teamId: "",
+              })
             }
-            options={["CS", "UP"]}
+            placeholder={
+              isDepartmentsLoading ? "Loading departments..." : "Select Department"
+            }
+            isLoading={isDepartmentsLoading}
+            selectStyles={selectStyles}
+          />
+          <EntitySelectField
+            label="Designation"
+            options={getDesignationOptions(currentProduct?.departmentId)}
+            value={findOptionById(
+              getDesignationOptions(currentProduct?.departmentId),
+              currentProduct?.designationId,
+            )}
+            onChange={(selected) =>
+              setCurrentProduct({
+                ...currentProduct,
+                designationId: selected?.value || "",
+                designationType: resolveDesignationType(
+                  selected,
+                  currentProduct?.designationType || "CS",
+                ),
+              })
+            }
+            placeholder={
+              isDesignationsLoading ? "Loading designations..." : "Select Designation"
+            }
+            isLoading={isDesignationsLoading}
+            selectStyles={selectStyles}
+          />
+          <EntitySelectField
+            label="Team"
+            options={getTeamOptions(currentProduct?.departmentId)}
+            value={findOptionById(
+              getTeamOptions(currentProduct?.departmentId),
+              currentProduct?.teamId,
+            )}
+            onChange={(selected) =>
+              setCurrentProduct({
+                ...currentProduct,
+                teamId: selected?.value || "",
+              })
+            }
+            placeholder={isTeamsLoading ? "Loading teams..." : "Select Team"}
+            isLoading={isTeamsLoading}
+            selectStyles={selectStyles}
           />
           <SelectField
             label="Period Type"
@@ -1655,13 +1861,63 @@ const EmployeeKPITable = () => {
             onChange={(v) => setCreateProduct({ ...createProduct, date: v })}
             required
           />
-          <SelectField
-            label="Designation"
-            value={createProduct.designationType}
-            onChange={(v) =>
-              setCreateProduct({ ...createProduct, designationType: v })
+          <EntitySelectField
+            label="Department"
+            options={departmentOptions}
+            value={findOptionById(departmentOptions, createProduct.departmentId)}
+            onChange={(selected) =>
+              setCreateProduct({
+                ...createProduct,
+                departmentId: selected?.value || "",
+                designationId: "",
+                teamId: "",
+              })
             }
-            options={["CS", "UP"]}
+            placeholder={
+              isDepartmentsLoading ? "Loading departments..." : "Select Department"
+            }
+            isLoading={isDepartmentsLoading}
+            selectStyles={selectStyles}
+          />
+          <EntitySelectField
+            label="Designation"
+            options={getDesignationOptions(createProduct.departmentId)}
+            value={findOptionById(
+              getDesignationOptions(createProduct.departmentId),
+              createProduct.designationId,
+            )}
+            onChange={(selected) =>
+              setCreateProduct({
+                ...createProduct,
+                designationId: selected?.value || "",
+                designationType: resolveDesignationType(
+                  selected,
+                  createProduct.designationType,
+                ),
+              })
+            }
+            placeholder={
+              isDesignationsLoading ? "Loading designations..." : "Select Designation"
+            }
+            isLoading={isDesignationsLoading}
+            selectStyles={selectStyles}
+          />
+          <EntitySelectField
+            label="Team"
+            options={getTeamOptions(createProduct.departmentId)}
+            value={findOptionById(
+              getTeamOptions(createProduct.departmentId),
+              createProduct.teamId,
+            )}
+            onChange={(selected) =>
+              setCreateProduct({
+                ...createProduct,
+                teamId: selected?.value || "",
+              })
+            }
+            placeholder={isTeamsLoading ? "Loading teams..." : "Select Team"}
+            isLoading={isTeamsLoading}
+            selectStyles={selectStyles}
           />
           <SelectField
             label="Period Type"
@@ -1815,6 +2071,31 @@ const SummaryCard = ({ title, value, suffix = "" }) => (
         </p>
       </div>
     </div>
+  </div>
+);
+
+const EntitySelectField = ({
+  label,
+  value,
+  onChange,
+  options = [],
+  placeholder,
+  isLoading,
+  selectStyles,
+}) => (
+  <div>
+    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
+      {label}
+    </label>
+    <Select
+      options={options}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder || `Select ${label}`}
+      isClearable
+      isLoading={isLoading}
+      styles={selectStyles}
+    />
   </div>
 );
 

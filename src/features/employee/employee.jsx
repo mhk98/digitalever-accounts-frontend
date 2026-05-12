@@ -48,9 +48,9 @@ export const employeeApi = createApi({
     }),
 
     getAllEmployee: build.query({
-      query: ({ page, limit, startDate, endDate, name }) => ({
+      query: ({ page, limit, startDate, endDate, name, departmentId }) => ({
         url: "/employee",
-        params: { page, limit, startDate, endDate, name }, // Pass the page and limit as query params
+        params: { page, limit, startDate, endDate, name, departmentId }, // Pass the page and limit as query params
       }),
       providesTags: ["employee"],
       refetchOnMountOrArgChange: true,

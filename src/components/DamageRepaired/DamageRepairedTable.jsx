@@ -66,6 +66,24 @@ const getVariationOptions = (product, key) => {
   }));
 };
 
+const getVariantRowsFromProduct = (product) => {
+  if (!Array.isArray(product?.variations)) return [];
+
+  return product.variations.flatMap((variation) => {
+    const sizes = parseVariationValue(variation?.size);
+    const colors = parseVariationValue(variation?.color);
+
+    if (sizes.length === 0 && colors.length === 0) return [];
+
+    const safeSizes = sizes.length ? sizes : [""];
+    const safeColors = colors.length ? colors : [""];
+
+    return safeSizes.flatMap((size) =>
+      safeColors.map((color) => ({ size, color, quantity: "" })),
+    );
+  });
+};
+
 const createEmptyVariantRow = () => ({
   size: "",
   color: "",
@@ -278,6 +296,7 @@ const DamageRepairedTable = () => {
   const [createForm, setCreateForm] = useState({
     ...initialCreateForm,
   });
+  const [createItems, setCreateItems] = useState([]);
 
   const [rows, setRows] = useState([]);
 
@@ -342,14 +361,16 @@ const DamageRepairedTable = () => {
   const selectedEditProductId =
     selectedEditDamageStock?.productId || currentItem?.productId || undefined;
 
-  const { data: selectedCreateProductRes } = useGetSingleProductByIdQuery(
-    selectedCreateProductId,
-    { skip: !selectedCreateProductId },
-  );
-  const { data: selectedEditProductRes } = useGetSingleProductByIdQuery(
-    selectedEditProductId,
-    { skip: !selectedEditProductId },
-  );
+  const {
+    data: selectedCreateProductRes,
+    isFetching: isFetchingCreateProduct,
+  } = useGetSingleProductByIdQuery(selectedCreateProductId, {
+    skip: !selectedCreateProductId,
+  });
+  const { data: selectedEditProductRes, isFetching: isFetchingEditProduct } =
+    useGetSingleProductByIdQuery(selectedEditProductId, {
+      skip: !selectedEditProductId,
+    });
 
   const selectedCreateProductData =
     selectedCreateProductRes?.data || selectedCreateProductRes;
@@ -380,6 +401,19 @@ const DamageRepairedTable = () => {
     },
     [selectedCreateDamageStock, selectedCreateProductData],
   );
+  const shouldShowCreateVariantOptions = useMemo(
+    () =>
+      createSizeOptions.length > 0 ||
+      createColorOptions.length > 0 ||
+      (!isFetchingCreateProduct &&
+        getVariantRowsFromProduct(selectedCreateProductData).length > 0),
+    [
+      createColorOptions.length,
+      createSizeOptions.length,
+      isFetchingCreateProduct,
+      selectedCreateProductData,
+    ],
+  );
   const editSizeOptions = useMemo(
     () => {
       const stockOptions = getStockVariantOptions(
@@ -391,6 +425,21 @@ const DamageRepairedTable = () => {
         : getVariationOptions(selectedEditProductData, "size");
     },
     [selectedEditDamageStock, selectedEditProductData],
+  );
+  const shouldShowEditVariantOptions = useMemo(
+    () =>
+      hasConfiguredVariants(currentItem?.variantRows) ||
+      editSizeOptions.length > 0 ||
+      editColorOptions.length > 0 ||
+      (!isFetchingEditProduct &&
+        getVariantRowsFromProduct(selectedEditProductData).length > 0),
+    [
+      currentItem?.variantRows,
+      editColorOptions.length,
+      editSizeOptions.length,
+      isFetchingEditProduct,
+      selectedEditProductData,
+    ],
   );
   const editColorOptions = useMemo(
     () => {
@@ -488,11 +537,13 @@ const DamageRepairedTable = () => {
   // modals
   const openAdd = () => {
     setCreateForm(initialCreateForm);
+    setCreateItems([]);
     setIsAddOpen(true);
   };
   const closeAdd = () => {
     setIsAddOpen(false);
     setCreateForm(initialCreateForm);
+    setCreateItems([]);
   };
 
   const updateVariantRow = (mode, index, key, value) => {
@@ -595,20 +646,17 @@ const DamageRepairedTable = () => {
   const [updateDamageRepaired] = useUpdateDamageRepairedMutation();
   const [deleteDamageRepaired] = useDeleteDamageRepairedMutation();
 
-  // create
-  const handleCreate = async (e) => {
-    e.preventDefault();
-
+  const buildCreatePayload = () => {
     if (!createForm.receivedId && !createForm.productId)
-      return toast.error("Please select a product");
+      return { error: "Please select a product" };
     if (!createForm.quantity || Number(createForm.quantity) <= 0)
-      return toast.error("Please enter valid quantity");
+      return { error: "Please enter valid quantity" };
 
     const variantsPayload = getNormalizedVariantsPayload(
       createForm.variantRows,
     );
     if (hasDuplicateVariantCombination(variantsPayload)) {
-      return toast.error("Duplicate size and color combination found");
+      return { error: "Duplicate size and color combination found" };
     }
     if (
       !validateVariantSelection(
@@ -617,11 +665,16 @@ const DamageRepairedTable = () => {
         createForm.quantity,
       )
     ) {
-      return;
+      return { error: "Invalid variant quantity" };
     }
 
-    try {
-      const payload = {
+    const productId = String(createForm.receivedId || createForm.productId);
+    const selectedProduct = receivedDropdownOptions.find(
+      (option) => option.value === productId,
+    );
+
+    return {
+      payload: {
         receivedId: Number(createForm.receivedId || createForm.productId),
         productId: Number(createForm.productId || selectedCreateProductId || 0),
         supplierId: Number(createForm.supplierId),
@@ -631,11 +684,69 @@ const DamageRepairedTable = () => {
         note: createForm.note,
         remarks: createForm.remarks,
         date: createForm.date,
-      };
+      },
+      label: selectedProduct?.label || `Product #${productId}`,
+    };
+  };
 
+  const resetCreateProductFields = () => {
+    setCreateForm((prev) => ({
+      ...prev,
+      receivedId: "",
+      productId: "",
+      variantRows: [createEmptyVariantRow()],
+      quantity: "",
+    }));
+  };
+
+  const handleAddCreateItem = () => {
+    const item = buildCreatePayload();
+    if (item.error) return toast.error(item.error);
+    setCreateItems((prev) => [...prev, item]);
+    resetCreateProductFields();
+    toast.success("Product added to list");
+  };
+
+  const preserveCurrentCreateItem = () => {
+    if (!createForm.receivedId && !createForm.productId) return;
+    if (!createForm.quantity || Number(createForm.quantity) <= 0) return;
+
+    const item = buildCreatePayload();
+    if (item.error) return;
+    setCreateItems((prev) => [...prev, item]);
+    toast.success("Previous product added to list");
+  };
+
+  const handleCreateProductSelect = (selected) => {
+    preserveCurrentCreateItem();
+    setCreateForm((p) => ({
+      ...p,
+      productId: String(
+        receivedData.find((item) => String(item.Id) === String(selected?.value))
+          ?.productId || "",
+      ),
+      receivedId: selected?.value || "",
+      variantRows: [createEmptyVariantRow()],
+      quantity: "",
+    }));
+  };
+
+  // create
+  const handleCreate = async (e) => {
+    e.preventDefault();
+
+    let items = createItems.map((item) => item.payload);
+    if (items.length === 0) {
+      const item = buildCreatePayload();
+      if (item.error) return toast.error(item.error);
+      items = [item.payload];
+    }
+
+    try {
+      const payload = items.length === 1 ? items[0] : { items };
       const res = await insertDamageRepaired(payload).unwrap();
       if (res?.success) {
-        toast.success("Created!");
+        toast.success(items.length > 1 ? "Products created!" : "Created!");
         closeAdd();
         refetch?.();
       } else toast.error(res?.message || "Create failed!");
@@ -1263,7 +1374,8 @@ const DamageRepairedTable = () => {
             </div>
           </div>
 
-          <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+          {shouldShowEditVariantOptions && (
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
             <div>
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -1408,7 +1520,8 @@ const DamageRepairedTable = () => {
                 );
               },
             )}
-          </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -1620,19 +1733,7 @@ const DamageRepairedTable = () => {
                     (o) => o.value === String(createForm.receivedId),
                   ) || null
                 }
-                onChange={(selected) =>
-                  setCreateForm((p) => ({
-                    ...p,
-                    productId: String(
-                      receivedData.find(
-                        (item) => String(item.Id) === String(selected?.value),
-                      )?.productId || "",
-                    ),
-                    receivedId: selected?.value || "",
-                    variantRows: [createEmptyVariantRow()],
-                    quantity: "",
-                  }))
-                }
+                onChange={handleCreateProductSelect}
                 placeholder={receivedLoading ? "Loading..." : "Select Product"}
                 isClearable
                 isDisabled={receivedLoading}
@@ -1654,7 +1755,8 @@ const DamageRepairedTable = () => {
             </div>
           </div>
 
-          <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+          {shouldShowCreateVariantOptions && (
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
             <div>
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -1796,7 +1898,8 @@ const DamageRepairedTable = () => {
                 </div>
               );
             })}
-          </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -1904,6 +2007,58 @@ const DamageRepairedTable = () => {
             />
           </div>
 
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Product List
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Add multiple products, quantities and variants before saving
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddCreateItem}
+                className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50"
+              >
+                <Plus size={16} />
+                Add to List
+              </button>
+            </div>
+
+            {createItems.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {createItems.map((item, index) => (
+                  <div
+                    key={`${item.label}-${index}`}
+                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                  >
+                    <div>
+                      <p className="font-semibold text-slate-800">
+                        {item.label}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Qty {item.payload.quantity}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCreateItems((prev) =>
+                          prev.filter((_, itemIndex) => itemIndex !== index),
+                        )
+                      }
+                      className="rounded-lg px-2 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-slate-100">
             <button
               type="button"
@@ -1916,7 +2071,7 @@ const DamageRepairedTable = () => {
               type="submit"
               className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
             >
-              Add Product
+              {createItems.length > 0 ? "Save Products" : "Add Product"}
             </button>
           </div>
         </form>

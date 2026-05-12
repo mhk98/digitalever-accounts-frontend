@@ -72,6 +72,24 @@ const getVariationOptions = (product, key) => {
   }));
 };
 
+const getVariantRowsFromProduct = (product) => {
+  if (!Array.isArray(product?.variations)) return [];
+
+  return product.variations.flatMap((variation) => {
+    const sizes = parseVariationValue(variation?.size);
+    const colors = parseVariationValue(variation?.color);
+
+    if (sizes.length === 0 && colors.length === 0) return [];
+
+    const safeSizes = sizes.length ? sizes : [""];
+    const safeColors = colors.length ? colors : [""];
+
+    return safeSizes.flatMap((size) =>
+      safeColors.map((color) => ({ size, color, quantity: "" })),
+    );
+  });
+};
+
 const createEmptyVariantRow = () => ({
   size: "",
   color: "",
@@ -143,6 +161,29 @@ const getVariantDisplayRows = (record) => {
   return [];
 };
 
+const parsePurchaseRequisitionItems = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string") return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const getPurchaseRequisitionRowItems = (record) => {
+  const items = parsePurchaseRequisitionItems(record?.items);
+  return items.length ? items : [record];
+};
+
+const getPurchaseRequisitionItemsTotalQuantity = (items = []) =>
+  items.reduce((total, item) => total + (Number(item?.quantity) || 0), 0);
+
+const getPurchaseRequisitionItemsTotalAmount = (items = []) =>
+  items.reduce((total, item) => total + (Number(item?.amount) || 0), 0);
+
 const getVariationColorsForSize = (product, size) => {
   if (!size || !Array.isArray(product?.variations)) return [];
 
@@ -203,6 +244,23 @@ const purchaseRequisitionStatusesByRole = {
   inventor: ["Product Received"],
 };
 
+const initialCreateProduct = {
+  warehouseId: "",
+  supplierId: "",
+  bookId: "",
+  paymentMode: "",
+  bankName: "",
+  bankAccount: "",
+  productId: "",
+  variantRows: [createEmptyVariantRow()],
+  quantity: "",
+  amount: "",
+  date: new Date().toISOString().slice(0, 10),
+  note: "",
+  status: "",
+  file: null,
+};
+
 const PurchaseRequisionTable = () => {
   const { language } = useLayout();
   const t = translations[language] || translations.EN;
@@ -238,21 +296,8 @@ const PurchaseRequisionTable = () => {
   const [supplier, setSupplier] = useState("");
 
   // ✅ Add form (INSERT) -> productId (Id)
-  const [createProduct, setCreateProduct] = useState({
-    warehouseId: "",
-    supplierId: "",
-    bookId: "",
-    paymentMode: "",
-    bankName: "",
-    bankAccount: "",
-    productId: "",
-    variantRows: [createEmptyVariantRow()],
-    quantity: "",
-    amount: "",
-    date: new Date().toISOString().slice(0, 10),
-    note: "",
-    status: "",
-  });
+  const [createProduct, setCreateProduct] = useState(initialCreateProduct);
+  const [createProductItems, setCreateProductItems] = useState([]);
 
   const [rows, setRows] = useState([]);
 
@@ -338,27 +383,55 @@ const PurchaseRequisionTable = () => {
   const selectedCreateProductId = createProduct?.productId || undefined;
   const selectedEditProductId = currentProduct?.productId || undefined;
 
-  const { data: selectedCreateProductRes } =
-    useGetSingleReceivedProductByIdQuery(selectedCreateProductId, {
-      skip: !selectedCreateProductId,
+  const {
+    data: selectedCreateProductRes,
+    isFetching: isFetchingCreateProduct,
+  } = useGetSingleReceivedProductByIdQuery(selectedCreateProductId, {
+    skip: !selectedCreateProductId,
+  });
+  const { data: selectedEditProductRes, isFetching: isFetchingEditProduct } =
+    useGetSingleReceivedProductByIdQuery(selectedEditProductId, {
+      skip: !selectedEditProductId,
     });
-  const { data: selectedEditProductRes } = useGetSingleReceivedProductByIdQuery(
-    selectedEditProductId,
-    { skip: !selectedEditProductId },
-  );
 
   const selectedCreateProductData =
     selectedCreateProductRes?.data || selectedCreateProductRes;
   const selectedEditProductData =
     selectedEditProductRes?.data || selectedEditProductRes;
+  const selectedCreateProductDataId = selectedCreateProductData
+    ? String(selectedCreateProductData.Id ?? selectedCreateProductData.id ?? "")
+    : "";
+  const isSelectedCreateProductDataCurrent = Boolean(
+    createProduct.productId &&
+      selectedCreateProductDataId &&
+      selectedCreateProductDataId === String(createProduct.productId),
+  );
+  const selectedCreateProductVariants = useMemo(
+    () =>
+      isSelectedCreateProductDataCurrent
+        ? getVariantRowsFromProduct(selectedCreateProductData)
+        : [],
+    [isSelectedCreateProductDataCurrent, selectedCreateProductData],
+  );
 
   const createSizeOptions = useMemo(
-    () => getVariationOptions(selectedCreateProductData, "size"),
-    [selectedCreateProductData],
+    () =>
+      isSelectedCreateProductDataCurrent
+        ? getVariationOptions(selectedCreateProductData, "size")
+        : [],
+    [isSelectedCreateProductDataCurrent, selectedCreateProductData],
   );
   const createColorOptions = useMemo(
-    () => getVariationOptions(selectedCreateProductData, "color"),
-    [selectedCreateProductData],
+    () =>
+      isSelectedCreateProductDataCurrent
+        ? getVariationOptions(selectedCreateProductData, "color")
+        : [],
+    [isSelectedCreateProductDataCurrent, selectedCreateProductData],
+  );
+  const shouldShowCreateVariantOptions = Boolean(
+    !isFetchingCreateProduct &&
+      isSelectedCreateProductDataCurrent &&
+      selectedCreateProductVariants.length > 0,
   );
   const editSizeOptions = useMemo(
     () => getVariationOptions(selectedEditProductData, "size"),
@@ -367,6 +440,17 @@ const PurchaseRequisionTable = () => {
   const editColorOptions = useMemo(
     () => getVariationOptions(selectedEditProductData, "color"),
     [selectedEditProductData],
+  );
+  const shouldShowEditVariantOptions = useMemo(
+    () =>
+      hasConfiguredVariants(currentProduct?.variantRows) ||
+      (!isFetchingEditProduct &&
+        getVariantRowsFromProduct(selectedEditProductData).length > 0),
+    [
+      currentProduct?.variantRows,
+      isFetchingEditProduct,
+      selectedEditProductData,
+    ],
   );
 
   // ✅ productId -> productName map
@@ -380,6 +464,14 @@ const PurchaseRequisionTable = () => {
   // }, [productsData]);
 
   const productNameMap = useMemo(() => {
+    const m = new Map();
+    (productsData || []).forEach((p) => {
+      m.set(String(p.Id ?? p.id ?? p._id ?? ""), p.name);
+    });
+    return m;
+  }, [productsData]);
+
+  const productIdByNameMap = useMemo(() => {
     const m = new Map();
     (productsData || []).forEach((p) => {
       m.set(String(p.name).trim().toLowerCase(), String(p.Id));
@@ -445,25 +537,16 @@ const PurchaseRequisionTable = () => {
   }, [data, isLoading, isError, error, itemsPerPage]);
 
   // ✅ Modals
-  const handleAddProduct = () => setIsModalOpen1(true);
+  const handleAddProduct = () => {
+    setCreateProduct(initialCreateProduct);
+    setCreateProductItems([]);
+    setIsModalOpen1(true);
+  };
   const handleModalClose = () => setIsModalOpen(false);
   const handleModalClose1 = () => {
     setIsModalOpen1(false);
-    setCreateProduct({
-      warehouseId: "",
-      supplierId: "",
-      bookId: "",
-      paymentMode: "",
-      bankName: "",
-      bankAccount: "",
-      productId: "",
-      variantRows: [createEmptyVariantRow()],
-      quantity: "",
-      amount: "",
-      date: new Date().toISOString().slice(0, 10),
-      note: "",
-      status: "",
-    });
+    setCreateProduct(initialCreateProduct);
+    setCreateProductItems([]);
   };
   const handleModalClose2 = () => setIsModalOpen2(false);
 
@@ -483,6 +566,20 @@ const PurchaseRequisionTable = () => {
       }
     }
   }, [currentProduct?.paymentMode]);
+
+  const currentProductBulkItems = useMemo(
+    () => parsePurchaseRequisitionItems(currentProduct?.items),
+    [currentProduct?.items],
+  );
+  const isEditingBulkPurchaseRequisition = currentProductBulkItems.length > 0;
+  const currentProductBulkTotalQuantity = useMemo(
+    () => getPurchaseRequisitionItemsTotalQuantity(currentProductBulkItems),
+    [currentProductBulkItems],
+  );
+  const currentProductBulkTotalAmount = useMemo(
+    () => getPurchaseRequisitionItemsTotalAmount(currentProductBulkItems),
+    [currentProductBulkItems],
+  );
 
   const updateVariantRow = (mode, index, key, value) => {
     const setter = mode === "edit" ? setCurrentProduct : setCreateProduct;
@@ -556,17 +653,23 @@ const PurchaseRequisionTable = () => {
   // };
 
   const handleEditClick = (rp) => {
-    const pidFromRow = rp.productId ? String(rp.productId) : "";
+    const bulkItems = parsePurchaseRequisitionItems(rp.items);
+    const firstBulkItem = bulkItems[0] || null;
+    const pidFromRow =
+      rp.productId || firstBulkItem?.productId
+        ? String(rp.productId || firstBulkItem?.productId)
+        : "";
     const pidFromName =
-      productNameMap.get(
+      productIdByNameMap.get(
         String(rp.name || "")
           .trim()
           .toLowerCase(),
       ) || "";
-    const variantRows = getInitialVariantRowsFromRecord(rp);
+    const variantRows = getInitialVariantRowsFromRecord(firstBulkItem || rp);
 
     setCurrentProduct({
       ...rp,
+      items: bulkItems,
       bookId: String(rp.bookId ?? rp.book?.Id ?? rp.book?.id ?? ""),
       paymentMode: rp.paymentMode ?? "",
       bankName: rp.bankName ?? "",
@@ -600,17 +703,23 @@ const PurchaseRequisionTable = () => {
   // };
 
   const handleEditClick1 = (rp) => {
-    const pidFromRow = rp.productId ? String(rp.productId) : "";
+    const bulkItems = parsePurchaseRequisitionItems(rp.items);
+    const firstBulkItem = bulkItems[0] || null;
+    const pidFromRow =
+      rp.productId || firstBulkItem?.productId
+        ? String(rp.productId || firstBulkItem?.productId)
+        : "";
     const pidFromName =
-      productNameMap.get(
+      productIdByNameMap.get(
         String(rp.name || "")
           .trim()
           .toLowerCase(),
       ) || "";
-    const variantRows = getInitialVariantRowsFromRecord(rp);
+    const variantRows = getInitialVariantRowsFromRecord(firstBulkItem || rp);
 
     setCurrentProduct({
       ...rp,
+      items: bulkItems,
       bookId: String(rp.bookId ?? rp.book?.Id ?? rp.book?.id ?? ""),
       paymentMode: rp.paymentMode ?? "",
       bankName: rp.bankName ?? "",
@@ -632,11 +741,15 @@ const PurchaseRequisionTable = () => {
 
   const handleUpdateProduct = async () => {
     try {
+      const bulkItems = parsePurchaseRequisitionItems(currentProduct?.items);
       const variantsPayload = getNormalizedVariantsPayload(
         currentProduct?.variantRows,
       );
-      if (hasDuplicateVariantCombination(variantsPayload)) {
+      if (!bulkItems.length && hasDuplicateVariantCombination(variantsPayload)) {
         return toast.error("Duplicate size and color combination found");
+      }
+      if (bulkItems.some((item) => Number(item.quantity) <= 0)) {
+        return toast.error("Please enter quantity for every product");
       }
       if (
         currentProduct?.paymentMode === "Bank" &&
@@ -646,7 +759,14 @@ const PurchaseRequisionTable = () => {
       }
 
       const formData = new FormData();
-      formData.append("productId", Number(currentProduct.productId));
+      if (bulkItems.length > 0) {
+        formData.append("items", JSON.stringify(bulkItems));
+      } else {
+        formData.append("productId", Number(currentProduct.productId));
+        formData.append("quantity", Number(currentProduct.quantity));
+        formData.append("amount", Number(currentProduct.amount) || 0);
+        formData.append("variants", JSON.stringify(variantsPayload));
+      }
       if (Number(currentProduct.bookId))
         formData.append("bookId", Number(currentProduct.bookId));
       formData.append("paymentMode", currentProduct.paymentMode || "");
@@ -662,9 +782,6 @@ const PurchaseRequisionTable = () => {
           ? currentProduct.bankAccount || ""
           : "",
       );
-      formData.append("quantity", Number(currentProduct.quantity));
-      formData.append("amount", Number(currentProduct.amount) || 0);
-      formData.append("variants", JSON.stringify(variantsPayload));
       if (Number(currentProduct.supplierId))
         formData.append("supplierId", Number(currentProduct.supplierId));
       if (Number(currentProduct.warehouseId))
@@ -700,10 +817,11 @@ const PurchaseRequisionTable = () => {
       return toast.error("Note is required!");
 
     try {
+      const bulkItems = parsePurchaseRequisitionItems(currentProduct?.items);
       const variantsPayload = getNormalizedVariantsPayload(
         currentProduct?.variantRows,
       );
-      if (hasDuplicateVariantCombination(variantsPayload)) {
+      if (!bulkItems.length && hasDuplicateVariantCombination(variantsPayload)) {
         return toast.error("Duplicate size and color combination found");
       }
       if (
@@ -714,7 +832,14 @@ const PurchaseRequisionTable = () => {
       }
 
       const formData = new FormData();
-      formData.append("productId", Number(currentProduct.productId));
+      if (bulkItems.length > 0) {
+        formData.append("items", JSON.stringify(bulkItems));
+      } else {
+        formData.append("productId", Number(currentProduct.productId));
+        formData.append("quantity", Number(currentProduct.quantity));
+        formData.append("amount", Number(currentProduct.amount) || 0);
+        formData.append("variants", JSON.stringify(variantsPayload));
+      }
       if (Number(currentProduct.bookId))
         formData.append("bookId", Number(currentProduct.bookId));
       formData.append("paymentMode", currentProduct.paymentMode || "");
@@ -730,9 +855,6 @@ const PurchaseRequisionTable = () => {
           ? currentProduct.bankAccount || ""
           : "",
       );
-      formData.append("quantity", Number(currentProduct.quantity));
-      formData.append("amount", Number(currentProduct.amount) || 0);
-      formData.append("variants", JSON.stringify(variantsPayload));
       formData.append("status", currentProduct.status || "");
       formData.append("note", currentProduct.note || "");
       formData.append("date", currentProduct.date || "");
@@ -762,20 +884,259 @@ const PurchaseRequisionTable = () => {
   // ✅ Insert
   const [insertPurchaseRequisition] = useInsertPurchaseRequisitionMutation();
 
+  const resetCreateProductFields = () => {
+    setCreateProduct((prev) => ({
+      ...prev,
+      productId: "",
+      variantRows: [createEmptyVariantRow()],
+      quantity: "",
+      amount: "",
+    }));
+  };
+
+  useEffect(() => {
+    if (
+      !createProduct.productId ||
+      !selectedCreateProductData ||
+      !isSelectedCreateProductDataCurrent ||
+      shouldShowCreateVariantOptions
+    ) {
+      return;
+    }
+
+    const productId = String(createProduct.productId);
+    const label =
+      productNameMap.get(productId) ||
+      selectedCreateProductData?.name ||
+      `Product #${productId}`;
+
+    setCreateProductItems((prev) => [
+      ...prev,
+      {
+        label,
+        payload: {
+          productId: Number(productId) || "",
+          quantity: 0,
+          amount: 0,
+          variants: [],
+        },
+      },
+    ]);
+    resetCreateProductFields();
+  }, [
+    createProduct.productId,
+    selectedCreateProductData,
+    isSelectedCreateProductDataCurrent,
+    shouldShowCreateVariantOptions,
+    productNameMap,
+  ]);
+
+  const buildCreateProductPayload = () => {
+    if (!createProduct.productId) return { error: "Please select a product" };
+
+    const variantsPayload = getNormalizedVariantsPayload(
+      createProduct.variantRows,
+    );
+    if (hasDuplicateVariantCombination(variantsPayload)) {
+      return { error: "Duplicate size and color combination found" };
+    }
+
+    const totalQuantity =
+      variantsPayload.length > 0
+        ? getVariantRowsTotalQuantity(variantsPayload)
+        : Number(createProduct.quantity) || 0;
+
+    if (totalQuantity <= 0) {
+      return { error: "Please enter a valid quantity" };
+    }
+
+    const productId = String(createProduct.productId);
+    const selectedProduct = productDropdownOptions.find(
+      (option) => option.value === productId,
+    );
+
+    return {
+      label:
+        selectedProduct?.label ||
+        productNameMap.get(productId) ||
+        `Product #${productId}`,
+      payload: {
+        productId: Number(productId) || "",
+        quantity: totalQuantity,
+        amount: Number(createProduct.amount) || 0,
+        variants: variantsPayload,
+      },
+    };
+  };
+
+  const handleAddCreateProductVariants = () => {
+    const item = buildCreateProductPayload();
+    if (item.error) return toast.error(item.error);
+    setCreateProductItems((prev) => [...prev, item]);
+    resetCreateProductFields();
+  };
+
+  const handleCreateProductSelect = (selected) => {
+    if (!selected?.value) return resetCreateProductFields();
+
+    setCreateProduct((prev) => ({
+      ...prev,
+      productId: selected.value,
+      variantRows: [createEmptyVariantRow()],
+      quantity: "",
+      amount: "",
+    }));
+  };
+
+  const updateCreateProductItem = (index, key, value) => {
+    setCreateProductItems((prev) =>
+      prev.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              payload: {
+                ...item.payload,
+                [key]: value,
+              },
+            }
+          : item,
+      ),
+    );
+  };
+
+  const updateCreateProductItemVariantField = (
+    itemIndex,
+    variantIndex,
+    key,
+    value,
+  ) => {
+    setCreateProductItems((prev) =>
+      prev.map((item, currentItemIndex) => {
+        if (currentItemIndex !== itemIndex) return item;
+
+        const nextVariants = (item.payload?.variants || []).map(
+          (variant, currentVariantIndex) =>
+            currentVariantIndex === variantIndex
+              ? {
+                  ...variant,
+                  [key]: key === "quantity" ? Number(value) || 0 : value,
+                }
+              : variant,
+        );
+
+        return {
+          ...item,
+          payload: {
+            ...item.payload,
+            variants: nextVariants,
+            quantity: nextVariants.reduce(
+              (total, variant) => total + (Number(variant.quantity) || 0),
+              0,
+            ),
+          },
+        };
+      }),
+    );
+  };
+
+  const updateCurrentProductBulkItem = (index, key, value) => {
+    setCurrentProduct((prev) => {
+      const nextItems = parsePurchaseRequisitionItems(prev?.items).map(
+        (item, itemIndex) =>
+          itemIndex === index
+            ? {
+                ...item,
+                [key]: value,
+              }
+            : item,
+      );
+
+      return {
+        ...prev,
+        items: nextItems,
+        quantity: String(getPurchaseRequisitionItemsTotalQuantity(nextItems)),
+        amount: String(getPurchaseRequisitionItemsTotalAmount(nextItems)),
+      };
+    });
+  };
+
+  const updateCurrentProductBulkItemVariantField = (
+    itemIndex,
+    variantIndex,
+    key,
+    value,
+  ) => {
+    setCurrentProduct((prev) => {
+      const nextItems = parsePurchaseRequisitionItems(prev?.items).map(
+        (item, currentItemIndex) => {
+          if (currentItemIndex !== itemIndex) return item;
+
+          const nextVariants = (item.variants || []).map(
+            (variant, currentVariantIndex) =>
+              currentVariantIndex === variantIndex
+                ? {
+                    ...variant,
+                    [key]: key === "quantity" ? Number(value) || 0 : value,
+                  }
+                : variant,
+          );
+
+          return {
+            ...item,
+            variants: nextVariants,
+            quantity: nextVariants.reduce(
+              (total, variant) => total + (Number(variant.quantity) || 0),
+              0,
+            ),
+          };
+        },
+      );
+
+      return {
+        ...prev,
+        items: nextItems,
+        quantity: String(getPurchaseRequisitionItemsTotalQuantity(nextItems)),
+        amount: String(getPurchaseRequisitionItemsTotalAmount(nextItems)),
+      };
+    });
+  };
+
+  const createProductItemsTotalQuantity = useMemo(() => {
+    const savedTotal = createProductItems.reduce(
+      (total, item) => total + (Number(item.payload?.quantity) || 0),
+      0,
+    );
+    const currentTotal =
+      createProduct.productId && createProduct.quantity
+        ? Number(createProduct.quantity) || 0
+        : 0;
+
+    return savedTotal + currentTotal;
+  }, [createProductItems, createProduct.productId, createProduct.quantity]);
+
+  const createProductItemsTotalAmount = useMemo(() => {
+    const savedTotal = createProductItems.reduce(
+      (total, item) => total + (Number(item.payload?.amount) || 0),
+      0,
+    );
+    const currentTotal =
+      createProduct.productId && createProduct.amount
+        ? Number(createProduct.amount) || 0
+        : 0;
+
+    return savedTotal + currentTotal;
+  }, [createProductItems, createProduct.productId, createProduct.amount]);
+
+  const appendPurchaseRequisitionPayload = (formData, payload) => {
+    Object.entries(payload).forEach(([key, value]) => {
+      formData.append(key, key === "variants" ? JSON.stringify(value) : value);
+    });
+  };
+
   const handleCreateProduct = async (e) => {
     e.preventDefault();
 
-    if (!createProduct.productId) return toast.error("Please select a product");
-    if (!createProduct.quantity || Number(createProduct.quantity) <= 0)
-      return toast.error("Please enter a valid quantity");
-
     try {
-      const variantsPayload = getNormalizedVariantsPayload(
-        createProduct.variantRows,
-      );
-      if (hasDuplicateVariantCombination(variantsPayload)) {
-        return toast.error("Duplicate size and color combination found");
-      }
       if (
         createProduct.paymentMode === "Bank" &&
         (!createProduct.bankName || !createProduct.bankAccount)
@@ -783,58 +1144,69 @@ const PurchaseRequisionTable = () => {
         return toast.error("Please select bank name and bank account");
       }
 
+      const commonFields = {
+        procurement: `${user?.FirstName || ""} ${user?.LastName || ""}`.trim() || "N/A",
+        bookId: Number(createProduct.bookId) || "",
+        paymentMode: createProduct.paymentMode || "",
+        bankName:
+          createProduct.paymentMode === "Bank"
+            ? createProduct.bankName || ""
+            : "",
+        bankAccount:
+          createProduct.paymentMode === "Bank"
+            ? createProduct.bankAccount || ""
+            : "",
+        supplierId: Number(createProduct.supplierId) || "",
+        warehouseId: Number(createProduct.warehouseId) || "",
+        note: createProduct.note || "",
+        date: createProduct.date,
+        userId,
+      };
+
+      let items = createProductItems.map((item) => ({
+        ...item.payload,
+        ...commonFields,
+      }));
+
+      if (createProduct.productId) {
+        const item = buildCreateProductPayload();
+        if (item.error) return toast.error(item.error);
+        items = [
+          ...items,
+          {
+            ...item.payload,
+            ...commonFields,
+          },
+        ];
+      }
+
+      if (items.length === 0) {
+        return toast.error("Please add at least one product");
+      }
+
+      if (items.some((item) => Number(item.quantity) <= 0)) {
+        return toast.error("Please enter quantity for every product");
+      }
+
       const formData = new FormData();
-      formData.append("productId", Number(createProduct.productId));
-      formData.append(
-        "procurement",
-        `${user.FirstName} ${user.LastName}` || "N/A",
-      );
-      if (Number(createProduct.bookId))
-        formData.append("bookId", Number(createProduct.bookId));
-      formData.append("paymentMode", createProduct.paymentMode || "");
-      formData.append(
-        "bankName",
-        createProduct.paymentMode === "Bank"
-          ? createProduct.bankName || ""
-          : "",
-      );
-      formData.append(
-        "bankAccount",
-        createProduct.paymentMode === "Bank"
-          ? createProduct.bankAccount || ""
-          : "",
-      );
-      formData.append("quantity", Number(createProduct.quantity));
-      formData.append("amount", Number(createProduct.amount) || 0);
-      formData.append("variants", JSON.stringify(variantsPayload));
-      if (Number(createProduct.supplierId))
-        formData.append("supplierId", Number(createProduct.supplierId));
-      if (Number(createProduct.warehouseId))
-        formData.append("warehouseId", Number(createProduct.warehouseId));
-      formData.append("note", createProduct.note || "");
-      formData.append("date", createProduct.date);
-      formData.append("userId", userId);
+      if (items.length === 1) {
+        appendPurchaseRequisitionPayload(formData, items[0]);
+      } else {
+        appendPurchaseRequisitionPayload(formData, commonFields);
+        formData.append("items", JSON.stringify(items));
+      }
       if (createProduct.file) formData.append("file", createProduct.file);
 
       const res = await insertPurchaseRequisition(formData).unwrap();
       if (res?.success) {
-        toast.success("Successfully created received product");
+        toast.success(
+          items.length > 1
+            ? "Successfully created purchase requisitions"
+            : "Successfully created purchase requisition",
+        );
         setIsModalOpen1(false);
-        setCreateProduct({
-          warehouseId: "",
-          supplierId: "",
-          bookId: "",
-          paymentMode: "",
-          bankName: "",
-          bankAccount: "",
-          productId: "",
-          variantRows: [createEmptyVariantRow()],
-          quantity: "",
-          amount: "",
-          date: new Date().toISOString().slice(0, 10),
-          note: "",
-          status: "",
-        });
+        setCreateProduct(initialCreateProduct);
+        setCreateProductItems([]);
         refetch?.();
       } else toast.error(res?.message || "Create failed!");
     } catch (err) {
@@ -1282,7 +1654,14 @@ const PurchaseRequisionTable = () => {
 
           <tbody className="divide-y divide-slate-200 bg-white">
             {rows.map((rp) => {
-              const variantDisplayRows = getVariantDisplayRows(rp);
+              const rowItems = getPurchaseRequisitionRowItems(rp);
+              const rowTotalQuantity =
+                getPurchaseRequisitionItemsTotalQuantity(rowItems);
+              const rowTotalAmount =
+                getPurchaseRequisitionItemsTotalAmount(rowItems);
+              const variantDisplayRows = rowItems.flatMap((item) =>
+                getVariantDisplayRows(item),
+              );
 
               return (
                 <motion.tr
@@ -1308,13 +1687,23 @@ const PurchaseRequisionTable = () => {
                     {rp?.book?.name || "-"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                    {rp.name || resolveProductName(rp)}
+                    {rowItems.length > 1 ? (
+                      <div className="space-y-1">
+                        {rowItems.map((item, index) => (
+                          <div key={`${rp.Id}-item-${index}`}>
+                            {item.name || `Product #${item.productId || "-"}`}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      rp.name || resolveProductName(rp)
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.quantity || 0)}
+                    {Number(rowTotalQuantity || rp.quantity || 0)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.amount || 0).toFixed(2)}
+                    {Number(rowTotalAmount || rp.amount || 0).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 min-w-[240px]">
                     {variantDisplayRows.length > 0 ? (
@@ -1493,11 +1882,151 @@ const PurchaseRequisionTable = () => {
         isOpen={isModalOpen && !!currentProduct}
         onClose={handleModalClose}
         title="Edit Purchase Requisition"
-        maxWidth="max-w-2xl"
+        maxWidth="max-w-4xl"
       >
         <div className="space-y-6">
+          {isEditingBulkPurchaseRequisition && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Product Line Items
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <div className="rounded-xl border border-indigo-100 bg-white px-4 py-2 text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Total Quantity
+                    </p>
+                    <p className="text-lg font-black text-slate-900">
+                      {currentProductBulkTotalQuantity}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-emerald-100 bg-white px-4 py-2 text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Total Amount
+                    </p>
+                    <p className="text-lg font-black text-slate-900">
+                      {Number(currentProductBulkTotalAmount || 0).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                <table className="min-w-[720px] w-full text-sm">
+                  <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th className="px-3 py-3 text-left">Product</th>
+                      <th className="px-3 py-3 text-left">Product Detail</th>
+                      <th className="px-3 py-3 text-left">Variant Detail</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {currentProductBulkItems.map((item, index) => (
+                      <tr key={`edit-bulk-${item.productId || item.name}-${index}`}>
+                        <td className="px-3 py-3 align-top font-semibold text-slate-800">
+                          {item.name || `Product #${item.productId || "-"}`}
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                {item.variants?.length ? "Total Qty" : "Qty"}
+                              </p>
+                              {item.variants?.length ? (
+                                <p className="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-black text-slate-900">
+                                  {Number(item.quantity || 0)}
+                                </p>
+                              ) : (
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={item.quantity ?? ""}
+                                  onChange={(e) =>
+                                    updateCurrentProductBulkItem(
+                                      index,
+                                      "quantity",
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                                />
+                              )}
+                            </div>
+                            <div>
+                              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                Amount
+                              </p>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.amount ?? ""}
+                                onChange={(e) =>
+                                  updateCurrentProductBulkItem(
+                                    index,
+                                    "amount",
+                                    e.target.value,
+                                  )
+                                }
+                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 align-top text-xs text-slate-500">
+                          {item.variants?.length
+                            ? item.variants.map((variant, variantIndex) => (
+                                <div
+                                  key={`${variant.size}-${variant.color}-${variantIndex}`}
+                                  className="mb-2 grid grid-cols-[1fr_90px] items-end gap-2 last:mb-0"
+                                >
+                                  <span className="rounded-lg bg-slate-50 px-2 py-1 font-semibold text-slate-600">
+                                    {variant.size || "-"} /{" "}
+                                    {variant.color || "-"}
+                                  </span>
+                                  <div>
+                                    {variantIndex === 0 && (
+                                      <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                        Qty
+                                      </p>
+                                    )}
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      value={variant.quantity}
+                                      onChange={(e) =>
+                                        updateCurrentProductBulkItemVariantField(
+                                          index,
+                                          variantIndex,
+                                          "quantity",
+                                          e.target.value,
+                                        )
+                                      }
+                                      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                                    />
+                                  </div>
+                                </div>
+                              ))
+                            : "No variants"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
+            <div
+              className={
+                isEditingBulkPurchaseRequisition ? "hidden" : "md:col-span-2"
+              }
+            >
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Product
               </label>
@@ -1524,7 +2053,8 @@ const PurchaseRequisionTable = () => {
               />
             </div>
 
-            <div className="md:col-span-2 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+            {!isEditingBulkPurchaseRequisition && shouldShowEditVariantOptions && (
+              <div className="md:col-span-2 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -1657,7 +2187,8 @@ const PurchaseRequisionTable = () => {
                   );
                 },
               )}
-            </div>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Warehouse
@@ -1830,6 +2361,7 @@ const PurchaseRequisionTable = () => {
                 className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
               />
             </div>
+            {!isEditingBulkPurchaseRequisition && (
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Quantity
@@ -1849,6 +2381,8 @@ const PurchaseRequisionTable = () => {
                 }`}
               />
             </div>
+            )}
+            {!isEditingBulkPurchaseRequisition && (
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Amount
@@ -1865,6 +2399,7 @@ const PurchaseRequisionTable = () => {
                 placeholder="0.00"
               />
             </div>
+            )}
           </div>
 
           {canUpdatePurchaseRequisitionStatus ? (
@@ -1967,7 +2502,10 @@ const PurchaseRequisionTable = () => {
         title="Add Purchase Requisition"
         maxWidth="max-w-2xl"
       >
-        <form onSubmit={handleCreateProduct} className="space-y-6">
+        <form
+          onSubmit={handleCreateProduct}
+          className="space-y-6 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
@@ -1980,14 +2518,7 @@ const PurchaseRequisionTable = () => {
                     (o) => o.value === String(createProduct.productId),
                   ) || null
                 }
-                onChange={(selected) =>
-                  setCreateProduct({
-                    ...createProduct,
-                    productId: selected?.value || "",
-                    variantRows: [createEmptyVariantRow()],
-                    quantity: "",
-                  })
-                }
+                onChange={handleCreateProductSelect}
                 placeholder="Select Product"
                 isClearable
                 className="text-black"
@@ -1996,7 +2527,8 @@ const PurchaseRequisionTable = () => {
               />
             </div>
 
-            <div className="md:col-span-2 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+            {shouldShowCreateVariantOptions && (
+              <div className="md:col-span-2 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -2129,7 +2661,212 @@ const PurchaseRequisionTable = () => {
                   );
                 },
               )}
+                <div className="flex justify-end border-t border-slate-200 pt-3">
+                  <button
+                    type="button"
+                    onClick={handleAddCreateProductVariants}
+                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-100 transition hover:bg-indigo-700 active:scale-95"
+                  >
+                    <Plus size={16} />
+                    Add Variants
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Product Line Items
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    Select a product above to add a new row; then set quantity
+                    and amount here
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <div className="rounded-xl border border-indigo-100 bg-white px-4 py-2 text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Total Quantity
+                    </p>
+                    <p className="text-lg font-black text-slate-900">
+                      {createProductItemsTotalQuantity}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-emerald-100 bg-white px-4 py-2 text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Total Amount
+                    </p>
+                    <p className="text-lg font-black text-slate-900">
+                      {Number(createProductItemsTotalAmount || 0).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                <table className="min-w-[720px] w-full text-sm">
+                  <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th className="px-3 py-3 text-left">Product</th>
+                      <th className="px-3 py-3 text-left">Product Detail</th>
+                      <th className="px-3 py-3 text-left">Variant Detail</th>
+                      <th className="px-3 py-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {createProductItems.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="px-3 py-8 text-center text-sm text-slate-400"
+                        >
+                          No products added
+                        </td>
+                      </tr>
+                    ) : (
+                      createProductItems.map((item, index) => (
+                        <tr key={`${item.label}-${index}`}>
+                          <td className="px-3 py-3 align-top font-semibold text-slate-800">
+                            {item.label}
+                          </td>
+                          <td className="px-3 py-3 align-top">
+                            {item.payload.variants?.length > 0 ? (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Total Quantity
+                                  </p>
+                                  <p className="text-base font-black text-slate-900">
+                                    {item.payload.quantity}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Amount
+                                  </p>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={item.payload.amount}
+                                    onChange={(e) =>
+                                      updateCreateProductItem(
+                                        index,
+                                        "amount",
+                                        e.target.value,
+                                      )
+                                    }
+                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Qty
+                                  </p>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={item.payload.quantity}
+                                    onChange={(e) =>
+                                      updateCreateProductItem(
+                                        index,
+                                        "quantity",
+                                        e.target.value,
+                                      )
+                                    }
+                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                                  />
+                                </div>
+                                <div>
+                                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Amount
+                                  </p>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={item.payload.amount}
+                                    onChange={(e) =>
+                                      updateCreateProductItem(
+                                        index,
+                                        "amount",
+                                        e.target.value,
+                                      )
+                                    }
+                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-3 py-3 align-top text-xs text-slate-500">
+                            {item.payload.variants?.length
+                              ? item.payload.variants.map(
+                                  (variant, variantIndex) => (
+                                    <div
+                                      key={`${variant.size}-${variant.color}-${variantIndex}`}
+                                      className="mb-2 grid grid-cols-[1fr_90px] items-end gap-2 last:mb-0"
+                                    >
+                                      <span className="rounded-lg bg-slate-50 px-2 py-1 font-semibold text-slate-600">
+                                        {variant.size || "-"} /{" "}
+                                        {variant.color || "-"}
+                                      </span>
+                                      <div>
+                                        {variantIndex === 0 && (
+                                          <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                            Qty
+                                          </p>
+                                        )}
+                                        <input
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          value={variant.quantity}
+                                          onChange={(e) =>
+                                            updateCreateProductItemVariantField(
+                                              index,
+                                              variantIndex,
+                                              "quantity",
+                                              e.target.value,
+                                            )
+                                          }
+                                          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                                        />
+                                      </div>
+                                    </div>
+                                  ),
+                                )
+                              : "No variants"}
+                          </td>
+                          <td className="px-3 py-3 text-right align-top">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCreateProductItems((prev) =>
+                                  prev.filter(
+                                    (_, itemIndex) => itemIndex !== index,
+                                  ),
+                                )
+                              }
+                              className="rounded-lg px-2 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50"
+                            >
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Date
@@ -2303,42 +3040,6 @@ const PurchaseRequisionTable = () => {
                 </div>
               </>
             )}
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                Quantity
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={createProduct.quantity}
-                onChange={(e) =>
-                  setCreateProduct((p) => ({ ...p, quantity: e.target.value }))
-                }
-                readOnly={hasConfiguredVariants(createProduct?.variantRows)}
-                className={`w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 outline-none ${
-                  hasConfiguredVariants(createProduct?.variantRows)
-                    ? "bg-slate-50"
-                    : "bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                }`}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                Amount
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={createProduct.amount}
-                onChange={(e) =>
-                  setCreateProduct((p) => ({ ...p, amount: e.target.value }))
-                }
-                className="w-full h-12 border border-slate-200 rounded-2xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                placeholder="0.00"
-              />
-            </div>
           </div>
 
           <div>

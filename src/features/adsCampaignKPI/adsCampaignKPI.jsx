@@ -90,6 +90,30 @@ export const adsCampaignKPIApi = baseApi.injectEndpoints({
       providesTags: [{ type: "AdsCampaignKPI", id: "GRAPH" }],
       refetchOnMountOrArgChange: true,
     }),
+
+    getAdsAccounts: build.query({
+      query: (arg = {}) => {
+        const params = { ...arg };
+        Object.keys(params).forEach((key) => {
+          if (params[key] === undefined || params[key] === null || params[key] === "") {
+            delete params[key];
+          }
+        });
+
+        return { url: "/ads-campaign-kpi/ads-accounts", params };
+      },
+      providesTags: [{ type: "AdsAccount", id: "LIST" }],
+      refetchOnMountOrArgChange: true,
+    }),
+
+    createAdsAccount: build.mutation({
+      query: (data) => ({
+        url: "/ads-campaign-kpi/ads-accounts/create",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: [{ type: "AdsAccount", id: "LIST" }],
+    }),
   }),
   overrideExisting: false,
 });
@@ -101,4 +125,6 @@ export const {
   useGetAllAdsCampaignKPIQuery,
   useGetAdsCampaignKPISummaryQuery,
   useGetAdsCampaignKPIPerformanceGraphQuery,
+  useGetAdsAccountsQuery,
+  useCreateAdsAccountMutation,
 } = adsCampaignKPIApi;

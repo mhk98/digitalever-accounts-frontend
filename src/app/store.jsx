@@ -147,6 +147,7 @@ import { employeeListApi } from "../features/employeeList/employeeList";
 import { profitLossApi } from "../features/profitLoss/profitLoss";
 import { departmentApi } from "../features/department/department";
 import { designationApi } from "../features/designation/designation";
+import { teamApi } from "../features/team/team";
 import { shiftApi } from "../features/shift/shift";
 import { holidayApi } from "../features/holiday/holiday";
 import { attendanceDeviceApi } from "../features/attendanceDevice/attendanceDevice";
@@ -164,6 +165,7 @@ import { logisticWorkReportApi } from "../features/logisticWorkReport/logisticWo
 import { assetsApi } from "../features/assets/assets";
 import { noticeApi } from "../features/notice/notice";
 import { taskApi } from "../features/task/task";
+import { chargeSettingApi } from "../features/chargeSetting/chargeSetting";
 
 // ✅ 1) Collect all apis once
 const apis = [
@@ -208,6 +210,7 @@ const apis = [
   employeeListApi,
   departmentApi,
   designationApi,
+  teamApi,
   shiftApi,
   holidayApi,
   attendanceDeviceApi,
@@ -224,6 +227,7 @@ const apis = [
   logisticWorkReportApi,
   notificationApi,
   noticeApi,
+  chargeSettingApi,
   taskApi,
   salaryApi,
   logoApi,

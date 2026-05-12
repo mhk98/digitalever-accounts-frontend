@@ -633,6 +633,7 @@ const UserManagementTable = () => {
                 <option value="leader">Leader</option>
                 <option value="inventor">Inventor</option>
                 <option value="accountant">Accountant</option>
+                <option value="employee">Employee</option>
                 <option value="staff">Staff</option>
                 <option value="user">User</option>
               </select>

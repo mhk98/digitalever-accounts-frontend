@@ -67,6 +67,24 @@ const getVariationOptions = (product, key) => {
   }));
 };
 
+const getVariantRowsFromProduct = (product) => {
+  if (!Array.isArray(product?.variations)) return [];
+
+  return product.variations.flatMap((variation) => {
+    const sizes = parseVariationValue(variation?.size);
+    const colors = parseVariationValue(variation?.color);
+
+    if (sizes.length === 0 && colors.length === 0) return [];
+
+    const safeSizes = sizes.length ? sizes : [""];
+    const safeColors = colors.length ? colors : [""];
+
+    return safeSizes.flatMap((size) =>
+      safeColors.map((color) => ({ size, color, quantity: "" })),
+    );
+  });
+};
+
 const createEmptyVariantRow = () => ({
   size: "",
   color: "",
@@ -147,6 +165,32 @@ const getVariantDisplayRows = (record) => {
 
   return [];
 };
+
+const parseReturnItems = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string") return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const getReturnRowItems = (record) => {
+  const items = parseReturnItems(record?.items);
+  return items.length ? items : [record];
+};
+
+const getReturnItemsTotalQuantity = (items = []) =>
+  items.reduce((total, item) => total + (Number(item?.quantity) || 0), 0);
+
+const getReturnItemsTotalPurchasePrice = (items = []) =>
+  items.reduce((total, item) => total + (Number(item?.purchase_price) || 0), 0);
+
+const getReturnItemsTotalSalePrice = (items = []) =>
+  items.reduce((total, item) => total + (Number(item?.sale_price) || 0), 0);
 
 const getVariationColorsForSize = (product, size) => {
   if (!size || !Array.isArray(product?.variations)) return [];
@@ -249,6 +293,7 @@ const PurchaseReturnProductTable = () => {
 
   // ✅ UI uses receivedId (ReceivedProduct.Id)
   const [createForm, setCreateForm] = useState(initialCreateProduct);
+  const [createItems, setCreateItems] = useState([]);
 
   const [rows, setRows] = useState([]);
 
@@ -383,13 +428,36 @@ const PurchaseReturnProductTable = () => {
   const resolveProductName = (rp) => {
     if (rp?.name) return rp.name;
 
-    const productId = rp?.productId;
+    const productId = rp?.productId || rp?.receivedId;
     if (!productId) return "N/A";
 
     const match = receivedData.find(
-      (r) => Number(r.productId) === Number(productId),
+      (r) =>
+        Number(r.Id) === Number(productId) ||
+        Number(r.id) === Number(productId) ||
+        Number(r.productId) === Number(productId) ||
+        Number(r.product?.Id) === Number(productId) ||
+        Number(r.product?.id) === Number(productId),
     );
     return match?.name || "N/A";
+  };
+
+  const resolveReturnItemName = (item) => {
+    if (item?.name) return item.name;
+
+    const productId = item?.productId || item?.receivedId;
+    if (!productId) return "N/A";
+
+    const match = receivedData.find(
+      (r) =>
+        Number(r.Id) === Number(productId) ||
+        Number(r.id) === Number(productId) ||
+        Number(r.productId) === Number(productId) ||
+        Number(r.product?.Id) === Number(productId) ||
+        Number(r.product?.id) === Number(productId),
+    );
+
+    return match?.name || `Product #${productId}`;
   };
 
   const productSkuMap = useMemo(() => {
@@ -424,14 +492,16 @@ const PurchaseReturnProductTable = () => {
   const selectedEditProductId =
     currentItem?.productId || currentItem?.receivedId || undefined;
 
-  const { data: selectedCreateProductRes } = useGetSingleProductByIdQuery(
-    selectedCreateProductId,
-    { skip: !selectedCreateProductId },
-  );
-  const { data: selectedEditProductRes } = useGetSingleProductByIdQuery(
-    selectedEditProductId,
-    { skip: !selectedEditProductId },
-  );
+  const {
+    data: selectedCreateProductRes,
+    isFetching: isFetchingCreateProduct,
+  } = useGetSingleProductByIdQuery(selectedCreateProductId, {
+    skip: !selectedCreateProductId,
+  });
+  const { data: selectedEditProductRes, isFetching: isFetchingEditProduct } =
+    useGetSingleProductByIdQuery(selectedEditProductId, {
+      skip: !selectedEditProductId,
+    });
 
   const selectedCreateProductData =
     selectedCreateProductRes?.data || selectedCreateProductRes;
@@ -446,6 +516,12 @@ const PurchaseReturnProductTable = () => {
     () => getVariationOptions(selectedCreateProductData, "color"),
     [selectedCreateProductData],
   );
+  const shouldShowCreateVariantOptions = useMemo(
+    () =>
+      !isFetchingCreateProduct &&
+      getVariantRowsFromProduct(selectedCreateProductData).length > 0,
+    [isFetchingCreateProduct, selectedCreateProductData],
+  );
   const editSizeOptions = useMemo(
     () => getVariationOptions(selectedEditProductData, "size"),
     [selectedEditProductData],
@@ -453,6 +529,22 @@ const PurchaseReturnProductTable = () => {
   const editColorOptions = useMemo(
     () => getVariationOptions(selectedEditProductData, "color"),
     [selectedEditProductData],
+  );
+  const shouldShowEditVariantOptions = useMemo(
+    () =>
+      hasConfiguredVariants(currentItem?.variantRows) ||
+      (!isFetchingEditProduct &&
+        getVariantRowsFromProduct(selectedEditProductData).length > 0),
+    [currentItem?.variantRows, isFetchingEditProduct, selectedEditProductData],
+  );
+  const currentBulkItems = useMemo(
+    () => parseReturnItems(currentItem?.items),
+    [currentItem?.items],
+  );
+  const isEditingBulkReturn = currentBulkItems.length > 0;
+  const currentBulkTotalQuantity = useMemo(
+    () => getReturnItemsTotalQuantity(currentBulkItems),
+    [currentBulkItems],
   );
 
   const updateVariantRow = (mode, index, key, value) => {
@@ -510,23 +602,92 @@ const PurchaseReturnProductTable = () => {
       };
     });
   };
+
+  const updateCurrentBulkItem = (index, key, value) => {
+    setCurrentItem((prev) => {
+      const nextItems = parseReturnItems(prev?.items).map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              [key]: value,
+            }
+          : item,
+      );
+
+      return {
+        ...prev,
+        items: nextItems,
+        quantity: String(getReturnItemsTotalQuantity(nextItems)),
+      };
+    });
+  };
+
+  const updateCurrentBulkItemVariantField = (
+    itemIndex,
+    variantIndex,
+    key,
+    value,
+  ) => {
+    setCurrentItem((prev) => {
+      const nextItems = parseReturnItems(prev?.items).map(
+        (item, currentItemIndex) => {
+          if (currentItemIndex !== itemIndex) return item;
+
+          const nextVariants = (item.variants || []).map(
+            (variant, currentVariantIndex) =>
+              currentVariantIndex === variantIndex
+                ? {
+                    ...variant,
+                    [key]: key === "quantity" ? Number(value) || 0 : value,
+                  }
+                : variant,
+          );
+
+          return {
+            ...item,
+            variants: nextVariants,
+            quantity: nextVariants.reduce(
+              (total, variant) => total + (Number(variant.quantity) || 0),
+              0,
+            ),
+          };
+        },
+      );
+
+      return {
+        ...prev,
+        items: nextItems,
+        quantity: String(getReturnItemsTotalQuantity(nextItems)),
+      };
+    });
+  };
+
   // ✅ add/edit handlers
   const openAdd = () => {
     setCreateForm(initialCreateProduct);
+    setCreateItems([]);
     setIsAddOpen(true);
   };
   const closeAdd = () => {
     setIsAddOpen(false);
     setCreateForm(initialCreateProduct);
+    setCreateItems([]);
   };
 
   const openEdit = (rp) => {
-    const variantRows = getInitialVariantRowsFromRecord(rp);
+    const bulkItems = parseReturnItems(rp.items);
+    const firstBulkItem = bulkItems[0] || null;
+    const variantRows = getInitialVariantRowsFromRecord(firstBulkItem || rp);
 
     setCurrentItem({
       ...rp,
-      productId: String(rp.productId ?? rp.receivedId ?? ""),
-      receivedId: String(rp.receivedId ?? rp.productId ?? ""),
+      items: bulkItems,
+      productId: String(
+        firstBulkItem?.productId ?? rp.productId ?? rp.receivedId ?? "",
+      ),
+      receivedId: String(
+        firstBulkItem?.receivedId ?? rp.receivedId ?? rp.productId ?? "",
+      ),
       note: rp.note ?? "",
       status: rp.status ?? "",
       date: rp.date ?? "",
@@ -545,12 +706,19 @@ const PurchaseReturnProductTable = () => {
   };
 
   const openEdit1 = (rp) => {
-    const variantRows = getInitialVariantRowsFromRecord(rp);
+    const bulkItems = parseReturnItems(rp.items);
+    const firstBulkItem = bulkItems[0] || null;
+    const variantRows = getInitialVariantRowsFromRecord(firstBulkItem || rp);
 
     setCurrentItem({
       ...rp,
-      productId: String(rp.productId ?? rp.receivedId ?? ""),
-      receivedId: String(rp.receivedId ?? rp.productId ?? ""),
+      items: bulkItems,
+      productId: String(
+        firstBulkItem?.productId ?? rp.productId ?? rp.receivedId ?? "",
+      ),
+      receivedId: String(
+        firstBulkItem?.receivedId ?? rp.receivedId ?? rp.productId ?? "",
+      ),
       note: rp.note ?? "",
       status: rp.status ?? "",
       userId,
@@ -572,24 +740,26 @@ const PurchaseReturnProductTable = () => {
   const [updatePurchaseReturn] = useUpdatePurchaseReturnProductMutation();
   const [deletePurchaseReturn] = useDeletePurchaseReturnProductMutation();
 
-  // ✅ create (send receivedId)
-  const handleCreate = async (e) => {
-    e.preventDefault();
-
+  const buildCreatePayload = () => {
     if (!createForm.productId && !createForm.receivedId)
-      return toast.error("Please select a product");
+      return { error: "Please select a product" };
     if (!createForm.quantity || Number(createForm.quantity) <= 0)
-      return toast.error("Please enter valid quantity");
+      return { error: "Please enter valid quantity" };
 
     const variantsPayload = getNormalizedVariantsPayload(
       createForm.variantRows,
     );
     if (hasDuplicateVariantCombination(variantsPayload)) {
-      return toast.error("Duplicate size and color combination found");
+      return { error: "Duplicate size and color combination found" };
     }
 
-    try {
-      const payload = {
+    const productId = String(createForm.receivedId || createForm.productId);
+    const selectedProduct = receivedDropdownOptions.find(
+      (option) => option.value === productId,
+    );
+
+    return {
+      payload: {
         receivedId: Number(createForm.receivedId || createForm.productId),
         productId: Number(createForm.productId || createForm.receivedId),
         supplierId: Number(createForm.supplierId),
@@ -598,11 +768,185 @@ const PurchaseReturnProductTable = () => {
         variants: variantsPayload,
         note: createForm.note,
         date: createForm.date,
-      };
+      },
+      label: selectedProduct?.label || `Product #${productId}`,
+    };
+  };
 
+  const buildEmptyCreateItem = () => {
+    const productId = String(createForm.receivedId || createForm.productId);
+    const selectedProduct = receivedDropdownOptions.find(
+      (option) => option.value === productId,
+    );
+
+    return {
+      payload: {
+        receivedId: Number(productId),
+        productId: Number(productId),
+        quantity: 0,
+        variants: [],
+      },
+      label: selectedProduct?.label || `Product #${productId}`,
+    };
+  };
+
+  const resetCreateProductFields = () => {
+    setCreateForm((prev) => ({
+      ...prev,
+      receivedId: "",
+      productId: "",
+      variantRows: [createEmptyVariantRow()],
+      quantity: "",
+    }));
+  };
+
+  const handleAddCreateItem = () => {
+    const item = buildCreatePayload();
+    if (item.error) return toast.error(item.error);
+    setCreateItems((prev) => [...prev, item]);
+    resetCreateProductFields();
+    toast.success("Product added to list");
+  };
+
+  const updateCreateItem = (index, key, value) => {
+    setCreateItems((prev) =>
+      prev.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              payload: {
+                ...item.payload,
+                [key]: value,
+              },
+            }
+          : item,
+      ),
+    );
+  };
+
+  const updateCreateItemVariantField = (
+    itemIndex,
+    variantIndex,
+    key,
+    value,
+  ) => {
+    setCreateItems((prev) =>
+      prev.map((item, currentItemIndex) => {
+        if (currentItemIndex !== itemIndex) return item;
+
+        const nextVariants = (item.payload?.variants || []).map(
+          (variant, currentVariantIndex) =>
+            currentVariantIndex === variantIndex
+              ? {
+                  ...variant,
+                  [key]: key === "quantity" ? Number(value) || 0 : value,
+                }
+              : variant,
+        );
+
+        return {
+          ...item,
+          payload: {
+            ...item.payload,
+            variants: nextVariants,
+            quantity: nextVariants.reduce(
+              (total, variant) => total + (Number(variant.quantity) || 0),
+              0,
+            ),
+          },
+        };
+      }),
+    );
+  };
+
+  const preserveCurrentCreateItem = () => {
+    if (!createForm.receivedId && !createForm.productId) return;
+    if (!createForm.quantity || Number(createForm.quantity) <= 0) return;
+
+    const item = buildCreatePayload();
+    if (item.error) return;
+    setCreateItems((prev) => [...prev, item]);
+    toast.success("Previous product added to list");
+  };
+
+  const handleCreateProductSelect = (selected) => {
+    preserveCurrentCreateItem();
+    setCreateForm((prev) => ({
+      ...prev,
+      productId: selected?.value || "",
+      receivedId: selected?.value || "",
+      variantRows: [createEmptyVariantRow()],
+      quantity: "",
+    }));
+  };
+
+  useEffect(() => {
+    if (!createForm.receivedId || isFetchingCreateProduct) return;
+    if (!selectedCreateProductData) return;
+    if (shouldShowCreateVariantOptions) return;
+
+    const item = buildEmptyCreateItem();
+    setCreateItems((prev) => [...prev, item]);
+    resetCreateProductFields();
+  }, [
+    createForm.receivedId,
+    isFetchingCreateProduct,
+    selectedCreateProductData,
+    shouldShowCreateVariantOptions,
+  ]);
+
+  const createItemsTotalQuantity = useMemo(
+    () =>
+      createItems.reduce(
+        (total, item) => total + (Number(item.payload?.quantity) || 0),
+        0,
+      ),
+    [createItems],
+  );
+
+  // ✅ create (send receivedId)
+  const handleCreate = async (e) => {
+    e.preventDefault();
+
+    const commonFields = {
+      supplierId: Number(createForm.supplierId) || "",
+      warehouseId: Number(createForm.warehouseId) || "",
+      note: createForm.note || "",
+      date: createForm.date || "",
+      userId,
+    };
+
+    let items = createItems.map((item) => ({
+      ...item.payload,
+      ...commonFields,
+    }));
+    if (createForm.receivedId || createForm.productId) {
+      const item = buildCreatePayload();
+      if (item.error) return toast.error(item.error);
+      items = [
+        ...items,
+        {
+          ...item.payload,
+          ...commonFields,
+        },
+      ];
+    }
+
+    if (items.length === 0) {
+      return toast.error("Please add at least one product");
+    }
+    if (items.some((item) => Number(item.quantity) <= 0)) {
+      return toast.error("Please enter quantity for every product");
+    }
+
+    try {
+      const payload =
+        items.length === 1 ? items[0] : { ...commonFields, items };
       const res = await insertPurchaseReturn(payload).unwrap();
       if (res?.success) {
-        toast.success("Successfully created!");
+        toast.success(
+          items.length > 1 ? "Products created!" : "Successfully created!",
+        );
         closeAdd();
         refetch?.();
       } else toast.error(res?.message || "Create failed!");
@@ -614,32 +958,57 @@ const PurchaseReturnProductTable = () => {
   // ✅ update
   const handleUpdate = async () => {
     if (!currentItem?.Id) return toast.error("Invalid item");
-    if (!currentItem?.receivedId && !currentItem?.productId)
+    const bulkItems = parseReturnItems(currentItem?.items);
+    if (
+      !bulkItems.length &&
+      !currentItem?.receivedId &&
+      !currentItem?.productId
+    )
       return toast.error("Please select a product");
-    if (!currentItem.quantity || Number(currentItem.quantity) <= 0)
+    if (
+      bulkItems.length
+        ? bulkItems.some((item) => Number(item.quantity) <= 0)
+        : !currentItem.quantity || Number(currentItem.quantity) <= 0
+    )
       return toast.error("Please enter valid quantity");
 
     const variantsPayload = getNormalizedVariantsPayload(
       currentItem?.variantRows,
     );
-    if (hasDuplicateVariantCombination(variantsPayload)) {
+    if (!bulkItems.length && hasDuplicateVariantCombination(variantsPayload)) {
       return toast.error("Duplicate size and color combination found");
     }
 
     try {
-      const payload = {
-        note: currentItem.note,
-        status: currentItem.status,
-        date: currentItem.date,
-        quantity: Number(currentItem.quantity),
-        variants: variantsPayload,
-        receivedId: Number(currentItem.receivedId || currentItem.productId),
-        productId: Number(currentItem.productId || currentItem.receivedId),
-        supplierId: Number(currentItem.supplierId),
-        warehouseId: Number(currentItem.warehouseId),
-        userId: userId,
-        actorRole: role,
-      };
+      const payload =
+        bulkItems.length > 0
+          ? {
+              items: bulkItems,
+              note: currentItem.note,
+              status: currentItem.status,
+              date: currentItem.date,
+              supplierId: Number(currentItem.supplierId),
+              warehouseId: Number(currentItem.warehouseId),
+              userId,
+              actorRole: role,
+            }
+          : {
+              note: currentItem.note,
+              status: currentItem.status,
+              date: currentItem.date,
+              quantity: Number(currentItem.quantity),
+              variants: variantsPayload,
+              receivedId: Number(
+                currentItem.receivedId || currentItem.productId,
+              ),
+              productId: Number(
+                currentItem.productId || currentItem.receivedId,
+              ),
+              supplierId: Number(currentItem.supplierId),
+              warehouseId: Number(currentItem.warehouseId),
+              userId: userId,
+              actorRole: role,
+            };
 
       const res = await updatePurchaseReturn({
         id: currentItem.Id,
@@ -659,19 +1028,39 @@ const PurchaseReturnProductTable = () => {
 
   const handleUpdate1 = async () => {
     if (!currentItem?.Id) return toast.error("Invalid item");
-    if (!currentItem?.receivedId && !currentItem?.productId)
+    const bulkItems = parseReturnItems(currentItem?.items);
+    if (
+      !bulkItems.length &&
+      !currentItem?.receivedId &&
+      !currentItem?.productId
+    )
       return toast.error("Please select a product");
 
     try {
-      const payload = {
-        note: currentItem.note,
-        status: currentItem.status,
-        quantity: Number(currentItem.quantity || 0),
-        receivedId: Number(currentItem.receivedId || currentItem.productId),
-        productId: Number(currentItem.productId || currentItem.receivedId),
-        userId: userId,
-        actorRole: role,
-      };
+      const payload =
+        bulkItems.length > 0
+          ? {
+              items: bulkItems,
+              note: currentItem.note,
+              status: currentItem.status,
+              supplierId: Number(currentItem.supplierId),
+              warehouseId: Number(currentItem.warehouseId),
+              userId,
+              actorRole: role,
+            }
+          : {
+              note: currentItem.note,
+              status: currentItem.status,
+              quantity: Number(currentItem.quantity || 0),
+              receivedId: Number(
+                currentItem.receivedId || currentItem.productId,
+              ),
+              productId: Number(
+                currentItem.productId || currentItem.receivedId,
+              ),
+              userId: userId,
+              actorRole: role,
+            };
 
       const res = await updatePurchaseReturn({
         id: currentItem.Id,
@@ -691,7 +1080,12 @@ const PurchaseReturnProductTable = () => {
 
   // delete
   const handleDelete = async (id) => {
-    if (!await requestDeleteConfirmation({ message: "Do you want to delete this item?" })) return;
+    if (
+      !(await requestDeleteConfirmation({
+        message: "Do you want to delete this item?",
+      }))
+    )
+      return;
 
     try {
       const res = await deletePurchaseReturn(id).unwrap();
@@ -941,7 +1335,17 @@ const PurchaseReturnProductTable = () => {
 
           <tbody className="divide-y divide-slate-200 bg-white">
             {rows.map((rp) => {
-              const variantDisplayRows = getVariantDisplayRows(rp);
+              const rowItems = getReturnRowItems(rp);
+              const rowTotalQuantity = getReturnItemsTotalQuantity(rowItems);
+              const rowTotalPurchasePrice =
+                getReturnItemsTotalPurchasePrice(rowItems);
+              const rowTotalSalePrice = getReturnItemsTotalSalePrice(rowItems);
+              const variantDisplayRows = rowItems.flatMap((item) =>
+                getVariantDisplayRows(item),
+              );
+              const noVariantItems = rowItems.filter(
+                (item) => getVariantDisplayRows(item).length === 0,
+              );
               const fallbackSku =
                 productSkuMap.get(
                   String(
@@ -965,7 +1369,17 @@ const PurchaseReturnProductTable = () => {
                     {rp.date}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                    {resolveProductName(rp)}
+                    {rowItems.length > 1 ? (
+                      <div className="space-y-1">
+                        {rowItems.map((item, index) => (
+                          <div key={`${rp.Id}-item-${index}`}>
+                            {resolveReturnItemName(item)}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      resolveProductName(rp)
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp?.supplier?.name || "-"}
@@ -974,11 +1388,31 @@ const PurchaseReturnProductTable = () => {
                     {rp?.warehouse?.name || "-"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.quantity || 0).toFixed(2)}
+                    {Number(rowTotalQuantity || rp.quantity || 0).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 min-w-[260px]">
-                    {variantDisplayRows.length > 0 ? (
+                    {variantDisplayRows.length > 0 ||
+                    noVariantItems.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
+                        {noVariantItems.map((item, index) => (
+                          <div
+                            key={`${rp.Id}-no-variant-${index}`}
+                            className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2 shadow-sm min-w-[118px]"
+                          >
+                            <div className="text-[11px] font-bold text-slate-700">
+                              {resolveReturnItemName(item)}
+                            </div>
+                            <div className="mt-2 text-[11px] font-medium text-slate-500">
+                              Qty{" "}
+                              <span className="text-slate-900 font-bold">
+                                {Number(item.quantity || 0).toFixed(0)}
+                              </span>
+                            </div>
+                            <div className="mt-2 text-[10px] font-semibold text-slate-400">
+                              No variants
+                            </div>
+                          </div>
+                        ))}
                         {variantDisplayRows.map((variant, index) => (
                           <div
                             key={`${rp.Id}-variant-${index}`}
@@ -1014,10 +1448,12 @@ const PurchaseReturnProductTable = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.purchase_price || 0).toFixed(2)}
+                    {Number(
+                      rowTotalPurchasePrice || rp.purchase_price || 0,
+                    ).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.sale_price || 0).toFixed(2)}
+                    {Number(rowTotalSalePrice || rp.sale_price || 0).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     <span
@@ -1170,7 +1606,12 @@ const PurchaseReturnProductTable = () => {
       </div>
 
       {/* Edit Modal */}
-      <Modal isOpen={isEditOpen && !!currentItem} onClose={closeEdit} title="Edit Product" maxWidth="max-w-4xl">
+      <Modal
+        isOpen={isEditOpen && !!currentItem}
+        onClose={closeEdit}
+        title="Edit Product"
+        maxWidth="max-w-4xl"
+      >
         {currentItem && (
           <>
             {/* <div className="mt-4">
@@ -1196,7 +1637,109 @@ const PurchaseReturnProductTable = () => {
               />
             </div> */}
 
-            <div>
+            {isEditingBulkReturn && (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Product List
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-indigo-100 bg-white px-4 py-2 text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Total Quantity
+                    </p>
+                    <p className="text-lg font-black text-slate-900">
+                      {currentBulkTotalQuantity}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                  <table className="min-w-[680px] w-full text-sm">
+                    <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                      <tr>
+                        <th className="px-3 py-3 text-left">Product</th>
+                        <th className="px-3 py-3 text-left">Quantity</th>
+                        <th className="px-3 py-3 text-left">Variant Detail</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {currentBulkItems.map((item, index) => (
+                        <tr
+                          key={`edit-return-${item.productId || item.name}-${index}`}
+                        >
+                          <td className="px-3 py-3 align-top font-semibold text-slate-800">
+                            {item.name || `Product #${item.productId || "-"}`}
+                          </td>
+                          <td className="px-3 py-3 align-top">
+                            {item.variants?.length ? (
+                              <p className="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-black text-slate-900">
+                                {Number(item.quantity || 0)}
+                              </p>
+                            ) : (
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.quantity ?? ""}
+                                onChange={(e) =>
+                                  updateCurrentBulkItem(
+                                    index,
+                                    "quantity",
+                                    e.target.value,
+                                  )
+                                }
+                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                              />
+                            )}
+                          </td>
+                          <td className="px-3 py-3 align-top text-xs text-slate-500">
+                            {item.variants?.length
+                              ? item.variants.map((variant, variantIndex) => (
+                                  <div
+                                    key={`${variant.size}-${variant.color}-${variantIndex}`}
+                                    className="mb-2 grid grid-cols-[1fr_90px] items-end gap-2 last:mb-0"
+                                  >
+                                    <span className="rounded-lg bg-slate-50 px-2 py-1 font-semibold text-slate-600">
+                                      {variant.size || "-"} /{" "}
+                                      {variant.color || "-"}
+                                    </span>
+                                    <div>
+                                      {variantIndex === 0 && (
+                                        <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                          Qty
+                                        </p>
+                                      )}
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={variant.quantity}
+                                        onChange={(e) =>
+                                          updateCurrentBulkItemVariantField(
+                                            index,
+                                            variantIndex,
+                                            "quantity",
+                                            e.target.value,
+                                          )
+                                        }
+                                        className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                                      />
+                                    </div>
+                                  </div>
+                                ))
+                              : "No variants"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className={isEditingBulkReturn ? "hidden" : ""}>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
                 {t.select_product || "Select Product"}
               </label>
@@ -1224,142 +1767,144 @@ const PurchaseReturnProductTable = () => {
               />
             </div>
 
-            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
-              <div>
+            {!isEditingBulkReturn && shouldShowEditVariantOptions && (
+              <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
                 <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Product Variants
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    Add size, color and quantity combinations
-                  </p>
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Product Variants
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      Add size, color and quantity combinations
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
-                <button
-                  type="button"
-                  onClick={() => addVariantRow("edit")}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                  disabled={!currentItem?.receivedId}
-                >
-                  <Plus size={14} />
-                  Add Variant
-                </button>
-              </div>
+                <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
+                  <button
+                    type="button"
+                    onClick={() => addVariantRow("edit")}
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    disabled={!currentItem?.receivedId}
+                  >
+                    <Plus size={14} />
+                    Add Variant
+                  </button>
+                </div>
 
-              {normalizeVariantRows(currentItem?.variantRows).map(
-                (row, index) => {
-                  const colorOptions = row.size
-                    ? getVariationColorsForSize(
-                        selectedEditProductData,
-                        row.size,
-                      )
-                    : editColorOptions;
+                {normalizeVariantRows(currentItem?.variantRows).map(
+                  (row, index) => {
+                    const colorOptions = row.size
+                      ? getVariationColorsForSize(
+                          selectedEditProductData,
+                          row.size,
+                        )
+                      : editColorOptions;
 
-                  return (
-                    <div
-                      key={`edit-variant-${index}`}
-                      className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
-                    >
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                          Size / Code
-                        </label>
-                        <Select
-                          options={editSizeOptions}
-                          value={
-                            editSizeOptions.find(
-                              (option) => option.value === row.size,
-                            ) || null
-                          }
-                          onChange={(selected) =>
-                            updateVariantRow(
-                              "edit",
-                              index,
-                              "size",
-                              selected?.value || "",
-                            )
-                          }
-                          placeholder="Select size..."
-                          isClearable
-                          styles={selectStyles}
-                          className="text-sm font-medium"
-                          isDisabled={
-                            !currentItem?.receivedId ||
-                            editSizeOptions.length === 0
-                          }
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                          Color
-                        </label>
-                        <Select
-                          options={colorOptions}
-                          value={
-                            colorOptions.find(
-                              (option) => option.value === row.color,
-                            ) || null
-                          }
-                          onChange={(selected) =>
-                            updateVariantRow(
-                              "edit",
-                              index,
-                              "color",
-                              selected?.value || "",
-                            )
-                          }
-                          placeholder="Select color..."
-                          isClearable
-                          styles={selectStyles}
-                          className="text-sm font-medium"
-                          isDisabled={!row.size || colorOptions.length === 0}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                          Quantity
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={row.quantity}
-                          onChange={(e) =>
-                            updateVariantRow(
-                              "edit",
-                              index,
-                              "quantity",
-                              e.target.value,
-                            )
-                          }
-                          disabled={
-                            !currentItem?.receivedId ||
-                            editSizeOptions.length === 0
-                          }
-                          className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
-                          placeholder="0"
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => removeVariantRow("edit", index)}
-                        className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
-                        disabled={
-                          normalizeVariantRows(currentItem?.variantRows)
-                            .length === 1
-                        }
+                    return (
+                      <div
+                        key={`edit-variant-${index}`}
+                        className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
                       >
-                        <X size={16} className="mx-auto" />
-                      </button>
-                    </div>
-                  );
-                },
-              )}
-            </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                            Size / Code
+                          </label>
+                          <Select
+                            options={editSizeOptions}
+                            value={
+                              editSizeOptions.find(
+                                (option) => option.value === row.size,
+                              ) || null
+                            }
+                            onChange={(selected) =>
+                              updateVariantRow(
+                                "edit",
+                                index,
+                                "size",
+                                selected?.value || "",
+                              )
+                            }
+                            placeholder="Select size..."
+                            isClearable
+                            styles={selectStyles}
+                            className="text-sm font-medium"
+                            isDisabled={
+                              !currentItem?.receivedId ||
+                              editSizeOptions.length === 0
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                            Color
+                          </label>
+                          <Select
+                            options={colorOptions}
+                            value={
+                              colorOptions.find(
+                                (option) => option.value === row.color,
+                              ) || null
+                            }
+                            onChange={(selected) =>
+                              updateVariantRow(
+                                "edit",
+                                index,
+                                "color",
+                                selected?.value || "",
+                              )
+                            }
+                            placeholder="Select color..."
+                            isClearable
+                            styles={selectStyles}
+                            className="text-sm font-medium"
+                            isDisabled={!row.size || colorOptions.length === 0}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                            Quantity
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={row.quantity}
+                            onChange={(e) =>
+                              updateVariantRow(
+                                "edit",
+                                index,
+                                "quantity",
+                                e.target.value,
+                              )
+                            }
+                            disabled={
+                              !currentItem?.receivedId ||
+                              editSizeOptions.length === 0
+                            }
+                            className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => removeVariantRow("edit", index)}
+                          className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
+                          disabled={
+                            normalizeVariantRows(currentItem?.variantRows)
+                              .length === 1
+                          }
+                        >
+                          <X size={16} className="mx-auto" />
+                        </button>
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+            )}
 
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Date</label>
@@ -1375,9 +1920,7 @@ const PurchaseReturnProductTable = () => {
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm text-slate-700">
-                Warehouse
-              </label>
+              <label className="block text-sm text-slate-700">Warehouse</label>
               <Select
                 options={warehouseOptions}
                 value={
@@ -1430,34 +1973,34 @@ const PurchaseReturnProductTable = () => {
               />
             </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Quantity</label>
-              <input
-                type="number"
-                step="0.01"
-                value={currentItem.quantity ?? ""}
-                onChange={(e) =>
-                  setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
-                }
-                readOnly={hasConfiguredVariants(currentItem?.variantRows)}
-                className={`h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none ${
-                  hasConfiguredVariants(currentItem?.variantRows)
-                    ? "bg-slate-50"
-                    : "bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-                }`}
-              />
-            </div>
+            {!isEditingBulkReturn && (
+              <div className="mt-4">
+                <label className="block text-sm text-slate-700">Quantity</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={currentItem.quantity ?? ""}
+                  onChange={(e) =>
+                    setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
+                  }
+                  readOnly={hasConfiguredVariants(currentItem?.variantRows)}
+                  className={`h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 outline-none ${
+                    hasConfiguredVariants(currentItem?.variantRows)
+                      ? "bg-slate-50"
+                      : "bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  }`}
+                />
+              </div>
+            )}
 
             {role === "superAdmin" || role === "admin" ? (
               <div className="mt-4">
                 <label className="block text-sm text-slate-700">Status</label>
                 <Select
-                  options={["Active", "Approved", "Pending"].map(
-                    (status) => ({
-                      value: status,
-                      label: status,
-                    }),
-                  )}
+                  options={["Active", "Approved", "Pending"].map((status) => ({
+                    value: status,
+                    label: status,
+                  }))}
                   value={
                     currentItem?.status
                       ? {
@@ -1512,7 +2055,12 @@ const PurchaseReturnProductTable = () => {
       </Modal>
 
       {/* Note / Delete Request Modal */}
-      <Modal isOpen={isEditOpen1 && !!currentItem} onClose={closeEdit1} title="Note" maxWidth="max-w-lg">
+      <Modal
+        isOpen={isEditOpen1 && !!currentItem}
+        onClose={closeEdit1}
+        title="Note"
+        maxWidth="max-w-lg"
+      >
         {currentItem && (
           <>
             <div className="mt-4">
@@ -1568,15 +2116,7 @@ const PurchaseReturnProductTable = () => {
                   (o) => o.value === String(createForm.receivedId),
                 ) || null
               }
-              onChange={(selected) =>
-                setCreateForm((prev) => ({
-                  ...prev,
-                  productId: selected?.value || "",
-                  receivedId: selected?.value || "",
-                  variantRows: [createEmptyVariantRow()],
-                  quantity: "",
-                }))
-              }
+              onChange={handleCreateProductSelect}
               placeholder={t.search_product || "Search product..."}
               isClearable
               styles={selectStyles}
@@ -1585,136 +2125,284 @@ const PurchaseReturnProductTable = () => {
             />
           </div>
 
-          <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
-            <div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Product Variants
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Product Line Items
                 </p>
                 <p className="text-[11px] text-slate-400">
-                  Add size, color and quantity combinations
+                  Select products above, then set return quantity here
+                </p>
+              </div>
+              <div className="rounded-xl border border-indigo-100 bg-white px-4 py-2 text-right">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Total Quantity
+                </p>
+                <p className="text-lg font-black text-slate-900">
+                  {createItemsTotalQuantity}
                 </p>
               </div>
             </div>
-            <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
-              <button
-                type="button"
-                onClick={() => addVariantRow("create")}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                disabled={!createForm?.receivedId}
-              >
-                <Plus size={14} />
-                Add Variant
-              </button>
+
+            <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+              <table className="min-w-[680px] w-full text-sm">
+                <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th className="px-3 py-3 text-left">Product</th>
+                    <th className="px-3 py-3 text-left">Quantity</th>
+                    <th className="px-3 py-3 text-left">Variant Detail</th>
+                    <th className="px-3 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {createItems.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="px-3 py-8 text-center text-sm text-slate-400"
+                      >
+                        No products added
+                      </td>
+                    </tr>
+                  ) : (
+                    createItems.map((item, index) => (
+                      <tr key={`${item.label}-${index}`}>
+                        <td className="px-3 py-3 align-top font-semibold text-slate-800">
+                          {item.label}
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          {item.payload.variants?.length ? (
+                            <p className="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-black text-slate-900">
+                              {Number(item.payload.quantity || 0)}
+                            </p>
+                          ) : (
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={item.payload.quantity}
+                              onChange={(e) =>
+                                updateCreateItem(
+                                  index,
+                                  "quantity",
+                                  e.target.value,
+                                )
+                              }
+                              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                            />
+                          )}
+                        </td>
+                        <td className="px-3 py-3 align-top text-xs text-slate-500">
+                          {item.payload.variants?.length
+                            ? item.payload.variants.map(
+                                (variant, variantIndex) => (
+                                  <div
+                                    key={`${variant.size}-${variant.color}-${variantIndex}`}
+                                    className="mb-2 grid grid-cols-[1fr_90px] items-end gap-2 last:mb-0"
+                                  >
+                                    <span className="rounded-lg bg-slate-50 px-2 py-1 font-semibold text-slate-600">
+                                      {variant.size || "-"} /{" "}
+                                      {variant.color || "-"}
+                                    </span>
+                                    <div>
+                                      {variantIndex === 0 && (
+                                        <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                          Qty
+                                        </p>
+                                      )}
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={variant.quantity}
+                                        onChange={(e) =>
+                                          updateCreateItemVariantField(
+                                            index,
+                                            variantIndex,
+                                            "quantity",
+                                            e.target.value,
+                                          )
+                                        }
+                                        className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                                      />
+                                    </div>
+                                  </div>
+                                ),
+                              )
+                            : "No variants"}
+                        </td>
+                        <td className="px-3 py-3 text-right align-top">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCreateItems((prev) =>
+                                prev.filter(
+                                  (_, itemIndex) => itemIndex !== index,
+                                ),
+                              )
+                            }
+                            className="rounded-lg px-2 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-
-            {normalizeVariantRows(createForm?.variantRows).map((row, index) => {
-              const colorOptions = row.size
-                ? getVariationColorsForSize(selectedCreateProductData, row.size)
-                : createColorOptions;
-
-              return (
-                <div
-                  key={`create-variant-${index}`}
-                  className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end"
-                >
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                      Size / Code
-                    </label>
-                    <Select
-                      options={createSizeOptions}
-                      value={
-                        createSizeOptions.find(
-                          (option) => option.value === row.size,
-                        ) || null
-                      }
-                      onChange={(selected) =>
-                        updateVariantRow(
-                          "create",
-                          index,
-                          "size",
-                          selected?.value || "",
-                        )
-                      }
-                      placeholder="Select size..."
-                      isClearable
-                      styles={selectStyles}
-                      className="text-sm text-black font-medium"
-                      isDisabled={
-                        !createForm?.receivedId ||
-                        createSizeOptions.length === 0
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                      Color
-                    </label>
-                    <Select
-                      options={colorOptions}
-                      value={
-                        colorOptions.find(
-                          (option) => option.value === row.color,
-                        ) || null
-                      }
-                      onChange={(selected) =>
-                        updateVariantRow(
-                          "create",
-                          index,
-                          "color",
-                          selected?.value || "",
-                        )
-                      }
-                      placeholder="Select color..."
-                      isClearable
-                      styles={selectStyles}
-                      className="text-sm text-black font-medium"
-                      isDisabled={!row.size || colorOptions.length === 0}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                      Quantity
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={row.quantity}
-                      onChange={(e) =>
-                        updateVariantRow(
-                          "create",
-                          index,
-                          "quantity",
-                          e.target.value,
-                        )
-                      }
-                      disabled={
-                        !createForm?.receivedId ||
-                        createSizeOptions.length === 0
-                      }
-                      className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
-                      placeholder="0"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => removeVariantRow("create", index)}
-                    className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
-                    disabled={
-                      normalizeVariantRows(createForm?.variantRows).length === 1
-                    }
-                  >
-                    <X size={16} className="mx-auto" />
-                  </button>
-                </div>
-              );
-            })}
           </div>
+
+          {shouldShowCreateVariantOptions && (
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+              <div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Product Variants
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    Add size, color and quantity combinations
+                  </p>
+                </div>
+              </div>
+              <div className="sticky top-0 z-20 -mx-4 flex justify-end bg-slate-50/95 px-4 py-2 backdrop-blur-sm">
+                <button
+                  type="button"
+                  onClick={() => addVariantRow("create")}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  disabled={!createForm?.receivedId}
+                >
+                  <Plus size={14} />
+                  Add Variant
+                </button>
+              </div>
+
+              {normalizeVariantRows(createForm?.variantRows).map(
+                (row, index) => {
+                  const colorOptions = row.size
+                    ? getVariationColorsForSize(
+                        selectedCreateProductData,
+                        row.size,
+                      )
+                    : createColorOptions;
+
+                  return (
+                    <div
+                      key={`create-variant-${index}`}
+                      className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end rounded-2xl border border-slate-200 bg-white p-3"
+                    >
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Size / Code
+                        </label>
+                        <Select
+                          options={createSizeOptions}
+                          value={
+                            createSizeOptions.find(
+                              (option) => option.value === row.size,
+                            ) || null
+                          }
+                          onChange={(selected) =>
+                            updateVariantRow(
+                              "create",
+                              index,
+                              "size",
+                              selected?.value || "",
+                            )
+                          }
+                          placeholder="Select size..."
+                          isClearable
+                          styles={selectStyles}
+                          className="text-sm text-black font-medium"
+                          isDisabled={
+                            !createForm?.receivedId ||
+                            createSizeOptions.length === 0
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Color
+                        </label>
+                        <Select
+                          options={colorOptions}
+                          value={
+                            colorOptions.find(
+                              (option) => option.value === row.color,
+                            ) || null
+                          }
+                          onChange={(selected) =>
+                            updateVariantRow(
+                              "create",
+                              index,
+                              "color",
+                              selected?.value || "",
+                            )
+                          }
+                          placeholder="Select color..."
+                          isClearable
+                          styles={selectStyles}
+                          className="text-sm text-black font-medium"
+                          isDisabled={!row.size || colorOptions.length === 0}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                          Quantity
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={row.quantity}
+                          onChange={(e) =>
+                            updateVariantRow(
+                              "create",
+                              index,
+                              "quantity",
+                              e.target.value,
+                            )
+                          }
+                          disabled={
+                            !createForm?.receivedId ||
+                            createSizeOptions.length === 0
+                          }
+                          className="w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeVariantRow("create", index)}
+                        className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition disabled:opacity-50"
+                        disabled={
+                          normalizeVariantRows(createForm?.variantRows)
+                            .length === 1
+                        }
+                      >
+                        <X size={16} className="mx-auto" />
+                      </button>
+                    </div>
+                  );
+                },
+              )}
+              <div className="flex justify-end border-t border-slate-200 pt-3">
+                <button
+                  type="button"
+                  onClick={handleAddCreateItem}
+                  className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-100 transition hover:bg-indigo-700 active:scale-95"
+                >
+                  <Plus size={16} />
+                  Add Variants
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -1761,55 +2449,31 @@ const PurchaseReturnProductTable = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Supplier
-              </label>
-              <Select
-                options={supplierOptions}
-                value={
-                  supplierOptions.find(
-                    (option) =>
-                      String(option.value) ===
-                      String(createForm?.supplierId || ""),
-                  ) || null
-                }
-                onChange={(selected) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    supplierId: selected?.value || "",
-                  }))
-                }
-                placeholder={
-                  isLoadingSupplier ? "Loading..." : "Select Supplier"
-                }
-                isClearable
-                styles={selectStyles}
-                className="text-black"
-                isDisabled={isLoadingSupplier}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                Quantity
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={createForm.quantity}
-                onChange={(e) =>
-                  setCreateForm((p) => ({ ...p, quantity: e.target.value }))
-                }
-                readOnly={hasConfiguredVariants(createForm?.variantRows)}
-                className={`w-full h-11 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 outline-none ${
-                  hasConfiguredVariants(createForm?.variantRows)
-                    ? "bg-slate-50"
-                    : "bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
-                }`}
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              Supplier
+            </label>
+            <Select
+              options={supplierOptions}
+              value={
+                supplierOptions.find(
+                  (option) =>
+                    String(option.value) ===
+                    String(createForm?.supplierId || ""),
+                ) || null
+              }
+              onChange={(selected) =>
+                setCreateForm((prev) => ({
+                  ...prev,
+                  supplierId: selected?.value || "",
+                }))
+              }
+              placeholder={isLoadingSupplier ? "Loading..." : "Select Supplier"}
+              isClearable
+              styles={selectStyles}
+              className="text-black"
+              isDisabled={isLoadingSupplier}
+            />
           </div>
 
           <div>
@@ -1840,7 +2504,7 @@ const PurchaseReturnProductTable = () => {
               type="submit"
               className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-100 active:scale-95"
             >
-              Save
+              {createItems.length > 0 ? "Save Products" : "Save"}
             </button>
           </div>
         </form>

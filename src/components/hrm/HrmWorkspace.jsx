@@ -21,20 +21,20 @@ import {
 } from "../../utils/navigationPermissions";
 
 const SECTION_ITEMS = [
-  {
-    group: "HRM",
-    label: "Employee Profile",
-    href: "/employee-profile",
-    match: ["/employee-profile"],
-    icon: ShieldCheck,
-  },
-  {
-    group: "HRM",
-    label: "Employee Master",
-    href: "/employee-master",
-    match: ["/employee-master"],
-    icon: Users2,
-  },
+  // {
+  //   group: "HRM",
+  //   label: "Employee Profile",
+  //   href: "/employee-profile",
+  //   match: ["/employee-profile"],
+  //   icon: ShieldCheck,
+  // },
+  // {
+  //   group: "HRM",
+  //   label: "Employee Master",
+  //   href: "/employee-master",
+  //   match: ["/employee-master"],
+  //   icon: Users2,
+  // },
   {
     group: "HRM",
     label: "Departments",
@@ -51,81 +51,88 @@ const SECTION_ITEMS = [
   },
   {
     group: "HRM",
-    label: "Shifts",
-    href: "/hrm/shifts",
-    match: ["/hrm/shifts"],
-    icon: TimerReset,
+    label: "Team",
+    href: "/hrm/teams",
+    match: ["/hrm/teams"],
+    icon: Users2,
   },
-  {
-    group: "HRM",
-    label: "Holidays",
-    href: "/hrm/holidays",
-    match: ["/hrm/holidays"],
-    icon: CalendarDays,
-  },
-  {
-    group: "HRM",
-    label: "Attendance Devices",
-    href: "/hrm/attendance-devices",
-    match: ["/hrm/attendance-devices"],
-    icon: Fingerprint,
-  },
-  {
-    group: "HRM",
-    label: "Enrollments",
-    href: "/hrm/attendance-enrollments",
-    match: ["/hrm/attendance-enrollments"],
-    icon: Fingerprint,
-  },
-  {
-    group: "HRM",
-    label: "Raw Logs",
-    href: "/hrm/attendance-logs",
-    match: ["/hrm/attendance-logs"],
-    icon: TimerReset,
-  },
-  {
-    group: "HRM",
-    label: "Summaries",
-    href: "/hrm/attendance-summaries",
-    match: ["/hrm/attendance-summaries"],
-    icon: CalendarDays,
-  },
-  {
-    group: "HRM",
-    label: "Regularizations",
-    href: "/hrm/attendance-regularizations",
-    match: ["/hrm/attendance-regularizations"],
-    icon: RefreshCcw,
-  },
-  {
-    group: "HRM",
-    label: "Leave Types",
-    href: "/hrm/leave-types",
-    match: ["/hrm/leave-types"],
-    icon: CalendarDays,
-  },
-  {
-    group: "HRM",
-    label: "Leave Requests",
-    href: "/hrm/leave-requests",
-    match: ["/hrm/leave-requests"],
-    icon: Layers3,
-  },
-  {
-    group: "Payroll",
-    label: "Payroll Runs",
-    href: "/hrm/payroll-runs",
-    match: ["/hrm/payroll-runs"],
-    icon: CircleDollarSign,
-  },
-  {
-    group: "Payroll",
-    label: "Payslips",
-    href: "/hrm/payslips",
-    match: ["/hrm/payslips"],
-    icon: ReceiptText,
-  },
+  // {
+  //   group: "HRM",
+  //   label: "Shifts",
+  //   href: "/hrm/shifts",
+  //   match: ["/hrm/shifts"],
+  //   icon: TimerReset,
+  // },
+  // {
+  //   group: "HRM",
+  //   label: "Holidays",
+  //   href: "/hrm/holidays",
+  //   match: ["/hrm/holidays"],
+  //   icon: CalendarDays,
+  // },
+  // {
+  //   group: "HRM",
+  //   label: "Attendance Devices",
+  //   href: "/hrm/attendance-devices",
+  //   match: ["/hrm/attendance-devices"],
+  //   icon: Fingerprint,
+  // },
+  // {
+  //   group: "HRM",
+  //   label: "Enrollments",
+  //   href: "/hrm/attendance-enrollments",
+  //   match: ["/hrm/attendance-enrollments"],
+  //   icon: Fingerprint,
+  // },
+  // {
+  //   group: "HRM",
+  //   label: "Raw Logs",
+  //   href: "/hrm/attendance-logs",
+  //   match: ["/hrm/attendance-logs"],
+  //   icon: TimerReset,
+  // },
+  // {
+  //   group: "HRM",
+  //   label: "Summaries",
+  //   href: "/hrm/attendance-summaries",
+  //   match: ["/hrm/attendance-summaries"],
+  //   icon: CalendarDays,
+  // },
+  // {
+  //   group: "HRM",
+  //   label: "Regularizations",
+  //   href: "/hrm/attendance-regularizations",
+  //   match: ["/hrm/attendance-regularizations"],
+  //   icon: RefreshCcw,
+  // },
+  // {
+  //   group: "HRM",
+  //   label: "Leave Types",
+  //   href: "/hrm/leave-types",
+  //   match: ["/hrm/leave-types"],
+  //   icon: CalendarDays,
+  // },
+  // {
+  //   group: "HRM",
+  //   label: "Leave Requests",
+  //   href: "/hrm/leave-requests",
+  //   match: ["/hrm/leave-requests"],
+  //   icon: Layers3,
+  // },
+  // {
+  //   group: "Payroll",
+  //   label: "Payroll Runs",
+  //   href: "/hrm/payroll-runs",
+  //   match: ["/hrm/payroll-runs"],
+  //   icon: CircleDollarSign,
+  // },
+  // {
+  //   group: "Payroll",
+  //   label: "Payslips",
+  //   href: "/hrm/payslips",
+  //   match: ["/hrm/payslips"],
+  //   icon: ReceiptText,
+  // },
   {
     group: "HRM",
     label: "Daily Work Reports",
@@ -233,7 +240,7 @@ const HrmWorkspace = ({
                 </p>
               </div>
 
-              <div className="grid min-w-full grid-cols-1 gap-3 sm:grid-cols-2 xl:min-w-[420px] xl:grid-cols-2">
+              <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:w-auto lg:min-w-[360px] xl:min-w-[420px] xl:grid-cols-2">
                 {stats.map((stat) => (
                   <StatCard
                     key={stat.name}
@@ -257,7 +264,7 @@ const HrmWorkspace = ({
               <div className="mb-3 px-2 pt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                 {section.group} Sections
               </div>
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-13">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2">
                 {section.items.map((item) => {
                   const active = item.match.some((matchPath) =>
                     pathname.startsWith(matchPath),

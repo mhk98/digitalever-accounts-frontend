@@ -132,8 +132,13 @@
   height: 50px !important;
 }
 
+input[type="date"] {
+  color-scheme: light;
+}
+
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
+  opacity: 1;
+  filter: none;
   cursor: pointer;
 }
 
@@ -148,7 +153,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .date-black-icon::-webkit-calendar-picker-indicator {
-  filter: invert(1);
+  opacity: 1;
+  filter: none;
+  cursor: pointer;
 }
 
 .date-time-light {

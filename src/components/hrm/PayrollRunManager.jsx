@@ -108,20 +108,20 @@ const PayrollRunManager = () => {
               Create a new payroll run for a month, then inspect itemized net, deductions and overtime.
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <label className="relative block">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+            <label className="relative block w-full sm:w-56">
               <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search payroll month"
-                className="h-11 min-w-[220px] rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
               />
             </label>
             <button
               type="button"
               onClick={() => setIsCreateOpen(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 sm:w-auto"
             >
               <PlayCircle size={16} />
               Generate Payroll
@@ -201,7 +201,7 @@ const PayrollRunManager = () => {
               </div>
 
               <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <table className="min-w-[720px] divide-y divide-slate-200 text-sm">
                   <thead className="bg-slate-50">
                     <tr>
                       <th className="px-4 py-3 text-left font-semibold text-slate-700">Employee</th>

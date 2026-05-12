@@ -286,7 +286,9 @@ const EmployeeListTable = () => {
   // Delete
   const [deleteEmployeeList] = useDeleteEmployeeListMutation();
   const handleDeleteProduct = async (id) => {
-    const confirmDelete = await requestDeleteConfirmation({ message: "Do you want to delete this product?" });
+    const confirmDelete = await requestDeleteConfirmation({
+      message: "Do you want to delete this product?",
+    });
     if (!confirmDelete) return toast.info("Delete action was cancelled.");
 
     try {
@@ -828,13 +830,13 @@ const EmployeeListTable = () => {
         title="Add Employee Salary"
       >
         <form onSubmit={handleCreateProduct} className="grid grid-cols-1 gap-5">
-          <Field
+          {/* <Field
             label="Purchase Date"
             type="date"
             value={createProduct.date}
             onChange={(v) => setCreateProduct({ ...createProduct, date: v })}
             required
-          />
+          /> */}
 
           <Field
             label="Employee Name"

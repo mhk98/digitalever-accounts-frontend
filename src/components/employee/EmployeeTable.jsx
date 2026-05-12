@@ -30,6 +30,7 @@ import Modal from "../common/Modal";
 import { useLayout } from "../../context/LayoutContext";
 import { translations } from "../../utils/translations";
 import { useGetAllEmployeeListWithoutQueryQuery } from "../../features/employeeList/employeeList";
+import { useGetAllDepartmentsQuery } from "../../features/department/department";
 
 const EmployeeTable = () => {
   const { language } = useLayout();
@@ -62,6 +63,7 @@ const EmployeeTable = () => {
   const emptyEmployee = {
     date: "",
     name: "",
+    departmentId: "",
     employeeListId: "",
     employee_id: "",
     bookId: "",
@@ -78,9 +80,11 @@ const EmployeeTable = () => {
     net_salary: "",
     note: "",
     remarks: "",
+    status: "Pending",
   };
 
   const [createEmployee, setCreateEmployee] = useState(emptyEmployee);
+  const [updatingStatusId, setUpdatingStatusId] = useState(null);
 
   // list + filter states
   const [employees, setEmployees] = useState([]);
@@ -89,6 +93,7 @@ const EmployeeTable = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [name, setName] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
 
   // ✅ Per-page user selectable
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -250,7 +255,7 @@ const EmployeeTable = () => {
   useEffect(() => {
     setCurrentPage(1);
     setStartPage(1);
-  }, [startDate, endDate, name, itemsPerPage]);
+  }, [startDate, endDate, name, selectedDepartment, itemsPerPage]);
 
   const queryArgs = {
     page: currentPage,
@@ -258,6 +263,7 @@ const EmployeeTable = () => {
     startDate: startDate || undefined,
     endDate: endDate || undefined,
     name: name?.trim() ? name.trim() : undefined,
+    departmentId: selectedDepartment?.value || undefined,
   };
 
   const { data, isLoading, isError, error, refetch } =
@@ -276,6 +282,8 @@ const EmployeeTable = () => {
 
   const { data: employeeList } = useGetAllEmployeeListWithoutQueryQuery();
   const { data: allBookRes } = useGetAllBookWithoutQueryQuery();
+  const { data: departmentsData, isLoading: isDepartmentsLoading } =
+    useGetAllDepartmentsQuery({ page: 1, limit: 500 });
 
   // ----------------------------
   // Options
@@ -294,8 +302,21 @@ const EmployeeTable = () => {
       id: employee.Id ?? employee.id ?? "",
       employee_id: employee.employee_id || "",
       salary: employee.salary ?? employee.basic_salary ?? employee.price ?? "",
+      departmentId: employee.departmentId ? String(employee.departmentId) : "",
     }));
   }, [employeeList]);
+
+  const departmentOptions = useMemo(() => {
+    return (departmentsData?.data || []).map((department) => ({
+      value: String(department.Id ?? department.id ?? ""),
+      label: department.name || "Unnamed Department",
+    }));
+  }, [departmentsData]);
+
+  const findDepartmentOption = (departmentId) =>
+    departmentOptions.find(
+      (option) => String(option.value) === String(departmentId || ""),
+    ) || null;
 
   const bookOptions = useMemo(() => {
     return (allBookRes?.data || []).map((book) => ({
@@ -387,6 +408,7 @@ const EmployeeTable = () => {
     const next = {
       ...(prev || {}),
       name: selected?.value || "",
+      departmentId: selected?.departmentId || "",
       employeeListId: selected?.id || "",
       employee_id: selected?.employee_id || "",
       basic_salary:
@@ -422,7 +444,7 @@ const EmployeeTable = () => {
 
       const next = hasCreateNetBalance
         ? { ...prev, advance: String(createNetBalance) }
-        : { ...prev, advance: "", bookId: "" };
+        : { ...prev, advance: "" };
       const s = calcSalary(next);
 
       return {
@@ -443,7 +465,7 @@ const EmployeeTable = () => {
 
       const next = hasCurrentNetBalance
         ? { ...prev, advance: String(currentNetBalance) }
-        : { ...prev, advance: "", bookId: "" };
+        : { ...prev, advance: "" };
       const s = calcSalary(next);
 
       return {
@@ -462,6 +484,7 @@ const EmployeeTable = () => {
       ...employee,
       date: employee.date ?? "",
       name: employee.name ?? "",
+      departmentId: employee.departmentId ?? "",
       employeeListId:
         employee.employeeListId ??
         getEmployeeInternalId(String(employee.employee_id ?? "").trim()) ??
@@ -538,6 +561,7 @@ const EmployeeTable = () => {
         ...createEmployee,
         date: createEmployee.date || undefined,
         name: createEmployee.name || "",
+        departmentId: normalizeOptionalId(createEmployee.departmentId),
         employee_id: createEmployee.employee_id || "",
         employeeListId: normalizeOptionalId(createEmployee.employeeListId),
         bookId: normalizeOptionalId(createEmployee.bookId),
@@ -589,6 +613,7 @@ const EmployeeTable = () => {
       const updatedEmployee = {
         date: currentEmployee.date || undefined,
         name: currentEmployee.name || "",
+        departmentId: normalizeOptionalId(currentEmployee.departmentId),
         employee_id: currentEmployee.employee_id || "",
         employeeListId: normalizeOptionalId(currentEmployee.employeeListId),
         bookId: normalizeOptionalId(currentEmployee.bookId),
@@ -659,6 +684,57 @@ const EmployeeTable = () => {
     }
   };
 
+  const handleInlineStatusUpdate = async (employee, nextStatus) => {
+    if (!employee || employee.status === nextStatus) return;
+
+    const updatedEmployee = {
+      date: employee.date || undefined,
+      name: employee.name || "",
+      departmentId: normalizeOptionalId(employee.departmentId),
+      employee_id: employee.employee_id || "",
+      employeeListId: normalizeOptionalId(employee.employeeListId),
+      bookId: normalizeOptionalId(employee.bookId),
+      note: employee.note || "",
+      remarks: employee.remarks || "",
+
+      basic_salary: Number(employee.basic_salary) || 0,
+      incentive: Number(employee.incentive) || 0,
+      holiday_payment: Number(employee.holiday_payment) || 0,
+
+      advance: Number(employee.advance) || 0,
+      late: Number(employee.late) || 0,
+      early_leave: Number(employee.early_leave) || 0,
+      absent: Number(employee.absent) || 0,
+      friday_absent: Number(employee.friday_absent) || 0,
+      unapproval_absent: Number(employee.unapproval_absent) || 0,
+
+      total_salary: Number(employee.total_salary) || 0,
+      net_salary: Number(employee.net_salary) || 0,
+      status: nextStatus,
+      userId,
+      actorRole: role,
+    };
+
+    try {
+      setUpdatingStatusId(employee.Id);
+      const res = await updateEmployee({
+        id: employee.Id,
+        data: updatedEmployee,
+      }).unwrap();
+
+      if (res.success) {
+        toast.success("Status updated");
+        refetch?.();
+      } else {
+        toast.error("Status update failed!");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Status update failed!");
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  };
+
   const handleDeleteEmployee = async (id) => {
     const confirmDelete = await requestDeleteConfirmation({
       message: "Do you want to delete this employee?",
@@ -685,6 +761,7 @@ const EmployeeTable = () => {
     setStartDate("");
     setEndDate("");
     setName("");
+    setSelectedDepartment(null);
   };
 
   const endPage = Math.min(startPage + pagesPerSet - 1, totalPages);
@@ -1675,6 +1752,14 @@ const EmployeeTable = () => {
     setIsNoteModalOpen(false); // Close the modal
   };
 
+  const normalizePayrollStatus = (status) =>
+    status === "Completed" ? "Completed" : "Pending";
+
+  const getPayrollStatusClass = (status) =>
+    normalizePayrollStatus(status) === "Completed"
+      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+      : "bg-amber-50 text-amber-700 border-amber-200";
+
   return (
     <motion.div
       className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(15,23,42,0.08)] rounded-2xl p-6 border border-slate-200 mb-8"
@@ -1728,7 +1813,7 @@ const EmployeeTable = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6 w-full justify-center mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 items-end mb-6 w-full justify-center mx-auto">
         <div className="flex flex-col">
           <label className="text-sm text-slate-600 mb-1">{t.from}</label>
           <input
@@ -1749,13 +1834,32 @@ const EmployeeTable = () => {
           />
         </div>
 
-        <div className="flex items-center justify-center md:mt-0">
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">
+            {t.employee || "Employee"}
+          </label>
           <Select
             options={employeeOptions}
             value={employeeOptions.find((o) => o.value === name) || null}
             onChange={(selected) => setName(selected?.value || "")}
             placeholder={t.select_employee || "Select Employee"}
             isClearable
+            styles={selectStyles}
+            className="w-full"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-600 mb-1">Department</label>
+          <Select
+            options={departmentOptions}
+            value={selectedDepartment}
+            onChange={setSelectedDepartment}
+            placeholder={
+              isDepartmentsLoading ? "Loading departments..." : "Select Department"
+            }
+            isClearable
+            isLoading={isDepartmentsLoading}
             styles={selectStyles}
             className="w-full"
           />
@@ -1805,6 +1909,7 @@ const EmployeeTable = () => {
               {[
                 { key: "Date", label: t.date },
                 { key: "Employee", label: t.employee || "Employee" },
+                { key: "Department", label: "Department" },
                 {
                   key: "Employee ID",
                   label: t.employee_id_label || "Employee ID",
@@ -1860,6 +1965,11 @@ const EmployeeTable = () => {
                   {emp.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {emp.department?.name ||
+                    findDepartmentOption(emp.departmentId)?.label ||
+                    "-"}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {emp.employee_id}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
@@ -1896,17 +2006,19 @@ const EmployeeTable = () => {
                   {Number(emp.net_salary || 0).toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
-                      emp.status === "Approved"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : emp.status === "Active"
-                          ? "bg-blue-50 text-blue-700 border-blue-200" // New color for Active
-                          : "bg-amber-50 text-amber-700 border-amber-200"
-                    }`}
+                  <select
+                    value={normalizePayrollStatus(emp.status)}
+                    onChange={(e) =>
+                      handleInlineStatusUpdate(emp, e.target.value)
+                    }
+                    disabled={updatingStatusId === emp.Id}
+                    className={`h-8 min-w-[118px] rounded-full border px-3 text-xs font-semibold outline-none transition focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-60 ${getPayrollStatusClass(
+                      emp.status,
+                    )}`}
                   >
-                    {emp.status}
-                  </span>
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
+                  </select>
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -2050,6 +2162,29 @@ const EmployeeTable = () => {
               />
             </div>
 
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Department
+              </label>
+              <Select
+                options={departmentOptions}
+                value={findDepartmentOption(currentEmployee?.departmentId)}
+                onChange={(selected) =>
+                  setCurrentEmployee({
+                    ...currentEmployee,
+                    departmentId: selected?.value || "",
+                  })
+                }
+                placeholder={
+                  isDepartmentsLoading ? "Loading departments..." : "Select Department"
+                }
+                isClearable
+                isLoading={isDepartmentsLoading}
+                styles={selectStyles}
+                className="w-full"
+              />
+            </div>
+
             <Field
               label={t.employee_id_label + ":" || "Employee Id:"}
               type="number"
@@ -2088,41 +2223,34 @@ const EmployeeTable = () => {
               step="0.01"
               value={currentEmployee?.advance}
               readOnly={hasCurrentNetBalance}
-              onChange={(v) => {
-                updateCurrentField("advance", v);
-                if (!hasAdvanceValue(v)) {
-                  setCurrentEmployee((prev) => ({ ...prev, bookId: "" }));
-                }
-              }}
+              onChange={(v) => updateCurrentField("advance", v)}
             />
 
-            {hasAdvanceValue(currentEmployee?.advance) && (
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                  Book:
-                </label>
-                <Select
-                  options={bookOptions}
-                  value={
-                    bookOptions.find(
-                      (option) =>
-                        String(option.value) ===
-                        String(currentEmployee?.bookId || ""),
-                    ) || null
-                  }
-                  onChange={(selected) =>
-                    setCurrentEmployee((prev) => ({
-                      ...prev,
-                      bookId: selected?.value || "",
-                    }))
-                  }
-                  placeholder="Select Book"
-                  isClearable
-                  styles={selectStyles}
-                  className="w-full"
-                />
-              </div>
-            )}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Book:
+              </label>
+              <Select
+                options={bookOptions}
+                value={
+                  bookOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(currentEmployee?.bookId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCurrentEmployee((prev) => ({
+                    ...prev,
+                    bookId: selected?.value || "",
+                  }))
+                }
+                placeholder="Select Book"
+                isClearable
+                styles={selectStyles}
+                className="w-full"
+              />
+            </div>
 
             <Field
               label={t.late_days_label || "Late (days):"}
@@ -2216,9 +2344,8 @@ const EmployeeTable = () => {
                   required
                 >
                   <option value="">{t.select_status || "Select Status"}</option>
-                  <option value="Active">Active</option>
-                  <option value="Approved">Approved</option>
                   <option value="Pending">Pending</option>
+                  <option value="Completed">Completed</option>
                 </select>
               </div>
             ) : (
@@ -2284,8 +2411,8 @@ const EmployeeTable = () => {
                 required
               >
                 <option value="">{t.select_status || "Select Status"}</option>
-                <option value="Approved">Approved</option>
                 <option value="Pending">Pending</option>
+                <option value="Completed">Completed</option>
               </select>
             </div>
           ) : (
@@ -2368,6 +2495,29 @@ const EmployeeTable = () => {
               />
             </div>
 
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Department
+              </label>
+              <Select
+                options={departmentOptions}
+                value={findDepartmentOption(createEmployee.departmentId)}
+                onChange={(selected) =>
+                  setCreateEmployee({
+                    ...createEmployee,
+                    departmentId: selected?.value || "",
+                  })
+                }
+                placeholder={
+                  isDepartmentsLoading ? "Loading departments..." : "Select Department"
+                }
+                isClearable
+                isLoading={isDepartmentsLoading}
+                styles={selectStyles}
+                className="w-full"
+              />
+            </div>
+
             <Field
               label="Employee Id:"
               type="number"
@@ -2407,41 +2557,34 @@ const EmployeeTable = () => {
               step="0.01"
               value={createEmployee.advance}
               readOnly={hasCreateNetBalance}
-              onChange={(v) => {
-                updateCreateField("advance", v);
-                if (!hasAdvanceValue(v)) {
-                  setCreateEmployee((prev) => ({ ...prev, bookId: "" }));
-                }
-              }}
+              onChange={(v) => updateCreateField("advance", v)}
             />
 
-            {hasAdvanceValue(createEmployee.advance) && (
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                  Book:
-                </label>
-                <Select
-                  options={bookOptions}
-                  value={
-                    bookOptions.find(
-                      (option) =>
-                        String(option.value) ===
-                        String(createEmployee.bookId || ""),
-                    ) || null
-                  }
-                  onChange={(selected) =>
-                    setCreateEmployee((prev) => ({
-                      ...prev,
-                      bookId: selected?.value || "",
-                    }))
-                  }
-                  placeholder="Select Book"
-                  isClearable
-                  styles={selectStyles}
-                  className="w-full"
-                />
-              </div>
-            )}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Book:
+              </label>
+              <Select
+                options={bookOptions}
+                value={
+                  bookOptions.find(
+                    (option) =>
+                      String(option.value) ===
+                      String(createEmployee.bookId || ""),
+                  ) || null
+                }
+                onChange={(selected) =>
+                  setCreateEmployee((prev) => ({
+                    ...prev,
+                    bookId: selected?.value || "",
+                  }))
+                }
+                placeholder="Select Book"
+                isClearable
+                styles={selectStyles}
+                className="w-full"
+              />
+            </div>
 
             <Field
               label={t.late_days_label + ":" || "Late (days):"}

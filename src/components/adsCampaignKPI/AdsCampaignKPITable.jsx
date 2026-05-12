@@ -11,7 +11,9 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
+  useCreateAdsAccountMutation,
   useDeleteAdsCampaignKPIMutation,
+  useGetAdsAccountsQuery,
   useGetAdsCampaignKPIPerformanceGraphQuery,
   useGetAllAdsCampaignKPIQuery,
   useInsertAdsCampaignKPIMutation,
@@ -19,37 +21,30 @@ import {
 } from "../../features/adsCampaignKPI/adsCampaignKPI";
 
 const getDefaultForm = () => ({
-  campaignName: "",
   platform: "Facebook",
+  adsAccountId: "",
+  adsAccountName: "",
   date: toDateInputValue(new Date()),
   spend: "",
-  conversions: "",
+  result: "",
+  confirm: "",
   revenue: "",
-  status: "Active",
   note: "",
 });
 
-const platformOptions = [
-  "Facebook",
-  "Google",
-  "TikTok",
-  "SEO",
-  "YouTube",
-  "Other",
-];
-const statusOptions = ["Active", "Paused", "Completed", "Pending"];
+const platformOptions = ["Facebook", "Google", "Tiktok", "SEO"];
 
 const metricFields = [
   { key: "spend", label: "Spend", prefix: "৳" },
-  { key: "revenue", label: "Revenue", prefix: "৳" },
-  { key: "roas", label: "ROAS", suffix: "x" },
-  { key: "cpr", label: "CPR", prefix: "৳" },
   { key: "result", label: "Result", digits: 0 },
+  { key: "confirm", label: "Confirm", digits: 0 },
+  { key: "revenue", label: "Revenue", prefix: "৳" },
 ];
 
 const inputFields = [
   ["spend", "Spend"],
-  ["conversions", "Result"],
+  ["result", "Result"],
+  ["confirm", "Confirm"],
   ["revenue", "Revenue"],
 ];
 
@@ -116,6 +111,7 @@ const normalizeForm = (form) => {
   inputFields.forEach(([key]) => {
     payload[key] = Number(payload[key] || 0);
   });
+  payload.adsAccountId = payload.adsAccountId ? Number(payload.adsAccountId) : null;
   return payload;
 };
 
@@ -124,13 +120,15 @@ const AdsCampaignKPITable = () => {
   const [filters, setFilters] = useState({
     searchTerm: "",
     platform: "",
-    status: "",
+    adsAccountId: "",
     ...getDatePresetRange("this_week"),
   });
   const [page, setPage] = useState(1);
   const [form, setForm] = useState(getDefaultForm);
   const [editingId, setEditingId] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isNewAdsAccountOpen, setIsNewAdsAccountOpen] = useState(false);
+  const [newAdsAccountName, setNewAdsAccountName] = useState("");
 
   const queryArgs = useMemo(
     () => ({
@@ -144,27 +142,47 @@ const AdsCampaignKPITable = () => {
   const { data, isLoading, isFetching, refetch } =
     useGetAllAdsCampaignKPIQuery(queryArgs);
   const { data: graphRes } = useGetAdsCampaignKPIPerformanceGraphQuery(filters);
+  const { data: adsAccountsRes } = useGetAdsAccountsQuery({
+    platform: form.platform,
+  });
+  const { data: filterAdsAccountsRes } = useGetAdsAccountsQuery({
+    platform: filters.platform,
+  });
   const [insertAdsCampaignKPI, { isLoading: isCreating }] =
     useInsertAdsCampaignKPIMutation();
   const [updateAdsCampaignKPI, { isLoading: isUpdating }] =
     useUpdateAdsCampaignKPIMutation();
   const [deleteAdsCampaignKPI] = useDeleteAdsCampaignKPIMutation();
+  const [createAdsAccount, { isLoading: isCreatingAdsAccount }] =
+    useCreateAdsAccountMutation();
 
   const rows = data?.data || [];
+  const adsAccounts = adsAccountsRes?.data || [];
+  const filterAdsAccounts = filterAdsAccountsRes?.data || [];
   const meta = data?.meta || {};
   const summary = meta.summary || {};
   const graphRows = graphRes?.data || [];
   const totalPages = Math.max(1, Math.ceil((meta.count || 0) / 10));
   const isSaving = isCreating || isUpdating;
 
-  const maxGraphRoas = Math.max(
+  const maxGraphRevenue = Math.max(
     1,
-    ...graphRows.map((item) => Number(item.roas || 0)),
+    ...graphRows.map((item) => Number(item.revenue || 0)),
   );
 
   const updateFilter = (key, value) => {
     setPage(1);
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    setFilters((prev) => {
+      if (key === "platform") {
+        return {
+          ...prev,
+          platform: value,
+          adsAccountId: "",
+        };
+      }
+
+      return { ...prev, [key]: value };
+    });
   };
 
   const updateDatePreset = (preset) => {
@@ -177,13 +195,26 @@ const AdsCampaignKPITable = () => {
   };
 
   const updateForm = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => {
+      if (key === "platform") {
+        return {
+          ...prev,
+          platform: value,
+          adsAccountId: "",
+          adsAccountName: "",
+        };
+      }
+
+      return { ...prev, [key]: value };
+    });
   };
 
   const resetForm = () => {
     setForm(getDefaultForm());
     setEditingId(null);
     setIsFormOpen(false);
+    setIsNewAdsAccountOpen(false);
+    setNewAdsAccountName("");
   };
 
   const showSavedEntryDate = (entryDate) => {
@@ -218,18 +249,72 @@ const AdsCampaignKPITable = () => {
     }
   };
 
+  const handleAdsAccountChange = (value) => {
+    if (value === "__new__") {
+      setIsNewAdsAccountOpen(true);
+      setForm((prev) => ({
+        ...prev,
+        adsAccountId: "",
+        adsAccountName: "",
+      }));
+      return;
+    }
+
+    const selectedAccount = adsAccounts.find(
+      (account) => String(account.Id) === String(value),
+    );
+
+    setIsNewAdsAccountOpen(false);
+    setNewAdsAccountName("");
+    setForm((prev) => ({
+      ...prev,
+      adsAccountId: value,
+      adsAccountName: selectedAccount?.accountName || "",
+    }));
+  };
+
+  const handleCreateAdsAccount = async () => {
+    const accountName = newAdsAccountName.trim();
+    if (!accountName) {
+      toast.error("Ads account name is required");
+      return;
+    }
+
+    try {
+      const res = await createAdsAccount({
+        platform: form.platform,
+        accountName,
+      }).unwrap();
+      const created = res?.data || res;
+      setForm((prev) => ({
+        ...prev,
+        adsAccountId: created?.Id || "",
+        adsAccountName: created?.accountName || accountName,
+      }));
+      setNewAdsAccountName("");
+      setIsNewAdsAccountOpen(false);
+      toast.success("Ads account created");
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to create ads account");
+    }
+  };
+
   const handleEdit = (row) => {
     setEditingId(row.Id);
     setForm({
       campaignName: row.campaignName || "",
       platform: row.platform || "Facebook",
+      adsAccountId: row.adsAccountId || "",
+      adsAccountName: row.adsAccountName || "",
       date: row.date || "",
       spend: row.spend || "",
-      conversions: row.conversions || "",
+      result: row.result || "",
+      confirm: row.confirm || "",
       revenue: row.revenue || "",
-      status: row.status || "Active",
       note: row.note || "",
     });
+    setIsNewAdsAccountOpen(false);
+    setNewAdsAccountName("");
     setIsFormOpen(true);
   };
 
@@ -329,14 +414,16 @@ const AdsCampaignKPITable = () => {
                 ))}
               </select>
               <select
-                value={filters.status}
-                onChange={(event) => updateFilter("status", event.target.value)}
+                value={filters.adsAccountId}
+                onChange={(event) =>
+                  updateFilter("adsAccountId", event.target.value)
+                }
                 className="h-10 bg-white rounded-md border border-gray-200 px-3 text-sm text-gray-900 outline-none focus:border-orange-400"
               >
-                <option value="">All status</option>
-                {statusOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
+                <option value="">All ads accounts</option>
+                {filterAdsAccounts.map((account) => (
+                  <option key={account.Id} value={account.Id}>
+                    {account.platform} - {account.accountName}
                   </option>
                 ))}
               </select>
@@ -382,11 +469,11 @@ const AdsCampaignKPITable = () => {
                   <tr>
                     {[
                       "Campaign",
+                      "Ads Account",
                       "Spend",
-                      "Revenue",
-                      "ROAS",
-                      "CPR",
                       "Result",
+                      "Confirm",
+                      "Revenue",
                       "Actions",
                     ].map((heading) => (
                       <th
@@ -413,26 +500,28 @@ const AdsCampaignKPITable = () => {
                       <tr key={row.Id} className="hover:bg-orange-50/40">
                         <td className="px-4 py-3">
                           <div className="font-medium text-gray-900">
-                            {row.campaignName}
+                            {row.campaignName ||
+                              row.adsAccountName ||
+                              row.platform}
                           </div>
                           <div className="text-xs text-gray-500">
                             {row.platform} • {row.date || "-"}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
+                          {row.adsAccountName || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
                           ৳{formatNumber(row.spend)}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
+                          {formatNumber(row.result, 0)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {formatNumber(row.confirm, 0)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
                           ৳{formatNumber(row.revenue)}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-semibold text-gray-900">
-                          {formatNumber(row.roas)}x
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          ৳{formatNumber(row.cpr ?? row.cpa)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {formatNumber(row.result ?? row.conversions, 0)}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
@@ -517,15 +606,6 @@ const AdsCampaignKPITable = () => {
               </div>
 
               <div className="space-y-3">
-                <input
-                  value={form.campaignName}
-                  onChange={(event) =>
-                    updateForm("campaignName", event.target.value)
-                  }
-                  required
-                  className="h-10 w-full bg-white rounded-md border border-gray-200 px-3 text-sm text-gray-900 outline-none focus:border-orange-400"
-                  placeholder="Campaign name"
-                />
                 <div className="grid grid-cols-2 gap-2">
                   <select
                     value={form.platform}
@@ -541,19 +621,43 @@ const AdsCampaignKPITable = () => {
                     ))}
                   </select>
                   <select
-                    value={form.status}
+                    value={form.adsAccountId || ""}
                     onChange={(event) =>
-                      updateForm("status", event.target.value)
+                      handleAdsAccountChange(event.target.value)
                     }
                     className="h-10 bg-white rounded-md border border-gray-200 px-3 text-sm text-gray-900 outline-none focus:border-orange-400"
                   >
-                    {statusOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
+                    <option value="">Ads account</option>
+                    {adsAccounts.map((account) => (
+                      <option key={account.Id} value={account.Id}>
+                        {account.accountName}
                       </option>
                     ))}
+                    <option value="__new__">New ads account</option>
                   </select>
                 </div>
+                {isNewAdsAccountOpen || !adsAccounts.length ? (
+                  <div className="rounded-md border border-dashed border-gray-200 bg-gray-50 p-2">
+                    <div className="flex gap-2">
+                      <input
+                        value={newAdsAccountName}
+                        onChange={(event) =>
+                          setNewAdsAccountName(event.target.value)
+                        }
+                        className="h-10 min-w-0 flex-1 bg-white rounded-md border border-gray-200 px-3 text-sm text-gray-900 outline-none focus:border-orange-400"
+                        placeholder={`${form.platform} ads account name`}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCreateAdsAccount}
+                        disabled={isCreatingAdsAccount}
+                        className="h-10 rounded-md bg-gray-900 px-3 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
                 <div>
                   <input
                     type="date"
@@ -601,8 +705,7 @@ const AdsCampaignKPITable = () => {
                 Campaign performance
               </h2>
               <p className="mt-1 text-sm text-gray-600">
-                Track Spend, Revenue, ROAS, CPR and Result for each ads
-                campaign.
+                Track Spend, Result, Confirm and Revenue for each ads campaign.
               </p>
             </div>
           )}
@@ -635,9 +738,6 @@ const AdsCampaignKPITable = () => {
                             : item.trend === "same"
                               ? "Same"
                               : "New"}{" "}
-                        {item.roasDelta
-                          ? `(${formatNumber(item.roasDelta)}x)`
-                          : ""}
                       </span>
                     </div>
                     <div className="h-2 rounded-full bg-gray-100">
@@ -648,15 +748,15 @@ const AdsCampaignKPITable = () => {
                             : "bg-emerald-500"
                         }`}
                         style={{
-                          width: `${Math.max(4, (Number(item.roas || 0) / maxGraphRoas) * 100)}%`,
+                          width: `${Math.max(4, (Number(item.revenue || 0) / maxGraphRevenue) * 100)}%`,
                         }}
                       />
                     </div>
                     <div className="mt-1 flex justify-between text-xs text-gray-500">
-                      <span>ROAS {formatNumber(item.roas)}x</span>
+                      <span>Revenue ৳{formatNumber(item.revenue)}</span>
                       <span>
                         Result{" "}
-                        {formatNumber(item.result ?? item.conversions, 0)}
+                        {formatNumber(item.result, 0)}
                       </span>
                     </div>
                   </div>

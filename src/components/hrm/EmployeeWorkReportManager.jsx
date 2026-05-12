@@ -339,8 +339,8 @@ const EmployeeWorkReportManager = () => {
       stats={stats}
     >
       <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
+        <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="text-lg font-bold text-slate-900">
                 {editingId || currentReport
@@ -355,7 +355,7 @@ const EmployeeWorkReportManager = () => {
               <button
                 type="button"
                 onClick={resetForm}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 sm:w-auto"
               >
                 New
               </button>
@@ -407,7 +407,7 @@ const EmployeeWorkReportManager = () => {
           </form>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h3 className="text-lg font-bold text-slate-900">
@@ -466,7 +466,7 @@ const EmployeeWorkReportManager = () => {
             />
           </div>
 
-          <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200">
+          <div className="mt-5 max-w-full overflow-x-auto rounded-2xl border border-slate-200">
             <table className="min-w-[1380px] w-full divide-y divide-slate-200 text-left text-sm">
               <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500">
                 <tr>
@@ -482,7 +482,9 @@ const EmployeeWorkReportManager = () => {
                   <th className="px-4 py-3">Assign</th>
                   <th className="px-4 py-3">Order</th>
                   <th className="px-4 py-3">Amount</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="sticky right-0 z-10 bg-slate-50 px-4 py-3 text-right shadow-[-10px_0_16px_-16px_rgba(15,23,42,0.65)]">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
@@ -511,11 +513,11 @@ const EmployeeWorkReportManager = () => {
                     const canMutateRow = Number(row.user?.Id) === currentUserId;
 
                     return (
-                      <tr key={row.Id} className="hover:bg-slate-50">
+                      <tr key={row.Id} className="group hover:bg-slate-50">
                         <td className="px-4 py-3 font-medium text-slate-900">
                           {row.reportDate}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="sticky right-0 bg-white px-4 py-3 shadow-[-10px_0_16px_-16px_rgba(15,23,42,0.65)] group-hover:bg-slate-50">
                           <div className="font-semibold text-slate-900">
                             {row.name}
                           </div>

@@ -550,7 +550,7 @@ const ReportForm = ({
   isSaving,
 }) => (
   <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-    <div className="flex items-start justify-between gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <h3 className="text-lg font-bold text-slate-900">
           Submit Daily Report
@@ -700,7 +700,7 @@ const ReportForm = ({
         <button
           type="submit"
           disabled={isSaving || form.tasks.length === 0}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60 sm:w-auto"
         >
           <Save size={16} />
           {isSaving
@@ -955,7 +955,7 @@ const AdminReviewPanel = ({
   sendingReminders,
 }) => (
   <section className="xl:col-span-2 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
         <div className="rounded-2xl bg-sky-50 p-3 text-sky-600">
           <FileText size={18} />
@@ -974,7 +974,7 @@ const AdminReviewPanel = ({
         type="button"
         onClick={onSendReminders}
         disabled={sendingReminders}
-        className="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 text-sm font-semibold text-amber-700 disabled:opacity-60"
+        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 text-sm font-semibold text-amber-700 disabled:opacity-60 sm:w-auto"
       >
         <BellRing size={16} />{" "}
         {sendingReminders ? "Sending..." : "Send Reminder"}
@@ -1035,7 +1035,8 @@ const AdminReviewPanel = ({
       />
     </div>
 
-    <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+    <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200">
+      <div className="min-w-[760px]">
       <div className="grid grid-cols-[1.2fr_0.8fr_0.7fr_0.7fr_0.8fr_0.4fr] bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
         <div>Submitter</div>
         <div>Date</div>
@@ -1084,6 +1085,7 @@ const AdminReviewPanel = ({
       {!isLoading && !reports.length && (
         <EmptyState text="No daily work report found." />
       )}
+      </div>
     </div>
 
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">

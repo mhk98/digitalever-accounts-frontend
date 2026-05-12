@@ -40,6 +40,7 @@ import {
   History,
   CalendarDays,
   Fingerprint,
+  WalletCards,
 } from "lucide-react";
 
 export const ROLE_OPTIONS = [
@@ -110,11 +111,14 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "settings",
     "logo",
     "notice",
+    "cod_charge",
+    "delivery_charge",
     "role_permissions",
     "hrm",
     "employee_management",
     "department_management",
     "designation_management",
+    "team_management",
     "shift_management",
     "holiday_management",
     "attendance",
@@ -185,11 +189,14 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "settings",
     "logo",
     "notice",
+    "cod_charge",
+    "delivery_charge",
     "role_permissions",
     "hrm",
     "employee_management",
     "department_management",
     "designation_management",
+    "team_management",
     "shift_management",
     "holiday_management",
     "attendance",
@@ -281,6 +288,7 @@ const DEFAULT_ROLE_PERMISSION_MAP = {
     "employee_management",
     "department_management",
     "designation_management",
+    "team_management",
     "shift_management",
     "holiday_management",
     "attendance",
@@ -754,6 +762,20 @@ export const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin"],
       },
       {
+        name: "COD Charge",
+        key: "cod_charge",
+        icon: WalletCards,
+        href: "/settings/cod-charge",
+        roles: ["superAdmin", "admin"],
+      },
+      {
+        name: "Delivery Charge",
+        key: "delivery_charge",
+        icon: Truck,
+        href: "/settings/delivery-charge",
+        roles: ["superAdmin", "admin"],
+      },
+      {
         name: "User Management",
         key: "user_management",
         icon: Users,
@@ -777,20 +799,21 @@ export const SIDEBAR_ITEMS = [
     color: "#ec4899",
     roles: ["superAdmin", "admin", "accountant", "employee"],
     children: [
-      {
-        name: "Employee Profile",
-        key: "employee_profile",
-        icon: BadgeCheck,
-        href: "/employee-profile",
-        roles: ["superAdmin", "admin", "employee"],
-      },
-      {
-        name: "Employee Master",
-        key: "employee_management",
-        icon: BadgeCheck,
-        href: "/employee-master",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
+      // {
+      //   name: "Employee Profile",
+      //   key: "employee_profile",
+      //   icon: BadgeCheck,
+      //   href: "/employee-profile",
+      //   roles: ["superAdmin", "admin", "employee"],
+      // },
+      // {
+      //   name: "Employee Master",
+      //   key: "employee_management",
+      //   icon: BadgeCheck,
+      //   href: "/employee-master",
+      //   roles: ["superAdmin", "admin", "accountant"],
+      // },
+
       {
         name: "Departments",
         key: "department_management",
@@ -806,68 +829,77 @@ export const SIDEBAR_ITEMS = [
         roles: ["superAdmin", "admin", "accountant"],
       },
       {
-        name: "Shifts",
-        key: "shift_management",
-        icon: ClipboardCheck,
-        href: "/hrm/shifts",
+        name: "Team",
+        key: "team_management",
+        icon: Users,
+        href: "/hrm/teams",
         roles: ["superAdmin", "admin", "accountant"],
       },
-      {
-        name: "Holidays",
-        key: "holiday_management",
-        icon: Bell,
-        href: "/hrm/holidays",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
-      {
-        name: "Attendance Devices",
-        key: "attendance_device",
-        icon: Settings,
-        href: "/hrm/attendance-devices",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
-      {
-        name: "Attendance Enrollments",
-        key: "attendance",
-        icon: Fingerprint,
-        href: "/hrm/attendance-enrollments",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
-      {
-        name: "Attendance Logs",
-        key: "attendance",
-        icon: ClipboardCheck,
-        href: "/hrm/attendance-logs",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
-      {
-        name: "Attendance Summaries",
-        key: "attendance",
-        icon: BadgeCheck,
-        href: "/hrm/attendance-summaries",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
-      {
-        name: "Attendance Regularizations",
-        key: "attendance",
-        icon: RefreshCcw,
-        href: "/hrm/attendance-regularizations",
-        roles: ["superAdmin", "admin", "accountant", "employee"],
-      },
-      {
-        name: "Leave Types",
-        key: "leave_management",
-        icon: CalendarDays,
-        href: "/hrm/leave-types",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
-      {
-        name: "Leave Requests",
-        key: "leave_management",
-        icon: ClipboardList,
-        href: "/hrm/leave-requests",
-        roles: ["superAdmin", "admin", "accountant", "employee"],
-      },
+
+      // {
+      //   name: "Shifts",
+      //   key: "shift_management",
+      //   icon: ClipboardCheck,
+      //   href: "/hrm/shifts",
+      //   roles: ["superAdmin", "admin", "accountant"],
+      // },
+      // {
+      //   name: "Holidays",
+      //   key: "holiday_management",
+      //   icon: Bell,
+      //   href: "/hrm/holidays",
+      //   roles: ["superAdmin", "admin", "accountant"],
+      // },
+      // {
+      //   name: "Attendance Devices",
+      //   key: "attendance_device",
+      //   icon: Settings,
+      //   href: "/hrm/attendance-devices",
+      //   roles: ["superAdmin", "admin", "accountant"],
+      // },
+      // {
+      //   name: "Attendance Enrollments",
+      //   key: "attendance",
+      //   icon: Fingerprint,
+      //   href: "/hrm/attendance-enrollments",
+      //   roles: ["superAdmin", "admin", "accountant"],
+      // },
+      // {
+      //   name: "Attendance Logs",
+      //   key: "attendance",
+      //   icon: ClipboardCheck,
+      //   href: "/hrm/attendance-logs",
+      //   roles: ["superAdmin", "admin", "accountant"],
+      // },
+      // {
+      //   name: "Attendance Summaries",
+      //   key: "attendance",
+      //   icon: BadgeCheck,
+      //   href: "/hrm/attendance-summaries",
+      //   roles: ["superAdmin", "admin", "accountant"],
+      // },
+      // {
+      //   name: "Attendance Regularizations",
+      //   key: "attendance",
+      //   icon: RefreshCcw,
+      //   href: "/hrm/attendance-regularizations",
+      //   roles: ["superAdmin", "admin", "accountant", "employee"],
+      // },
+      // {
+      //   name: "Leave Types",
+      //   key: "leave_management",
+      //   icon: CalendarDays,
+      //   href: "/hrm/leave-types",
+      //   roles: ["superAdmin", "admin", "accountant"],
+      // },
+      // {
+      //   name: "Leave Requests",
+      //   key: "leave_management",
+      //   icon: ClipboardList,
+      //   href: "/hrm/leave-requests",
+      //   roles: ["superAdmin", "admin", "accountant", "employee"],
+      // },
+
       {
         name: "Daily Work Reports",
         key: "daily_work_reports",
@@ -898,20 +930,20 @@ export const SIDEBAR_ITEMS = [
     color: "#16a34a",
     roles: ["superAdmin", "admin", "accountant", "employee"],
     children: [
-      {
-        name: "Payroll Runs",
-        key: "payroll_management",
-        icon: CircleDollarSign,
-        href: "/hrm/payroll-runs",
-        roles: ["superAdmin", "admin", "accountant"],
-      },
-      {
-        name: "Payslips",
-        key: "payslip",
-        icon: ReceiptText,
-        href: "/hrm/payslips",
-        roles: ["superAdmin", "admin", "accountant", "employee"],
-      },
+      // {
+      //   name: "Payroll Runs",
+      //   key: "payroll_management",
+      //   icon: CircleDollarSign,
+      //   href: "/hrm/payroll-runs",
+      //   roles: ["superAdmin", "admin", "accountant"],
+      // },
+      // {
+      //   name: "Payslips",
+      //   key: "payslip",
+      //   icon: ReceiptText,
+      //   href: "/hrm/payslips",
+      //   roles: ["superAdmin", "admin", "accountant", "employee"],
+      // },
       {
         name: "Employee List",
         key: "employee_list",
@@ -1056,6 +1088,12 @@ const normalizeRolePermissionMap = (value) => {
       if (defaultKeys.includes("notice")) {
         normalizedKeys.add("notice");
       }
+      if (defaultKeys.includes("cod_charge")) {
+        normalizedKeys.add("cod_charge");
+      }
+      if (defaultKeys.includes("delivery_charge")) {
+        normalizedKeys.add("delivery_charge");
+      }
     }
 
     const defaultKeys = DEFAULT_ROLE_PERMISSION_MAP[role] || [];
@@ -1094,6 +1132,10 @@ const normalizeRolePermissionMap = (value) => {
     if (normalizedKeys.has("department_designation")) {
       normalizedKeys.add("department_management");
       normalizedKeys.add("designation_management");
+    }
+
+    if (defaultKeys.includes("team_management")) {
+      normalizedKeys.add("team_management");
     }
 
     const payrollChildKeys = [

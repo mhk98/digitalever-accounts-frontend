@@ -18,7 +18,6 @@ import { useLayout } from "../context/LayoutContext";
 import { translations } from "../utils/translations";
 import { useGetInventoryOverviewLowStockQuery } from "../features/inventoryOverview/inventoryOverview";
 import { useGetAllInTransitProductQuery } from "../features/inTransitProduct/inTransitProduct";
-import { useGetAllProfitLossQuery } from "../features/profitLoss/profitLoss";
 
 const safeNumber = (value) => {
   const parsed = Number(value);
@@ -86,14 +85,14 @@ const getLastDaysRange = (days) => {
 const OverviewPage = () => {
   const { language } = useLayout();
   const t = translations[language] || translations.EN;
-  const defaultRange = useMemo(() => getThisMonthRange(), []);
-  const [selectedFilter, setSelectedFilter] = useState("");
+  const defaultRange = useMemo(() => getLastDaysRange(30), []);
+  const [selectedFilter, setSelectedFilter] = useState("last30");
   const [from, setFrom] = useState(defaultRange.from);
   const [to, setTo] = useState(defaultRange.to);
   const [appliedFilter, setAppliedFilter] = useState({
-    type: null,
-    from: null,
-    to: null,
+    type: "last30",
+    from: defaultRange.from,
+    to: defaultRange.to,
   });
 
   const summaryQuery = useMemo(() => {
@@ -106,7 +105,7 @@ const OverviewPage = () => {
     }
 
     if (
-      ["yesterday", "thisWeek"].includes(appliedFilter.type) &&
+      ["yesterday", "thisWeek", "last30"].includes(appliedFilter.type) &&
       appliedFilter.from &&
       appliedFilter.to
     ) {
@@ -143,60 +142,6 @@ const OverviewPage = () => {
 
   const summary = summaryRes?.data || {};
 
-  const autoProfitLossQueryArgs = useMemo(() => {
-    const args = {
-      page: 1,
-      limit: 1000,
-      mode: "auto",
-    };
-
-    if (
-      ["today", "yesterday", "thisWeek", "thisMonth", "custom"].includes(
-        appliedFilter.type,
-      ) &&
-      appliedFilter.from &&
-      appliedFilter.to
-    ) {
-      args.startDate = appliedFilter.from;
-      args.endDate = appliedFilter.to;
-    }
-
-    return args;
-  }, [appliedFilter]);
-
-  const {
-    data: autoProfitLossRes,
-    isLoading: autoProfitLossLoading,
-    isFetching: autoProfitLossFetching,
-  } = useGetAllProfitLossQuery(autoProfitLossQueryArgs);
-
-  const autoProfitLossRows = autoProfitLossRes?.data || [];
-  const autoProfitLossCount = safeNumber(
-    autoProfitLossRes?.meta?.count ?? autoProfitLossRes?.meta?.total,
-  );
-
-  const autoProfitLossSummary = useMemo(
-    () =>
-      autoProfitLossRows.reduce(
-        (acc, row) => {
-          acc.purchase += safeNumber(row?.purchase);
-          acc.revenue += safeNumber(row?.revenue);
-          acc.returnAmount += safeNumber(row?.return);
-          acc.cost += safeNumber(row?.cost);
-          acc.profitLoss += safeNumber(row?.profitLoss);
-          return acc;
-        },
-        {
-          purchase: 0,
-          revenue: 0,
-          returnAmount: 0,
-          cost: 0,
-          profitLoss: 0,
-        },
-      ),
-    [autoProfitLossRows],
-  );
-
   const onFilterChange = (value) => {
     setSelectedFilter(value);
 
@@ -232,6 +177,14 @@ const OverviewPage = () => {
       return;
     }
 
+    if (value === "last30") {
+      const last30Range = getLastDaysRange(30);
+      setFrom(last30Range.from);
+      setTo(last30Range.to);
+      setAppliedFilter({ type: "last30", ...last30Range });
+      return;
+    }
+
     if (value !== "custom") {
       setAppliedFilter({ type: null, from: null, to: null });
     }
@@ -243,11 +196,11 @@ const OverviewPage = () => {
   };
 
   const onReset = () => {
-    const monthRange = getThisMonthRange();
-    setSelectedFilter("");
-    setFrom(monthRange.from);
-    setTo(monthRange.to);
-    setAppliedFilter({ type: null, from: null, to: null });
+    const last30Range = getLastDaysRange(30);
+    setSelectedFilter("last30");
+    setFrom(last30Range.from);
+    setTo(last30Range.to);
+    setAppliedFilter({ type: "last30", ...last30Range });
   };
 
   if (isError) console.error("Overview Summary error:", error);
@@ -282,6 +235,13 @@ const OverviewPage = () => {
   const totalPendingApprovalCount = Number(
     summary?.totalPendingApprovalCount || 0,
   );
+  const profitLossSummary = {
+    netRevenue: safeNumber(summary?.netRevenue),
+    netPurchase: safeNumber(summary?.netPurchase),
+    grossProfit: safeNumber(summary?.grossProfit),
+    othersExpense: safeNumber(summary?.othersExpense),
+    netProfitLoss: safeNumber(summary?.netProfitLoss),
+  };
 
   // =========================
   // ✅ Trending Products
@@ -430,6 +390,7 @@ const OverviewPage = () => {
                   onChange={(e) => onFilterChange(e.target.value)}
                   className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition"
                 >
+                  <option value="last30">Last 30 Days</option>
                   <option value="">All Data</option>
                   <option value="today">Today</option>
                   <option value="yesterday">Yesterday</option>
@@ -557,31 +518,43 @@ const OverviewPage = () => {
                     Profit & Loss
                   </h3>
                   <p className="text-xs font-medium text-slate-400">
-                    Saved auto calculations from Intransit minus Sales Return
+                    Intransit sales minus returns, COD and delivery charges
                   </p>
                 </div>
               </div>
               <span className="rounded-full border border-slate-100 bg-slate-50 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-slate-500">
-                {autoProfitLossLoading || autoProfitLossFetching
-                  ? "Loading..."
-                  : `${autoProfitLossCount} records`}
+                {isLoading ? "Loading..." : "Live Summary"}
               </span>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
               {[
-                ["Revenue", autoProfitLossSummary.revenue, "text-indigo-700"],
-                ["Purchase", autoProfitLossSummary.purchase, "text-amber-700"],
                 [
-                  "Sales Return",
-                  autoProfitLossSummary.returnAmount,
-                  "text-rose-600",
+                  "Net Revenue",
+                  profitLossSummary.netRevenue,
+                  "text-indigo-700",
                 ],
-                ["Cost", autoProfitLossSummary.cost, "text-slate-700"],
                 [
-                  "Profit/Loss",
-                  autoProfitLossSummary.profitLoss,
-                  autoProfitLossSummary.profitLoss >= 0
+                  "Net Purchase",
+                  profitLossSummary.netPurchase,
+                  "text-amber-700",
+                ],
+                [
+                  "Gross Profit",
+                  profitLossSummary.grossProfit,
+                  profitLossSummary.grossProfit >= 0
+                    ? "text-emerald-600"
+                    : "text-rose-600",
+                ],
+                [
+                  "Others Expense",
+                  profitLossSummary.othersExpense,
+                  "text-slate-700",
+                ],
+                [
+                  "Net Profit/Loss",
+                  profitLossSummary.netProfitLoss,
+                  profitLossSummary.netProfitLoss >= 0
                     ? "text-emerald-600"
                     : "text-rose-600",
                 ],
@@ -594,9 +567,7 @@ const OverviewPage = () => {
                     {label}
                   </div>
                   <div className={`mt-2 text-xl font-black ${tone}`}>
-                    {autoProfitLossLoading || autoProfitLossFetching
-                      ? "..."
-                      : formatCurrency(value)}
+                    {isLoading ? "..." : formatCurrency(value)}
                   </div>
                 </div>
               ))}

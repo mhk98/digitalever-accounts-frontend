@@ -43,6 +43,7 @@ const EmployeePage = lazy(() => import("./pages/EmployeePage"));
 const POSPage = lazy(() => import("./pages/POSPage"));
 const NotificationPage = lazy(() => import("./pages/NotificationPage"));
 const NoticePage = lazy(() => import("./pages/NoticePage"));
+const ChargeSettingsPage = lazy(() => import("./pages/ChargeSettingsPage"));
 const TaskPage = lazy(() => import("./pages/TaskPage"));
 const SalaryPage = lazy(() => import("./pages/SalaryPage"));
 const LogoPage = lazy(() => import("./pages/LogoPage"));
@@ -82,6 +83,7 @@ const EmployeeMasterPage = lazy(() => import("./pages/EmployeeMasterPage"));
 const EmployeeProfilePage = lazy(() => import("./pages/EmployeeProfilePage"));
 const DepartmentPage = lazy(() => import("./pages/DepartmentPage"));
 const DesignationPage = lazy(() => import("./pages/DesignationPage"));
+const TeamPage = lazy(() => import("./pages/TeamPage"));
 const ShiftPage = lazy(() => import("./pages/ShiftPage"));
 const HolidayPage = lazy(() => import("./pages/HolidayPage"));
 const AttendanceDevicePage = lazy(() => import("./pages/AttendanceDevicePage"));
@@ -136,6 +138,7 @@ function App() {
                 <Route path="/employee-master" element={<AuthedRoute><EmployeeMasterPage /></AuthedRoute>} />
                 <Route path="/hrm/departments" element={<AuthedRoute><DepartmentPage /></AuthedRoute>} />
                 <Route path="/hrm/designations" element={<AuthedRoute><DesignationPage /></AuthedRoute>} />
+                <Route path="/hrm/teams" element={<AuthedRoute><TeamPage /></AuthedRoute>} />
                 <Route path="/hrm/shifts" element={<AuthedRoute><ShiftPage /></AuthedRoute>} />
                 <Route path="/hrm/holidays" element={<AuthedRoute><HolidayPage /></AuthedRoute>} />
                 <Route path="/hrm/attendance-devices" element={<AuthedRoute><AttendanceDevicePage /></AuthedRoute>} />
@@ -209,6 +212,8 @@ function App() {
                 <Route path="/logo" element={<AuthedRoute><LogoPage /></AuthedRoute>} />
                 <Route path="/tasks" element={<AuthedRoute><TaskPage /></AuthedRoute>} />
                 <Route path="/settings/notice" element={<AuthedRoute><NoticePage /></AuthedRoute>} />
+                <Route path="/settings/cod-charge" element={<AuthedRoute><ChargeSettingsPage chargeType="cod" /></AuthedRoute>} />
+                <Route path="/settings/delivery-charge" element={<AuthedRoute><ChargeSettingsPage chargeType="delivery" /></AuthedRoute>} />
                 <Route path="/settings/role-permissions" element={<AuthedRoute><RolePermissionsPage /></AuthedRoute>} />
                 <Route path="/notifications" element={<AuthedRoute><NotificationPage /></AuthedRoute>} />
                 <Route path="/chat" element={<AuthedRoute><ChatPage /></AuthedRoute>} />

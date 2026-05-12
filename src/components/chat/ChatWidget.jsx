@@ -419,7 +419,7 @@ const ChatWidget = () => {
                 <input
                   value={messageText}
                   onChange={(event) => setMessageText(event.target.value)}
-                  className="h-11 min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:border-indigo-300"
+                  className="h-11 min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 caret-indigo-600 outline-none placeholder:text-slate-400 focus:border-indigo-300"
                   placeholder="Type a message"
                 />
                 <button
@@ -440,7 +440,7 @@ const ChatWidget = () => {
                   <input
                     value={searchTerm}
                     onChange={(event) => setSearchTerm(event.target.value)}
-                    className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none"
+                    className="h-full min-w-0 flex-1 bg-transparent text-sm text-slate-900 caret-indigo-600 outline-none placeholder:text-slate-400"
                     placeholder="Search people"
                   />
                 </label>
