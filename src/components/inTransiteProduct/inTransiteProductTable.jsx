@@ -153,6 +153,32 @@ const getVariantDisplayRows = (record) => {
   return [];
 };
 
+const parseReturnItems = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string") return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const getReturnRowItems = (record) => {
+  const items = parseReturnItems(record?.items);
+  return items.length ? items : [record];
+};
+
+const getReturnItemsTotalQuantity = (items = []) =>
+  items.reduce((total, item) => total + (Number(item?.quantity) || 0), 0);
+
+const getReturnItemsTotalPurchasePrice = (items = []) =>
+  items.reduce((total, item) => total + (Number(item?.purchase_price) || 0), 0);
+
+const getReturnItemsTotalSalePrice = (items = []) =>
+  items.reduce((total, item) => total + (Number(item?.sale_price) || 0), 0);
+
 const getVariationColorsForSize = (product, size) => {
   if (!size || !Array.isArray(product?.variations)) return [];
 
@@ -339,6 +365,15 @@ const IntransiteProductTable = () => {
         getVariantRowsFromProduct(selectedEditProductData).length > 0),
     [currentItem?.variantRows, isFetchingEditProduct, selectedEditProductData],
   );
+  const currentBulkItems = useMemo(
+    () => parseReturnItems(currentItem?.items),
+    [currentItem?.items],
+  );
+  const isEditingBulkReturn = currentBulkItems.length > 0;
+  const currentBulkTotalQuantity = useMemo(
+    () => getReturnItemsTotalQuantity(currentBulkItems),
+    [currentBulkItems],
+  );
 
   // ✅ react-select light styles
   const selectStyles = {
@@ -418,13 +453,36 @@ const IntransiteProductTable = () => {
   const resolveProductName = (rp) => {
     if (rp?.name) return rp.name;
 
-    const productId = rp?.productId;
+    const productId = rp?.productId || rp?.receivedId;
     if (!productId) return "N/A";
 
     const match = receivedData.find(
-      (r) => Number(r.productId) === Number(productId),
+      (r) =>
+        Number(r.Id) === Number(productId) ||
+        Number(r.id) === Number(productId) ||
+        Number(r.productId) === Number(productId) ||
+        Number(r.product?.Id) === Number(productId) ||
+        Number(r.product?.id) === Number(productId),
     );
     return match?.name || "N/A";
+  };
+
+  const resolveReturnItemName = (item) => {
+    if (item?.name) return item.name;
+
+    const productId = item?.productId || item?.receivedId;
+    if (!productId) return "N/A";
+
+    const match = receivedData.find(
+      (r) =>
+        Number(r.Id) === Number(productId) ||
+        Number(r.id) === Number(productId) ||
+        Number(r.productId) === Number(productId) ||
+        Number(r.product?.Id) === Number(productId) ||
+        Number(r.product?.id) === Number(productId),
+    );
+
+    return match?.name || `Product #${productId}`;
   };
 
   // ✅ add/edit handlers
@@ -490,12 +548,73 @@ const IntransiteProductTable = () => {
     });
   };
 
+  const updateCurrentBulkItem = (index, key, value) => {
+    setCurrentItem((prev) => {
+      const nextItems = parseReturnItems(prev?.items).map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [key]: value } : item,
+      );
+
+      return {
+        ...prev,
+        items: nextItems,
+        quantity: String(getReturnItemsTotalQuantity(nextItems)),
+      };
+    });
+  };
+
+  const updateCurrentBulkItemVariantField = (
+    itemIndex,
+    variantIndex,
+    key,
+    value,
+  ) => {
+    setCurrentItem((prev) => {
+      const nextItems = parseReturnItems(prev?.items).map(
+        (item, currentItemIndex) => {
+          if (currentItemIndex !== itemIndex) return item;
+
+          const nextVariants = (item.variants || []).map(
+            (variant, currentVariantIndex) =>
+              currentVariantIndex === variantIndex
+                ? {
+                    ...variant,
+                    [key]: key === "quantity" ? Number(value) || 0 : value,
+                  }
+                : variant,
+          );
+
+          return {
+            ...item,
+            variants: nextVariants,
+            quantity: nextVariants.reduce(
+              (total, variant) => total + (Number(variant.quantity) || 0),
+              0,
+            ),
+          };
+        },
+      );
+
+      return {
+        ...prev,
+        items: nextItems,
+        quantity: String(getReturnItemsTotalQuantity(nextItems)),
+      };
+    });
+  };
+
   const openEdit = (rp) => {
-    const variantRows = getInitialVariantRowsFromRecord(rp);
+    const bulkItems = parseReturnItems(rp.items);
+    const firstBulkItem = bulkItems[0] || null;
+    const variantRows = getInitialVariantRowsFromRecord(firstBulkItem || rp);
     setCurrentItem({
       ...rp,
-      productId: String(rp.productId ?? rp.receivedId ?? ""),
-      receivedId: String(rp.receivedId ?? rp.productId ?? ""),
+      items: bulkItems,
+      productId: String(
+        firstBulkItem?.productId ?? rp.productId ?? rp.receivedId ?? "",
+      ),
+      receivedId: String(
+        firstBulkItem?.receivedId ?? rp.receivedId ?? rp.productId ?? "",
+      ),
       variantRows,
       quantity: String(
         getVariantRowsTotalQuantity(variantRows) || Number(rp.quantity) || 0,
@@ -516,11 +635,18 @@ const IntransiteProductTable = () => {
   };
 
   const openEdit1 = (rp) => {
-    const variantRows = getInitialVariantRowsFromRecord(rp);
+    const bulkItems = parseReturnItems(rp.items);
+    const firstBulkItem = bulkItems[0] || null;
+    const variantRows = getInitialVariantRowsFromRecord(firstBulkItem || rp);
     setCurrentItem({
       ...rp,
-      productId: String(rp.productId ?? rp.receivedId ?? ""),
-      receivedId: String(rp.receivedId ?? rp.productId ?? ""),
+      items: bulkItems,
+      productId: String(
+        firstBulkItem?.productId ?? rp.productId ?? rp.receivedId ?? "",
+      ),
+      receivedId: String(
+        firstBulkItem?.receivedId ?? rp.receivedId ?? rp.productId ?? "",
+      ),
       variantRows,
       quantity: String(
         getVariantRowsTotalQuantity(variantRows) || Number(rp.quantity) || 0,
@@ -684,6 +810,7 @@ const IntransiteProductTable = () => {
         warehouseId: Number(createForm.warehouseId),
         quantity: 0,
         sale_price: 0,
+        purchase_price: 0,
         variants: [],
         note: createForm.note,
         date: createForm.date,
@@ -768,6 +895,9 @@ const IntransiteProductTable = () => {
       if (item.error) return toast.error(item.error);
       items = [{ ...applyCreateGlobalFields(item.payload), batchId }];
     }
+    if (items.some((item) => Number(item.quantity) <= 0)) {
+      return toast.error("Please enter quantity for every product");
+    }
 
     try {
       const payload = items.length === 1 ? items[0] : { items };
@@ -785,33 +915,53 @@ const IntransiteProductTable = () => {
   // ✅ update
   const handleUpdate = async () => {
     if (!currentItem?.Id) return toast.error("Invalid item");
-    if (!currentItem?.receivedId && !currentItem?.productId)
+    const bulkItems = parseReturnItems(currentItem?.items);
+    if (
+      !bulkItems.length &&
+      !currentItem?.receivedId &&
+      !currentItem?.productId
+    )
       return toast.error("Please select a product");
-    if (!currentItem.quantity || Number(currentItem.quantity) <= 0)
+    if (
+      bulkItems.length
+        ? bulkItems.some((item) => Number(item.quantity) <= 0)
+        : !currentItem.quantity || Number(currentItem.quantity) <= 0
+    )
       return toast.error("Please enter valid quantity");
 
     const variantsPayload = getNormalizedVariantsPayload(
       currentItem?.variantRows,
     );
-    if (hasDuplicateVariantCombination(variantsPayload)) {
+    if (!bulkItems.length && hasDuplicateVariantCombination(variantsPayload)) {
       return toast.error("Duplicate size and color combination found");
     }
 
     try {
-      const payload = {
-        note: currentItem.note,
-        status: currentItem.status,
-        warehouseId: Number(currentItem.warehouseId),
-        date: currentItem.date,
-        quantity: Number(currentItem.quantity),
-        sale_price: Number(currentItem.sale_price) || 0,
-        purchase_price: Number(currentItem.purchase_price) || 0,
-        variants: variantsPayload,
-        receivedId: Number(currentItem.receivedId || currentItem.productId),
-        productId: Number(currentItem.productId || currentItem.receivedId),
-        userId: userId,
-        actorRole: role,
-      };
+      const payload =
+        bulkItems.length > 0
+          ? {
+              items: bulkItems,
+              note: currentItem.note,
+              status: currentItem.status,
+              warehouseId: Number(currentItem.warehouseId),
+              date: currentItem.date,
+              userId,
+              actorRole: role,
+            }
+          : {
+              note: currentItem.note,
+              status: currentItem.status,
+              warehouseId: Number(currentItem.warehouseId),
+              date: currentItem.date,
+              quantity: Number(currentItem.quantity),
+              sale_price: Number(currentItem.sale_price) || 0,
+              purchase_price: Number(currentItem.purchase_price) || 0,
+              variants: variantsPayload,
+              receivedId: Number(currentItem.receivedId || currentItem.productId),
+              productId: Number(currentItem.productId || currentItem.receivedId),
+              userId: userId,
+              actorRole: role,
+            };
 
       const res = await updateInTransitProduct({
         id: currentItem.Id,
@@ -831,19 +981,30 @@ const IntransiteProductTable = () => {
 
   const handleUpdate1 = async () => {
     if (!currentItem?.Id) return toast.error("Invalid item");
+    const bulkItems = parseReturnItems(currentItem?.items);
 
     try {
-      const payload = {
-        note: currentItem.note,
-        status: currentItem.status,
-        quantity: Number(currentItem.quantity || 0),
-        sale_price: Number(currentItem.sale_price) || 0,
-        purchase_price: Number(currentItem.purchase_price) || 0,
-        receivedId: Number(currentItem.receivedId || currentItem.productId),
-        productId: Number(currentItem.productId || currentItem.receivedId),
-        userId: userId,
-        actorRole: role,
-      };
+      const payload =
+        bulkItems.length > 0
+          ? {
+              items: bulkItems,
+              note: currentItem.note,
+              status: currentItem.status,
+              warehouseId: Number(currentItem.warehouseId),
+              userId,
+              actorRole: role,
+            }
+          : {
+              note: currentItem.note,
+              status: currentItem.status,
+              quantity: Number(currentItem.quantity || 0),
+              sale_price: Number(currentItem.sale_price) || 0,
+              purchase_price: Number(currentItem.purchase_price) || 0,
+              receivedId: Number(currentItem.receivedId || currentItem.productId),
+              productId: Number(currentItem.productId || currentItem.receivedId),
+              userId: userId,
+              actorRole: role,
+            };
 
       const res = await updateInTransitProduct({
         id: currentItem.Id,
@@ -1123,7 +1284,17 @@ const IntransiteProductTable = () => {
 
           <tbody className="divide-y divide-slate-200 bg-white">
             {rows.map((rp) => {
-              const variantDisplayRows = getVariantDisplayRows(rp);
+              const rowItems = getReturnRowItems(rp);
+              const rowTotalQuantity = getReturnItemsTotalQuantity(rowItems);
+              const rowTotalPurchasePrice =
+                getReturnItemsTotalPurchasePrice(rowItems);
+              const rowTotalSalePrice = getReturnItemsTotalSalePrice(rowItems);
+              const variantDisplayRows = rowItems.flatMap((item) =>
+                getVariantDisplayRows(item),
+              );
+              const noVariantItems = rowItems.filter(
+                (item) => getVariantDisplayRows(item).length === 0,
+              );
 
               return (
                 <motion.tr
@@ -1137,7 +1308,17 @@ const IntransiteProductTable = () => {
                     {rp.date}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                    {resolveProductName(rp)}
+                    {rowItems.length > 1 ? (
+                      <div className="space-y-1">
+                        {rowItems.map((item, index) => (
+                          <div key={`${rp.Id}-item-${index}`}>
+                            {resolveReturnItemName(item)}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      resolveProductName(rp)
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp?.supplier?.name || "-"}
@@ -1146,15 +1327,35 @@ const IntransiteProductTable = () => {
                     {rp?.warehouse?.name || "-"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.quantity || 0).toFixed(2)}
+                    {Number(rowTotalQuantity || rp.quantity || 0).toFixed(2)}
                   </td>
-                  <td className="px-6 py-4 min-w-[210px]">
-                    {variantDisplayRows.length > 0 ? (
+                  <td className="px-6 py-4 min-w-[260px]">
+                    {variantDisplayRows.length > 0 ||
+                    noVariantItems.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
+                        {noVariantItems.map((item, index) => (
+                          <div
+                            key={`${rp.Id}-no-variant-${index}`}
+                            className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2 shadow-sm min-w-[118px]"
+                          >
+                            <div className="text-[11px] font-bold text-slate-700">
+                              {resolveReturnItemName(item)}
+                            </div>
+                            <div className="mt-2 text-[11px] font-medium text-slate-500">
+                              Qty{" "}
+                              <span className="font-bold text-slate-900">
+                                {Number(item.quantity || 0).toFixed(0)}
+                              </span>
+                            </div>
+                            <div className="mt-2 text-[10px] font-semibold text-slate-400">
+                              No variants
+                            </div>
+                          </div>
+                        ))}
                         {variantDisplayRows.map((variant, index) => (
                           <div
                             key={`${rp.Id}-variant-${index}`}
-                            className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-2.5 py-1.5 shadow-sm"
+                            className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-3 py-2 shadow-sm min-w-[118px]"
                           >
                             <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
                               <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">
@@ -1180,10 +1381,12 @@ const IntransiteProductTable = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.purchase_price || 0).toFixed(2)}
+                    {Number(
+                      rowTotalPurchasePrice || rp.purchase_price || 0,
+                    ).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.sale_price || 0).toFixed(2)}
+                    {Number(rowTotalSalePrice || rp.sale_price || 0).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     <span
@@ -1358,7 +1561,97 @@ const IntransiteProductTable = () => {
       >
         {currentItem && (
           <>
-            <div className="mt-4">
+            {isEditingBulkReturn && (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Product List
+                  </p>
+                  <div className="rounded-xl border border-indigo-100 bg-white px-4 py-2 text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Total Quantity
+                    </p>
+                    <p className="text-lg font-black text-slate-900">
+                      {currentBulkTotalQuantity}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                  <table className="min-w-[680px] w-full text-sm">
+                    <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                      <tr>
+                        <th className="px-3 py-3 text-left">Product</th>
+                        <th className="px-3 py-3 text-left">Quantity</th>
+                        <th className="px-3 py-3 text-left">Variant Detail</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {currentBulkItems.map((item, index) => (
+                        <tr key={`edit-intransit-${item.productId || item.name}-${index}`}>
+                          <td className="px-3 py-3 align-top font-semibold text-slate-800">
+                            {resolveReturnItemName(item)}
+                          </td>
+                          <td className="px-3 py-3 align-top">
+                            {item.variants?.length ? (
+                              <p className="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-black text-slate-900">
+                                {Number(item.quantity || 0)}
+                              </p>
+                            ) : (
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.quantity ?? ""}
+                                onChange={(e) =>
+                                  updateCurrentBulkItem(
+                                    index,
+                                    "quantity",
+                                    e.target.value,
+                                  )
+                                }
+                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                              />
+                            )}
+                          </td>
+                          <td className="px-3 py-3 align-top text-xs text-slate-500">
+                            {item.variants?.length
+                              ? item.variants.map((variant, variantIndex) => (
+                                  <div
+                                    key={`${variant.size}-${variant.color}-${variantIndex}`}
+                                    className="mb-2 grid grid-cols-[1fr_90px] items-end gap-2 last:mb-0"
+                                  >
+                                    <span className="rounded-lg bg-slate-50 px-2 py-1 font-semibold text-slate-600">
+                                      {variant.size || "-"} / {variant.color || "-"}
+                                    </span>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      value={variant.quantity}
+                                      onChange={(e) =>
+                                        updateCurrentBulkItemVariantField(
+                                          index,
+                                          variantIndex,
+                                          "quantity",
+                                          e.target.value,
+                                        )
+                                      }
+                                      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                                    />
+                                  </div>
+                                ))
+                              : "No variants"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className={isEditingBulkReturn ? "hidden" : "mt-4"}>
               <label className="block text-sm text-slate-700">Product</label>
               <Select
                 options={receivedDropdownOptions}
@@ -1384,7 +1677,7 @@ const IntransiteProductTable = () => {
                 styles={selectStyles}
               />
             </div>
-            {shouldShowEditVariantOptions && (
+            {!isEditingBulkReturn && shouldShowEditVariantOptions && (
               <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
                 <div>
                   <div>
@@ -1525,6 +1818,7 @@ const IntransiteProductTable = () => {
               </div>
             )}
 
+            {!isEditingBulkReturn && (
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Date</label>
               <input
@@ -1537,6 +1831,7 @@ const IntransiteProductTable = () => {
                          focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
               />
             </div>
+            )}
 
             <div className="mt-4">
               <label className="block text-sm text-slate-700">Warehouse</label>
@@ -1565,53 +1860,57 @@ const IntransiteProductTable = () => {
               />
             </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">Quantity</label>
-              <input
-                type="number"
-                step="0.01"
-                value={currentItem.quantity ?? ""}
-                onChange={(e) =>
-                  setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              />
-            </div>
+            {!isEditingBulkReturn && (
+              <>
+                <div className="mt-4">
+                  <label className="block text-sm text-slate-700">Quantity</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={currentItem.quantity ?? ""}
+                    onChange={(e) =>
+                      setCurrentItem((p) => ({ ...p, quantity: e.target.value }))
+                    }
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  />
+                </div>
 
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">
-                Sales Price
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={currentItem.sale_price ?? ""}
-                onChange={(e) =>
-                  setCurrentItem((p) => ({
-                    ...p,
-                    sale_price: e.target.value,
-                  }))
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              />
-            </div>
-            <div className="mt-4">
-              <label className="block text-sm text-slate-700">
-                Purchase Price
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={currentItem.purchase_price ?? ""}
-                onChange={(e) =>
-                  setCurrentItem((p) => ({
-                    ...p,
-                    purchase_price: e.target.value,
-                  }))
-                }
-                className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              />
-            </div>
+                <div className="mt-4">
+                  <label className="block text-sm text-slate-700">
+                    Sales Price
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={currentItem.sale_price ?? ""}
+                    onChange={(e) =>
+                      setCurrentItem((p) => ({
+                        ...p,
+                        sale_price: e.target.value,
+                      }))
+                    }
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  />
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm text-slate-700">
+                    Purchase Price
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={currentItem.purchase_price ?? ""}
+                    onChange={(e) =>
+                      setCurrentItem((p) => ({
+                        ...p,
+                        purchase_price: e.target.value,
+                      }))
+                    }
+                    className="h-11 border border-slate-200 rounded-xl px-3 w-full mt-1 text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
+                  />
+                </div>
+              </>
+            )}
 
             {role === "superAdmin" || role === "admin" ? (
               <div className="mt-4">

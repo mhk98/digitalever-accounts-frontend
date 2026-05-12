@@ -153,6 +153,32 @@ const getVariantDisplayRows = (record) => {
   return [];
 };
 
+const parseReturnItems = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string") return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const getReturnRowItems = (record) => {
+  const items = parseReturnItems(record?.items);
+  return items.length ? items : [record];
+};
+
+const getReturnItemsTotalQuantity = (items = []) =>
+  items.reduce((total, item) => total + (Number(item?.quantity) || 0), 0);
+
+const getReturnItemsTotalPurchasePrice = (items = []) =>
+  items.reduce((total, item) => total + (Number(item?.purchase_price) || 0), 0);
+
+const getReturnItemsTotalSalePrice = (items = []) =>
+  items.reduce((total, item) => total + (Number(item?.sale_price) || 0), 0);
+
 const getVariationColorsForSize = (product, size) => {
   if (!size || !Array.isArray(product?.variations)) return [];
 
@@ -382,6 +408,16 @@ const ReturnProductTable = () => {
   );
 
   // ✅ react-select light styles
+  const currentBulkItems = useMemo(
+    () => parseReturnItems(currentItem?.items),
+    [currentItem?.items],
+  );
+  const isEditingBulkReturn = currentBulkItems.length > 0;
+  const currentBulkTotalQuantity = useMemo(
+    () => getReturnItemsTotalQuantity(currentBulkItems),
+    [currentBulkItems],
+  );
+
   const selectStyles = {
     control: (base, state) => ({
       ...base,
@@ -434,13 +470,36 @@ const ReturnProductTable = () => {
   const resolveProductName = (rp) => {
     if (rp?.name) return rp.name;
 
-    const productId = rp?.productId;
+    const productId = rp?.productId || rp?.receivedId;
     if (!productId) return "N/A";
 
     const match = receivedData.find(
-      (r) => Number(r.productId) === Number(productId),
+      (r) =>
+        Number(r.Id) === Number(productId) ||
+        Number(r.id) === Number(productId) ||
+        Number(r.productId) === Number(productId) ||
+        Number(r.product?.Id) === Number(productId) ||
+        Number(r.product?.id) === Number(productId),
     );
     return match?.name || "N/A";
+  };
+
+  const resolveReturnItemName = (item) => {
+    if (item?.name) return item.name;
+
+    const productId = item?.productId || item?.receivedId;
+    if (!productId) return "N/A";
+
+    const match = receivedData.find(
+      (r) =>
+        Number(r.Id) === Number(productId) ||
+        Number(r.id) === Number(productId) ||
+        Number(r.productId) === Number(productId) ||
+        Number(r.product?.Id) === Number(productId) ||
+        Number(r.product?.id) === Number(productId),
+    );
+
+    return match?.name || `Product #${productId}`;
   };
 
   // ✅ add/edit handlers
@@ -506,12 +565,73 @@ const ReturnProductTable = () => {
     });
   };
 
+  const updateCurrentBulkItem = (index, key, value) => {
+    setCurrentItem((prev) => {
+      const nextItems = parseReturnItems(prev?.items).map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [key]: value } : item,
+      );
+
+      return {
+        ...prev,
+        items: nextItems,
+        quantity: String(getReturnItemsTotalQuantity(nextItems)),
+      };
+    });
+  };
+
+  const updateCurrentBulkItemVariantField = (
+    itemIndex,
+    variantIndex,
+    key,
+    value,
+  ) => {
+    setCurrentItem((prev) => {
+      const nextItems = parseReturnItems(prev?.items).map(
+        (item, currentItemIndex) => {
+          if (currentItemIndex !== itemIndex) return item;
+
+          const nextVariants = (item.variants || []).map(
+            (variant, currentVariantIndex) =>
+              currentVariantIndex === variantIndex
+                ? {
+                    ...variant,
+                    [key]: key === "quantity" ? Number(value) || 0 : value,
+                  }
+                : variant,
+          );
+
+          return {
+            ...item,
+            variants: nextVariants,
+            quantity: nextVariants.reduce(
+              (total, variant) => total + (Number(variant.quantity) || 0),
+              0,
+            ),
+          };
+        },
+      );
+
+      return {
+        ...prev,
+        items: nextItems,
+        quantity: String(getReturnItemsTotalQuantity(nextItems)),
+      };
+    });
+  };
+
   const openEdit = (rp) => {
-    const variantRows = getInitialVariantRowsFromRecord(rp);
+    const bulkItems = parseReturnItems(rp.items);
+    const firstBulkItem = bulkItems[0] || null;
+    const variantRows = getInitialVariantRowsFromRecord(firstBulkItem || rp);
     setCurrentItem({
       ...rp,
-      productId: String(rp.productId ?? rp.receivedId ?? ""),
-      receivedId: String(rp.receivedId ?? rp.productId ?? ""),
+      items: bulkItems,
+      productId: String(
+        firstBulkItem?.productId ?? rp.productId ?? rp.receivedId ?? "",
+      ),
+      receivedId: String(
+        firstBulkItem?.receivedId ?? rp.receivedId ?? rp.productId ?? "",
+      ),
       variantRows,
       quantity: String(
         getVariantRowsTotalQuantity(variantRows) || Number(rp.quantity) || 0,
@@ -531,11 +651,18 @@ const ReturnProductTable = () => {
   };
 
   const openEdit1 = (rp) => {
-    const variantRows = getInitialVariantRowsFromRecord(rp);
+    const bulkItems = parseReturnItems(rp.items);
+    const firstBulkItem = bulkItems[0] || null;
+    const variantRows = getInitialVariantRowsFromRecord(firstBulkItem || rp);
     setCurrentItem({
       ...rp,
-      productId: String(rp.productId ?? rp.receivedId ?? ""),
-      receivedId: String(rp.receivedId ?? rp.productId ?? ""),
+      items: bulkItems,
+      productId: String(
+        firstBulkItem?.productId ?? rp.productId ?? rp.receivedId ?? "",
+      ),
+      receivedId: String(
+        firstBulkItem?.receivedId ?? rp.receivedId ?? rp.productId ?? "",
+      ),
       variantRows,
       quantity: String(
         getVariantRowsTotalQuantity(variantRows) || Number(rp.quantity) || 0,
@@ -561,8 +688,6 @@ const ReturnProductTable = () => {
   const buildCreatePayload = () => {
     if (!createForm.receivedId && !createForm.productId)
       return { error: "Please select a product" };
-    if (!createForm.quantity || Number(createForm.quantity) <= 0)
-      return { error: "Please enter valid quantity" };
 
     const variantsPayload = getNormalizedVariantsPayload(
       createForm.variantRows,
@@ -570,6 +695,13 @@ const ReturnProductTable = () => {
     if (hasDuplicateVariantCombination(variantsPayload)) {
       return { error: "Duplicate size and color combination found" };
     }
+
+    const totalQuantity =
+      variantsPayload.length > 0
+        ? getVariantRowsTotalQuantity(variantsPayload)
+        : Number(createForm.quantity) || 0;
+
+    if (totalQuantity <= 0) return { error: "Please enter valid quantity" };
 
     const productId = String(createForm.productId || createForm.receivedId);
     const selectedProduct = receivedDropdownOptions.find(
@@ -581,10 +713,32 @@ const ReturnProductTable = () => {
         receivedId: Number(createForm.receivedId || createForm.productId),
         productId: Number(createForm.productId || createForm.receivedId),
         warehouseId: Number(createForm.warehouseId),
-        quantity: Number(createForm.quantity),
+        quantity: totalQuantity,
         sale_price: Number(createForm.sale_price) || 0,
         purchase_price: Number(createForm.purchase_price) || 0,
         variants: variantsPayload,
+        note: createForm.note,
+        date: createForm.date,
+      },
+      label: selectedProduct?.label || `Product #${productId}`,
+    };
+  };
+
+  const buildEmptyCreateItem = () => {
+    const productId = String(createForm.receivedId || createForm.productId);
+    const selectedProduct = receivedDropdownOptions.find(
+      (option) => option.value === productId,
+    );
+
+    return {
+      payload: {
+        receivedId: Number(productId),
+        productId: Number(productId),
+        warehouseId: Number(createForm.warehouseId),
+        quantity: 0,
+        sale_price: 0,
+        purchase_price: 0,
+        variants: [],
         note: createForm.note,
         date: createForm.date,
       },
@@ -604,34 +758,55 @@ const ReturnProductTable = () => {
     }));
   };
 
-  const handleAddCreateItem = () => {
-    const item = buildCreatePayload();
-    if (item.error) return toast.error(item.error);
-    setCreateItems((prev) => [...prev, item]);
-    resetCreateProductFields();
-    toast.success("Product added to list");
+  const mergeCreateItem = (incomingItem) => {
+    setCreateItems((prev) => {
+      const targetReceivedId = String(incomingItem.payload?.receivedId || "");
+      const existingIndex = prev.findIndex(
+        (item) => String(item.payload?.receivedId || "") === targetReceivedId,
+      );
+
+      if (existingIndex === -1) return [...prev, incomingItem];
+
+      return prev.map((item, index) => {
+        if (index !== existingIndex) return item;
+
+        const variants = [
+          ...normalizeVariantRows(item.payload?.variants).filter(
+            (variant) => variant.size || variant.color || variant.quantity,
+          ),
+          ...normalizeVariantRows(incomingItem.payload?.variants).filter(
+            (variant) => variant.size || variant.color || variant.quantity,
+          ),
+        ];
+
+        return {
+          ...item,
+          payload: {
+            ...item.payload,
+            ...incomingItem.payload,
+            quantity:
+              (Number(item.payload?.quantity) || 0) +
+              (Number(incomingItem.payload?.quantity) || 0),
+            variants,
+          },
+        };
+      });
+    });
   };
 
-  const preserveCurrentCreateItem = () => {
-    if (
-      !createForm.receivedId &&
-      !createForm.productId &&
-      (!createForm.quantity || Number(createForm.quantity) <= 0)
-    ) {
-      return;
-    }
-
-    if (!createForm.receivedId && !createForm.productId) return;
-    if (!createForm.quantity || Number(createForm.quantity) <= 0) return;
-
+  const handleAddCreateVariants = () => {
     const item = buildCreatePayload();
-    if (item.error) return;
-    setCreateItems((prev) => [...prev, item]);
-    toast.success("Previous product added to list");
+    if (item.error) return toast.error(item.error);
+    mergeCreateItem(item);
+    resetCreateProductFields();
   };
 
   const handleCreateProductSelect = (selected) => {
-    preserveCurrentCreateItem();
+    if (!selected) {
+      resetCreateProductFields();
+      return;
+    }
+
     setCreateForm((p) => ({
       ...p,
       productId: selected?.value || "",
@@ -643,19 +818,117 @@ const ReturnProductTable = () => {
     }));
   };
 
+  useEffect(() => {
+    if (
+      !createForm?.receivedId ||
+      !selectedCreateProductData ||
+      isFetchingCreateProduct ||
+      shouldShowCreateVariantOptions
+    ) {
+      return;
+    }
+
+    mergeCreateItem(buildEmptyCreateItem());
+    resetCreateProductFields();
+  }, [
+    createForm?.receivedId,
+    createForm?.productId,
+    selectedCreateProductData,
+    isFetchingCreateProduct,
+    shouldShowCreateVariantOptions,
+    receivedDropdownOptions,
+  ]);
+
+  const updateCreateItem = (index, key, value) => {
+    setCreateItems((prev) =>
+      prev.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              payload: {
+                ...item.payload,
+                [key]: value,
+              },
+            }
+          : item,
+      ),
+    );
+  };
+
+  const updateCreateItemVariantField = (
+    itemIndex,
+    variantIndex,
+    key,
+    value,
+  ) => {
+    setCreateItems((prev) =>
+      prev.map((item, currentItemIndex) => {
+        if (currentItemIndex !== itemIndex) return item;
+
+        const variants = normalizeVariantRows(item.payload?.variants).map(
+          (variant, currentVariantIndex) =>
+            currentVariantIndex === variantIndex
+              ? { ...variant, [key]: value }
+              : variant,
+        );
+        const quantity = getVariantRowsTotalQuantity(variants);
+
+        return {
+          ...item,
+          payload: {
+            ...item.payload,
+            variants,
+            quantity,
+          },
+        };
+      }),
+    );
+  };
+
+  const removeCreateItem = (index) => {
+    setCreateItems((prev) =>
+      prev.filter((_, itemIndex) => itemIndex !== index),
+    );
+  };
+
   // ✅ create
   const handleCreate = async (e) => {
     e.preventDefault();
 
-    let items = createItems.map((item) => item.payload);
-    if (items.length === 0) {
+    if (!createForm.warehouseId) return toast.error("Please select warehouse");
+
+    const commonFields = {
+      warehouseId: Number(createForm.warehouseId),
+      note: createForm.note || "",
+      date: createForm.date || "",
+      userId,
+    };
+
+    let items = createItems.map((item) => ({
+      ...item.payload,
+      ...commonFields,
+    }));
+    if (createForm.receivedId || createForm.productId) {
       const item = buildCreatePayload();
       if (item.error) return toast.error(item.error);
-      items = [item.payload];
+      items = [
+        ...items,
+        {
+          ...item.payload,
+          ...commonFields,
+        },
+      ];
+    }
+
+    if (items.length === 0) {
+      return toast.error("Please add at least one product");
+    }
+    if (items.some((item) => Number(item.quantity) <= 0)) {
+      return toast.error("Please enter quantity for every product");
     }
 
     try {
-      const payload = items.length === 1 ? items[0] : { items };
+      const payload = items.length === 1 ? items[0] : { ...commonFields, items };
       const res = await insertReturnProduct(payload).unwrap();
       if (res?.success) {
         toast.success(items.length > 1 ? "Products created!" : "Created!");
@@ -670,33 +943,53 @@ const ReturnProductTable = () => {
   // ✅ update
   const handleUpdate = async () => {
     if (!currentItem?.Id) return toast.error("Invalid item");
-    if (!currentItem?.receivedId && !currentItem?.productId)
+    const bulkItems = parseReturnItems(currentItem?.items);
+    if (
+      !bulkItems.length &&
+      !currentItem?.receivedId &&
+      !currentItem?.productId
+    )
       return toast.error("Please select a product");
-    if (!currentItem.quantity || Number(currentItem.quantity) <= 0)
+    if (
+      bulkItems.length
+        ? bulkItems.some((item) => Number(item.quantity) <= 0)
+        : !currentItem.quantity || Number(currentItem.quantity) <= 0
+    )
       return toast.error("Please enter valid quantity");
 
     const variantsPayload = getNormalizedVariantsPayload(
       currentItem?.variantRows,
     );
-    if (hasDuplicateVariantCombination(variantsPayload)) {
+    if (!bulkItems.length && hasDuplicateVariantCombination(variantsPayload)) {
       return toast.error("Duplicate size and color combination found");
     }
 
     try {
-      const payload = {
-        note: currentItem.note,
-        status: currentItem.status,
-        date: currentItem.date,
-        quantity: Number(currentItem.quantity),
-        sale_price: Number(currentItem.sale_price) || 0,
-        purchase_price: Number(currentItem.purchase_price) || 0,
-        variants: variantsPayload,
-        receivedId: Number(currentItem.receivedId || currentItem.productId),
-        productId: Number(currentItem.productId || currentItem.receivedId),
-        warehouseId: Number(currentItem.warehouseId),
-        userId: userId,
-        actorRole: role,
-      };
+      const payload =
+        bulkItems.length > 0
+          ? {
+              items: bulkItems,
+              note: currentItem.note,
+              status: currentItem.status,
+              date: currentItem.date,
+              warehouseId: Number(currentItem.warehouseId),
+              userId,
+              actorRole: role,
+            }
+          : {
+              note: currentItem.note,
+              status: currentItem.status,
+              date: currentItem.date,
+              quantity: Number(currentItem.quantity),
+              sale_price: Number(currentItem.sale_price) || 0,
+              purchase_price: Number(currentItem.purchase_price) || 0,
+              variants: variantsPayload,
+              receivedId: Number(currentItem.receivedId || currentItem.productId),
+              productId: Number(currentItem.productId || currentItem.receivedId),
+              warehouseId: Number(currentItem.warehouseId),
+              userId: userId,
+              actorRole: role,
+            };
 
       const res = await updateReturnProduct({
         id: currentItem.Id,
@@ -716,17 +1009,28 @@ const ReturnProductTable = () => {
 
   const handleUpdate1 = async () => {
     if (!currentItem?.Id) return toast.error("Invalid item");
+    const bulkItems = parseReturnItems(currentItem?.items);
 
     try {
-      const payload = {
-        note: currentItem.note,
-        status: currentItem.status,
-        quantity: Number(currentItem.quantity || 0),
-        receivedId: Number(currentItem.receivedId || currentItem.productId),
-        productId: Number(currentItem.productId || currentItem.receivedId),
-        userId: userId,
-        actorRole: role,
-      };
+      const payload =
+        bulkItems.length > 0
+          ? {
+              items: bulkItems,
+              note: currentItem.note,
+              status: currentItem.status,
+              warehouseId: Number(currentItem.warehouseId),
+              userId,
+              actorRole: role,
+            }
+          : {
+              note: currentItem.note,
+              status: currentItem.status,
+              quantity: Number(currentItem.quantity || 0),
+              receivedId: Number(currentItem.receivedId || currentItem.productId),
+              productId: Number(currentItem.productId || currentItem.receivedId),
+              userId: userId,
+              actorRole: role,
+            };
 
       const res = await updateReturnProduct({
         id: currentItem.Id,
@@ -956,7 +1260,17 @@ const ReturnProductTable = () => {
 
           <tbody className="divide-y divide-slate-200 bg-white">
             {rows.map((rp) => {
-              const variantDisplayRows = getVariantDisplayRows(rp);
+              const rowItems = getReturnRowItems(rp);
+              const rowTotalQuantity = getReturnItemsTotalQuantity(rowItems);
+              const rowTotalPurchasePrice =
+                getReturnItemsTotalPurchasePrice(rowItems);
+              const rowTotalSalePrice = getReturnItemsTotalSalePrice(rowItems);
+              const variantDisplayRows = rowItems.flatMap((item) =>
+                getVariantDisplayRows(item),
+              );
+              const noVariantItems = rowItems.filter(
+                (item) => getVariantDisplayRows(item).length === 0,
+              );
 
               return (
                 <motion.tr
@@ -970,7 +1284,17 @@ const ReturnProductTable = () => {
                     {rp.date}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                    {resolveProductName(rp)}
+                    {rowItems.length > 1 ? (
+                      <div className="space-y-1">
+                        {rowItems.map((item, index) => (
+                          <div key={`${rp.Id}-item-${index}`}>
+                            {resolveReturnItemName(item)}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      resolveProductName(rp)
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {rp?.supplier?.name || "-"}
@@ -979,11 +1303,31 @@ const ReturnProductTable = () => {
                     {rp?.warehouse?.name || "-"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.quantity || 0).toFixed(2)}
+                    {Number(rowTotalQuantity || rp.quantity || 0).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 min-w-[260px]">
-                    {variantDisplayRows.length > 0 ? (
+                    {variantDisplayRows.length > 0 ||
+                    noVariantItems.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
+                        {noVariantItems.map((item, index) => (
+                          <div
+                            key={`${rp.Id}-no-variant-${index}`}
+                            className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2 shadow-sm min-w-[118px]"
+                          >
+                            <div className="text-[11px] font-bold text-slate-700">
+                              {resolveReturnItemName(item)}
+                            </div>
+                            <div className="mt-2 text-[11px] font-medium text-slate-500">
+                              Qty{" "}
+                              <span className="font-bold text-slate-900">
+                                {Number(item.quantity || 0).toFixed(0)}
+                              </span>
+                            </div>
+                            <div className="mt-2 text-[10px] font-semibold text-slate-400">
+                              No variants
+                            </div>
+                          </div>
+                        ))}
                         {variantDisplayRows.map((variant, index) => (
                           <div
                             key={`${rp.Id}-variant-${index}`}
@@ -1018,10 +1362,12 @@ const ReturnProductTable = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.purchase_price || 0).toFixed(2)}
+                    {Number(
+                      rowTotalPurchasePrice || rp.purchase_price || 0,
+                    ).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {Number(rp.sale_price || 0).toFixed(2)}
+                    {Number(rowTotalSalePrice || rp.sale_price || 0).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     <span
@@ -1186,10 +1532,106 @@ const ReturnProductTable = () => {
         isOpen={isEditOpen && !!currentItem}
         onClose={closeEdit}
         title="Edit Return Product"
-        maxWidth="max-w-2xl"
+        maxWidth="max-w-4xl"
       >
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {isEditingBulkReturn && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Product List
+                </p>
+                <div className="rounded-xl border border-indigo-100 bg-white px-4 py-2 text-right">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Total Quantity
+                  </p>
+                  <p className="text-lg font-black text-slate-900">
+                    {currentBulkTotalQuantity}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                <table className="min-w-[680px] w-full text-sm">
+                  <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th className="px-3 py-3 text-left">Product</th>
+                      <th className="px-3 py-3 text-left">Quantity</th>
+                      <th className="px-3 py-3 text-left">Variant Detail</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {currentBulkItems.map((item, index) => (
+                      <tr key={`edit-return-${item.productId || item.name}-${index}`}>
+                        <td className="px-3 py-3 align-top font-semibold text-slate-800">
+                          {resolveReturnItemName(item)}
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          {item.variants?.length ? (
+                            <p className="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-black text-slate-900">
+                              {Number(item.quantity || 0)}
+                            </p>
+                          ) : (
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={item.quantity ?? ""}
+                              onChange={(e) =>
+                                updateCurrentBulkItem(
+                                  index,
+                                  "quantity",
+                                  e.target.value,
+                                )
+                              }
+                              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                            />
+                          )}
+                        </td>
+                        <td className="px-3 py-3 align-top text-xs text-slate-500">
+                          {item.variants?.length
+                            ? item.variants.map((variant, variantIndex) => (
+                                <div
+                                  key={`${variant.size}-${variant.color}-${variantIndex}`}
+                                  className="mb-2 grid grid-cols-[1fr_90px] items-end gap-2 last:mb-0"
+                                >
+                                  <span className="rounded-lg bg-slate-50 px-2 py-1 font-semibold text-slate-600">
+                                    {variant.size || "-"} / {variant.color || "-"}
+                                  </span>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={variant.quantity}
+                                    onChange={(e) =>
+                                      updateCurrentBulkItemVariantField(
+                                        index,
+                                        variantIndex,
+                                        "quantity",
+                                        e.target.value,
+                                      )
+                                    }
+                                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                                  />
+                                </div>
+                              ))
+                            : "No variants"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div
+            className={
+              isEditingBulkReturn
+                ? "hidden"
+                : "grid grid-cols-1 md:grid-cols-2 gap-4"
+            }
+          >
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Product
@@ -1232,7 +1674,7 @@ const ReturnProductTable = () => {
             </div>
           </div>
 
-          {shouldShowEditVariantOptions && (
+          {!isEditingBulkReturn && shouldShowEditVariantOptions && (
             <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
               <div>
                 <div>
@@ -1401,6 +1843,7 @@ const ReturnProductTable = () => {
             </div>
           </div>
 
+          {!isEditingBulkReturn && (
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Quantity
@@ -1415,7 +1858,9 @@ const ReturnProductTable = () => {
               className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
             />
           </div>
+          )}
 
+          {!isEditingBulkReturn && (
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Sales Price
@@ -1430,6 +1875,7 @@ const ReturnProductTable = () => {
               className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
             />
           </div>
+          )}
 
           <div className="space-y-4 pt-2">
             {role === "superAdmin" || role === "admin" ? (
@@ -1714,6 +2160,17 @@ const ReturnProductTable = () => {
                   );
                 },
               )}
+
+              <div className="flex justify-end border-t border-slate-200 pt-3">
+                <button
+                  type="button"
+                  onClick={handleAddCreateVariants}
+                  className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-indigo-100 transition hover:bg-indigo-700"
+                >
+                  <Plus size={16} />
+                  Add Variants
+                </button>
+              </div>
             </div>
           )}
 
@@ -1745,7 +2202,7 @@ const ReturnProductTable = () => {
             </div>
           </div>
 
-          <div>
+          <div className="hidden">
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Quantity
             </label>
@@ -1757,11 +2214,10 @@ const ReturnProductTable = () => {
                 setCreateForm((p) => ({ ...p, quantity: e.target.value }))
               }
               className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              required
             />
           </div>
 
-          <div>
+          <div className="hidden">
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Sales Price
             </label>
@@ -1773,11 +2229,10 @@ const ReturnProductTable = () => {
                 setCreateForm((p) => ({ ...p, sale_price: e.target.value }))
               }
               className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              required
             />
           </div>
 
-          <div>
+          <div className="hidden">
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Purchase Price
             </label>
@@ -1789,7 +2244,6 @@ const ReturnProductTable = () => {
                 setCreateForm((p) => ({ ...p, purchase_price: e.target.value }))
               }
               className="h-11 border border-slate-200 rounded-xl px-3 w-full text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-200"
-              required
             />
           </div>
 
@@ -1849,7 +2303,7 @@ const ReturnProductTable = () => {
               </div>
               <button
                 type="button"
-                onClick={handleAddCreateItem}
+                onClick={handleAddCreateVariants}
                 className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50"
               >
                 <Plus size={16} />
@@ -1910,19 +2364,10 @@ const ReturnProductTable = () => {
                                     min="0"
                                     value={item.payload?.sale_price ?? ""}
                                     onChange={(event) =>
-                                      setCreateItems((prev) =>
-                                        prev.map((row, index) =>
-                                          index === itemIndex
-                                            ? {
-                                                ...row,
-                                                payload: {
-                                                  ...row.payload,
-                                                  sale_price:
-                                                    event.target.value,
-                                                },
-                                              }
-                                            : row,
-                                        ),
+                                      updateCreateItem(
+                                        itemIndex,
+                                        "sale_price",
+                                        event.target.value,
                                       )
                                     }
                                     className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
@@ -1939,19 +2384,10 @@ const ReturnProductTable = () => {
                                     min="0"
                                     value={item.payload?.purchase_price ?? ""}
                                     onChange={(event) =>
-                                      setCreateItems((prev) =>
-                                        prev.map((row, index) =>
-                                          index === itemIndex
-                                            ? {
-                                                ...row,
-                                                payload: {
-                                                  ...row.payload,
-                                                  purchase_price:
-                                                    event.target.value,
-                                                },
-                                              }
-                                            : row,
-                                        ),
+                                      updateCreateItem(
+                                        itemIndex,
+                                        "purchase_price",
+                                        event.target.value,
                                       )
                                     }
                                     className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
@@ -1971,18 +2407,10 @@ const ReturnProductTable = () => {
                                     min="0"
                                     value={item.payload?.quantity ?? ""}
                                     onChange={(event) =>
-                                      setCreateItems((prev) =>
-                                        prev.map((row, index) =>
-                                          index === itemIndex
-                                            ? {
-                                                ...row,
-                                                payload: {
-                                                  ...row.payload,
-                                                  quantity: event.target.value,
-                                                },
-                                              }
-                                            : row,
-                                        ),
+                                      updateCreateItem(
+                                        itemIndex,
+                                        "quantity",
+                                        event.target.value,
                                       )
                                     }
                                     className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
@@ -1999,19 +2427,10 @@ const ReturnProductTable = () => {
                                     min="0"
                                     value={item.payload?.sale_price ?? ""}
                                     onChange={(event) =>
-                                      setCreateItems((prev) =>
-                                        prev.map((row, index) =>
-                                          index === itemIndex
-                                            ? {
-                                                ...row,
-                                                payload: {
-                                                  ...row.payload,
-                                                  sale_price:
-                                                    event.target.value,
-                                                },
-                                              }
-                                            : row,
-                                        ),
+                                      updateCreateItem(
+                                        itemIndex,
+                                        "sale_price",
+                                        event.target.value,
                                       )
                                     }
                                     className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
@@ -2028,19 +2447,10 @@ const ReturnProductTable = () => {
                                     min="0"
                                     value={item.payload?.purchase_price ?? ""}
                                     onChange={(event) =>
-                                      setCreateItems((prev) =>
-                                        prev.map((row, index) =>
-                                          index === itemIndex
-                                            ? {
-                                                ...row,
-                                                payload: {
-                                                  ...row.payload,
-                                                  purchase_price:
-                                                    event.target.value,
-                                                },
-                                              }
-                                            : row,
-                                        ),
+                                      updateCreateItem(
+                                        itemIndex,
+                                        "purchase_price",
+                                        event.target.value,
                                       )
                                     }
                                     className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
@@ -2074,45 +2484,11 @@ const ReturnProductTable = () => {
                                         min="0"
                                         value={variant.quantity ?? ""}
                                         onChange={(event) =>
-                                          setCreateItems((prev) =>
-                                            prev.map((row, index) => {
-                                              if (index !== itemIndex)
-                                                return row;
-                                              return {
-                                                ...row,
-                                                payload: {
-                                                  ...row.payload,
-                                                  variants:
-                                                    normalizeVariantRows(
-                                                      row.payload?.variants,
-                                                    ).map((v, vIndex) =>
-                                                      vIndex === variantIndex
-                                                        ? {
-                                                            ...v,
-                                                            quantity:
-                                                              event.target
-                                                                .value,
-                                                          }
-                                                        : v,
-                                                    ),
-                                                  quantity:
-                                                    getVariantRowsTotalQuantity(
-                                                      normalizeVariantRows(
-                                                        row.payload?.variants,
-                                                      ).map((v, vIndex) =>
-                                                        vIndex === variantIndex
-                                                          ? {
-                                                              ...v,
-                                                              quantity:
-                                                                event.target
-                                                                  .value,
-                                                            }
-                                                          : v,
-                                                      ),
-                                                    ),
-                                                },
-                                              };
-                                            }),
+                                          updateCreateItemVariantField(
+                                            itemIndex,
+                                            variantIndex,
+                                            "quantity",
+                                            event.target.value,
                                           )
                                         }
                                         className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
@@ -2130,13 +2506,7 @@ const ReturnProductTable = () => {
                           <td className="px-4 py-4 text-right align-top">
                             <button
                               type="button"
-                              onClick={() =>
-                                setCreateItems((prev) =>
-                                  prev.filter(
-                                    (_, index) => index !== itemIndex,
-                                  ),
-                                )
-                              }
+                              onClick={() => removeCreateItem(itemIndex)}
                               className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-rose-600 transition hover:bg-rose-50"
                             >
                               Remove
